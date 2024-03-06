@@ -55,7 +55,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	sdkConfig.SetBech32PrefixForAccount(minitiaapp.AccountAddressPrefix, accountPubKeyPrefix)
 	sdkConfig.SetBech32PrefixForValidator(validatorAddressPrefix, validatorPubKeyPrefix)
 	sdkConfig.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)
-	sdkConfig.SetAddressVerifier(wasmtypes.VerifyAddressLen())
+	sdkConfig.SetAddressVerifier(minitiaapp.VerifyAddressLen())
 	sdkConfig.Seal()
 
 	encodingConfig := minitiaapp.MakeEncodingConfig()

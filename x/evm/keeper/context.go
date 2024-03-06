@@ -73,6 +73,10 @@ func (k Keeper) createEVM(ctx context.Context, sender sdk.AccAddress) (*vm.EVM, 
 }
 
 func (k Keeper) EVMCall(ctx context.Context, sender sdk.AccAddress, contractAddr common.Address, inputBz []byte) ([]byte, types.Logs, error) {
+	if len(sender) != common.AddressLength {
+		return nil, nil, types.ErrInvalidAddressLength
+	}
+
 	evm, err := k.createEVM(ctx, sender)
 	if err != nil {
 		return nil, nil, err
@@ -121,6 +125,10 @@ func (k Keeper) EVMCall(ctx context.Context, sender sdk.AccAddress, contractAddr
 }
 
 func (k Keeper) EVMCreate(ctx context.Context, sender sdk.AccAddress, codeBz []byte) ([]byte, common.Address, error) {
+	if len(sender) != common.AddressLength {
+		return nil, common.Address{}, types.ErrInvalidAddressLength
+	}
+
 	evm, err := k.createEVM(ctx, sender)
 	if err != nil {
 		return nil, common.Address{}, err

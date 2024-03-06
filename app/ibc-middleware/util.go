@@ -32,9 +32,9 @@ func isIcs20Packet(packet channeltypes.Packet) (isIcs20 bool, ics20data transfer
 	return true, data
 }
 
-func validateAndParseMemo(memo, receiver string) (isWasmRouted bool, msg evmtypes.MsgCall, err error) {
-	isWasmRouted, metadata := jsonStringHasKey(memo, "evm")
-	if !isWasmRouted {
+func validateAndParseMemo(memo, receiver string) (isEVMRouted bool, msg evmtypes.MsgCall, err error) {
+	isEVMRouted, metadata := jsonStringHasKey(memo, "evm")
+	if !isEVMRouted {
 		return
 	}
 

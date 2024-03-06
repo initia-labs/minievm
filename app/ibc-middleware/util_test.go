@@ -11,27 +11,27 @@ import (
 func Test_validateAndParseMemo(t *testing.T) {
 	memo := `
 	{
-		"wasm" : {
+		"evm" : {
 			"sender": "init_addr",
 			"contract_addr": "contract_addr",
-			"input": {}
+			"input": ""
 		}
 	}`
-	isWasmRouted, msg, err := validateAndParseMemo(memo, "contract_addr")
-	require.True(t, isWasmRouted)
+	isEVMRouted, msg, err := validateAndParseMemo(memo, "contract_addr")
+	require.True(t, isEVMRouted)
 	require.NoError(t, err)
 	require.Equal(t, evmtypes.MsgCall{
 		Sender:       "init_addr",
 		ContractAddr: "contract_addr",
-		Input:        []byte("{}"),
+		Input:        []byte(""),
 	}, msg)
 
 	// invalid receiver
-	isWasmRouted, _, err = validateAndParseMemo(memo, "invalid_addr")
-	require.True(t, isWasmRouted)
+	isEVMRouted, _, err = validateAndParseMemo(memo, "invalid_addr")
+	require.True(t, isEVMRouted)
 	require.Error(t, err)
 
-	isWasmRouted, _, err = validateAndParseMemo("hihi", "invalid_addr")
-	require.False(t, isWasmRouted)
+	isEVMRouted, _, err = validateAndParseMemo("hihi", "invalid_addr")
+	require.False(t, isEVMRouted)
 	require.NoError(t, err)
 }

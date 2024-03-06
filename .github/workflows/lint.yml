@@ -20,10 +20,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  WASM_DIR: ./wasmchain
-  MOVE_DIR: ./movechain
-
 jobs:
   golangci:
     env:

@@ -15,7 +15,7 @@ import (
 // minitiaAppConfig initia specify app config
 type minitiaAppConfig struct {
 	serverconfig.Config
-	EVMConfig evmconfig.EVMConfig `mapstructure:"wasm"`
+	EVMConfig evmconfig.EVMConfig `mapstructure:"evm"`
 }
 
 // initAppConfig helps to override default appConfig template and configs.
@@ -45,7 +45,7 @@ func initAppConfig() (string, interface{}) {
 	}
 
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
-		evmconfig.DefaultConfigTemplate()
+		evmconfig.DefaultConfigTemplate
 
 	return minitiaAppTemplate, minitiaAppConfig
 }

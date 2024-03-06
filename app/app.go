@@ -44,6 +44,7 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -339,7 +340,7 @@ func NewMinitiaApp(
 	)
 	app.AccountKeeper = &accountKeeper
 
-	bankKeeper := bankkeeper.NewBaseKeeper(
+	app.BankKeeper = bankkeeper.NewBaseKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[banktypes.StoreKey]),
 		app.AccountKeeper,
@@ -347,7 +348,6 @@ func NewMinitiaApp(
 		authorityAddr,
 		logger,
 	)
-	app.BankKeeper = &bankKeeper
 
 	communityPoolKeeper := appkeepers.NewCommunityPoolKeeper(app.BankKeeper, authtypes.FeeCollectorName)
 
@@ -617,7 +617,7 @@ func NewMinitiaApp(
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	//////////////////////////////
-	// WasmKeeper Configuration //
+	// EVMKeeper Configuration //
 	//////////////////////////////
 	evmConfig := evmconfig.GetConfig(appOpts)
 
@@ -1119,4 +1119,15 @@ func (app *MinitiaApp) TxConfig() client.TxConfig {
 func (app *MinitiaApp) ChainID() string { // TODO: remove this method once chain updates to v0.50.x
 	field := reflect.ValueOf(app.BaseApp).Elem().FieldByName("chainID")
 	return field.String()
+}
+
+// allow 20 and 32 bytes address
+func VerifyAddressLen() func(addr []byte) error {
+	return func(addr []byte) error {
+		addrLen := len(addr)
+		if addrLen != 32 && addrLen != 20 {
+			return sdkerrors.ErrInvalidAddress
+		}
+		return nil
+	}
 }

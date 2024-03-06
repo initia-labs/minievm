@@ -3,6 +3,7 @@ package hook
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -21,7 +22,9 @@ func NewEVMBridgeHook(evmKeeper *evmkeeper.Keeper) EVMBridgeHook {
 
 func (mbh EVMBridgeHook) Hook(ctx context.Context, sender sdk.AccAddress, msgBytes []byte) error {
 	msg := evmtypes.MsgCall{}
-	err := json.Unmarshal(msgBytes, &msg)
+	decoder := json.NewDecoder(strings.NewReader(string(msgBytes)))
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&msg)
 	if err != nil {
 		return err
 	}
