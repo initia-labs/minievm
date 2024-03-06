@@ -1,0 +1,27 @@
+syntax = "proto3";
+package minievm.evm.v1;
+
+import "gogoproto/gogo.proto";
+import "minievm/evm/v1/types.proto";
+
+option go_package = "github.com/initia-labs/minievm/x/evm/types";
+
+// GenesisState defines the evm module's genesis state.
+message GenesisState {
+  // params defines the parameters of the module.
+  Params params = 1 [(gogoproto.nullable) = false];
+
+  // state root
+  bytes state_root = 2;
+
+  // vm kv store
+  repeated GenesisKeyValue key_values = 3 [(gogoproto.moretags) = "yaml:\"key_values\"", (gogoproto.nullable) = false];
+}
+
+// GenesisDenom defines a evm denom that is defined within genesis
+// state. The structure contains DenomAuthorityMetadata which defines the
+// denom's admin.
+message GenesisKeyValue {
+  bytes key   = 1;
+  bytes value = 2;
+}

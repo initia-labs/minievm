@@ -1,0 +1,96 @@
+syntax = "proto3";
+package minievm.evm.v1;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "minievm/evm/v1/types.proto";
+
+option go_package                      = "github.com/initia-labs/minievm/x/evm/types";
+option (gogoproto.equal_all)           = false;
+option (gogoproto.goproto_getters_all) = false;
+
+// Query provides defines the gRPC querier service
+service Query {
+  // Code gets the module info.
+  rpc Code(QueryCodeRequest) returns (QueryCodeResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/codes/{contract_addr}";
+  }
+
+  // State gets the state bytes of the given address and key bytes.
+  rpc State(QueryStateRequest) returns (QueryStateResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/states/{contract_addr}/{key}";
+  }
+
+  // Call execute entry function and return  the function result
+  rpc Call(QueryCallRequest) returns (QueryCallResponse) {
+    option (google.api.http) = {
+      post: "/minievm/evm/v1/call"
+      body: "*"
+    };
+  }
+
+  // Params queries all parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/params";
+  }
+}
+
+// QueryCodeRequest is the request type for the Query/Code RPC
+// method
+message QueryCodeRequest {
+  // contract address to query
+  string contract_addr = 1;
+}
+
+// QueryCodeResponse is the response type for the Query/Code RPC
+// method
+message QueryCodeResponse {
+  option (gogoproto.equal) = true;
+  bytes code               = 1;
+}
+
+// QueryStateRequest is the request type for the Query/State RPC
+// method
+message QueryStateRequest {
+  // contract address to query
+  string contract_addr = 1;
+  // hex encoded hash string
+  string key = 2;
+}
+
+// QueryStateResponse is the response type for the Query/State RPC
+// method
+message QueryStateResponse {
+  option (gogoproto.equal) = true;
+  // hex encoded hash string
+  string value = 1;
+}
+
+// QueryCallRequest is the request type for the Query/Call RPC
+// method
+message QueryCallRequest {
+  // sender address
+  string sender = 1;
+  // contract address to call
+  string contract_addr = 2;
+  // call input bytes
+  bytes input = 3;
+}
+
+// QueryCallResponse is the response type for the Query/Call RPC
+// method
+message QueryCallResponse {
+  bytes        response = 1;
+  uint64       used_gas = 2;
+  repeated Log logs     = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// QueryParamsRequest is the request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is the response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params defines the parameters of the module.
+  Params params = 1 [(gogoproto.nullable) = false];
+}
