@@ -360,7 +360,7 @@ func NewMinitiaApp(
 		runtime.NewKVStoreService(keys[opchildtypes.StoreKey]),
 		app.AccountKeeper,
 		app.BankKeeper,
-		apphook.NewEVMBridgeHook(app.EVMKeeper).Hook,
+		apphook.NewEVMBridgeHook(ac, app.EVMKeeper).Hook,
 		app.MsgServiceRouter(),
 		authorityAddr,
 		vc,
