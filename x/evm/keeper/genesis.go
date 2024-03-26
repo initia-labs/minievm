@@ -1,8 +1,10 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 
+	"cosmossdk.io/collections"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -11,12 +13,36 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		return err
 	}
 
+	// if the genesis is not exported, initialize the state
+	if !genState.IsExported() {
+		return k.Initialize(ctx)
+	}
+
+	// else set the state from the genesis
 	if err := k.VMRoot.Set(ctx, genState.StateRoot); err != nil {
 		return err
 	}
 
 	for _, kv := range genState.KeyValues {
 		if err := k.VMStore.Set(ctx, kv.Key, kv.Value); err != nil {
+			return err
+		}
+	}
+
+	for _, stores := range genState.Erc20Stores {
+		for _, store := range stores.Stores {
+			if err := k.ERC20Stores.Set(ctx, collections.Join(stores.Address, store)); err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, denomAddress := range genState.DenomAddresses {
+		if err := k.ERC20ContractAddrsByDenom.Set(ctx, denomAddress.Denom, denomAddress.ContractAddress); err != nil {
+			return err
+		}
+
+		if err := k.ERC20DenomsByContractAddr.Set(ctx, denomAddress.ContractAddress, denomAddress.Denom); err != nil {
 			return err
 		}
 	}
@@ -41,9 +67,38 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		return false, nil
 	})
 
+	var stores *types.GenesisERC20Stores
+	erc20Stores := []types.GenesisERC20Stores{}
+	k.ERC20Stores.Walk(ctx, nil, func(key collections.Pair[[]byte, []byte]) (stop bool, err error) {
+		if stores == nil || !bytes.Equal(stores.Address, key.K1()) {
+			erc20Stores = append(erc20Stores, types.GenesisERC20Stores{
+				Address: key.K1(),
+				Stores:  [][]byte{key.K2()},
+			})
+
+			stores = &erc20Stores[len(erc20Stores)-1]
+			return false, nil
+		}
+
+		stores.Stores = append(stores.Stores, key.K2())
+		return false, nil
+	})
+
+	denomAddresses := []types.GenesisDenomAddress{}
+	k.ERC20ContractAddrsByDenom.Walk(ctx, nil, func(denom string, contractAddr []byte) (stop bool, err error) {
+		denomAddresses = append(denomAddresses, types.GenesisDenomAddress{
+			Denom:           denom,
+			ContractAddress: contractAddr,
+		})
+
+		return false, nil
+	})
+
 	return &types.GenesisState{
-		Params:    params,
-		StateRoot: stateRoot,
-		KeyValues: kvs,
+		Params:         params,
+		StateRoot:      stateRoot,
+		KeyValues:      kvs,
+		Erc20Stores:    erc20Stores,
+		DenomAddresses: denomAddresses,
 	}
 }

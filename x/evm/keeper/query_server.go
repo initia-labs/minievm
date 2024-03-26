@@ -2,7 +2,10 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -20,7 +23,13 @@ func NewQueryServer(k *Keeper) types.QueryServer {
 }
 
 // Call implements types.QueryServer.
-func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest) (*types.QueryCallResponse, error) {
+func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest) (res *types.QueryCallResponse, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errorsmod.Wrap(types.ErrEVMCallFailed, fmt.Sprintf("vm panic: %v", r))
+		}
+	}()
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithGasMeter(storetypes.NewGasMeter(qs.config.ContractQueryGasLimit))
 
@@ -34,13 +43,21 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		return nil, err
 	}
 
-	retBz, logs, err := qs.EVMCall(sdkCtx, sender, contractAddr, req.Input)
+	inputBz, err := hex.DecodeString(req.Input)
+	if err != nil {
+		return nil, err
+	}
+
+	// use cache context to rollback writes
+	sdkCtx, _ = sdkCtx.CacheContext()
+	caller := common.BytesToAddress(sender)
+	retBz, logs, err := qs.EVMCall(sdkCtx, caller, contractAddr, inputBz)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.QueryCallResponse{
-		Response: retBz,
+		Response: common.Bytes2Hex(retBz),
 		UsedGas:  sdkCtx.GasMeter().GasConsumedToLimit(),
 		Logs:     logs,
 	}, nil
@@ -90,6 +107,33 @@ func (qs *queryServerImpl) State(ctx context.Context, req *types.QueryStateReque
 	return &types.QueryStateResponse{
 		Value: state.Hex(),
 	}, nil
+}
+
+// ContractAddrByDenom implements types.QueryServer.
+func (qs *queryServerImpl) ContractAddrByDenom(ctx context.Context, req *types.QueryContractAddrByDenomRequest) (*types.QueryContractAddrByDenomResponse, error) {
+	contractAddr, err := types.DenomToContractAddr(ctx, qs, req.Denom)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryContractAddrByDenomResponse{
+		Address: contractAddr.Hex(),
+	}, nil
+}
+
+// Denom implements types.QueryServer.
+func (qs *queryServerImpl) Denom(ctx context.Context, req *types.QueryDenomRequest) (*types.QueryDenomResponse, error) {
+	addr, err := types.ContractAddressFromString(qs.ac, req.ContractAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	denom, err := types.ContractAddrToDenom(ctx, qs, addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryDenomResponse{Denom: denom}, nil
 }
 
 // Params implements types.QueryServer.

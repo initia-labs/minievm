@@ -1,6 +1,7 @@
 package types
 
 import (
+	bytes "bytes"
 	"errors"
 
 	"cosmossdk.io/core/address"
@@ -23,4 +24,8 @@ func (genState *GenesisState) Validate(ac address.Codec) error {
 	}
 
 	return genState.Params.Validate(ac)
+}
+
+func (genState GenesisState) IsExported() bool {
+	return !bytes.Equal(genState.StateRoot, coretypes.EmptyRootHash[:])
 }

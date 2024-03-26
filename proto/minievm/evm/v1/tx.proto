@@ -31,15 +31,15 @@ message MsgCreate {
   // Sender is the that actor that signed the messages
   string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
-  // Code is raw contract bytes code.
-  bytes code = 2;
+  // Code is hex encoded raw contract bytes code.
+  string code = 2;
 }
 
 // MsgCreateResponse defines the Msg/Create response type.
 message MsgCreateResponse {
-  bytes result = 1;
+  string result = 1;
 
-  // hex encoded contract address
+  // hex encoded address (0x prefixed)
   string contract_addr = 2;
 }
 
@@ -52,16 +52,16 @@ message MsgCall {
   string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   // ContractAddr is the contract address to be executed.
-  // It can be cosmos address or hex encoded address.
+  // It can be cosmos address or hex encoded address (0x prefixed).
   string contract_addr = 2;
 
-  // Execution input bytes.
-  bytes input = 3;
+  // Hex encoded execution input bytes.
+  string input = 3;
 }
 
 // MsgCallResponse defines the Msg/Call response type.
 message MsgCallResponse {
-  bytes        result = 1;
+  string       result = 1;
   repeated Log logs   = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 

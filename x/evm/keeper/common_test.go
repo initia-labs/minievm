@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"encoding/binary"
 	"testing"
 	"time"
@@ -34,15 +35,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	distribution "github.com/cosmos/cosmos-sdk/x/distribution"
-	distributionkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 
+	"github.com/initia-labs/minievm/x/evm"
 	EVMConfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -51,8 +49,7 @@ import (
 var ModuleBasics = module.NewBasicManager(
 	auth.AppModuleBasic{},
 	bank.AppModuleBasic{},
-	staking.AppModuleBasic{},
-	distribution.AppModuleBasic{},
+	evm.AppModuleBasic{},
 )
 
 var (
@@ -162,25 +159,24 @@ func (f *TestFaucet) NewFundedAccount(ctx sdk.Context, amounts ...sdk.Coin) sdk.
 }
 
 type TestKeepers struct {
-	AccountKeeper  authkeeper.AccountKeeper
-	StakingKeeper  stakingkeeper.Keeper
-	DistKeeper     distributionkeeper.Keeper
-	BankKeeper     bankkeeper.Keeper
-	EVMKeeper      evmkeeper.Keeper
-	EncodingConfig EncodingConfig
-	Faucet         *TestFaucet
-	MultiStore     storetypes.CommitMultiStore
+	AccountKeeper       authkeeper.AccountKeeper
+	BankKeeper          bankkeeper.Keeper
+	CommunityPoolKeeper *MockCommunityPoolKeeper
+	EVMKeeper           evmkeeper.Keeper
+	EncodingConfig      EncodingConfig
+	Faucet              *TestFaucet
+	MultiStore          storetypes.CommitMultiStore
 }
 
 // createDefaultTestInput common settings for createTestInput
 func createDefaultTestInput(t testing.TB) (sdk.Context, TestKeepers) {
-	return createTestInput(t, false)
+	return createTestInput(t, false, true)
 }
 
 // createTestInput encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
-func createTestInput(t testing.TB, isCheckTx bool) (sdk.Context, TestKeepers) {
+func createTestInput(t testing.TB, isCheckTx, initialize bool) (sdk.Context, TestKeepers) {
 	// Load default move config
-	return _createTestInput(t, isCheckTx, dbm.NewMemDB())
+	return _createTestInput(t, isCheckTx, initialize, dbm.NewMemDB())
 }
 
 var keyCounter uint64
@@ -201,7 +197,7 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
 // encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
 func _createTestInput(
 	t testing.TB,
-	isCheckTx bool,
+	isCheckTx, initialize bool,
 	db dbm.DB,
 ) (sdk.Context, TestKeepers) {
 	keys := storetypes.NewKVStoreKeys(
@@ -228,18 +224,13 @@ func _createTestInput(
 	appCodec := encodingConfig.Codec
 
 	maccPerms := map[string][]string{ // module account permissions
-		authtypes.FeeCollectorName:     nil,
-		distributiontypes.ModuleName:   nil,
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		authtypes.FeeCollectorName: nil,
 
 		// for testing
 		authtypes.Minter: {authtypes.Minter, authtypes.Burner},
 	}
 
 	ac := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
-	vc := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix())
-	cc := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix())
 
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
@@ -265,54 +256,44 @@ func _createTestInput(
 	)
 	require.NoError(t, bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
 
-	stakingKeeper := stakingkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[stakingtypes.StoreKey]),
-		accountKeeper,
-		bankKeeper,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		vc, cc,
-	)
-	stakingParams := stakingtypes.DefaultParams()
-	require.NoError(t, stakingKeeper.SetParams(ctx, stakingParams))
-
-	distrKeeper := distributionkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[distributiontypes.StoreKey]),
-		accountKeeper,
-		bankKeeper,
-		stakingKeeper,
-		authtypes.FeeCollectorName,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-	)
-	distrParams := distributiontypes.DefaultParams()
-	require.NoError(t, distrKeeper.Params.Set(ctx, distrParams))
-	stakingKeeper.SetHooks(distrKeeper.Hooks())
-
-	// set genesis items required for distribution
-	require.NoError(t, distrKeeper.FeePool.Set(ctx, distributiontypes.InitialFeePool()))
-
+	communityPoolKeeper := &MockCommunityPoolKeeper{}
 	evmKeeper := evmkeeper.NewKeeper(
 		ac,
 		appCodec,
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
+		accountKeeper,
+		communityPoolKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		EVMConfig.DefaultEVMConfig(),
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
+	if initialize {
+		require.NoError(t, evmKeeper.Initialize(ctx))
+	}
 
 	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter, initialTotalSupply()...)
 
 	keepers := TestKeepers{
-		AccountKeeper:  accountKeeper,
-		StakingKeeper:  *stakingKeeper,
-		DistKeeper:     distrKeeper,
-		EVMKeeper:      *evmKeeper,
-		BankKeeper:     bankKeeper,
-		EncodingConfig: encodingConfig,
-		Faucet:         faucet,
-		MultiStore:     ms,
+		AccountKeeper:       accountKeeper,
+		CommunityPoolKeeper: communityPoolKeeper,
+		EVMKeeper:           *evmKeeper,
+		BankKeeper:          bankKeeper,
+		EncodingConfig:      encodingConfig,
+		Faucet:              faucet,
+		MultiStore:          ms,
 	}
 	return ctx, keepers
+}
+
+var _ evmtypes.CommunityPoolKeeper = &MockCommunityPoolKeeper{}
+
+type MockCommunityPoolKeeper struct {
+	CommunityPool sdk.Coins
+}
+
+func (k *MockCommunityPoolKeeper) FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error {
+	k.CommunityPool = k.CommunityPool.Add(amount...)
+
+	return nil
 }

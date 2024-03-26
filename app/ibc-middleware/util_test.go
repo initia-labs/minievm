@@ -23,7 +23,7 @@ func Test_validateAndParseMemo(t *testing.T) {
 	require.Equal(t, evmtypes.MsgCall{
 		Sender:       "init_addr",
 		ContractAddr: "contract_addr",
-		Input:        []byte(""),
+		Input:        "",
 	}, msg)
 
 	// invalid receiver

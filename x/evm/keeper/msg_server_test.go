@@ -17,13 +17,12 @@ func Test_MsgServer_Create(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
-	counterBz, err := hex.DecodeString(strings.TrimPrefix(counter.CounterBin, "0x"))
-	require.NoError(t, err)
+	counterBin := strings.TrimPrefix(counter.CounterBin, "0x")
 
 	msgServer := keeper.NewMsgServerImpl(&input.EVMKeeper)
 	res, err := msgServer.Create(ctx, &types.MsgCreate{
 		Sender: addr.String(),
-		Code:   counterBz,
+		Code:   counterBin,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, res.Result)
@@ -38,7 +37,7 @@ func Test_MsgServer_Create(t *testing.T) {
 	// allowed
 	res, err = msgServer.Create(ctx, &types.MsgCreate{
 		Sender: addr.String(),
-		Code:   counterBz,
+		Code:   counterBin,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, res.Result)
@@ -48,7 +47,7 @@ func Test_MsgServer_Create(t *testing.T) {
 	_, _, addr = keyPubAddr()
 	_, err = msgServer.Create(ctx, &types.MsgCreate{
 		Sender: addr.String(),
-		Code:   counterBz,
+		Code:   counterBin,
 	})
 	require.Error(t, err)
 }
@@ -56,11 +55,12 @@ func Test_MsgServer_Create(t *testing.T) {
 func Test_MsgServer_Call(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
+	caller := common.BytesToAddress(addr.Bytes())
 
 	counterBz, err := hex.DecodeString(strings.TrimPrefix(counter.CounterBin, "0x"))
 	require.NoError(t, err)
 
-	retBz, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, addr, counterBz)
+	retBz, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
@@ -71,7 +71,7 @@ func Test_MsgServer_Call(t *testing.T) {
 	queryInputBz, err := parsed.Pack("count")
 	require.NoError(t, err)
 
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, addr, contractAddr, queryInputBz)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(0).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -83,13 +83,13 @@ func Test_MsgServer_Call(t *testing.T) {
 	res, err := msgServer.Call(ctx, &types.MsgCall{
 		Sender:       addr.String(),
 		ContractAddr: contractAddr.Hex(),
-		Input:        inputBz,
+		Input:        common.Bytes2Hex(inputBz),
 	})
 	require.NoError(t, err)
 	require.Empty(t, res.Result)
 	require.NotEmpty(t, res.Logs)
 
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, addr, contractAddr, queryInputBz)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)

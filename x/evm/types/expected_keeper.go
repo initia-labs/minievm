@@ -1,1 +1,60 @@
 package types
+
+import (
+	"context"
+
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
+)
+
+// AccountKeeper is expected keeper for auth module
+type AccountKeeper interface {
+	NewAccount(ctx context.Context, acc sdk.AccountI) sdk.AccountI
+	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
+	SetAccount(ctx context.Context, acc sdk.AccountI)
+	HasAccount(ctx context.Context, addr sdk.AccAddress) bool
+
+	NewAccountWithAddress(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
+	NextAccountNumber(ctx context.Context) uint64
+}
+
+type CommunityPoolKeeper interface {
+	// FundCommunityPool allows an account to directly fund the community fund pool.
+	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
+}
+
+type IERC20StoresKeeper interface {
+	Register(ctx context.Context, contractAddr common.Address) error
+	RegisterStore(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) error
+	IsStoreRegistered(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) (bool, error)
+}
+
+type IERC20Keeper interface {
+	// balance
+	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) (math.Int, error)
+	GetPaginatedBalances(ctx context.Context, pageReq *query.PageRequest, addr sdk.AccAddress) (sdk.Coins, *query.PageResponse, error)
+	GetPaginatedSupply(ctx context.Context, pageReq *query.PageRequest) (sdk.Coins, *query.PageResponse, error)
+	IterateAccountBalances(ctx context.Context, addr sdk.AccAddress, cb func(sdk.Coin) (bool, error)) error
+	IterateSupply(ctx context.Context, cb func(supply sdk.Coin) (bool, error)) error
+
+	// operations
+	SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
+	MintCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error
+	BurnCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error
+
+	// supply
+	GetSupply(ctx context.Context, denom string) (math.Int, error)
+	HasSupply(ctx context.Context, denom string) (bool, error)
+
+	// fungible asset
+	GetMetadata(ctx context.Context, denom string) (banktypes.Metadata, error)
+}
+
+type WithContext interface {
+	WithContext(ctx context.Context) vm.PrecompiledContract
+}

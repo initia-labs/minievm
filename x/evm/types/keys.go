@@ -20,8 +20,12 @@ const (
 // Keys for move store
 // Items are stored with the following key: values
 var (
-	VMStorePrefix = []byte{0x21} // prefix for vm
+	VMStorePrefix                   = []byte{0x21} // prefix for vm
+	ERC20sPrefix                    = []byte{0x31} // prefix for erc20 stores
+	ERC20StoresPrefix               = []byte{0x32} // prefix for erc20 stores
+	ERC20DenomsByContractAddrPrefix = []byte{0x33} // prefix for erc20 denoms
+	ERC20ContractAddrsByDenomPrefix = []byte{0x34} // prefix for erc20 denoms
 
-	ParamsKey = []byte{0x31} // key of parameters for module x/evm
-	VMRootKey = []byte{0x41} // key of evm state root
+	ParamsKey = []byte{0x41} // key of parameters for module x/evm
+	VMRootKey = []byte{0x51} // key of evm state root
 )
