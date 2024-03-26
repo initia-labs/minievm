@@ -104,6 +104,9 @@ import (
 
 	initiaapplanes "github.com/initia-labs/initia/app/lanes"
 	initiaappparams "github.com/initia-labs/initia/app/params"
+	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
+	ibchookskeeper "github.com/initia-labs/initia/x/ibc-hooks/keeper"
+	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
 	"github.com/initia-labs/initia/x/ibc/fetchprice"
 	fetchpricekeeper "github.com/initia-labs/initia/x/ibc/fetchprice/keeper"
 	fetchpricetypes "github.com/initia-labs/initia/x/ibc/fetchprice/types"
@@ -134,7 +137,7 @@ import (
 	// local imports
 	appante "github.com/initia-labs/minievm/app/ante"
 	apphook "github.com/initia-labs/minievm/app/hook"
-	evmibcmiddleware "github.com/initia-labs/minievm/app/ibc-middleware"
+	ibcevmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	appkeepers "github.com/initia-labs/minievm/app/keepers"
 	applanes "github.com/initia-labs/minievm/app/lanes"
 
@@ -223,6 +226,7 @@ type MinitiaApp struct {
 	ICQKeeper             *icqkeeper.Keeper
 	OracleKeeper          *oraclekeeper.Keeper // x/oracle keeper used for the slinky oracle
 	FetchPriceKeeper      *fetchpricekeeper.Keeper
+	IBCHooksKeeper        *ibchookskeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
@@ -276,7 +280,7 @@ func NewMinitiaApp(
 		icahosttypes.StoreKey, icacontrollertypes.StoreKey, icaauthtypes.StoreKey,
 		ibcfeetypes.StoreKey, evmtypes.StoreKey, opchildtypes.StoreKey,
 		auctiontypes.StoreKey, packetforwardtypes.StoreKey, icqtypes.StoreKey,
-		oracletypes.StoreKey, fetchpricetypes.StoreKey,
+		oracletypes.StoreKey, fetchpricetypes.StoreKey, ibchookstypes.StoreKey,
 	)
 	tkeys := storetypes.NewTransientStoreKeys()
 	memKeys := storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -437,6 +441,13 @@ func NewMinitiaApp(
 	)
 	app.IBCFeeKeeper = &ibcFeeKeeper
 
+	app.IBCHooksKeeper = ibchookskeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[ibchookstypes.StoreKey]),
+		authorityAddr,
+		ac,
+	)
+
 	////////////////////////////
 	// Transfer configuration //
 	////////////////////////////
@@ -446,7 +457,6 @@ func NewMinitiaApp(
 	var transferStack porttypes.IBCModule
 	{
 		packetForwardKeeper := &packetforwardkeeper.Keeper{}
-		evmMiddleware := &evmibcmiddleware.IBCMiddleware{}
 
 		// Create Transfer Keepers
 		transferKeeper := ibctransferkeeper.NewKeeper(
@@ -473,8 +483,8 @@ func NewMinitiaApp(
 			app.IBCKeeper.ChannelKeeper,
 			communityPoolKeeper,
 			app.BankKeeper,
-			// ics4wrapper: transfer -> packet forward -> evm
-			evmMiddleware,
+			// ics4wrapper: transfer -> packet forward -> fee
+			app.IBCFeeKeeper,
 			authorityAddr,
 		)
 		app.PacketForwardKeeper = packetForwardKeeper
@@ -487,19 +497,21 @@ func NewMinitiaApp(
 			packetforwardkeeper.DefaultRefundTransferPacketTimeoutTimestamp,
 		)
 
-		// create move middleware for transfer
-		*evmMiddleware = evmibcmiddleware.NewIBCMiddleware(
-			// receive: evm -> packet forward -> transfer
+		// create wasm middleware for transfer
+		hookMiddleware := ibchooks.NewIBCMiddleware(
+			// receive: wasm -> packet forward -> transfer
 			packetForwardMiddleware,
-			// ics4wrapper: transfer -> packet forward -> evm -> fee
-			app.IBCFeeKeeper,
-			app.EVMKeeper,
+			ibchooks.NewICS4Middleware(
+				nil, /* ics4wrapper: not used */
+				ibcevmhooks.NewEVMHooks(app.EVMKeeper, ac),
+			),
+			app.IBCHooksKeeper,
 		)
 
 		// create ibcfee middleware for transfer
 		transferStack = ibcfee.NewIBCMiddleware(
 			// receive: fee -> evm -> packet forward -> transfer
-			evmMiddleware,
+			hookMiddleware,
 			// ics4wrapper: transfer -> packet forward -> evm -> fee -> channel
 			*app.IBCFeeKeeper,
 		)

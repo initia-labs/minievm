@@ -299,8 +299,7 @@ func _createTestInput(
 	// ibc middleware setup
 
 	mockIBCMiddleware := mockIBCMiddleware{}
-	evmHooks, err := evmhooks.NewEVMHooks(evmKeeper, ac)
-	require.NoError(t, err)
+	evmHooks := evmhooks.NewEVMHooks(evmKeeper, ac)
 
 	middleware := ibchooks.NewICS4Middleware(mockIBCMiddleware, evmHooks)
 	ibcHookMiddleware := ibchooks.NewIBCMiddleware(mockIBCMiddleware, middleware, ibcHooksKeeper)

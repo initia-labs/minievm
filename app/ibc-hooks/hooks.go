@@ -25,17 +25,17 @@ type EVMHooks struct {
 	asyncCallbackABI *abi.ABI
 }
 
-func NewEVMHooks(evmKeeper *evmkeeper.Keeper, ac address.Codec) (*EVMHooks, error) {
+func NewEVMHooks(evmKeeper *evmkeeper.Keeper, ac address.Codec) *EVMHooks {
 	abi, err := i_ibc_async_callback.IIbcAsyncCallbackMetaData.GetAbi()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	return &EVMHooks{
 		evmKeeper:        evmKeeper,
 		ac:               ac,
 		asyncCallbackABI: abi,
-	}, nil
+	}
 }
 
 func (h EVMHooks) OnRecvPacketOverride(im ibchooks.IBCMiddleware, ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) ibcexported.Acknowledgement {
