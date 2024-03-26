@@ -58,8 +58,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
@@ -140,6 +138,8 @@ import (
 	appkeepers "github.com/initia-labs/minievm/app/keepers"
 	applanes "github.com/initia-labs/minievm/app/lanes"
 
+	"github.com/initia-labs/minievm/x/bank"
+	bankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -203,7 +203,7 @@ type MinitiaApp struct {
 
 	// keepers
 	AccountKeeper         *authkeeper.AccountKeeper
-	BankKeeper            bankkeeper.Keeper
+	BankKeeper            *bankkeeper.BaseKeeper
 	CapabilityKeeper      *capabilitykeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
 	GroupKeeper           *groupkeeper.Keeper
@@ -328,6 +328,7 @@ func NewMinitiaApp(
 
 	// add keepers
 	app.EVMKeeper = &evmkeeper.Keeper{}
+	erc20Keeper := new(evmkeeper.ERC20Keeper)
 
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
@@ -340,14 +341,15 @@ func NewMinitiaApp(
 	)
 	app.AccountKeeper = &accountKeeper
 
-	app.BankKeeper = bankkeeper.NewBaseKeeper(
+	bankKeeper := bankkeeper.NewBaseKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[banktypes.StoreKey]),
 		app.AccountKeeper,
+		erc20Keeper,
 		app.ModuleAccountAddrs(),
 		authorityAddr,
-		logger,
 	)
+	app.BankKeeper = &bankKeeper
 
 	communityPoolKeeper := appkeepers.NewCommunityPoolKeeper(app.BankKeeper, authtypes.FeeCollectorName)
 
@@ -621,15 +623,16 @@ func NewMinitiaApp(
 	//////////////////////////////
 	evmConfig := evmconfig.GetConfig(appOpts)
 
-	// The last arguments can contain custom message handlers, and custom query handlers,
-	// if we want to allow any custom callbacks
 	app.EVMKeeper = evmkeeper.NewKeeper(
 		ac,
 		appCodec,
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
+		accountKeeper,
+		communityPoolKeeper,
 		authorityAddr,
 		evmConfig,
 	)
+	*erc20Keeper = *app.EVMKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
 
 	// x/auction module keeper initialization
 
@@ -657,7 +660,7 @@ func NewMinitiaApp(
 
 	app.ModuleManager = module.NewManager(
 		auth.NewAppModule(appCodec, *app.AccountKeeper, nil, nil),
-		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, nil),
+		bank.NewAppModule(appCodec, *app.BankKeeper, app.AccountKeeper),
 		opchild.NewAppModule(appCodec, *app.OPChildKeeper),
 		capability.NewAppModule(appCodec, *app.CapabilityKeeper, false),
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, *app.FeeGrantKeeper, app.interfaceRegistry),
@@ -723,13 +726,12 @@ func NewMinitiaApp(
 	// so that other modules that want to create or claim capabilities afterwards in InitChain
 	// can do so safely.
 	genesisModuleOrder := []string{
-		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName,
+		capabilitytypes.ModuleName, authtypes.ModuleName, evmtypes.ModuleName, banktypes.ModuleName,
 		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName,
 		upgradetypes.ModuleName, feegrant.ModuleName, consensusparamtypes.ModuleName, ibcexported.ModuleName,
 		ibctransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
-		ibcfeetypes.ModuleName, auctiontypes.ModuleName,
-		evmtypes.ModuleName, oracletypes.ModuleName, packetforwardtypes.ModuleName,
-		icqtypes.ModuleName, fetchpricetypes.ModuleName,
+		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
+		packetforwardtypes.ModuleName, icqtypes.ModuleName, fetchpricetypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)

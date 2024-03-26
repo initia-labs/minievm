@@ -2,10 +2,10 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
@@ -27,14 +27,16 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 		return nil, err
 	}
 
-	codeBz := msg.Code
-
 	// argument validation
 	if len(sender) != common.AddressLength {
 		return nil, types.ErrInvalidAddressLength
 	}
-	if len(codeBz) == 0 {
+	if len(msg.Code) == 0 {
 		return nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
+	}
+	codeBz, err := hex.DecodeString(msg.Code)
+	if err != nil {
+		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
 
 	// check the sender is allowed publisher
@@ -60,21 +62,15 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// deploy a contract
-	retBz, contractAddr, err := ms.EVMCreate(ctx, sender, codeBz)
+	caller := common.BytesToAddress(sender)
+	retBz, contractAddr, err := ms.EVMCreate(ctx, caller, codeBz)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
 
-	// emit action events
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeCall,
-		sdk.NewAttribute(types.AttributeKeyContract, contractAddr.Hex()),
-		sdk.NewAttribute(types.AttributeKeyRet, common.Bytes2Hex(retBz)),
-	))
-
+	retHex := common.Bytes2Hex(retBz)
 	return &types.MsgCreateResponse{
-		Result:       retBz,
+		Result:       retHex,
 		ContractAddr: contractAddr.Hex(),
 	}, nil
 }
@@ -91,8 +87,6 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, err
 	}
 
-	inputBz := msg.Input
-
 	// argument validation
 	if len(sender) != common.AddressLength {
 		return nil, types.ErrInvalidAddressLength
@@ -100,33 +94,19 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	if len(contractAddr) != common.AddressLength {
 		return nil, types.ErrInvalidAddressLength
 	}
+	inputBz, err := hex.DecodeString(msg.Input)
+	if err != nil {
+		return nil, types.ErrInvalidHexString.Wrap(err.Error())
+	}
 
-	retBz, logs, err := ms.EVMCall(ctx, sender, contractAddr, inputBz)
+	caller := common.BytesToAddress(sender)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz)
 	if err != nil {
 		return nil, types.ErrEVMCreateFailed.Wrap(err.Error())
 	}
 
-	// emit action events
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeCall,
-		sdk.NewAttribute(types.AttributeKeyContract, contractAddr.Hex()),
-		sdk.NewAttribute(types.AttributeKeyRet, common.Bytes2Hex(retBz)),
-	))
-
-	// emit logs events
-	for _, log := range logs {
-		dataInHex := common.Bytes2Hex(log.Data)
-		for _, topic := range log.Topics {
-			sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-				types.EventTypeLog,
-				sdk.NewAttribute(types.AttributeKeyTopic, topic),
-				sdk.NewAttribute(types.AttributeKeyRet, dataInHex),
-			))
-		}
-	}
-
-	return &types.MsgCallResponse{Result: retBz, Logs: logs}, nil
+	retHex := common.Bytes2Hex(retBz)
+	return &types.MsgCallResponse{Result: retHex, Logs: logs}, nil
 }
 
 // UpdateParams implements types.MsgServer.

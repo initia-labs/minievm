@@ -2,9 +2,24 @@ package types
 
 import (
 	"cosmossdk.io/core/address"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
+
+// 0x0 null address
+var NullAddress common.Address = common.HexToAddress("0x0")
+
+// 0x1 std address
+var StdAddress common.Address = common.HexToAddress("0x1")
+
+// 0xf1 ERC20 precompile address
+var ERC20PrecompileAddress common.Address = common.HexToAddress("0xf1")
+
+func FactoryAddress() common.Address {
+	return crypto.CreateAddress(StdAddress, 0)
+}
 
 // Parse string contract address to sdk.AccAddress
 func ContractAddressFromString(ac address.Codec, contractAddrInString string) (contractAddr common.Address, err error) {
@@ -17,4 +32,12 @@ func ContractAddressFromString(ac address.Codec, contractAddrInString string) (c
 	}
 
 	return contractAddr, nil
+}
+
+func CosmosAddressToEthAddress(addr sdk.AccAddress) (common.Address, error) {
+	if len(addr.Bytes()) != 20 {
+		return common.Address{}, ErrInvalidAddressLength
+	}
+
+	return common.BytesToAddress(addr.Bytes()), nil
 }

@@ -16,12 +16,29 @@ message GenesisState {
 
   // vm kv store
   repeated GenesisKeyValue key_values = 3 [(gogoproto.moretags) = "yaml:\"key_values\"", (gogoproto.nullable) = false];
+
+  // erc20 stores
+  repeated GenesisERC20Stores erc20_stores = 4
+      [(gogoproto.moretags) = "yaml:\"erc20_stores\"", (gogoproto.nullable) = false];
+
+  repeated GenesisDenomAddress denom_addresses = 5
+      [(gogoproto.moretags) = "yaml:\"denom_addresses\"", (gogoproto.nullable) = false];
 }
 
-// GenesisDenom defines a evm denom that is defined within genesis
-// state. The structure contains DenomAuthorityMetadata which defines the
-// denom's admin.
+// GenesisKeyValue defines store KV values.
 message GenesisKeyValue {
   bytes key   = 1;
   bytes value = 2;
+}
+
+// GenesisERC20Stores defines erc20 contract addresses of an account.
+message GenesisERC20Stores {
+  bytes          address = 1;
+  repeated bytes stores  = 2;
+}
+
+// GenesisDenomAddress defines erc20 contract address of denom.
+message GenesisDenomAddress {
+  string denom            = 1;
+  bytes  contract_address = 2;
 }
