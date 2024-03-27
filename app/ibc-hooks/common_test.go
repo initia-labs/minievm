@@ -41,6 +41,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	ibc "github.com/cosmos/ibc-go/v8/modules/core"
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
@@ -52,7 +53,7 @@ import (
 
 	evmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm"
-	EVMConfig "github.com/initia-labs/minievm/x/evm/config"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
@@ -62,6 +63,7 @@ var ModuleBasics = module.NewBasicManager(
 	bank.AppModuleBasic{},
 	ibchooks.AppModuleBasic{},
 	evm.AppModuleBasic{},
+	ibc.AppModuleBasic{},
 )
 
 var (
@@ -277,6 +279,7 @@ func _createTestInput(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		ac,
 	)
+	ibcHooksKeeper.Params.Set(ctx, ibchookstypes.DefaultParams())
 
 	communityPoolKeeper := &MockCommunityPoolKeeper{}
 	evmKeeper := evmkeeper.NewKeeper(
@@ -286,7 +289,7 @@ func _createTestInput(
 		accountKeeper,
 		communityPoolKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		EVMConfig.DefaultEVMConfig(),
+		evmconfig.DefaultEVMConfig(),
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
@@ -299,7 +302,7 @@ func _createTestInput(
 	// ibc middleware setup
 
 	mockIBCMiddleware := mockIBCMiddleware{}
-	evmHooks := evmhooks.NewEVMHooks(evmKeeper, ac)
+	evmHooks := evmhooks.NewEVMHooks(appCodec, ac, evmKeeper)
 
 	middleware := ibchooks.NewICS4Middleware(mockIBCMiddleware, evmHooks)
 	ibcHookMiddleware := ibchooks.NewIBCMiddleware(mockIBCMiddleware, middleware, ibcHooksKeeper)

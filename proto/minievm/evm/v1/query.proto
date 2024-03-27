@@ -84,15 +84,18 @@ message QueryCallRequest {
   string contract_addr = 2;
   // hex encoded call input
   string input = 3;
+  // whether to trace the call
+  bool with_trace = 4;
 }
 
 // QueryCallResponse is the response type for the Query/Call RPC
 // method
 message QueryCallResponse {
   // hex encoded response bytes.
-  string       response = 1;
-  uint64       used_gas = 2;
-  repeated Log logs     = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string       response     = 1;
+  uint64       used_gas     = 2;
+  repeated Log logs         = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string       trace_output = 4;
 }
 
 // QueryContractAddrByDenomRequest is the request type for the Query/ContractAddrByDenom RPC
@@ -106,7 +109,7 @@ message QueryContractAddrByDenomRequest {
 message QueryContractAddrByDenomResponse {
   option (gogoproto.equal) = true;
   // 0x prefixed hex address
-  string address           = 1;
+  string address = 1;
 }
 
 // QueryDenomRequest is the request type for the Query/Denom RPC

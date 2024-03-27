@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	errorsmod "cosmossdk.io/errors"
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/tracing"
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
 	"github.com/initia-labs/minievm/x/evm/types"
 )
@@ -48,18 +51,30 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		return nil, err
 	}
 
+	var tracer *tracing.Hooks
+	tracerOutput := new(strings.Builder)
+	if req.WithTrace {
+		tracer = logger.NewJSONLogger(&logger.Config{
+			EnableMemory:     qs.config.TracingEnableMemory,
+			DisableStack:     !qs.config.TracingEnableStack,
+			DisableStorage:   !qs.config.TracingEnableStorage,
+			EnableReturnData: qs.config.TracingEnableReturnData,
+		}, tracerOutput)
+	}
+
 	// use cache context to rollback writes
 	sdkCtx, _ = sdkCtx.CacheContext()
 	caller := common.BytesToAddress(sender)
-	retBz, logs, err := qs.EVMCall(sdkCtx, caller, contractAddr, inputBz)
+	retBz, logs, err := qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, tracer)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.QueryCallResponse{
-		Response: common.Bytes2Hex(retBz),
-		UsedGas:  sdkCtx.GasMeter().GasConsumedToLimit(),
-		Logs:     logs,
+		Response:    common.Bytes2Hex(retBz),
+		UsedGas:     sdkCtx.GasMeter().GasConsumedToLimit(),
+		Logs:        logs,
+		TraceOutput: tracerOutput.String(),
 	}, nil
 }
 

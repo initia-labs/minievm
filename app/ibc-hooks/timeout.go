@@ -34,6 +34,7 @@ func (h EVMHooks) onTimeoutIcs20Packet(
 	if allowed, err := h.checkACL(im, ctx, callback.ContractAddress); err != nil {
 		return err
 	} else if !allowed {
+		// just return nil here to avoid packet stuck due to hook acl.
 		return nil
 	}
 

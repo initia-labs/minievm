@@ -31,23 +31,6 @@ func (k ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddres
 }
 
 func (k ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Address) error {
-	if k.accountKeeper.HasAccount(ctx, sdk.AccAddress(contractAddr.Bytes())) {
-		account := k.accountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))
-		if account.GetPubKey() != nil {
-			return types.ErrAddressAlreadyExists.Wrap(contractAddr.String())
-		}
-
-		// convert normal account to contract account
-		contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
-		contractAccount.AccountNumber = account.GetAccountNumber()
-		k.accountKeeper.SetAccount(ctx, contractAccount)
-	} else {
-		// create contract account
-		contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
-		contractAccount.AccountNumber = k.accountKeeper.NextAccountNumber(ctx)
-		k.accountKeeper.SetAccount(ctx, contractAccount)
-	}
-
 	if found, err := k.ERC20DenomsByContractAddr.Has(ctx, contractAddr.Bytes()); err != nil {
 		return err
 	} else if !found {

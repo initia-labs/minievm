@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -33,7 +32,6 @@ func TestExportGenesis(t *testing.T) {
 
 	exportGenesis := input.BankKeeper.ExportGenesis(ctx)
 
-	fmt.Println(expectedBalances, exportGenesis.Balances)
 	require.Len(t, exportGenesis.Params.SendEnabled, 0)
 	require.Equal(t, types.DefaultParams().DefaultSendEnabled, exportGenesis.Params.DefaultSendEnabled)
 	require.Equal(t, totalSupply, exportGenesis.Supply)

@@ -34,10 +34,11 @@ func (h EVMHooks) onAckIcs20Packet(
 	if allowed, err := h.checkACL(im, ctx, callback.ContractAddress); err != nil {
 		return err
 	} else if !allowed {
+		// just return nil here to avoid packet stuck due to hook acl.
 		return nil
 	}
 
-	inputBz, err := h.asyncCallbackABI.Pack(functionNameAck, callback.Id, !isAckError(acknowledgement))
+	inputBz, err := h.asyncCallbackABI.Pack(functionNameAck, callback.Id, !isAckError(h.codec, acknowledgement))
 	if err != nil {
 		return err
 	}

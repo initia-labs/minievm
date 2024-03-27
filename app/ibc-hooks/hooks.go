@@ -2,6 +2,7 @@ package evm_hooks
 
 import (
 	"cosmossdk.io/core/address"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
@@ -20,20 +21,22 @@ var (
 )
 
 type EVMHooks struct {
-	evmKeeper        *evmkeeper.Keeper
+	codec            codec.Codec
 	ac               address.Codec
+	evmKeeper        *evmkeeper.Keeper
 	asyncCallbackABI *abi.ABI
 }
 
-func NewEVMHooks(evmKeeper *evmkeeper.Keeper, ac address.Codec) *EVMHooks {
+func NewEVMHooks(codec codec.Codec, ac address.Codec, evmKeeper *evmkeeper.Keeper) *EVMHooks {
 	abi, err := i_ibc_async_callback.IIbcAsyncCallbackMetaData.GetAbi()
 	if err != nil {
 		panic(err)
 	}
 
 	return &EVMHooks{
-		evmKeeper:        evmKeeper,
+		codec:            codec,
 		ac:               ac,
+		evmKeeper:        evmKeeper,
 		asyncCallbackABI: abi,
 	}
 }

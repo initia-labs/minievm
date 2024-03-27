@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -67,7 +68,8 @@ func (k Keeper) buildTxContext(_ context.Context, caller common.Address) vm.TxCo
 	}
 }
 
-func (k Keeper) createEVM(ctx context.Context, caller common.Address) (*vm.EVM, error) {
+// createEVM creates a new EVM instance.
+func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (*vm.EVM, error) {
 	extraEIPs, err := k.ExtraEIPs(ctx)
 	if err != nil {
 		return nil, err
@@ -80,26 +82,58 @@ func (k Keeper) createEVM(ctx context.Context, caller common.Address) (*vm.EVM, 
 		return nil, err
 	}
 
+	vmConfig := vm.Config{
+		Tracer:              tracer,
+		ExtraEips:           extraEIPs,
+		ContractCreatedHook: k.contractCreatedHook(ctx),
+	}
+
 	return vm.NewEVMWithPrecompiles(
 		blockContext,
 		txContext,
 		stateDB,
 		types.DefaultChainConfig(),
-		vm.Config{ExtraEips: extraEIPs},
-		// vm.Config{ExtraEips: extraEIPs,
-		// 	Tracer: logger.NewJSONLogger(&logger.Config{
-		// 		EnableMemory:     false,
-		// 		DisableStack:     true,
-		// 		DisableStorage:   true,
-		// 		EnableReturnData: true,
-		// 	}, os.Stderr),
-		// },
+		vmConfig,
 		k.precompiles.toMap(ctx),
 	), nil
 }
 
+// contractCreatedHook returns a callback function that is called when a contract is created.
+//
+// It converts a normal account to a contract account if the account is empty and create
+// creates a contract account if the account does not exist.
+func (k Keeper) contractCreatedHook(ctx context.Context) vm.ContractCreatedHook {
+	return func(contractAddr common.Address) error {
+		if k.accountKeeper.HasAccount(ctx, sdk.AccAddress(contractAddr.Bytes())) {
+			account := k.accountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))
+			_, isModuleAccount := account.(sdk.ModuleAccountI)
+			if isModuleAccount || account.GetPubKey() != nil {
+				return types.ErrAddressAlreadyExists.Wrap(contractAddr.String())
+			}
+
+			// convert normal account to contract account only if this account is empty
+			contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
+			contractAccount.AccountNumber = account.GetAccountNumber()
+			k.accountKeeper.SetAccount(ctx, contractAccount)
+		} else {
+			// create contract account
+			contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
+			contractAccount.AccountNumber = k.accountKeeper.NextAccountNumber(ctx)
+			k.accountKeeper.SetAccount(ctx, contractAccount)
+		}
+
+		return nil
+	}
+}
+
+// EVMStaticCall executes an EVM call with the given input data in static mode.
 func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte) ([]byte, error) {
-	evm, err := k.createEVM(ctx, caller)
+	return k.EVMStaticCallWithTracer(ctx, caller, contractAddr, inputBz, nil)
+}
+
+// EVMStaticCallWithTracer executes an EVM call with the given input data and tracer in static mode.
+func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, tracer *tracing.Hooks) ([]byte, error) {
+	evm, err := k.createEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +158,14 @@ func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contra
 	return retBz, nil
 }
 
+// EVMCall executes an EVM call with the given input data.
 func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte) ([]byte, types.Logs, error) {
-	evm, err := k.createEVM(ctx, caller)
+	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, nil)
+}
+
+// EVMCallWithTracer executes an EVM call with the given input data and tracer.
+func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
+	evm, err := k.createEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -192,8 +232,14 @@ func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr
 	return retBz, logs, nil
 }
 
+// EVMCreate creates a new contract with the given code.
 func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []byte) ([]byte, common.Address, error) {
-	evm, err := k.createEVM(ctx, caller)
+	return k.EVMCreateWithTracer(ctx, caller, codeBz, nil)
+}
+
+// EVMCreateWithTracer creates a new contract with the given code and tracer.
+func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, tracer *tracing.Hooks) ([]byte, common.Address, error) {
+	evm, err := k.createEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, common.Address{}, err
 	}
@@ -246,6 +292,7 @@ func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []b
 	return retBz, contractAddr, nil
 }
 
+// Initialize deploy genesis contracts.
 func (k Keeper) Initialize(ctx context.Context) error {
 	bin, err := hex.DecodeString(strings.TrimPrefix(factory.FactoryBin, "0x"))
 	if err != nil {
@@ -260,6 +307,7 @@ func (k Keeper) Initialize(ctx context.Context) error {
 	return nil
 }
 
+// NextContractAddress returns the next contract address which will be created by the given caller.
 func (k Keeper) NextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
 	stateDB, err := k.newStateDB(ctx)
 	if err != nil {

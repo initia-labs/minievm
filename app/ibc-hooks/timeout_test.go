@@ -7,17 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/holiman/uint256"
-	"github.com/stretchr/testify/require"
-
 	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/holiman/uint256"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
+	"github.com/stretchr/testify/require"
 )
 
-func Test_onReceiveIcs20Packet_noMemo(t *testing.T) {
+func Test_onTimeoutIcs20Packet_noMemo(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 	_, _, addr2 := keyPubAddr()
@@ -33,14 +31,13 @@ func Test_onReceiveIcs20Packet_noMemo(t *testing.T) {
 	dataBz, err := json.Marshal(&data)
 	require.NoError(t, err)
 
-	ack := input.IBCHooksMiddleware.OnRecvPacket(ctx, channeltypes.Packet{
+	err = input.IBCHooksMiddleware.OnTimeoutPacket(ctx, channeltypes.Packet{
 		Data: dataBz,
 	}, addr)
-
-	require.True(t, ack.Success())
+	require.NoError(t, err)
 }
 
-func Test_onReceiveIcs20Packet_memo(t *testing.T) {
+func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 	evmAddr := common.BytesToAddress(addr.Bytes())
@@ -54,9 +51,6 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	abi, err := counter.CounterMetaData.GetAbi()
 	require.NoError(t, err)
 
-	inputBz, err := abi.Pack("increase")
-	require.NoError(t, err)
-
 	data := transfertypes.FungibleTokenPacketData{
 		Denom:    "foo",
 		Amount:   "10000",
@@ -64,38 +58,43 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 		Receiver: contractAddr.Hex(),
 		Memo: fmt.Sprintf(`{
 			"evm": {
-				"message": {
-					"contract_addr": "%s",
-					"input": "%s"
+				"async_callback": {
+					"id": 99,
+					"contract_address": "%s"
 				}
 			}
-		}`, contractAddr.Hex(), hex.EncodeToString(inputBz)),
+		}`, contractAddr.Hex()),
 	}
 
 	dataBz, err := json.Marshal(&data)
 	require.NoError(t, err)
 
-	// failed to due to acl
-	ack := input.IBCHooksMiddleware.OnRecvPacket(ctx, channeltypes.Packet{
+	// hook should not be called to due to acl
+	err = input.IBCHooksMiddleware.OnTimeoutPacket(ctx, channeltypes.Packet{
 		Data: dataBz,
 	}, addr)
-	require.False(t, ack.Success())
+	require.NoError(t, err)
+
+	// check the contract state
+	queryInputBz, err := abi.Pack("count")
+	require.NoError(t, err)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz)
+	require.NoError(t, err)
+	require.Equal(t, uint256.NewInt(0).Bytes32(), [32]byte(queryRes))
+	require.Empty(t, logs)
 
 	// set acl
 	require.NoError(t, input.IBCHooksKeeper.SetAllowed(ctx, contractAddr[:], true))
 
 	// success
-	ack = input.IBCHooksMiddleware.OnRecvPacket(ctx, channeltypes.Packet{
+	err = input.IBCHooksMiddleware.OnTimeoutPacket(ctx, channeltypes.Packet{
 		Data: dataBz,
 	}, addr)
-	require.True(t, ack.Success())
-
-	queryInputBz, err := abi.Pack("count")
 	require.NoError(t, err)
 
-	// check the contract state
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz)
+	// check the contract state; increased by 99
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz)
 	require.NoError(t, err)
-	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
+	require.Equal(t, uint256.NewInt(99).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
 }

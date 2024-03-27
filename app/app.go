@@ -503,7 +503,7 @@ func NewMinitiaApp(
 			packetForwardMiddleware,
 			ibchooks.NewICS4Middleware(
 				nil, /* ics4wrapper: not used */
-				ibcevmhooks.NewEVMHooks(app.EVMKeeper, ac),
+				ibcevmhooks.NewEVMHooks(appCodec, ac, app.EVMKeeper),
 			),
 			app.IBCHooksKeeper,
 		)

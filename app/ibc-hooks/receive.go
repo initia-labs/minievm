@@ -34,7 +34,7 @@ func (h EVMHooks) onRecvIcs20Packet(
 	if allowed, err := h.checkACL(im, ctx, msg.ContractAddr); err != nil {
 		return newEmitErrorAcknowledgement(err)
 	} else if !allowed {
-		return im.App.OnRecvPacket(ctx, packet, relayer)
+		return newEmitErrorAcknowledgement(fmt.Errorf("contract `%s` not allowed to be used in ibchooks", msg.ContractAddr))
 	}
 
 	// Validate whether the receiver is correctly specified or not.
@@ -63,7 +63,6 @@ func (h EVMHooks) onRecvIcs20Packet(
 		return ack
 	}
 
-	fmt.Println("SIBONG")
 	msg.Sender = intermediateSender
 	_, err = h.execMsg(ctx, msg)
 	if err != nil {

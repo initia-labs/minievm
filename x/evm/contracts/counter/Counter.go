@@ -31,8 +31,8 @@ var (
 
 // CounterMetaData contains all meta data concerning the Counter contract.
 var CounterMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"oldCount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newCount\",\"type\":\"uint256\"}],\"name\":\"increased\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"count\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"increase\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x608060405234801561000f575f80fd5b506101f98061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c806306661abd14610038578063e8927fbc14610056575b5f80fd5b610040610060565b60405161004d91906100dc565b60405180910390f35b61005e610065565b005b5f5481565b5f8081548092919061007690610122565b91905055507f61996fe196f72cb598c483e896a1221263a28bb630480aa89495f737d4a8e3df60015f546100aa9190610169565b5f546040516100ba92919061019c565b60405180910390a1565b5f819050919050565b6100d6816100c4565b82525050565b5f6020820190506100ef5f8301846100cd565b92915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61012c826100c4565b91507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff820361015e5761015d6100f5565b5b600182019050919050565b5f610173826100c4565b915061017e836100c4565b9250828203905081811115610196576101956100f5565b5b92915050565b5f6040820190506101af5f8301856100cd565b6101bc60208301846100cd565b939250505056fea26469706673582212205af05190048c7917b0ee5ebf1492cb1d07ff48b691d3fabc63d863923408e7a864736f6c63430008180033",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"oldCount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newCount\",\"type\":\"uint256\"}],\"name\":\"increased\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"count\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"callback_id\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"name\":\"ibc_ack\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"callback_id\",\"type\":\"uint64\"}],\"name\":\"ibc_timeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"increase\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x608060405234801561000f575f80fd5b506103c48061001d5f395ff3fe608060405234801561000f575f80fd5b506004361061004a575f3560e01c806306661abd1461004e5780630d4f1f9d1461006c57806331a503f014610088578063e8927fbc146100a4575b5f80fd5b6100566100ae565b6040516100639190610195565b60405180910390f35b61008660048036038101906100819190610224565b6100b3565b005b6100a2600480360381019061009d9190610262565b6100fa565b005b6100ac61011e565b005b5f5481565b80156100df578167ffffffffffffffff165f808282546100d391906102ba565b925050819055506100f6565b5f808154809291906100f0906102ed565b91905055505b5050565b8067ffffffffffffffff165f8082825461011491906102ba565b9250508190555050565b5f8081548092919061012f906102ed565b91905055507f61996fe196f72cb598c483e896a1221263a28bb630480aa89495f737d4a8e3df60015f546101639190610334565b5f54604051610173929190610367565b60405180910390a1565b5f819050919050565b61018f8161017d565b82525050565b5f6020820190506101a85f830184610186565b92915050565b5f80fd5b5f67ffffffffffffffff82169050919050565b6101ce816101b2565b81146101d8575f80fd5b50565b5f813590506101e9816101c5565b92915050565b5f8115159050919050565b610203816101ef565b811461020d575f80fd5b50565b5f8135905061021e816101fa565b92915050565b5f806040838503121561023a576102396101ae565b5b5f610247858286016101db565b925050602061025885828601610210565b9150509250929050565b5f60208284031215610277576102766101ae565b5b5f610284848285016101db565b91505092915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f6102c48261017d565b91506102cf8361017d565b92508282019050808211156102e7576102e661028d565b5b92915050565b5f6102f78261017d565b91507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff82036103295761032861028d565b5b600182019050919050565b5f61033e8261017d565b91506103498361017d565b92508282039050818111156103615761036061028d565b5b92915050565b5f60408201905061037a5f830185610186565b6103876020830184610186565b939250505056fea264697066735822122026639416d05d33f26bc2c230b981d417c89827f78d1bd9c1b9df6fd689735b7364736f6c63430008180033",
 }
 
 // CounterABI is the input ABI used to generate the binding from.
@@ -231,6 +231,48 @@ func (_Counter *CounterSession) Count() (*big.Int, error) {
 // Solidity: function count() view returns(uint256)
 func (_Counter *CounterCallerSession) Count() (*big.Int, error) {
 	return _Counter.Contract.Count(&_Counter.CallOpts)
+}
+
+// IbcAck is a paid mutator transaction binding the contract method 0x0d4f1f9d.
+//
+// Solidity: function ibc_ack(uint64 callback_id, bool success) returns()
+func (_Counter *CounterTransactor) IbcAck(opts *bind.TransactOpts, callback_id uint64, success bool) (*types.Transaction, error) {
+	return _Counter.contract.Transact(opts, "ibc_ack", callback_id, success)
+}
+
+// IbcAck is a paid mutator transaction binding the contract method 0x0d4f1f9d.
+//
+// Solidity: function ibc_ack(uint64 callback_id, bool success) returns()
+func (_Counter *CounterSession) IbcAck(callback_id uint64, success bool) (*types.Transaction, error) {
+	return _Counter.Contract.IbcAck(&_Counter.TransactOpts, callback_id, success)
+}
+
+// IbcAck is a paid mutator transaction binding the contract method 0x0d4f1f9d.
+//
+// Solidity: function ibc_ack(uint64 callback_id, bool success) returns()
+func (_Counter *CounterTransactorSession) IbcAck(callback_id uint64, success bool) (*types.Transaction, error) {
+	return _Counter.Contract.IbcAck(&_Counter.TransactOpts, callback_id, success)
+}
+
+// IbcTimeout is a paid mutator transaction binding the contract method 0x31a503f0.
+//
+// Solidity: function ibc_timeout(uint64 callback_id) returns()
+func (_Counter *CounterTransactor) IbcTimeout(opts *bind.TransactOpts, callback_id uint64) (*types.Transaction, error) {
+	return _Counter.contract.Transact(opts, "ibc_timeout", callback_id)
+}
+
+// IbcTimeout is a paid mutator transaction binding the contract method 0x31a503f0.
+//
+// Solidity: function ibc_timeout(uint64 callback_id) returns()
+func (_Counter *CounterSession) IbcTimeout(callback_id uint64) (*types.Transaction, error) {
+	return _Counter.Contract.IbcTimeout(&_Counter.TransactOpts, callback_id)
+}
+
+// IbcTimeout is a paid mutator transaction binding the contract method 0x31a503f0.
+//
+// Solidity: function ibc_timeout(uint64 callback_id) returns()
+func (_Counter *CounterTransactorSession) IbcTimeout(callback_id uint64) (*types.Transaction, error) {
+	return _Counter.Contract.IbcTimeout(&_Counter.TransactOpts, callback_id)
 }
 
 // Increase is a paid mutator transaction binding the contract method 0xe8927fbc.
