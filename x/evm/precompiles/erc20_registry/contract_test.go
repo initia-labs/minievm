@@ -1,4 +1,4 @@
-package erc20registry_test
+package erc20registryprecompile_test
 
 import (
 	"context"
@@ -74,14 +74,14 @@ func (e ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddres
 	return nil
 }
 
-func Test_ERC20Registry(t *testing.T) {
+func Test_ERC20RegistryPrecompile(t *testing.T) {
 	ctx, k := setup()
 
-	registry, err := precompiles.NewERC20Registry(k)
+	registry, err := precompiles.NewERC20RegistryPrecompile(k)
 	require.NoError(t, err)
 
 	// set context
-	registry = registry.WithContext(ctx).(precompiles.ERC20Registry)
+	registry = registry.WithContext(ctx).(precompiles.ERC20RegistryPrecompile)
 
 	erc20Addr := common.HexToAddress("0x1")
 	accountAddr := common.HexToAddress("0x2")

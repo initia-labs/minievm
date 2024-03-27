@@ -1,4 +1,4 @@
-package erc20registry
+package erc20registryprecompile
 
 import (
 	"context"
@@ -14,26 +14,26 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-var _ vm.ExtendedPrecompiledContract = ERC20Registry{}
-var _ vm.PrecompiledContract = ERC20Registry{}
-var _ types.WithContext = ERC20Registry{}
+var _ vm.ExtendedPrecompiledContract = ERC20RegistryPrecompile{}
+var _ vm.PrecompiledContract = ERC20RegistryPrecompile{}
+var _ types.WithContext = ERC20RegistryPrecompile{}
 
-type ERC20Registry struct {
+type ERC20RegistryPrecompile struct {
 	*abi.ABI
 	ctx context.Context
 	k   types.IERC20StoresKeeper
 }
 
-func NewERC20Registry(k types.IERC20StoresKeeper) (ERC20Registry, error) {
+func NewERC20RegistryPrecompile(k types.IERC20StoresKeeper) (ERC20RegistryPrecompile, error) {
 	abi, err := i_erc20_registry.IErc20RegistryMetaData.GetAbi()
 	if err != nil {
-		return ERC20Registry{}, err
+		return ERC20RegistryPrecompile{}, err
 	}
 
-	return ERC20Registry{ABI: abi, k: k}, nil
+	return ERC20RegistryPrecompile{ABI: abi, k: k}, nil
 }
 
-func (e ERC20Registry) WithContext(ctx context.Context) vm.PrecompiledContract {
+func (e ERC20RegistryPrecompile) WithContext(ctx context.Context) vm.PrecompiledContract {
 	e.ctx = ctx
 	return e
 }
@@ -45,7 +45,7 @@ const (
 )
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
-func (e ERC20Registry) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
+func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
 	method, err := e.ABI.MethodById(input)
 	if err != nil {
 		return nil, 0, err
@@ -103,11 +103,11 @@ func (e ERC20Registry) ExtendedRun(caller vm.ContractRef, input []byte, supplied
 }
 
 // RequiredGas implements vm.PrecompiledContract.
-func (e ERC20Registry) RequiredGas(input []byte) uint64 {
+func (e ERC20RegistryPrecompile) RequiredGas(input []byte) uint64 {
 	return 0
 }
 
 // Run implements vm.PrecompiledContract.
-func (e ERC20Registry) Run(input []byte) ([]byte, error) {
-	return nil, errors.New("the ERC20Registry works exclusively with ExtendedRun")
+func (e ERC20RegistryPrecompile) Run(input []byte) ([]byte, error) {
+	return nil, errors.New("the ERC20RegistryPrecompile works exclusively with ExtendedRun")
 }

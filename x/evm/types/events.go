@@ -3,13 +3,14 @@ package types
 const (
 	EventTypeCall   = "call"
 	EventTypeCreate = "create"
-	EventTypeLog    = "log"
+	EventTypeLogs   = "logs"
 
 	// erc20 events
 	EventTypeERC20Created = "erc20_created"
 
 	AttributeKeyContract = "contract"
-	AttributeKeyTopic    = "topic"
+	AttributeKeyAddress  = "address"
+	AttributeKeyLog      = "log"
 	AttributeKeyData     = "data"
 	AttributeKeyRet      = "ret"
 	AttributeKeyDenom    = "denom"

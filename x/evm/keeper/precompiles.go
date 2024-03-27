@@ -6,7 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
-	erc20registry "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"
+	cosmosprecompile "github.com/initia-labs/minievm/x/evm/precompiles/cosmos"
+	erc20registryprecompile "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -18,7 +19,12 @@ type precompile struct {
 
 // loadPrecompiles loads the precompiled contracts.
 func (k *Keeper) loadPrecompiles() error {
-	erc20Registry, err := erc20registry.NewERC20Registry(k.erc20StoresKeeper)
+	erc20RegistryPrecompile, err := erc20registryprecompile.NewERC20RegistryPrecompile(k.erc20StoresKeeper)
+	if err != nil {
+		return err
+	}
+
+	cosmosPrecompile, err := cosmosprecompile.NewCosmosPrecompile(k.ac)
 	if err != nil {
 		return err
 	}
@@ -26,7 +32,11 @@ func (k *Keeper) loadPrecompiles() error {
 	k.precompiles = precompiles{
 		{
 			addr:     common.BytesToAddress([]byte{0xf1}),
-			contract: erc20Registry,
+			contract: erc20RegistryPrecompile,
+		},
+		{
+			addr:     common.BytesToAddress([]byte{0xf2}),
+			contract: cosmosPrecompile,
 		},
 	}
 

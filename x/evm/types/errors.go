@@ -19,4 +19,6 @@ var (
 	ErrFailedToUnpackABI       = errorsmod.Register(ModuleName, 11, "Failed to unpack ABI")
 	ErrNonReadOnlyMethod       = errorsmod.Register(ModuleName, 12, "Failed to call precompile in readonly mode")
 	ErrAddressAlreadyExists    = errorsmod.Register(ModuleName, 13, "Address already exists")
+	ErrFailedToEncodeLogs      = errorsmod.Register(ModuleName, 14, "Failed to encode logs")
+	ErrEmptyContractAddress    = errorsmod.Register(ModuleName, 15, "Empty contract address")
 )

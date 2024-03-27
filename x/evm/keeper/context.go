@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"math"
 	"math/big"
 	"strings"
@@ -170,6 +171,11 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		return nil, nil, err
 	}
 
+	// check the contract is empty or not
+	if evm.StateDB.GetCodeSize(contractAddr) == 0 {
+		return nil, nil, types.ErrEmptyContractAddress.Wrap(contractAddr.String())
+	}
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
 
@@ -219,15 +225,19 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	))
 
 	// emit logs events
-	for _, log := range logs {
-		for _, topic := range log.Topics {
-			sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-				types.EventTypeLog,
-				sdk.NewAttribute(types.AttributeKeyTopic, topic),
-				sdk.NewAttribute(types.AttributeKeyRet, log.Data),
-			))
+	attrs := make([]sdk.Attribute, len(logs))
+	for i, log := range logs {
+		jsonBz, err := json.Marshal(log)
+		if err != nil {
+			return nil, nil, types.ErrFailedToEncodeLogs.Wrap(err.Error())
 		}
+
+		attrs[i] = sdk.NewAttribute(types.AttributeKeyLog, string(jsonBz))
 	}
+	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeLogs,
+		attrs...,
+	))
 
 	return retBz, logs, nil
 }
@@ -281,12 +291,28 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	retHex := common.Bytes2Hex(retBz)
+	logs := types.NewLogs(stateDB.Logs())
 
 	// emit action events
 	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeCall,
+		types.EventTypeCreate,
 		sdk.NewAttribute(types.AttributeKeyContract, contractAddr.Hex()),
 		sdk.NewAttribute(types.AttributeKeyRet, retHex),
+	))
+
+	// emit logs events
+	attrs := make([]sdk.Attribute, len(logs))
+	for i, log := range logs {
+		jsonBz, err := json.Marshal(log)
+		if err != nil {
+			return nil, common.Address{}, types.ErrFailedToEncodeLogs.Wrap(err.Error())
+		}
+
+		attrs[i] = sdk.NewAttribute(types.AttributeKeyLog, string(jsonBz))
+	}
+	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
+		types.EventTypeLogs,
+		attrs...,
 	))
 
 	return retBz, contractAddr, nil

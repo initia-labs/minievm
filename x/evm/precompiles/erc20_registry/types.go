@@ -1,6 +1,8 @@
-package erc20registry
+package erc20registryprecompile
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"github.com/ethereum/go-ethereum/common"
+)
 
 type RegisterArguments struct {
 	Account common.Address `abi:"account"`
