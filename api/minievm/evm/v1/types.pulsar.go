@@ -813,8 +813,8 @@ func (x *fastReflection_Log) Range(f func(protoreflect.FieldDescriptor, protoref
 			return
 		}
 	}
-	if len(x.Data) != 0 {
-		value := protoreflect.ValueOfBytes(x.Data)
+	if x.Data != "" {
+		value := protoreflect.ValueOfString(x.Data)
 		if !f(fd_Log_data, value) {
 			return
 		}
@@ -839,7 +839,7 @@ func (x *fastReflection_Log) Has(fd protoreflect.FieldDescriptor) bool {
 	case "minievm.evm.v1.Log.topics":
 		return len(x.Topics) != 0
 	case "minievm.evm.v1.Log.data":
-		return len(x.Data) != 0
+		return x.Data != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Log"))
@@ -861,7 +861,7 @@ func (x *fastReflection_Log) Clear(fd protoreflect.FieldDescriptor) {
 	case "minievm.evm.v1.Log.topics":
 		x.Topics = nil
 	case "minievm.evm.v1.Log.data":
-		x.Data = nil
+		x.Data = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Log"))
@@ -889,7 +889,7 @@ func (x *fastReflection_Log) Get(descriptor protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfList(listValue)
 	case "minievm.evm.v1.Log.data":
 		value := x.Data
-		return protoreflect.ValueOfBytes(value)
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Log"))
@@ -917,7 +917,7 @@ func (x *fastReflection_Log) Set(fd protoreflect.FieldDescriptor, value protoref
 		clv := lv.(*_Log_2_list)
 		x.Topics = *clv.list
 	case "minievm.evm.v1.Log.data":
-		x.Data = value.Bytes()
+		x.Data = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Log"))
@@ -967,7 +967,7 @@ func (x *fastReflection_Log) NewField(fd protoreflect.FieldDescriptor) protorefl
 		list := []string{}
 		return protoreflect.ValueOfList(&_Log_2_list{list: &list})
 	case "minievm.evm.v1.Log.data":
-		return protoreflect.ValueOfBytes(nil)
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Log"))
@@ -1220,7 +1220,7 @@ func (x *fastReflection_Log) ProtoMethods() *protoiface.Methods {
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
 				}
-				var byteLen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1230,25 +1230,23 @@ func (x *fastReflection_Log) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Data = append(x.Data[:0], dAtA[iNdEx:postIndex]...)
-				if x.Data == nil {
-					x.Data = []byte{}
-				}
+				x.Data = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1357,7 +1355,7 @@ type Log struct {
 	// list of topics provided by the contract.
 	Topics []string `protobuf:"bytes,2,rep,name=topics,proto3" json:"topics,omitempty"`
 	// supplied by the contract, usually ABI-encoded
-	Data []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	Data string `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *Log) Reset() {
@@ -1394,11 +1392,11 @@ func (x *Log) GetTopics() []string {
 	return nil
 }
 
-func (x *Log) GetData() []byte {
+func (x *Log) GetData() string {
 	if x != nil {
 		return x.Data
 	}
-	return nil
+	return ""
 }
 
 var File_minievm_evm_v1_types_proto protoreflect.FileDescriptor
@@ -1425,7 +1423,7 @@ var file_minievm_evm_v1_types_proto_rawDesc = []byte{
 	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
 	0x12, 0x16, 0x0a, 0x06, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09,
 	0x52, 0x06, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0xa9, 0x01, 0xc8,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0xa9, 0x01, 0xc8,
 	0xe1, 0x1e, 0x00, 0xa8, 0xe2, 0x1e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6d, 0x69, 0x6e,
 	0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x54, 0x79, 0x70,
 	0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f,

@@ -19,10 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_Code_FullMethodName   = "/minievm.evm.v1.Query/Code"
-	Query_State_FullMethodName  = "/minievm.evm.v1.Query/State"
-	Query_Call_FullMethodName   = "/minievm.evm.v1.Query/Call"
-	Query_Params_FullMethodName = "/minievm.evm.v1.Query/Params"
+	Query_Code_FullMethodName                = "/minievm.evm.v1.Query/Code"
+	Query_State_FullMethodName               = "/minievm.evm.v1.Query/State"
+	Query_ContractAddrByDenom_FullMethodName = "/minievm.evm.v1.Query/ContractAddrByDenom"
+	Query_Denom_FullMethodName               = "/minievm.evm.v1.Query/Denom"
+	Query_Call_FullMethodName                = "/minievm.evm.v1.Query/Call"
+	Query_Params_FullMethodName              = "/minievm.evm.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
@@ -33,6 +35,8 @@ type QueryClient interface {
 	Code(ctx context.Context, in *QueryCodeRequest, opts ...grpc.CallOption) (*QueryCodeResponse, error)
 	// State gets the state bytes of the given address and key bytes.
 	State(ctx context.Context, in *QueryStateRequest, opts ...grpc.CallOption) (*QueryStateResponse, error)
+	ContractAddrByDenom(ctx context.Context, in *QueryContractAddrByDenomRequest, opts ...grpc.CallOption) (*QueryContractAddrByDenomResponse, error)
+	Denom(ctx context.Context, in *QueryDenomRequest, opts ...grpc.CallOption) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
 	Call(ctx context.Context, in *QueryCallRequest, opts ...grpc.CallOption) (*QueryCallResponse, error)
 	// Params queries all parameters.
@@ -65,6 +69,24 @@ func (c *queryClient) State(ctx context.Context, in *QueryStateRequest, opts ...
 	return out, nil
 }
 
+func (c *queryClient) ContractAddrByDenom(ctx context.Context, in *QueryContractAddrByDenomRequest, opts ...grpc.CallOption) (*QueryContractAddrByDenomResponse, error) {
+	out := new(QueryContractAddrByDenomResponse)
+	err := c.cc.Invoke(ctx, Query_ContractAddrByDenom_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Denom(ctx context.Context, in *QueryDenomRequest, opts ...grpc.CallOption) (*QueryDenomResponse, error) {
+	out := new(QueryDenomResponse)
+	err := c.cc.Invoke(ctx, Query_Denom_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) Call(ctx context.Context, in *QueryCallRequest, opts ...grpc.CallOption) (*QueryCallResponse, error) {
 	out := new(QueryCallResponse)
 	err := c.cc.Invoke(ctx, Query_Call_FullMethodName, in, out, opts...)
@@ -91,6 +113,8 @@ type QueryServer interface {
 	Code(context.Context, *QueryCodeRequest) (*QueryCodeResponse, error)
 	// State gets the state bytes of the given address and key bytes.
 	State(context.Context, *QueryStateRequest) (*QueryStateResponse, error)
+	ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error)
+	Denom(context.Context, *QueryDenomRequest) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
 	Call(context.Context, *QueryCallRequest) (*QueryCallResponse, error)
 	// Params queries all parameters.
@@ -107,6 +131,12 @@ func (UnimplementedQueryServer) Code(context.Context, *QueryCodeRequest) (*Query
 }
 func (UnimplementedQueryServer) State(context.Context, *QueryStateRequest) (*QueryStateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method State not implemented")
+}
+func (UnimplementedQueryServer) ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractAddrByDenom not implemented")
+}
+func (UnimplementedQueryServer) Denom(context.Context, *QueryDenomRequest) (*QueryDenomResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Denom not implemented")
 }
 func (UnimplementedQueryServer) Call(context.Context, *QueryCallRequest) (*QueryCallResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
@@ -163,6 +193,42 @@ func _Query_State_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ContractAddrByDenom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryContractAddrByDenomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ContractAddrByDenom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ContractAddrByDenom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ContractAddrByDenom(ctx, req.(*QueryContractAddrByDenomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Denom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryDenomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Denom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Denom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Denom(ctx, req.(*QueryDenomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryCallRequest)
 	if err := dec(in); err != nil {
@@ -213,6 +279,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "State",
 			Handler:    _Query_State_Handler,
+		},
+		{
+			MethodName: "ContractAddrByDenom",
+			Handler:    _Query_ContractAddrByDenom_Handler,
+		},
+		{
+			MethodName: "Denom",
+			Handler:    _Query_Denom_Handler,
 		},
 		{
 			MethodName: "Call",

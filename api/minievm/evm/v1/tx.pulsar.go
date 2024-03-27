@@ -100,8 +100,8 @@ func (x *fastReflection_MsgCreate) Range(f func(protoreflect.FieldDescriptor, pr
 			return
 		}
 	}
-	if len(x.Code) != 0 {
-		value := protoreflect.ValueOfBytes(x.Code)
+	if x.Code != "" {
+		value := protoreflect.ValueOfString(x.Code)
 		if !f(fd_MsgCreate_code, value) {
 			return
 		}
@@ -124,7 +124,7 @@ func (x *fastReflection_MsgCreate) Has(fd protoreflect.FieldDescriptor) bool {
 	case "minievm.evm.v1.MsgCreate.sender":
 		return x.Sender != ""
 	case "minievm.evm.v1.MsgCreate.code":
-		return len(x.Code) != 0
+		return x.Code != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCreate"))
@@ -144,7 +144,7 @@ func (x *fastReflection_MsgCreate) Clear(fd protoreflect.FieldDescriptor) {
 	case "minievm.evm.v1.MsgCreate.sender":
 		x.Sender = ""
 	case "minievm.evm.v1.MsgCreate.code":
-		x.Code = nil
+		x.Code = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCreate"))
@@ -166,7 +166,7 @@ func (x *fastReflection_MsgCreate) Get(descriptor protoreflect.FieldDescriptor) 
 		return protoreflect.ValueOfString(value)
 	case "minievm.evm.v1.MsgCreate.code":
 		value := x.Code
-		return protoreflect.ValueOfBytes(value)
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCreate"))
@@ -190,7 +190,7 @@ func (x *fastReflection_MsgCreate) Set(fd protoreflect.FieldDescriptor, value pr
 	case "minievm.evm.v1.MsgCreate.sender":
 		x.Sender = value.Interface().(string)
 	case "minievm.evm.v1.MsgCreate.code":
-		x.Code = value.Bytes()
+		x.Code = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCreate"))
@@ -231,7 +231,7 @@ func (x *fastReflection_MsgCreate) NewField(fd protoreflect.FieldDescriptor) pro
 	case "minievm.evm.v1.MsgCreate.sender":
 		return protoreflect.ValueOfString("")
 	case "minievm.evm.v1.MsgCreate.code":
-		return protoreflect.ValueOfBytes(nil)
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCreate"))
@@ -437,7 +437,7 @@ func (x *fastReflection_MsgCreate) ProtoMethods() *protoiface.Methods {
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Code", wireType)
 				}
-				var byteLen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -447,25 +447,23 @@ func (x *fastReflection_MsgCreate) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Code = append(x.Code[:0], dAtA[iNdEx:postIndex]...)
-				if x.Code == nil {
-					x.Code = []byte{}
-				}
+				x.Code = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -580,8 +578,8 @@ func (x *fastReflection_MsgCreateResponse) Interface() protoreflect.ProtoMessage
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_MsgCreateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Result) != 0 {
-		value := protoreflect.ValueOfBytes(x.Result)
+	if x.Result != "" {
+		value := protoreflect.ValueOfString(x.Result)
 		if !f(fd_MsgCreateResponse_result, value) {
 			return
 		}
@@ -608,7 +606,7 @@ func (x *fastReflection_MsgCreateResponse) Range(f func(protoreflect.FieldDescri
 func (x *fastReflection_MsgCreateResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCreateResponse.result":
-		return len(x.Result) != 0
+		return x.Result != ""
 	case "minievm.evm.v1.MsgCreateResponse.contract_addr":
 		return x.ContractAddr != ""
 	default:
@@ -628,7 +626,7 @@ func (x *fastReflection_MsgCreateResponse) Has(fd protoreflect.FieldDescriptor) 
 func (x *fastReflection_MsgCreateResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCreateResponse.result":
-		x.Result = nil
+		x.Result = ""
 	case "minievm.evm.v1.MsgCreateResponse.contract_addr":
 		x.ContractAddr = ""
 	default:
@@ -649,7 +647,7 @@ func (x *fastReflection_MsgCreateResponse) Get(descriptor protoreflect.FieldDesc
 	switch descriptor.FullName() {
 	case "minievm.evm.v1.MsgCreateResponse.result":
 		value := x.Result
-		return protoreflect.ValueOfBytes(value)
+		return protoreflect.ValueOfString(value)
 	case "minievm.evm.v1.MsgCreateResponse.contract_addr":
 		value := x.ContractAddr
 		return protoreflect.ValueOfString(value)
@@ -674,7 +672,7 @@ func (x *fastReflection_MsgCreateResponse) Get(descriptor protoreflect.FieldDesc
 func (x *fastReflection_MsgCreateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCreateResponse.result":
-		x.Result = value.Bytes()
+		x.Result = value.Interface().(string)
 	case "minievm.evm.v1.MsgCreateResponse.contract_addr":
 		x.ContractAddr = value.Interface().(string)
 	default:
@@ -715,7 +713,7 @@ func (x *fastReflection_MsgCreateResponse) Mutable(fd protoreflect.FieldDescript
 func (x *fastReflection_MsgCreateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCreateResponse.result":
-		return protoreflect.ValueOfBytes(nil)
+		return protoreflect.ValueOfString("")
 	case "minievm.evm.v1.MsgCreateResponse.contract_addr":
 		return protoreflect.ValueOfString("")
 	default:
@@ -891,7 +889,7 @@ func (x *fastReflection_MsgCreateResponse) ProtoMethods() *protoiface.Methods {
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
 				}
-				var byteLen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -901,25 +899,23 @@ func (x *fastReflection_MsgCreateResponse) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Result = append(x.Result[:0], dAtA[iNdEx:postIndex]...)
-				if x.Result == nil {
-					x.Result = []byte{}
-				}
+				x.Result = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
@@ -1080,8 +1076,8 @@ func (x *fastReflection_MsgCall) Range(f func(protoreflect.FieldDescriptor, prot
 			return
 		}
 	}
-	if len(x.Input) != 0 {
-		value := protoreflect.ValueOfBytes(x.Input)
+	if x.Input != "" {
+		value := protoreflect.ValueOfString(x.Input)
 		if !f(fd_MsgCall_input, value) {
 			return
 		}
@@ -1106,7 +1102,7 @@ func (x *fastReflection_MsgCall) Has(fd protoreflect.FieldDescriptor) bool {
 	case "minievm.evm.v1.MsgCall.contract_addr":
 		return x.ContractAddr != ""
 	case "minievm.evm.v1.MsgCall.input":
-		return len(x.Input) != 0
+		return x.Input != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCall"))
@@ -1128,7 +1124,7 @@ func (x *fastReflection_MsgCall) Clear(fd protoreflect.FieldDescriptor) {
 	case "minievm.evm.v1.MsgCall.contract_addr":
 		x.ContractAddr = ""
 	case "minievm.evm.v1.MsgCall.input":
-		x.Input = nil
+		x.Input = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCall"))
@@ -1153,7 +1149,7 @@ func (x *fastReflection_MsgCall) Get(descriptor protoreflect.FieldDescriptor) pr
 		return protoreflect.ValueOfString(value)
 	case "minievm.evm.v1.MsgCall.input":
 		value := x.Input
-		return protoreflect.ValueOfBytes(value)
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCall"))
@@ -1179,7 +1175,7 @@ func (x *fastReflection_MsgCall) Set(fd protoreflect.FieldDescriptor, value prot
 	case "minievm.evm.v1.MsgCall.contract_addr":
 		x.ContractAddr = value.Interface().(string)
 	case "minievm.evm.v1.MsgCall.input":
-		x.Input = value.Bytes()
+		x.Input = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCall"))
@@ -1224,7 +1220,7 @@ func (x *fastReflection_MsgCall) NewField(fd protoreflect.FieldDescriptor) proto
 	case "minievm.evm.v1.MsgCall.contract_addr":
 		return protoreflect.ValueOfString("")
 	case "minievm.evm.v1.MsgCall.input":
-		return protoreflect.ValueOfBytes(nil)
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.MsgCall"))
@@ -1473,7 +1469,7 @@ func (x *fastReflection_MsgCall) ProtoMethods() *protoiface.Methods {
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Input", wireType)
 				}
-				var byteLen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1483,25 +1479,23 @@ func (x *fastReflection_MsgCall) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Input = append(x.Input[:0], dAtA[iNdEx:postIndex]...)
-				if x.Input == nil {
-					x.Input = []byte{}
-				}
+				x.Input = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1667,8 +1661,8 @@ func (x *fastReflection_MsgCallResponse) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_MsgCallResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Result) != 0 {
-		value := protoreflect.ValueOfBytes(x.Result)
+	if x.Result != "" {
+		value := protoreflect.ValueOfString(x.Result)
 		if !f(fd_MsgCallResponse_result, value) {
 			return
 		}
@@ -1695,7 +1689,7 @@ func (x *fastReflection_MsgCallResponse) Range(f func(protoreflect.FieldDescript
 func (x *fastReflection_MsgCallResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCallResponse.result":
-		return len(x.Result) != 0
+		return x.Result != ""
 	case "minievm.evm.v1.MsgCallResponse.logs":
 		return len(x.Logs) != 0
 	default:
@@ -1715,7 +1709,7 @@ func (x *fastReflection_MsgCallResponse) Has(fd protoreflect.FieldDescriptor) bo
 func (x *fastReflection_MsgCallResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCallResponse.result":
-		x.Result = nil
+		x.Result = ""
 	case "minievm.evm.v1.MsgCallResponse.logs":
 		x.Logs = nil
 	default:
@@ -1736,7 +1730,7 @@ func (x *fastReflection_MsgCallResponse) Get(descriptor protoreflect.FieldDescri
 	switch descriptor.FullName() {
 	case "minievm.evm.v1.MsgCallResponse.result":
 		value := x.Result
-		return protoreflect.ValueOfBytes(value)
+		return protoreflect.ValueOfString(value)
 	case "minievm.evm.v1.MsgCallResponse.logs":
 		if len(x.Logs) == 0 {
 			return protoreflect.ValueOfList(&_MsgCallResponse_2_list{})
@@ -1764,7 +1758,7 @@ func (x *fastReflection_MsgCallResponse) Get(descriptor protoreflect.FieldDescri
 func (x *fastReflection_MsgCallResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCallResponse.result":
-		x.Result = value.Bytes()
+		x.Result = value.Interface().(string)
 	case "minievm.evm.v1.MsgCallResponse.logs":
 		lv := value.List()
 		clv := lv.(*_MsgCallResponse_2_list)
@@ -1811,7 +1805,7 @@ func (x *fastReflection_MsgCallResponse) Mutable(fd protoreflect.FieldDescriptor
 func (x *fastReflection_MsgCallResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "minievm.evm.v1.MsgCallResponse.result":
-		return protoreflect.ValueOfBytes(nil)
+		return protoreflect.ValueOfString("")
 	case "minievm.evm.v1.MsgCallResponse.logs":
 		list := []*Log{}
 		return protoreflect.ValueOfList(&_MsgCallResponse_2_list{list: &list})
@@ -1999,7 +1993,7 @@ func (x *fastReflection_MsgCallResponse) ProtoMethods() *protoiface.Methods {
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
 				}
-				var byteLen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -2009,25 +2003,23 @@ func (x *fastReflection_MsgCallResponse) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Result = append(x.Result[:0], dAtA[iNdEx:postIndex]...)
-				if x.Result == nil {
-					x.Result = []byte{}
-				}
+				x.Result = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
@@ -2975,8 +2967,8 @@ type MsgCreate struct {
 
 	// Sender is the that actor that signed the messages
 	Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
-	// Code is raw contract bytes code.
-	Code []byte `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	// Code is hex encoded raw contract bytes code.
+	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
 }
 
 func (x *MsgCreate) Reset() {
@@ -3006,11 +2998,11 @@ func (x *MsgCreate) GetSender() string {
 	return ""
 }
 
-func (x *MsgCreate) GetCode() []byte {
+func (x *MsgCreate) GetCode() string {
 	if x != nil {
 		return x.Code
 	}
-	return nil
+	return ""
 }
 
 // MsgCreateResponse defines the Msg/Create response type.
@@ -3019,8 +3011,8 @@ type MsgCreateResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Result []byte `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
-	// hex encoded contract address
+	Result string `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	// hex encoded address (0x prefixed)
 	ContractAddr string `protobuf:"bytes,2,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
 }
 
@@ -3044,11 +3036,11 @@ func (*MsgCreateResponse) Descriptor() ([]byte, []int) {
 	return file_minievm_evm_v1_tx_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MsgCreateResponse) GetResult() []byte {
+func (x *MsgCreateResponse) GetResult() string {
 	if x != nil {
 		return x.Result
 	}
-	return nil
+	return ""
 }
 
 func (x *MsgCreateResponse) GetContractAddr() string {
@@ -3067,10 +3059,10 @@ type MsgCall struct {
 	// Sender is the that actor that signed the messages
 	Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	// ContractAddr is the contract address to be executed.
-	// It can be cosmos address or hex encoded address.
+	// It can be cosmos address or hex encoded address (0x prefixed).
 	ContractAddr string `protobuf:"bytes,2,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
-	// Execution input bytes.
-	Input []byte `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
+	// Hex encoded execution input bytes.
+	Input string `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
 }
 
 func (x *MsgCall) Reset() {
@@ -3107,11 +3099,11 @@ func (x *MsgCall) GetContractAddr() string {
 	return ""
 }
 
-func (x *MsgCall) GetInput() []byte {
+func (x *MsgCall) GetInput() string {
 	if x != nil {
 		return x.Input
 	}
-	return nil
+	return ""
 }
 
 // MsgCallResponse defines the Msg/Call response type.
@@ -3120,7 +3112,7 @@ type MsgCallResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Result []byte `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	Result string `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 	Logs   []*Log `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
 }
 
@@ -3144,11 +3136,11 @@ func (*MsgCallResponse) Descriptor() ([]byte, []int) {
 	return file_minievm_evm_v1_tx_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MsgCallResponse) GetResult() []byte {
+func (x *MsgCallResponse) GetResult() string {
 	if x != nil {
 		return x.Result
 	}
-	return nil
+	return ""
 }
 
 func (x *MsgCallResponse) GetLogs() []*Log {
@@ -3252,12 +3244,12 @@ var file_minievm_evm_v1_tx_proto_rawDesc = []byte{
 	0x30, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
 	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
 	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65,
-	0x72, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x72, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x04, 0x63, 0x6f, 0x64, 0x65, 0x3a, 0x1d, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65, 0x6e, 0x64,
 	0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x0d, 0x65, 0x76, 0x6d, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x72,
 	0x65, 0x61, 0x74, 0x65, 0x22, 0x50, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74,
 	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c,
 	0x74, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64,
 	0x64, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61,
 	0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x22, 0x93, 0x01, 0x0a, 0x07, 0x4d, 0x73, 0x67, 0x43, 0x61,
@@ -3267,11 +3259,11 @@ var file_minievm_evm_v1_tx_proto_rawDesc = []byte{
 	0x6e, 0x64, 0x65, 0x72, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
 	0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x6f, 0x6e,
 	0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6e, 0x70,
-	0x75, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x3a,
+	0x75, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x3a,
 	0x1b, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a,
 	0x0b, 0x65, 0x76, 0x6d, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6c, 0x6c, 0x22, 0x5d, 0x0a, 0x0f,
 	0x4d, 0x73, 0x67, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x16, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x16, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x32, 0x0a, 0x04, 0x6c, 0x6f, 0x67, 0x73, 0x18,
 	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e,
 	0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x6f, 0x67, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
