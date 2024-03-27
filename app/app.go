@@ -693,6 +693,7 @@ func NewMinitiaApp(
 		packetforward.NewAppModule(app.PacketForwardKeeper, nil),
 		icq.NewAppModule(*app.ICQKeeper, nil),
 		fetchprice.NewAppModule(appCodec, *app.FetchPriceKeeper),
+		ibchooks.NewAppModule(appCodec, *app.IBCHooksKeeper),
 		// slinky modules
 		oracle.NewAppModule(appCodec, *app.OracleKeeper),
 	)
@@ -744,6 +745,7 @@ func NewMinitiaApp(
 		ibctransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
 		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
 		packetforwardtypes.ModuleName, icqtypes.ModuleName, fetchpricetypes.ModuleName,
+		ibchookstypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
