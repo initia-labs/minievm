@@ -19,8 +19,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	customtypes "github.com/initia-labs/initia/x/bank/types"
 	"github.com/initia-labs/minievm/x/bank/keeper"
-	customtypes "github.com/initia-labs/minievm/x/bank/types"
 )
 
 const ConsensusVersion = 1
@@ -48,8 +48,8 @@ func (AppModuleBasic) Name() string { return types.ModuleName }
 
 // RegisterLegacyAminoCodec registers the bank module's types on the LegacyAmino codec.
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	types.RegisterLegacyAminoCodec(cdc)
 	customtypes.RegisterLegacyAminoCodec(cdc)
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
 // DefaultGenesis returns default genesis state as raw bytes for the bank

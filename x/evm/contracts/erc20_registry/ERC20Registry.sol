@@ -8,18 +8,18 @@ import "../i_erc20_registry/IERC20Registry.sol";
  */
 contract ERC20Registry {
     modifier register_erc20() {
-        BECH32_CONTRACT.register_erc20();
+        ERC20_REGISTRY_CONTRACT.register_erc20();
 
         _;
     }
 
     modifier register_erc20_store(address account) {
         if (
-            !BECH32_CONTRACT.is_erc20_store_registered(
+            !ERC20_REGISTRY_CONTRACT.is_erc20_store_registered(
                 account
             )
         ) {
-            BECH32_CONTRACT.register_erc20_store(
+            ERC20_REGISTRY_CONTRACT.register_erc20_store(
                 account
             );
         }

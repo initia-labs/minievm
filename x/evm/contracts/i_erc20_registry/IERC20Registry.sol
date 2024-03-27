@@ -5,7 +5,7 @@ pragma solidity ^0.8.24;
 address constant ERC20_REGISTRY_ADDRESS = 0x00000000000000000000000000000000000000f1;
 
 /// @dev The IERC20Registry contract's instance.
-IERC20Registry constant BECH32_CONTRACT = IERC20Registry(
+IERC20Registry constant ERC20_REGISTRY_CONTRACT = IERC20Registry(
     ERC20_REGISTRY_ADDRESS
 );
 
