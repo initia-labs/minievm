@@ -18,19 +18,32 @@ func (k Keeper) convertToEVMAddress(ctx context.Context, addr sdk.AccAddress) (c
 
 	shorthandAddr := common.BytesToAddress(addr.Bytes())
 	if found := k.accountKeeper.HasAccount(ctx, shorthandAddr.Bytes()); found {
-		existingAccount := k.accountKeeper.GetAccount(ctx, shorthandAddr.Bytes())
-		shorthandAccount, isShorthandAccount := existingAccount.(types.ShorthandAccountI)
-		if !isShorthandAccount {
-			return common.Address{}, types.ErrAddressAlreadyExists.Wrapf("failed to create shorthand account: %s", shorthandAddr)
+		account := k.accountKeeper.GetAccount(ctx, shorthandAddr.Bytes())
+
+		// if the account is empty account, convert it to shorthand account
+		if types.IsEmptyAccount(account) {
+			shorthandAccount, err := types.NewShorthandAccountWithAddress(k.ac, addr)
+			if err != nil {
+				return common.Address{}, err
+			}
+
+			shorthandAccount.AccountNumber = account.GetAccountNumber()
+			k.accountKeeper.SetAccount(ctx, shorthandAccount)
+
+			return shorthandAddr, nil
 		}
 
-		if originAddr, err := shorthandAccount.GetOriginalAddress(k.ac); err != nil {
-			return common.Address{}, err
-		} else if !originAddr.Equals(addr) {
-			return common.Address{}, types.ErrAddressAlreadyExists.Wrapf("failed to create shorthand account: %s", shorthandAddr)
+		// check if the account is shorthand account, and if so, check if the original address is the same
+		shorthandAccount, isShorthandAccount := account.(types.ShorthandAccountI)
+		if isShorthandAccount {
+			if originAddr, err := shorthandAccount.GetOriginalAddress(k.ac); err != nil {
+				return common.Address{}, err
+			} else if originAddr.Equals(addr) {
+				return shorthandAddr, nil
+			}
 		}
 
-		return shorthandAddr, nil
+		return common.Address{}, types.ErrAddressAlreadyExists.Wrapf("failed to create shorthand account of `%s`: `%s`", addr, shorthandAddr)
 	}
 
 	// create shorthand account

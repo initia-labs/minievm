@@ -32,6 +32,7 @@ func (ca ContractAccount) SetPubKey(pubKey cryptotypes.PubKey) error {
 	return fmt.Errorf("not supported for contract accounts")
 }
 
+// ShorthandAccountI is an interface for shorthand account.
 type ShorthandAccountI interface {
 	GetOriginalAddress(ac address.Codec) (sdk.AccAddress, error)
 }
@@ -55,6 +56,16 @@ func (sa ShorthandAccount) SetPubKey(pubKey cryptotypes.PubKey) error {
 	return fmt.Errorf("not supported for shorthand accounts")
 }
 
+// GetOriginalAddress returns the original address.
 func (sa ShorthandAccount) GetOriginalAddress(ac address.Codec) (sdk.AccAddress, error) {
 	return ac.StringToBytes(sa.OriginalAddress)
+}
+
+// IsEmptyAccount checks if the account is empty.
+func IsEmptyAccount(account sdk.AccountI) bool {
+	_, isModuleAccount := account.(sdk.ModuleAccountI)
+	_, isShorthandAccount := account.(ShorthandAccountI)
+	_, isContractAccount := account.(*ContractAccount)
+
+	return !isModuleAccount && !isShorthandAccount && !isContractAccount && account.GetPubKey() == nil
 }

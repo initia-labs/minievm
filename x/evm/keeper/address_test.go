@@ -51,4 +51,11 @@ func Test_AllowLongCosmosAddress(t *testing.T) {
 		sdk.NewCoin(fooDenom, math.NewInt(50)),
 	))
 	require.ErrorContains(t, err, types.ErrAddressAlreadyExists.Error())
+
+	// but still can send to the same address
+	err = erc20Keeper.SendCoins(ctx, addr, addr3, sdk.NewCoins(
+		sdk.NewCoin("bar", math.NewInt(100)),
+		sdk.NewCoin(fooDenom, math.NewInt(50)),
+	))
+	require.NoError(t, err)
 }

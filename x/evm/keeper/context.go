@@ -114,15 +114,13 @@ func (k Keeper) contractCreatedHook(ctx context.Context) vm.ContractCreatedHook 
 	return func(contractAddr common.Address) error {
 		if k.accountKeeper.HasAccount(ctx, sdk.AccAddress(contractAddr.Bytes())) {
 			account := k.accountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))
-			_, isModuleAccount := account.(sdk.ModuleAccountI)
-			_, isShorthandAccount := account.(types.ShorthandAccountI)
 
-			// contract account collision should be check in evm side.
-			if isModuleAccount || isShorthandAccount || account.GetPubKey() != nil {
+			// check the account is empty or not
+			if !types.IsEmptyAccount(account) {
 				return types.ErrAddressAlreadyExists.Wrap(contractAddr.String())
 			}
 
-			// convert normal account to contract account only if this account is empty
+			// convert base account to contract account only if this account is empty
 			contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
 			contractAccount.AccountNumber = account.GetAccountNumber()
 			k.accountKeeper.SetAccount(ctx, contractAccount)
