@@ -19,6 +19,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/tx/signing"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecaddress "github.com/cosmos/cosmos-sdk/codec/address"
@@ -283,6 +284,18 @@ func _createTestInput(
 	)
 	ibcHooksKeeper.Params.Set(ctx, ibchookstypes.DefaultParams())
 
+	msgRouter := baseapp.NewMsgServiceRouter()
+	msgRouter.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
+
+	// register bank message service to the router
+	banktypes.RegisterMsgServer(msgRouter, custombankkeeper.NewMsgServerImpl(bankKeeper))
+
+	queryRouter := baseapp.NewGRPCQueryRouter()
+	queryRouter.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
+
+	// register bank query service to the router
+	banktypes.RegisterQueryServer(queryRouter, &bankKeeper)
+
 	communityPoolKeeper := &MockCommunityPoolKeeper{}
 	evmKeeper := evmkeeper.NewKeeper(
 		ac,
@@ -290,6 +303,8 @@ func _createTestInput(
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
 		accountKeeper,
 		communityPoolKeeper,
+		msgRouter,
+		queryRouter,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		evmconfig.DefaultEVMConfig(),
 	)

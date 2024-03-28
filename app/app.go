@@ -641,6 +641,8 @@ func NewMinitiaApp(
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
 		accountKeeper,
 		communityPoolKeeper,
+		app.MsgServiceRouter(),
+		app.GRPCQueryRouter(),
 		authorityAddr,
 		evmConfig,
 	)

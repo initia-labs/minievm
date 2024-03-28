@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/core/address"
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -24,6 +25,10 @@ type Keeper struct {
 	communityPoolKeeper types.CommunityPoolKeeper
 	erc20Keeper         types.IERC20Keeper
 	erc20StoresKeeper   types.IERC20StoresKeeper
+
+	// grpc server routers
+	msgRouter  baseapp.MessageRouter
+	grpcRouter *baseapp.GRPCQueryRouter
 
 	config evmconfig.EVMConfig
 
@@ -51,6 +56,8 @@ func NewKeeper(
 	storeService corestoretypes.KVStoreService,
 	accountKeeper types.AccountKeeper,
 	communityPoolKeeper types.CommunityPoolKeeper,
+	msgRouter baseapp.MessageRouter,
+	grpcRouter *baseapp.GRPCQueryRouter,
 	authority string,
 	EVMConfig evmconfig.EVMConfig,
 ) *Keeper {
@@ -71,6 +78,9 @@ func NewKeeper(
 
 		accountKeeper:       accountKeeper,
 		communityPoolKeeper: communityPoolKeeper,
+
+		msgRouter:  msgRouter,
+		grpcRouter: grpcRouter,
 
 		config: EVMConfig,
 

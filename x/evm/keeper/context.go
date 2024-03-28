@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math"
 	"math/big"
 
@@ -179,7 +180,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	}
 
 	// check the contract is empty or not
-	if evm.StateDB.GetCodeSize(contractAddr) == 0 {
+	if !types.IsPrecompileAddress(contractAddr) && evm.StateDB.GetCodeSize(contractAddr) == 0 {
 		return nil, nil, types.ErrEmptyContractAddress.Wrap(contractAddr.String())
 	}
 
@@ -247,10 +248,10 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	))
 
 	// handle cosmos messages
-	// messages := sdkCtx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
-	// for _, msg := range *messages {
-
-	// }
+	messages := sdkCtx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
+	if err := k.dispatchMessages(sdkCtx, *messages); err != nil {
+		return nil, nil, err
+	}
 
 	return retBz, logs, nil
 }
@@ -328,6 +329,12 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 		attrs...,
 	))
 
+	// handle cosmos messages
+	messages := sdkCtx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
+	if err := k.dispatchMessages(sdkCtx, *messages); err != nil {
+		return nil, common.Address{}, err
+	}
+
 	return retBz, contractAddr, nil
 }
 
@@ -339,4 +346,36 @@ func (k Keeper) nextContractAddress(ctx context.Context, caller common.Address) 
 	}
 
 	return crypto.CreateAddress(caller, stateDB.GetNonce(caller)), nil
+}
+
+// dispatchMessages run the given cosmos msgs and emit events
+func (k Keeper) dispatchMessages(ctx context.Context, msgs []sdk.Msg) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	for _, msg := range msgs {
+
+		// validate msg
+		if msg, ok := msg.(sdk.HasValidateBasic); ok {
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+		}
+
+		// find the handler
+		handler := k.msgRouter.Handler(msg)
+		if handler == nil {
+			return types.ErrNotSupportedCosmosMessage
+		}
+
+		//  and execute it
+		res, err := handler(sdkCtx, msg)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		// emit events
+		sdkCtx.EventManager().EmitEvents(res.GetEvents())
+	}
+
+	return nil
 }

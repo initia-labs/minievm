@@ -13,12 +13,12 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log"
-	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/tx/signing"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecaddress "github.com/cosmos/cosmos-sdk/codec/address"
@@ -40,6 +40,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 
+	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
 	EVMConfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -50,17 +51,6 @@ var ModuleBasics = module.NewBasicManager(
 	auth.AppModuleBasic{},
 	bank.AppModuleBasic{},
 	evm.AppModuleBasic{},
-)
-
-var (
-	initiaSupply = math.NewInt(100_000_000_000)
-	testDenoms   = []string{
-		"test1",
-		"test2",
-		"test3",
-		"test4",
-		"test5",
-	}
 )
 
 type EncodingConfig struct {
@@ -100,17 +90,6 @@ func MakeEncodingConfig(_ testing.TB) EncodingConfig {
 	}
 }
 
-var bondDenom = sdk.DefaultBondDenom
-
-func initialTotalSupply() sdk.Coins {
-	faucetBalance := sdk.NewCoins(sdk.NewCoin(bondDenom, initiaSupply))
-	for _, testDenom := range testDenoms {
-		faucetBalance = faucetBalance.Add(sdk.NewCoin(testDenom, initiaSupply))
-	}
-
-	return faucetBalance
-}
-
 type TestFaucet struct {
 	t                testing.TB
 	bankKeeper       bankkeeper.Keeper
@@ -120,7 +99,6 @@ type TestFaucet struct {
 }
 
 func NewTestFaucet(t testing.TB, ctx sdk.Context, bankKeeper bankkeeper.Keeper, minterModuleName string, initiaSupply ...sdk.Coin) *TestFaucet {
-	require.NotEmpty(t, initiaSupply)
 	r := &TestFaucet{t: t, bankKeeper: bankKeeper, minterModuleName: minterModuleName}
 	_, _, addr := keyPubAddr()
 	r.sender = addr
@@ -130,6 +108,10 @@ func NewTestFaucet(t testing.TB, ctx sdk.Context, bankKeeper bankkeeper.Keeper, 
 }
 
 func (f *TestFaucet) Mint(parentCtx sdk.Context, addr sdk.AccAddress, amounts ...sdk.Coin) {
+	if len(amounts) == 0 {
+		return
+	}
+
 	amounts = sdk.Coins(amounts).Sort()
 	require.NotEmpty(f.t, amounts)
 	ctx := parentCtx.WithEventManager(sdk.NewEventManager()) // discard all faucet related events
@@ -232,6 +214,7 @@ func _createTestInput(
 
 	ac := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
 
+	erc20Keeper := new(evmkeeper.ERC20Keeper)
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[authtypes.StoreKey]), // target store
@@ -246,15 +229,27 @@ func _createTestInput(
 		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = true
 	}
 
-	bankKeeper := bankkeeper.NewBaseKeeper(
+	bankKeeper := custombankkeeper.NewBaseKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[banktypes.StoreKey]),
 		accountKeeper,
+		erc20Keeper,
 		blockedAddrs,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		ctx.Logger().With("module", "x/"+banktypes.ModuleName),
 	)
 	require.NoError(t, bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
+
+	msgRouter := baseapp.NewMsgServiceRouter()
+	msgRouter.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
+
+	// register bank message service to the router
+	banktypes.RegisterMsgServer(msgRouter, custombankkeeper.NewMsgServerImpl(bankKeeper))
+
+	queryRouter := baseapp.NewGRPCQueryRouter()
+	queryRouter.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
+
+	// register bank query service to the router
+	banktypes.RegisterQueryServer(queryRouter, &bankKeeper)
 
 	communityPoolKeeper := &MockCommunityPoolKeeper{}
 	evmKeeper := evmkeeper.NewKeeper(
@@ -263,13 +258,18 @@ func _createTestInput(
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
 		accountKeeper,
 		communityPoolKeeper,
+		msgRouter,
+		queryRouter,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		EVMConfig.DefaultEVMConfig(),
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
 
-	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter, initialTotalSupply()...)
+	// set erc20 keeper
+	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
+
+	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter)
 
 	keepers := TestKeepers{
 		AccountKeeper:       accountKeeper,
