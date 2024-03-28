@@ -17,24 +17,17 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
-	"github.com/initia-labs/minievm/x/evm/contracts/factory"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
 type ERC20Keeper struct {
 	*Keeper
 	*abi.ABI
-	FactoryABI *abi.ABI
-	ERC20Bin   []byte
+	ERC20Bin []byte
 }
 
 func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 	abi, err := erc20.Erc20MetaData.GetAbi()
-	if err != nil {
-		return ERC20Keeper{}, err
-	}
-
-	factoryABI, err := factory.FactoryMetaData.GetAbi()
 	if err != nil {
 		return ERC20Keeper{}, err
 	}
@@ -44,7 +37,7 @@ func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 		return ERC20Keeper{}, err
 	}
 
-	return &ERC20Keeper{k, abi, factoryABI, erc20Bin}, nil
+	return &ERC20Keeper{k, abi, erc20Bin}, nil
 }
 
 // BurnCoins implements IERC20Keeper.
@@ -289,13 +282,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		if found, err := k.ERC20ContractAddrsByDenom.Has(ctx, denom); err != nil {
 			return err
 		} else if !found {
-			inputBz, err := k.FactoryABI.Pack("deployNewERC20", denom, denom, uint8(0))
-			if err != nil {
-				return types.ErrFailedToPackABI.Wrap(err.Error())
-			}
-
-			factoryAddr := types.FactoryAddress()
-			contractAddr, err := k.nextContractAddress(ctx, factoryAddr)
+			contractAddr, err := k.nextContractAddress(ctx, types.StdAddress)
 			if err != nil {
 				return err
 			}
@@ -308,7 +295,12 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 				return err
 			}
 
-			ret, _, err := k.EVMCall(ctx, types.StdAddress, factoryAddr, inputBz)
+			inputBz, err := k.ABI.Pack("", denom, denom, uint8(0))
+			if err != nil {
+				return types.ErrFailedToPackABI.Wrap(err.Error())
+			}
+
+			ret, _, err := k.EVMCreate(ctx, types.StdAddress, append(k.ERC20Bin, inputBz...))
 			if err != nil {
 				return err
 			}

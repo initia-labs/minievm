@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"encoding/hex"
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -11,22 +13,23 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
-	"github.com/initia-labs/minievm/x/evm/contracts/factory"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
 func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, denom string) common.Address {
-	abi, err := factory.FactoryMetaData.GetAbi()
+	abi, err := erc20.Erc20MetaData.GetAbi()
 	require.NoError(t, err)
 
-	inputBz, err := abi.Pack("deployNewERC20", denom, denom, uint8(6))
+	inputBz, err := abi.Pack("", denom, denom, uint8(6))
 	require.NoError(t, err)
 
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, types.FactoryAddress(), inputBz)
+	erc20Bin, err := hex.DecodeString(strings.TrimPrefix(erc20.Erc20Bin, "0x"))
 	require.NoError(t, err)
 
-	contractAddr := common.BytesToAddress(ret)
+	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, caller, append(erc20Bin, inputBz...))
+	require.NoError(t, err)
+
 	return contractAddr
 }
 

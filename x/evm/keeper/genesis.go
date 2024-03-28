@@ -13,11 +13,6 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		return err
 	}
 
-	// if the genesis is not exported, initialize the state
-	if !genState.IsExported() {
-		return k.Initialize(ctx)
-	}
-
 	// else set the state from the genesis
 	if err := k.VMRoot.Set(ctx, genState.StateRoot); err != nil {
 		return err

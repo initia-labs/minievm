@@ -12,6 +12,8 @@ import (
 	"cosmossdk.io/store"
 	storemetrics "cosmossdk.io/store/metrics"
 	db "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 
@@ -22,16 +24,18 @@ import (
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/cosmos"
 )
 
-func setup() (sdk.Context, address.Codec) {
+func setup() (sdk.Context, codec.Codec, address.Codec) {
 	kv := db.NewMemDB()
 	cms := store.NewCommitMultiStore(kv, log.NewNopLogger(), storemetrics.NewNoOpMetrics())
 
-	return sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger()), authcodec.NewBech32Codec("init")
+	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
+	ac := authcodec.NewBech32Codec("init")
+	return sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger()), cdc, ac
 }
 
 func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
-	ctx, ac := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(ac)
+	ctx, cdc, ac := setup()
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
@@ -61,8 +65,8 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 }
 
 func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
-	ctx, ac := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(ac)
+	ctx, cdc, ac := setup()
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)

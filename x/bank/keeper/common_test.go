@@ -287,7 +287,6 @@ func _createTestInput(
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
-	require.NoError(t, evmKeeper.Initialize(ctx))
 
 	// set erc20 keeper
 	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)

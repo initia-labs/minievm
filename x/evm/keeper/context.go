@@ -2,11 +2,9 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"math"
 	"math/big"
-	"strings"
 
 	"github.com/holiman/uint256"
 
@@ -19,7 +17,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/initia-labs/minievm/x/evm/contracts/factory"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -324,21 +321,6 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	))
 
 	return retBz, contractAddr, nil
-}
-
-// Initialize deploy genesis contracts.
-func (k Keeper) Initialize(ctx context.Context) error {
-	bin, err := hex.DecodeString(strings.TrimPrefix(factory.FactoryBin, "0x"))
-	if err != nil {
-		return err
-	}
-
-	_, _, err = k.EVMCreate(ctx, types.StdAddress, bin)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // nextContractAddress returns the next contract address which will be created by the given caller.

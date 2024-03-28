@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Genesis(t *testing.T) {
-	ctx, input := createTestInput(t, false, false)
+	ctx, input := createTestInput(t, false)
 
 	genState := types.DefaultGenesis()
 	genState.StateRoot = []byte{1, 2, 3, 4}

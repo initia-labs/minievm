@@ -18,7 +18,7 @@ interface ICosmos {
         string memory cosmos_address
     ) external returns (address evm_address);
 
-    function execute_cosmos_message(
-        string memory msg
-    ) external returns (string memory response);
+    // record a cosmos message to be executed
+    // after the current message execution.
+    function execute_cosmos_message(string memory msg) external;
 }

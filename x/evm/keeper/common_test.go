@@ -170,13 +170,13 @@ type TestKeepers struct {
 
 // createDefaultTestInput common settings for createTestInput
 func createDefaultTestInput(t testing.TB) (sdk.Context, TestKeepers) {
-	return createTestInput(t, false, true)
+	return createTestInput(t, false)
 }
 
 // createTestInput encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
-func createTestInput(t testing.TB, isCheckTx, initialize bool) (sdk.Context, TestKeepers) {
+func createTestInput(t testing.TB, isCheckTx bool) (sdk.Context, TestKeepers) {
 	// Load default move config
-	return _createTestInput(t, isCheckTx, initialize, dbm.NewMemDB())
+	return _createTestInput(t, isCheckTx, dbm.NewMemDB())
 }
 
 var keyCounter uint64
@@ -197,7 +197,7 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
 // encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
 func _createTestInput(
 	t testing.TB,
-	isCheckTx, initialize bool,
+	isCheckTx bool,
 	db dbm.DB,
 ) (sdk.Context, TestKeepers) {
 	keys := storetypes.NewKVStoreKeys(
@@ -268,9 +268,6 @@ func _createTestInput(
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
-	if initialize {
-		require.NoError(t, evmKeeper.Initialize(ctx))
-	}
 
 	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter, initialTotalSupply()...)
 

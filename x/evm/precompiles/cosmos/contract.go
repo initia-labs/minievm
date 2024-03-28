@@ -10,6 +10,7 @@ import (
 
 	"cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos"
@@ -22,17 +23,19 @@ var _ types.WithContext = CosmosPrecompile{}
 
 type CosmosPrecompile struct {
 	*abi.ABI
+
 	ctx context.Context
+	cdc codec.Codec
 	ac  address.Codec
 }
 
-func NewCosmosPrecompile(ac address.Codec) (CosmosPrecompile, error) {
+func NewCosmosPrecompile(cdc codec.Codec, ac address.Codec) (CosmosPrecompile, error) {
 	abi, err := i_cosmos.ICosmosMetaData.GetAbi()
 	if err != nil {
 		return CosmosPrecompile{}, err
 	}
 
-	return CosmosPrecompile{ABI: abi, ac: ac}, nil
+	return CosmosPrecompile{ABI: abi, cdc: cdc, ac: ac}, nil
 }
 
 func (e CosmosPrecompile) WithContext(ctx context.Context) vm.PrecompiledContract {
@@ -41,8 +44,9 @@ func (e CosmosPrecompile) WithContext(ctx context.Context) vm.PrecompiledContrac
 }
 
 const (
-	METHOD_TO_COSMOS_ADDRESS = "to_cosmos_address"
-	METHOD_TO_EVM_ADDRESS    = "to_evm_address"
+	METHOD_TO_COSMOS_ADDRESS         = "to_cosmos_address"
+	METHOD_TO_EVM_ADDRESS            = "to_evm_address"
+	METHOD_TO_EXECUTE_COSMOS_MESSAGE = "execute_cosmos_message"
 )
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
@@ -75,7 +79,6 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, 0, err
 		}
 
-		// TODO - make gas table
 		ctx.GasMeter().ConsumeGas(TO_COSMOS_ADDRESS_GAS, "to_cosmos_address")
 	case METHOD_TO_EVM_ADDRESS:
 		var toEVMAddressArguments ToEVMAddressArguments
@@ -98,8 +101,9 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, 0, err
 		}
 
-		// TODO - make gas table
 		ctx.GasMeter().ConsumeGas(TO_EVM_ADDRESS_GAS, "to_evm_address")
+	// case METHOD_TO_EXECUTE_COSMOS_MESSAGE:
+
 	default:
 		return nil, 0, types.ErrUnknownPrecompileMethod.Wrap(method.Name)
 	}
