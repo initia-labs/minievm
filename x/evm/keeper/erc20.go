@@ -49,11 +49,11 @@ func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 
 // BurnCoins implements IERC20Keeper.
 func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error {
-	if len(addr.Bytes()) != common.AddressLength {
-		return types.ErrInvalidAddressLength
+	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	if err != nil {
+		return err
 	}
 
-	evmAddr := common.BytesToAddress(addr.Bytes())
 	for _, coin := range amount {
 		// if a coin is not generated from 0x1, then send the coin to community pool
 		// because we don't have burn capability.
@@ -88,11 +88,11 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 
 // GetBalance implements IERC20Keeper.
 func (k ERC20Keeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) (math.Int, error) {
-	if len(addr.Bytes()) != common.AddressLength {
-		return math.ZeroInt(), types.ErrInvalidAddressLength
+	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	if err != nil {
+		return math.ZeroInt(), err
 	}
 
-	evmAddr := common.BytesToAddress(addr.Bytes())
 	contractAddr, err := types.DenomToContractAddr(ctx, k, denom)
 	if err != nil {
 		return math.ZeroInt(), err
@@ -163,11 +163,11 @@ func (k ERC20Keeper) GetMetadata(ctx context.Context, denom string) (banktypes.M
 
 // GetPaginatedBalances implements IERC20Keeper.
 func (k ERC20Keeper) GetPaginatedBalances(ctx context.Context, pageReq *query.PageRequest, addr sdk.AccAddress) (sdk.Coins, *query.PageResponse, error) {
-	if len(addr.Bytes()) != common.AddressLength {
-		return nil, nil, types.ErrInvalidAddressLength
+	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	evmAddr := common.BytesToAddress(addr.Bytes())
 	coins, res, err := query.CollectionPaginate(ctx, k.ERC20Stores, pageReq, func(key collections.Pair[[]byte, []byte], _ collections.NoValue) (sdk.Coin, error) {
 		balance, err := k.balanceOf(ctx, common.BytesToAddress(key.K1()), common.BytesToAddress(key.K2()))
 		if err != nil {
@@ -229,11 +229,11 @@ func (k ERC20Keeper) HasSupply(ctx context.Context, denom string) (bool, error) 
 
 // IterateAccountBalances implements IERC20Keeper.
 func (k ERC20Keeper) IterateAccountBalances(ctx context.Context, addr sdk.AccAddress, cb func(sdk.Coin) (bool, error)) error {
-	if len(addr.Bytes()) != common.AddressLength {
-		return types.ErrInvalidAddressLength
+	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	if err != nil {
+		return err
 	}
 
-	evmAddr := common.BytesToAddress(addr.Bytes())
 	return k.ERC20Stores.Walk(ctx, collections.NewPrefixedPairRange[[]byte, []byte](evmAddr.Bytes()), func(key collections.Pair[[]byte, []byte]) (stop bool, err error) {
 		balance, err := k.balanceOf(ctx, common.BytesToAddress(key.K1()), common.BytesToAddress(key.K2()))
 		if err != nil {
@@ -273,12 +273,11 @@ func (k ERC20Keeper) IterateSupply(ctx context.Context, cb func(supply sdk.Coin)
 
 // MintCoins implements IERC20Keeper.
 func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error {
-	if len(addr.Bytes()) != common.AddressLength {
-		return types.ErrInvalidAddressLength
-	}
-
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	evmAddr := common.BytesToAddress(addr.Bytes())
+	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	if err != nil {
+		return err
+	}
 
 	for _, coin := range amount {
 		denom := coin.Denom
@@ -296,7 +295,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 			}
 
 			factoryAddr := types.FactoryAddress()
-			contractAddr, err := k.NextContractAddress(ctx, factoryAddr)
+			contractAddr, err := k.nextContractAddress(ctx, factoryAddr)
 			if err != nil {
 				return err
 			}
@@ -347,12 +346,15 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 
 // SendCoins implements IERC20Keeper.
 func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
-	if len(fromAddr.Bytes()) != 20 || len(toAddr.Bytes()) != 20 {
-		return types.ErrInvalidAddressLength
+	evmFromAddr, err := k.convertToEVMAddress(ctx, fromAddr)
+	if err != nil {
+		return err
+	}
+	evmToAddr, err := k.convertToEVMAddress(ctx, toAddr)
+	if err != nil {
+		return err
 	}
 
-	evmFromAddr := common.BytesToAddress(fromAddr.Bytes())
-	evmToAddr := common.BytesToAddress(toAddr.Bytes())
 	for _, coin := range amt {
 		contractAddr, err := types.DenomToContractAddr(ctx, k, coin.Denom)
 		if err != nil {

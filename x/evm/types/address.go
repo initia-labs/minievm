@@ -2,7 +2,6 @@ package types
 
 import (
 	"cosmossdk.io/core/address"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -32,12 +31,4 @@ func ContractAddressFromString(ac address.Codec, contractAddrInString string) (c
 	}
 
 	return contractAddr, nil
-}
-
-func CosmosAddressToEthAddress(addr sdk.AccAddress) (common.Address, error) {
-	if len(addr.Bytes()) != 20 {
-		return common.Address{}, ErrInvalidAddressLength
-	}
-
-	return common.BytesToAddress(addr.Bytes()), nil
 }

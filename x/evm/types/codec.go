@@ -17,7 +17,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "evm/MsgUpdateParams")
 
 	cdc.RegisterConcrete(&ContractAccount{}, "evm/ContractAccount", nil)
-
+	cdc.RegisterConcrete(&ShorthandAccount{}, "evm/ShorthandAccount", nil)
 }
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
@@ -36,6 +36,14 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*authtypes.GenesisAccount)(nil),
 		&ContractAccount{},
+	)
+	registry.RegisterImplementations(
+		(*sdk.AccountI)(nil),
+		&ShorthandAccount{},
+	)
+	registry.RegisterImplementations(
+		(*authtypes.GenesisAccount)(nil),
+		&ShorthandAccount{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

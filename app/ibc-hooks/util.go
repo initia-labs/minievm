@@ -26,7 +26,7 @@ const senderPrefix = "ibc-evm-hook-intermediary"
 // TODO - make this as module account to check address collision
 func deriveIntermediateSender(channel, originalSender string) string {
 	senderStr := fmt.Sprintf("%s/%s", channel, originalSender)
-	senderAddr := sdk.AccAddress(address.Hash(senderPrefix, []byte(senderStr))[12:])
+	senderAddr := sdk.AccAddress(address.Hash(senderPrefix, []byte(senderStr)))
 	return senderAddr.String()
 }
 

@@ -52,6 +52,7 @@ import (
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
 
 	evmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
+	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -249,6 +250,7 @@ func _createTestInput(
 
 	ac := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
 
+	erc20Keeper := new(evmkeeper.ERC20Keeper)
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[authtypes.StoreKey]), // target store
@@ -263,13 +265,13 @@ func _createTestInput(
 		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = true
 	}
 
-	bankKeeper := bankkeeper.NewBaseKeeper(
+	bankKeeper := custombankkeeper.NewBaseKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[banktypes.StoreKey]),
 		accountKeeper,
+		erc20Keeper,
 		blockedAddrs,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		ctx.Logger().With("module", "x/"+banktypes.ModuleName),
 	)
 	require.NoError(t, bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
 
@@ -296,6 +298,9 @@ func _createTestInput(
 	if initialize {
 		require.NoError(t, evmKeeper.Initialize(ctx))
 	}
+
+	// set erc20 keeper
+	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
 
 	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter, initialTotalSupply()...)
 

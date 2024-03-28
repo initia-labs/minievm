@@ -90,11 +90,6 @@ func (qs *queryServerImpl) Code(ctx context.Context, req *types.QueryCodeRequest
 		return nil, err
 	}
 
-	// argument validation
-	if len(contractAddr) != common.AddressLength {
-		return nil, types.ErrInvalidAddressLength
-	}
-
 	codeBz := stateDB.GetCode(common.Address(contractAddr.Bytes()))
 	return &types.QueryCodeResponse{
 		Code: codeBz,
@@ -111,11 +106,6 @@ func (qs *queryServerImpl) State(ctx context.Context, req *types.QueryStateReque
 	contractAddr, err := types.ContractAddressFromString(qs.ac, req.ContractAddr)
 	if err != nil {
 		return nil, err
-	}
-
-	// argument validation
-	if len(contractAddr) != common.AddressLength {
-		return nil, types.ErrInvalidAddressLength
 	}
 
 	state := stateDB.GetState(common.Address(contractAddr.Bytes()), common.HexToHash(req.Key))

@@ -28,8 +28,9 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// argument validation
-	if len(sender) != common.AddressLength {
-		return nil, types.ErrInvalidAddressLength
+	caller, err := ms.convertToEVMAddress(ctx, sender)
+	if err != nil {
+		return nil, err
 	}
 	if len(msg.Code) == 0 {
 		return nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
@@ -62,7 +63,6 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// deploy a contract
-	caller := common.BytesToAddress(sender)
 	retBz, contractAddr, err := ms.EVMCreate(ctx, caller, codeBz)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
@@ -88,18 +88,15 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	}
 
 	// argument validation
-	if len(sender) != common.AddressLength {
-		return nil, types.ErrInvalidAddressLength
-	}
-	if len(contractAddr) != common.AddressLength {
-		return nil, types.ErrInvalidAddressLength
+	caller, err := ms.convertToEVMAddress(ctx, sender)
+	if err != nil {
+		return nil, err
 	}
 	inputBz, err := hex.DecodeString(msg.Input)
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
 
-	caller := common.BytesToAddress(sender)
 	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz)
 	if err != nil {
 		return nil, types.ErrEVMCreateFailed.Wrap(err.Error())

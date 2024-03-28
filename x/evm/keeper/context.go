@@ -89,14 +89,21 @@ func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tr
 		ContractCreatedHook: k.contractCreatedHook(ctx),
 	}
 
-	return vm.NewEVMWithPrecompiles(
+	evm := vm.NewEVMWithPrecompiles(
 		blockContext,
 		txContext,
 		stateDB,
 		types.DefaultChainConfig(),
 		vmConfig,
 		k.precompiles.toMap(ctx),
-	), nil
+	)
+
+	if tracer != nil {
+		// register vm context to tracer
+		tracer.OnTxStart(evm.GetVMContext(), nil, caller)
+	}
+
+	return evm, nil
 }
 
 // contractCreatedHook returns a callback function that is called when a contract is created.
@@ -108,7 +115,10 @@ func (k Keeper) contractCreatedHook(ctx context.Context) vm.ContractCreatedHook 
 		if k.accountKeeper.HasAccount(ctx, sdk.AccAddress(contractAddr.Bytes())) {
 			account := k.accountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))
 			_, isModuleAccount := account.(sdk.ModuleAccountI)
-			if isModuleAccount || account.GetPubKey() != nil {
+			_, isShorthandAccount := account.(types.ShorthandAccountI)
+
+			// contract account collision should be check in evm side.
+			if isModuleAccount || isShorthandAccount || account.GetPubKey() != nil {
 				return types.ErrAddressAlreadyExists.Wrap(contractAddr.String())
 			}
 
@@ -333,8 +343,8 @@ func (k Keeper) Initialize(ctx context.Context) error {
 	return nil
 }
 
-// NextContractAddress returns the next contract address which will be created by the given caller.
-func (k Keeper) NextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
+// nextContractAddress returns the next contract address which will be created by the given caller.
+func (k Keeper) nextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
 	stateDB, err := k.newStateDB(ctx)
 	if err != nil {
 		return common.Address{}, err
