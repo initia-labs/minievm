@@ -67,17 +67,17 @@ func (k Keeper) buildTxContext(_ context.Context, caller common.Address) vm.TxCo
 }
 
 // createEVM creates a new EVM instance.
-func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (*vm.EVM, error) {
+func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (context.Context, *vm.EVM, error) {
 	extraEIPs, err := k.ExtraEIPs(ctx)
 	if err != nil {
-		return nil, err
+		return ctx, nil, err
 	}
 
 	blockContext := k.buildBlockContext(ctx)
 	txContext := k.buildTxContext(ctx, caller)
 	stateDB, err := k.newStateDB(ctx)
 	if err != nil {
-		return nil, err
+		return ctx, nil, err
 	}
 
 	vmConfig := vm.Config{
@@ -86,6 +86,8 @@ func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tr
 		ContractCreatedHook: k.contractCreatedHook(ctx),
 	}
 
+	// set cosmos messages to context
+	ctx = sdk.UnwrapSDKContext(ctx).WithValue(types.CONTEXT_KEY_COSMOS_MESSAGES, &[]sdk.Msg{})
 	evm := vm.NewEVMWithPrecompiles(
 		blockContext,
 		txContext,
@@ -100,7 +102,7 @@ func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tr
 		tracer.OnTxStart(evm.GetVMContext(), nil, caller)
 	}
 
-	return evm, nil
+	return ctx, evm, nil
 }
 
 // contractCreatedHook returns a callback function that is called when a contract is created.
@@ -139,7 +141,7 @@ func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contra
 
 // EVMStaticCallWithTracer executes an EVM call with the given input data and tracer in static mode.
 func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, tracer *tracing.Hooks) ([]byte, error) {
-	evm, err := k.createEVM(ctx, caller, tracer)
+	ctx, evm, err := k.createEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +173,7 @@ func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr
 
 // EVMCallWithTracer executes an EVM call with the given input data and tracer.
 func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
-	evm, err := k.createEVM(ctx, caller, tracer)
+	ctx, evm, err := k.createEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -244,6 +246,12 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		attrs...,
 	))
 
+	// handle cosmos messages
+	// messages := sdkCtx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
+	// for _, msg := range *messages {
+
+	// }
+
 	return retBz, logs, nil
 }
 
@@ -254,7 +262,7 @@ func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []b
 
 // EVMCreateWithTracer creates a new contract with the given code and tracer.
 func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, tracer *tracing.Hooks) ([]byte, common.Address, error) {
-	evm, err := k.createEVM(ctx, caller, tracer)
+	ctx, evm, err := k.createEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, common.Address{}, err
 	}

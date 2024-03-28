@@ -96,6 +96,7 @@ message QueryCallResponse {
   uint64       used_gas     = 2;
   repeated Log logs         = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
   string       trace_output = 4;
+  string       error        = 5;
 }
 
 // QueryContractAddrByDenomRequest is the request type for the Query/ContractAddrByDenom RPC

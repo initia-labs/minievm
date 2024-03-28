@@ -21,4 +21,5 @@ var (
 	ErrAddressAlreadyExists    = errorsmod.Register(ModuleName, 13, "Address already exists")
 	ErrFailedToEncodeLogs      = errorsmod.Register(ModuleName, 14, "Failed to encode logs")
 	ErrEmptyContractAddress    = errorsmod.Register(ModuleName, 15, "Empty contract address")
+	ErrPrecompileFailed        = errorsmod.Register(ModuleName, 16, "Precompile failed")
 )

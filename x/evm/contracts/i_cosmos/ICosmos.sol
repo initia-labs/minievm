@@ -20,5 +20,19 @@ interface ICosmos {
 
     // record a cosmos message to be executed
     // after the current message execution.
+    //
+    // msg should be in json string format like:
+    // {
+    //    "@type": "/cosmos.bank.v1beta1.MsgSend",
+    //    "from_address": "init13vhzmdmzsqlxkdzvygue9zjtpzedz7j87c62q4",
+    //    "to_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+    //    "amount": [
+    //        {
+    //            "denom": "stake",
+    //            "amount": "100"
+    //        }
+    //    ]
+    // }
+    //
     function execute_cosmos_message(string memory msg) external;
 }

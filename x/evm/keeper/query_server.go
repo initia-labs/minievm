@@ -67,7 +67,11 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	caller := common.BytesToAddress(sender)
 	retBz, logs, err := qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, tracer)
 	if err != nil {
-		return nil, err
+		return &types.QueryCallResponse{
+			Error:       err.Error(),
+			UsedGas:     sdkCtx.GasMeter().GasConsumedToLimit(),
+			TraceOutput: tracerOutput.String(),
+		}, nil
 	}
 
 	return &types.QueryCallResponse{

@@ -9,7 +9,6 @@ import (
 	"cosmossdk.io/log"
 	"cosmossdk.io/store"
 	storemetrics "cosmossdk.io/store/metrics"
-	storetypes "cosmossdk.io/store/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	db "github.com/cosmos/cosmos-db"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -37,21 +36,13 @@ type ERC20StoresKeeper struct {
 	stores map[string]map[string]bool
 }
 
-const REGISTER_GAS storetypes.Gas = 300
-const REGISTER_STORE_GAS storetypes.Gas = 200
-const IS_STORE_REGISTERED_GAS storetypes.Gas = 100
-
 func (e ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Address) error {
-	sdk.UnwrapSDKContext(ctx).GasMeter().ConsumeGas(REGISTER_GAS, "register gas")
-
 	e.erc20s[contractAddr.Hex()] = true
 	return nil
 }
 
 // IsRegistered implements types.IERC20StoresKeeper.
 func (e ERC20StoresKeeper) IsStoreRegistered(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) (bool, error) {
-	sdk.UnwrapSDKContext(ctx).GasMeter().ConsumeGas(IS_STORE_REGISTERED_GAS, "is_register gas")
-
 	store, ok := e.stores[addr.String()]
 	if !ok {
 		return false, nil
@@ -63,8 +54,6 @@ func (e ERC20StoresKeeper) IsStoreRegistered(ctx context.Context, addr sdk.AccAd
 
 // Register implements types.IERC20StoresKeeper.
 func (e ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) error {
-	sdk.UnwrapSDKContext(ctx).GasMeter().ConsumeGas(REGISTER_STORE_GAS, "register gas")
-
 	_, ok := e.stores[addr.String()]
 	if !ok {
 		e.stores[addr.String()] = make(map[string]bool)
@@ -94,17 +83,17 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 
 	// out of gas panic
 	require.Panics(t, func() {
-		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, REGISTER_GAS-1, false)
+		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS-1, false)
 	})
 
 	// non read only method fail
-	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, REGISTER_GAS, true)
+	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS+uint64(len(bz)), true)
 	require.Error(t, err)
 
 	// success
-	_, usedGas, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, REGISTER_GAS, false)
+	_, usedGas, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS+uint64(len(bz)), false)
 	require.NoError(t, err)
-	require.Equal(t, usedGas, uint64(REGISTER_GAS))
+	require.Equal(t, usedGas, uint64(precompiles.REGISTER_GAS)+uint64(len(bz)))
 
 	// check erc20 registered
 	require.True(t, k.(ERC20StoresKeeper).erc20s[erc20Addr.Hex()])
@@ -113,9 +102,9 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	bz, err = abi.Pack(precompiles.METHOD_IS_STORE_REGISTERED, accountAddr)
 	require.NoError(t, err)
 
-	resBz, usedGas, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, IS_STORE_REGISTERED_GAS, true)
+	resBz, usedGas, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS+uint64(len(bz)), true)
 	require.NoError(t, err)
-	require.Equal(t, usedGas, uint64(IS_STORE_REGISTERED_GAS))
+	require.Equal(t, usedGas, uint64(precompiles.IS_STORE_REGISTERED_GAS)+uint64(len(bz)))
 
 	res, err := abi.Methods[precompiles.METHOD_IS_STORE_REGISTERED].Outputs.Unpack(resBz)
 	require.NoError(t, err)
@@ -127,17 +116,17 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 
 	// out of gas panic
 	require.Panics(t, func() {
-		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, REGISTER_STORE_GAS-1, false)
+		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS-1, false)
 	})
 
 	// non read only method fail
-	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, REGISTER_STORE_GAS, true)
+	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS+uint64(len(bz)), true)
 	require.Error(t, err)
 
 	// success
-	_, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, REGISTER_STORE_GAS, false)
+	_, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS+uint64(len(bz)), false)
 	require.NoError(t, err)
-	require.Equal(t, usedGas, uint64(REGISTER_STORE_GAS))
+	require.Equal(t, usedGas, uint64(precompiles.REGISTER_STORE_GAS)+uint64(len(bz)))
 
 	// check registered
 	bz, err = abi.Pack(precompiles.METHOD_IS_STORE_REGISTERED, accountAddr)
@@ -145,12 +134,12 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 
 	// out of gas panic
 	require.Panics(t, func() {
-		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, IS_STORE_REGISTERED_GAS-1, true)
+		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS-1, true)
 	})
 
-	resBz, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, IS_STORE_REGISTERED_GAS, true)
+	resBz, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS+uint64(len(bz)), true)
 	require.NoError(t, err)
-	require.Equal(t, usedGas, uint64(IS_STORE_REGISTERED_GAS))
+	require.Equal(t, usedGas, uint64(precompiles.IS_STORE_REGISTERED_GAS)+uint64(len(bz)))
 
 	res, err = abi.Methods[precompiles.METHOD_IS_STORE_REGISTERED].Outputs.Unpack(resBz)
 	require.NoError(t, err)

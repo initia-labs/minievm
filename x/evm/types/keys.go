@@ -29,3 +29,11 @@ var (
 	ParamsKey = []byte{0x41} // key of parameters for module x/evm
 	VMRootKey = []byte{0x51} // key of evm state root
 )
+
+// ContextKey type for context key
+type ContextKey int
+
+const (
+	// CONTEXT_KEY_COSMOS_MESSAGES is a context key for cosmos messages
+	CONTEXT_KEY_COSMOS_MESSAGES ContextKey = iota
+)

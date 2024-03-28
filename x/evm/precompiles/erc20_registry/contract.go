@@ -48,54 +48,62 @@ const (
 func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
 	method, err := e.ABI.MethodById(input)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}
 
 	args, err := method.Inputs.Unpack(input[4:])
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}
 
 	ctx := sdk.UnwrapSDKContext(e.ctx).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
+	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")
+
 	switch method.Name {
 	case METHOD_REGISTER:
+		ctx.GasMeter().ConsumeGas(REGISTER_GAS, "register_erc20")
+
 		if readOnly {
-			return nil, 0, types.ErrNonReadOnlyMethod.Wrap(method.Name)
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
 
 		if err := e.k.Register(ctx, caller.Address()); err != nil {
-			return nil, 0, err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_REGISTER_STORE:
+		ctx.GasMeter().ConsumeGas(REGISTER_STORE_GAS, "register_erc20_store")
+
 		if readOnly {
-			return nil, 0, types.ErrNonReadOnlyMethod.Wrap(method.Name)
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
 
-		var registerArgs RegisterArguments
+		var registerArgs RegisterStoreArguments
 		if err := method.Inputs.Copy(&registerArgs, args); err != nil {
-			return nil, 0, err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
 		if err := e.k.RegisterStore(ctx, registerArgs.Account.Bytes(), caller.Address()); err != nil {
-			return nil, 0, err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_IS_STORE_REGISTERED:
-		var isRegisteredArgs IsRegisteredArguments
+		ctx.GasMeter().ConsumeGas(IS_STORE_REGISTERED_GAS, "is_erc20_store_registered")
+
+		var isRegisteredArgs IsStoreRegisteredArguments
 		if err := method.Inputs.Copy(&isRegisteredArgs, args); err != nil {
-			return nil, 0, err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
 		ok, err := e.k.IsStoreRegistered(ctx, isRegisteredArgs.Account.Bytes(), caller.Address())
 		if err != nil {
-			return nil, 0, err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
 		resBz, err = method.Outputs.Pack(ok)
 		if err != nil {
-			return nil, 0, err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	default:
-		return nil, 0, types.ErrUnknownPrecompileMethod.Wrap(method.Name)
+		return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrUnknownPrecompileMethod.Wrap(method.Name)
 	}
 
 	usedGas = ctx.GasMeter().GasConsumedToLimit()
