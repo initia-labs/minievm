@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/keeper"
@@ -39,12 +40,12 @@ func Test_Query_Call(t *testing.T) {
 	res, err := qs.Call(ctx, &types.QueryCallRequest{
 		Sender:       addr.String(),
 		ContractAddr: fooContractAddr.String(),
-		Input:        common.Bytes2Hex(inputBz),
+		Input:        hexutil.Encode(inputBz),
 		WithTrace:    true,
 	})
 	require.NoError(t, err)
 
-	outputBz := common.Hex2Bytes(res.Response)
+	outputBz := hexutil.MustDecode(res.Response)
 	ret, err := abi.Unpack("balanceOf", outputBz)
 	require.NoError(t, err)
 

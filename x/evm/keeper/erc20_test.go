@@ -1,12 +1,11 @@
 package keeper_test
 
 import (
-	"encoding/hex"
-	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,7 +23,7 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 	inputBz, err := abi.Pack("", denom, denom, uint8(6))
 	require.NoError(t, err)
 
-	erc20Bin, err := hex.DecodeString(strings.TrimPrefix(erc20.Erc20Bin, "0x"))
+	erc20Bin, err := hexutil.Decode(erc20.Erc20Bin)
 	require.NoError(t, err)
 
 	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, caller, append(erc20Bin, inputBz...))

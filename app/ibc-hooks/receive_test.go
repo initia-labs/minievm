@@ -1,13 +1,12 @@
 package evm_hooks_test
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
@@ -45,7 +44,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	_, _, addr := keyPubAddr()
 	evmAddr := common.BytesToAddress(addr.Bytes())
 
-	codeBz, err := hex.DecodeString(strings.TrimPrefix(counter.CounterBin, "0x"))
+	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
 	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz)
@@ -69,7 +68,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 					"input": "%s"
 				}
 			}
-		}`, contractAddr.Hex(), hex.EncodeToString(inputBz)),
+		}`, contractAddr.Hex(), hexutil.Encode(inputBz)),
 	}
 
 	dataBz, err := json.Marshal(&data)

@@ -1,14 +1,13 @@
 package keeper_test
 
 import (
-	"encoding/hex"
 	"fmt"
-	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 
@@ -25,7 +24,7 @@ func Test_Create(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
-	counterBz, err := hex.DecodeString(strings.TrimPrefix(counter.CounterBin, "0x"))
+	counterBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())
@@ -39,7 +38,7 @@ func Test_Call(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
-	counterBz, err := hex.DecodeString(strings.TrimPrefix(counter.CounterBin, "0x"))
+	counterBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())

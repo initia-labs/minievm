@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -25,6 +25,6 @@ func NewLog(ethLog *coretypes.Log) Log {
 	return Log{
 		Address: ethLog.Address.String(),
 		Topics:  topics,
-		Data:    common.Bytes2Hex(ethLog.Data),
+		Data:    hexutil.Encode(ethLog.Data),
 	}
 }

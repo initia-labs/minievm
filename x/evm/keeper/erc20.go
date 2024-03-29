@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"math/big"
 	"strings"
 
@@ -15,6 +14,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -32,7 +32,7 @@ func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 		return ERC20Keeper{}, err
 	}
 
-	erc20Bin, err := hex.DecodeString(strings.TrimPrefix(erc20.Erc20Bin, "0x"))
+	erc20Bin, err := hexutil.Decode(erc20.Erc20Bin)
 	if err != nil {
 		return ERC20Keeper{}, err
 	}
@@ -310,7 +310,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 				sdk.NewEvent(
 					types.EventTypeERC20Created,
 					sdk.NewAttribute(types.AttributeKeyDenom, denom),
-					sdk.NewAttribute(types.AttributeKeyContract, common.Bytes2Hex(ret)),
+					sdk.NewAttribute(types.AttributeKeyContract, hexutil.Encode(ret)),
 				),
 			)
 		}

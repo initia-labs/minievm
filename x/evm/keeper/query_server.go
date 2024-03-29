@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -11,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
@@ -46,7 +46,7 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		return nil, err
 	}
 
-	inputBz, err := hex.DecodeString(strings.TrimPrefix(req.Input, "0x"))
+	inputBz, err := hexutil.Decode(req.Input)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	}
 
 	return &types.QueryCallResponse{
-		Response:    common.Bytes2Hex(retBz),
+		Response:    hexutil.Encode(retBz),
 		UsedGas:     sdkCtx.GasMeter().GasConsumedToLimit(),
 		Logs:        logs,
 		TraceOutput: tracerOutput.String(),
@@ -94,9 +94,9 @@ func (qs *queryServerImpl) Code(ctx context.Context, req *types.QueryCodeRequest
 		return nil, err
 	}
 
-	codeBz := stateDB.GetCode(common.Address(contractAddr.Bytes()))
+	codeBz := stateDB.GetCode(contractAddr)
 	return &types.QueryCodeResponse{
-		Code: codeBz,
+		Code: hexutil.Encode(codeBz),
 	}, nil
 }
 
@@ -112,12 +112,12 @@ func (qs *queryServerImpl) State(ctx context.Context, req *types.QueryStateReque
 		return nil, err
 	}
 
-	keyBz, err := hex.DecodeString(strings.TrimPrefix(req.Key, "0x"))
+	keyBz, err := hexutil.Decode(req.Key)
 	if err != nil {
 		return nil, err
 	}
 
-	state := stateDB.GetState(common.Address(contractAddr.Bytes()), common.BytesToHash(keyBz))
+	state := stateDB.GetState(contractAddr, common.BytesToHash(keyBz))
 	return &types.QueryStateResponse{
 		Value: state.Hex(),
 	}, nil

@@ -2,10 +2,8 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
-	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -36,7 +34,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	if len(msg.Code) == 0 {
 		return nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
 	}
-	codeBz, err := hex.DecodeString(strings.TrimPrefix(msg.Code, "0x"))
+	codeBz, err := hexutil.Decode(msg.Code)
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
@@ -69,9 +67,8 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
 
-	retHex := common.Bytes2Hex(retBz)
 	return &types.MsgCreateResponse{
-		Result:       retHex,
+		Result:       hexutil.Encode(retBz),
 		ContractAddr: contractAddr.Hex(),
 	}, nil
 }
@@ -93,7 +90,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	if err != nil {
 		return nil, err
 	}
-	inputBz, err := hex.DecodeString(strings.TrimPrefix(msg.Input, "0x"))
+	inputBz, err := hexutil.Decode(msg.Input)
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
@@ -103,8 +100,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, types.ErrEVMCreateFailed.Wrap(err.Error())
 	}
 
-	retHex := common.Bytes2Hex(retBz)
-	return &types.MsgCallResponse{Result: retHex, Logs: logs}, nil
+	return &types.MsgCallResponse{Result: hexutil.Encode(retBz), Logs: logs}, nil
 }
 
 // UpdateParams implements types.MsgServer.

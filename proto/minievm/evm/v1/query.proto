@@ -55,13 +55,13 @@ message QueryCodeRequest {
 // method
 message QueryCodeResponse {
   option (gogoproto.equal) = true;
-  bytes code               = 1;
+  string code              = 1;
 }
 
 // QueryStateRequest is the request type for the Query/State RPC
 // method
 message QueryStateRequest {
-  // It can be cosmos address or hex encoded address (0x prefixed).
+  // It can be cosmos address or hex encoded address.
   string contract_addr = 1;
   // hex encoded hash string
   string key = 2;
@@ -80,7 +80,7 @@ message QueryStateResponse {
 message QueryCallRequest {
   // sender address
   string sender = 1;
-  // It can be cosmos address or hex encoded address (0x prefixed).
+  // It can be cosmos address or hex encoded address.
   string contract_addr = 2;
   // hex encoded call input
   string input = 3;

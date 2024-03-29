@@ -1,15 +1,14 @@
 package evm_hooks_test
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 
 	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/holiman/uint256"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/stretchr/testify/require"
@@ -42,7 +41,7 @@ func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 	_, _, addr := keyPubAddr()
 	evmAddr := common.BytesToAddress(addr.Bytes())
 
-	codeBz, err := hex.DecodeString(strings.TrimPrefix(counter.CounterBin, "0x"))
+	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
 	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz)

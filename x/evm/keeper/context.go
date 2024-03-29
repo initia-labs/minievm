@@ -10,6 +10,7 @@ import (
 	"github.com/holiman/uint256"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -222,7 +223,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		return nil, nil, err
 	}
 
-	retHex := common.Bytes2Hex(retBz)
+	retHex := hexutil.Encode(retBz)
 	logs := types.NewLogs(stateDB.Logs())
 
 	// emit action events
@@ -304,7 +305,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 		return nil, common.Address{}, err
 	}
 
-	retHex := common.Bytes2Hex(retBz)
+	retHex := hexutil.Encode(retBz)
 	logs := types.NewLogs(stateDB.Logs())
 
 	// emit action events

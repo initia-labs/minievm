@@ -1,11 +1,10 @@
 package keeper_test
 
 import (
-	"encoding/hex"
-	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/holiman/uint256"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/keeper"
@@ -17,12 +16,10 @@ func Test_MsgServer_Create(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
-	counterBin := strings.TrimPrefix(counter.CounterBin, "0x")
-
 	msgServer := keeper.NewMsgServerImpl(&input.EVMKeeper)
 	res, err := msgServer.Create(ctx, &types.MsgCreate{
 		Sender: addr.String(),
-		Code:   counterBin,
+		Code:   counter.CounterBin,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, res.Result)
@@ -37,7 +34,7 @@ func Test_MsgServer_Create(t *testing.T) {
 	// allowed
 	res, err = msgServer.Create(ctx, &types.MsgCreate{
 		Sender: addr.String(),
-		Code:   counterBin,
+		Code:   counter.CounterBin,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, res.Result)
@@ -47,7 +44,7 @@ func Test_MsgServer_Create(t *testing.T) {
 	_, _, addr = keyPubAddr()
 	_, err = msgServer.Create(ctx, &types.MsgCreate{
 		Sender: addr.String(),
-		Code:   counterBin,
+		Code:   counter.CounterBin,
 	})
 	require.Error(t, err)
 }
@@ -57,7 +54,7 @@ func Test_MsgServer_Call(t *testing.T) {
 	_, _, addr := keyPubAddr()
 	caller := common.BytesToAddress(addr.Bytes())
 
-	counterBz, err := hex.DecodeString(strings.TrimPrefix(counter.CounterBin, "0x"))
+	counterBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
 	retBz, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz)
@@ -83,10 +80,10 @@ func Test_MsgServer_Call(t *testing.T) {
 	res, err := msgServer.Call(ctx, &types.MsgCall{
 		Sender:       addr.String(),
 		ContractAddr: contractAddr.Hex(),
-		Input:        common.Bytes2Hex(inputBz),
+		Input:        hexutil.Encode(inputBz),
 	})
 	require.NoError(t, err)
-	require.Empty(t, res.Result)
+	require.Equal(t, "0x", res.Result)
 	require.NotEmpty(t, res.Logs)
 
 	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz)

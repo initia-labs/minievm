@@ -3,11 +3,11 @@ package cosmosprecompile
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	"cosmossdk.io/core/address"
@@ -104,7 +104,7 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 
 		// check address length
 		if len(addr) != common.AddressLength {
-			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrInvalidAddressLength.Wrap(common.Bytes2Hex(addr))
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrInvalidAddressLength.Wrap(hexutil.Encode(addr))
 		}
 
 		resBz, err = method.Outputs.Pack(common.BytesToAddress(addr))
@@ -156,8 +156,8 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			}
 
 			return nil, ctx.GasMeter().GasConsumedToLimit(), sdkerrors.ErrUnauthorized.Wrapf(
-				"required signer: `0x%s`, given signer: `%s`",
-				hex.EncodeToString(signer), caller.Address(),
+				"required signer: `%s`, given signer: `%s`",
+				hexutil.Encode(signer), caller.Address(),
 			)
 		}
 
