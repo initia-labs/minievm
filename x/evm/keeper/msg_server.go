@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -35,7 +36,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	if len(msg.Code) == 0 {
 		return nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
 	}
-	codeBz, err := hex.DecodeString(msg.Code)
+	codeBz, err := hex.DecodeString(strings.TrimPrefix(msg.Code, "0x"))
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
@@ -92,7 +93,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	if err != nil {
 		return nil, err
 	}
-	inputBz, err := hex.DecodeString(msg.Input)
+	inputBz, err := hex.DecodeString(strings.TrimPrefix(msg.Input, "0x"))
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}

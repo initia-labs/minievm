@@ -46,7 +46,7 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		return nil, err
 	}
 
-	inputBz, err := hex.DecodeString(req.Input)
+	inputBz, err := hex.DecodeString(strings.TrimPrefix(req.Input, "0x"))
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,12 @@ func (qs *queryServerImpl) State(ctx context.Context, req *types.QueryStateReque
 		return nil, err
 	}
 
-	state := stateDB.GetState(common.Address(contractAddr.Bytes()), common.HexToHash(req.Key))
+	keyBz, err := hex.DecodeString(strings.TrimPrefix(req.Key, "0x"))
+	if err != nil {
+		return nil, err
+	}
+
+	state := stateDB.GetState(common.Address(contractAddr.Bytes()), common.BytesToHash(keyBz))
 	return &types.QueryStateResponse{
 		Value: state.Hex(),
 	}, nil
