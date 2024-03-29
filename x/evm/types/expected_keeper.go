@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -57,4 +58,8 @@ type IERC20Keeper interface {
 
 type WithContext interface {
 	WithContext(ctx context.Context) vm.PrecompiledContract
+}
+
+type GRPCRouter interface {
+	Route(path string) baseapp.GRPCQueryHandler
 }

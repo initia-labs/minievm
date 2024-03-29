@@ -34,5 +34,15 @@ interface ICosmos {
     //    ]
     // }
     //
-    function execute_cosmos_message(string memory msg) external;
+    function execute_cosmos(string memory msg) external;
+
+    // query a whitelisted cosmos querys.
+    //
+    // example)
+    // path: "/slinky.oracle.v1.Query/GetPrices"
+    // req: {
+    //    "currency_pair_ids": ["BITCOIN/USD", "ETHEREUM/USD"]
+    // }
+    //
+    function query_cosmos(string memory path, string memory req) external returns (string memory result);
 }

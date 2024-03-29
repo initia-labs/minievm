@@ -10,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+
 	"cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -31,16 +33,32 @@ type CosmosPrecompile struct {
 	cdc codec.Codec
 	ac  address.Codec
 
-	ak types.AccountKeeper
+	ak         types.AccountKeeper
+	grpcRouter types.GRPCRouter
+
+	queryWhitelist types.QueryCosmosWhitelist
 }
 
-func NewCosmosPrecompile(cdc codec.Codec, ac address.Codec, ak types.AccountKeeper) (CosmosPrecompile, error) {
+func NewCosmosPrecompile(
+	cdc codec.Codec,
+	ac address.Codec,
+	ak types.AccountKeeper,
+	grpcRouter types.GRPCRouter,
+	queryWhitelist types.QueryCosmosWhitelist,
+) (CosmosPrecompile, error) {
 	abi, err := i_cosmos.ICosmosMetaData.GetAbi()
 	if err != nil {
 		return CosmosPrecompile{}, err
 	}
 
-	return CosmosPrecompile{ABI: abi, cdc: cdc, ac: ac, ak: ak}, nil
+	return CosmosPrecompile{
+		ABI:            abi,
+		cdc:            cdc,
+		ac:             ac,
+		ak:             ak,
+		grpcRouter:     grpcRouter,
+		queryWhitelist: queryWhitelist,
+	}, nil
 }
 
 func (e CosmosPrecompile) WithContext(ctx context.Context) vm.PrecompiledContract {
@@ -49,9 +67,10 @@ func (e CosmosPrecompile) WithContext(ctx context.Context) vm.PrecompiledContrac
 }
 
 const (
-	METHOD_TO_COSMOS_ADDRESS      = "to_cosmos_address"
-	METHOD_TO_EVM_ADDRESS         = "to_evm_address"
-	METHOD_EXECUTE_COSMOS_MESSAGE = "execute_cosmos_message"
+	METHOD_TO_COSMOS_ADDRESS = "to_cosmos_address"
+	METHOD_TO_EVM_ADDRESS    = "to_evm_address"
+	METHOD_EXECUTE_COSMOS    = "execute_cosmos"
+	METHOD_QUERY_COSMOS      = "query_cosmos"
 )
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
@@ -111,20 +130,20 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
-	case METHOD_EXECUTE_COSMOS_MESSAGE:
-		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_MESSAGE_GAS, "execute_cosmos_message")
+	case METHOD_EXECUTE_COSMOS:
+		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_GAS, "execute_cosmos")
 
 		if readOnly {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
 
-		var executeCosmosMessageArguments ExecuteCosmosMessageArguments
-		if err := method.Inputs.Copy(&executeCosmosMessageArguments, args); err != nil {
+		var executeCosmosArguments ExecuteCosmosArguments
+		if err := method.Inputs.Copy(&executeCosmosArguments, args); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
 		var sdkMsg sdk.Msg
-		if err := e.cdc.UnmarshalInterfaceJSON([]byte(executeCosmosMessageArguments.Msg), &sdkMsg); err != nil {
+		if err := e.cdc.UnmarshalInterfaceJSON([]byte(executeCosmosArguments.Msg), &sdkMsg); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
@@ -163,6 +182,41 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 
 		messages := ctx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
 		*messages = append(*messages, sdkMsg)
+	case METHOD_QUERY_COSMOS:
+		ctx.GasMeter().ConsumeGas(QUERY_COSMOS_GAS, "query_cosmos")
+
+		var queryCosmosArguments QueryCosmosArguments
+		if err := method.Inputs.Copy(&queryCosmosArguments, args); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		route := e.grpcRouter.Route(queryCosmosArguments.Path)
+		if route == nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNotSupportedCosmosQuery.Wrap(queryCosmosArguments.Path)
+		}
+
+		protoSet, found := e.queryWhitelist[queryCosmosArguments.Path]
+		if !found {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNotSupportedCosmosQuery.Wrap(queryCosmosArguments.Path)
+		}
+
+		reqData, err := types.ConvertJSONToProto(e.cdc, protoSet.Request, []byte(queryCosmosArguments.Req))
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		res, err := route(ctx, &abci.RequestQuery{
+			Data: reqData,
+			Path: queryCosmosArguments.Path,
+		})
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), err
+		}
+
+		resBz, err = types.ConvertProtoToJSON(e.cdc, protoSet.Response, res.Value)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), err
+		}
 
 	default:
 		return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrUnknownPrecompileMethod.Wrap(method.Name)

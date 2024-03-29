@@ -24,7 +24,7 @@ func (k *Keeper) loadPrecompiles() error {
 		return err
 	}
 
-	cosmosPrecompile, err := cosmosprecompile.NewCosmosPrecompile(k.cdc, k.ac, k.accountKeeper)
+	cosmosPrecompile, err := cosmosprecompile.NewCosmosPrecompile(k.cdc, k.ac, k.accountKeeper, k.grpcRouter, k.queryCosmosWhitelist)
 	if err != nil {
 		return err
 	}

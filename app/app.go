@@ -645,6 +645,7 @@ func NewMinitiaApp(
 		app.GRPCQueryRouter(),
 		authorityAddr,
 		evmConfig,
+		evmtypes.DefaultQueryCosmosWhitelist(),
 	)
 	*erc20Keeper = *app.EVMKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
 

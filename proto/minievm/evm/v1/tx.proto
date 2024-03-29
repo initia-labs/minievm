@@ -39,7 +39,7 @@ message MsgCreate {
 message MsgCreateResponse {
   string result = 1;
 
-  // hex encoded address (0x prefixed)
+  // hex encoded address
   string contract_addr = 2;
 }
 
@@ -52,7 +52,7 @@ message MsgCall {
   string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   // ContractAddr is the contract address to be executed.
-  // It can be cosmos address or hex encoded address (0x prefixed).
+  // It can be cosmos address or hex encoded address.
   string contract_addr = 2;
 
   // Hex encoded execution input bytes.

@@ -307,6 +307,7 @@ func _createTestInput(
 		queryRouter,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		evmconfig.DefaultEVMConfig(),
+		evmtypes.DefaultQueryCosmosWhitelist(),
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))

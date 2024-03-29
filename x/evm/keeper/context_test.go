@@ -6,6 +6,8 @@ import (
 
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -100,7 +102,7 @@ func Test_ExecuteCosmosMessage(t *testing.T) {
 	abi, err := i_cosmos.ICosmosMetaData.GetAbi()
 	require.NoError(t, err)
 
-	inputBz, err := abi.Pack("execute_cosmos_message", fmt.Sprintf(`
+	inputBz, err := abi.Pack("execute_cosmos", fmt.Sprintf(`
 		{
 			"@type": "/cosmos.bank.v1beta1.MsgSend",
 			"from_address": "%s",
@@ -120,4 +122,37 @@ func Test_ExecuteCosmosMessage(t *testing.T) {
 
 	balance := input.BankKeeper.GetBalance(ctx, addr2, "bar")
 	require.Equal(t, math.NewInt(100), balance.Amount)
+}
+
+func Test_QueryCosmosMessage(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
+	require.NoError(t, err)
+
+	// mint native coin
+	err = erc20Keeper.MintCoins(ctx, addr, sdk.NewCoins(
+		sdk.NewCoin("bar", math.NewInt(200)),
+	))
+	require.NoError(t, err)
+
+	abi, err := i_cosmos.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("query_cosmos", "/cosmos.bank.v1beta1.Query/Balance", fmt.Sprintf(`{
+		"address": "%s",
+		"denom": "bar"
+	}`, addr))
+	require.NoError(t, err)
+
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz)
+	require.NoError(t, err)
+
+	var ret banktypes.QueryBalanceResponse
+	err = input.EncodingConfig.Codec.UnmarshalJSON(retBz, &ret)
+	require.NoError(t, err)
+
+	require.Equal(t, math.NewInt(200), ret.Balance.Amount)
 }

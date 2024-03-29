@@ -44,7 +44,7 @@ import (
 	"github.com/initia-labs/minievm/x/bank"
 	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
-	EVMConfig "github.com/initia-labs/minievm/x/evm/config"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
@@ -298,7 +298,8 @@ func _createTestInput(
 		msgRouter,
 		queryRouter,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		EVMConfig.DefaultEVMConfig(),
+		evmconfig.DefaultEVMConfig(),
+		evmtypes.DefaultQueryCosmosWhitelist(),
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))

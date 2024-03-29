@@ -363,7 +363,7 @@ var xxx_messageInfo_QueryContractAddrByDenomResponse proto.InternalMessageInfo
 // QueryDenomRequest is the request type for the Query/Denom RPC
 // method
 type QueryDenomRequest struct {
-	// It can be cosmos address or hex encoded address (0x prefixed).
+	// It can be cosmos address or hex encoded address.
 	ContractAddr string `protobuf:"bytes,1,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
 }
 

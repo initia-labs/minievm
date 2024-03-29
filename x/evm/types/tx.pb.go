@@ -90,7 +90,7 @@ func (m *MsgCreate) GetCode() string {
 // MsgCreateResponse defines the Msg/Create response type.
 type MsgCreateResponse struct {
 	Result string `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
-	// hex encoded address (0x prefixed)
+	// hex encoded address
 	ContractAddr string `protobuf:"bytes,2,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
 }
 
@@ -146,7 +146,7 @@ type MsgCall struct {
 	// Sender is the that actor that signed the messages
 	Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	// ContractAddr is the contract address to be executed.
-	// It can be cosmos address or hex encoded address (0x prefixed).
+	// It can be cosmos address or hex encoded address.
 	ContractAddr string `protobuf:"bytes,2,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
 	// Hex encoded execution input bytes.
 	Input string `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`

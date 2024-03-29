@@ -36646,6 +36646,8 @@ paths:
                     the LOG opcode and stored/indexed by the node.
               trace_output:
                 type: string
+              error:
+                type: string
             title: |-
               QueryCallResponse is the response type for the Query/Call RPC
               method
@@ -36683,7 +36685,7 @@ paths:
                 title: sender address
               contract_addr:
                 type: string
-                description: It can be cosmos address or hex encoded address (0x prefixed).
+                description: It can be cosmos address or hex encoded address.
               input:
                 type: string
                 title: hex encoded call input
@@ -36707,7 +36709,6 @@ paths:
             properties:
               code:
                 type: string
-                format: byte
             title: |-
               QueryCodeResponse is the response type for the Query/Code RPC
               method
@@ -36825,7 +36826,7 @@ paths:
                       format: byte
       parameters:
         - name: contract_addr
-          description: It can be cosmos address or hex encoded address (0x prefixed).
+          description: It can be cosmos address or hex encoded address.
           in: path
           required: true
           type: string
@@ -36928,7 +36929,7 @@ paths:
                       format: byte
       parameters:
         - name: contract_addr
-          description: It can be cosmos address or hex encoded address (0x prefixed).
+          description: It can be cosmos address or hex encoded address.
           in: path
           required: true
           type: string
@@ -61132,7 +61133,7 @@ definitions:
         title: sender address
       contract_addr:
         type: string
-        description: It can be cosmos address or hex encoded address (0x prefixed).
+        description: It can be cosmos address or hex encoded address.
       input:
         type: string
         title: hex encoded call input
@@ -61172,6 +61173,8 @@ definitions:
             the LOG opcode and stored/indexed by the node.
       trace_output:
         type: string
+      error:
+        type: string
     title: |-
       QueryCallResponse is the response type for the Query/Call RPC
       method
@@ -61180,7 +61183,6 @@ definitions:
     properties:
       code:
         type: string
-        format: byte
     title: |-
       QueryCodeResponse is the response type for the Query/Code RPC
       method

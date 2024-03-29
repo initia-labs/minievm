@@ -26,9 +26,9 @@ type Keeper struct {
 	erc20Keeper         types.IERC20Keeper
 	erc20StoresKeeper   types.IERC20StoresKeeper
 
-	// grpc server routers
+	// grpc routers
 	msgRouter  baseapp.MessageRouter
-	grpcRouter *baseapp.GRPCQueryRouter
+	grpcRouter types.GRPCRouter
 
 	config evmconfig.EVMConfig
 
@@ -47,7 +47,8 @@ type Keeper struct {
 	ERC20DenomsByContractAddr collections.Map[[]byte, string]
 	ERC20ContractAddrsByDenom collections.Map[string, []byte]
 
-	precompiles precompiles
+	precompiles          precompiles
+	queryCosmosWhitelist types.QueryCosmosWhitelist
 }
 
 func NewKeeper(
@@ -59,16 +60,17 @@ func NewKeeper(
 	msgRouter baseapp.MessageRouter,
 	grpcRouter *baseapp.GRPCQueryRouter,
 	authority string,
-	EVMConfig evmconfig.EVMConfig,
+	evmConfig evmconfig.EVMConfig,
+	queryCosmosWhitelist types.QueryCosmosWhitelist,
 ) *Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
 
-	if EVMConfig.ContractSimulationGasLimit == 0 {
-		EVMConfig.ContractSimulationGasLimit = evmconfig.DefaultContractSimulationGasLimit
+	if evmConfig.ContractSimulationGasLimit == 0 {
+		evmConfig.ContractSimulationGasLimit = evmconfig.DefaultContractSimulationGasLimit
 	}
 
-	if EVMConfig.ContractQueryGasLimit == 0 {
-		EVMConfig.ContractQueryGasLimit = evmconfig.DefaultContractQueryGasLimit
+	if evmConfig.ContractQueryGasLimit == 0 {
+		evmConfig.ContractQueryGasLimit = evmconfig.DefaultContractQueryGasLimit
 	}
 
 	k := &Keeper{
@@ -82,7 +84,7 @@ func NewKeeper(
 		msgRouter:  msgRouter,
 		grpcRouter: grpcRouter,
 
-		config: EVMConfig,
+		config: evmConfig,
 
 		Params:  collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		VMRoot:  collections.NewItem(sb, types.VMRootKey, "vm_root", collections.BytesValue),
@@ -93,7 +95,8 @@ func NewKeeper(
 		ERC20DenomsByContractAddr: collections.NewMap(sb, types.ERC20DenomsByContractAddrPrefix, "erc20_denoms_by_contract_addr", collections.BytesKey, collections.StringValue),
 		ERC20ContractAddrsByDenom: collections.NewMap(sb, types.ERC20ContractAddrsByDenomPrefix, "erc20_contract_addrs_by_denom", collections.StringKey, collections.BytesValue),
 
-		precompiles: []precompile{},
+		precompiles:          []precompile{},
+		queryCosmosWhitelist: queryCosmosWhitelist,
 	}
 
 	// setup schema

@@ -116,7 +116,7 @@ message QueryContractAddrByDenomResponse {
 // QueryDenomRequest is the request type for the Query/Denom RPC
 // method
 message QueryDenomRequest {
-  // It can be cosmos address or hex encoded address (0x prefixed).
+  // It can be cosmos address or hex encoded address.
   string contract_addr = 1;
 }
 

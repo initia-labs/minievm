@@ -23,4 +23,5 @@ var (
 	ErrEmptyContractAddress      = errorsmod.Register(ModuleName, 15, "Empty contract address")
 	ErrPrecompileFailed          = errorsmod.Register(ModuleName, 16, "Precompile failed")
 	ErrNotSupportedCosmosMessage = errorsmod.Register(ModuleName, 17, "Not supported cosmos message")
+	ErrNotSupportedCosmosQuery   = errorsmod.Register(ModuleName, 18, "Not supported cosmos query")
 )

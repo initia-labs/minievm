@@ -42,7 +42,7 @@ import (
 
 	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
-	EVMConfig "github.com/initia-labs/minievm/x/evm/config"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
@@ -261,7 +261,13 @@ func _createTestInput(
 		msgRouter,
 		queryRouter,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		EVMConfig.DefaultEVMConfig(),
+		evmconfig.DefaultEVMConfig(),
+		evmtypes.QueryCosmosWhitelist{
+			"/cosmos.bank.v1beta1.Query/Balance": {
+				Request:  &banktypes.QueryBalanceRequest{},
+				Response: &banktypes.QueryBalanceResponse{},
+			},
+		},
 	)
 	evmParams := evmtypes.DefaultParams()
 	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
