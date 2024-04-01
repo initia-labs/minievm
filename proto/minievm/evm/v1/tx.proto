@@ -13,8 +13,10 @@ option go_package = "github.com/initia-labs/minievm/x/evm/types";
 service Msg {
   option (cosmos.msg.v1.service) = true;
 
-  // Create defines a method submitting Ethereum contract byte code.
+  // Create defines a method calling create of EVM.
   rpc Create(MsgCreate) returns (MsgCreateResponse);
+  // Create2 defines a method calling create2 of EVM.
+  rpc Create2(MsgCreate2) returns (MsgCreate2Response);
   // Call defines a method submitting Ethereum transactions.
   rpc Call(MsgCall) returns (MsgCallResponse);
   // UpdateParams defines an operation for updating the x/evm module
@@ -22,8 +24,7 @@ service Msg {
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
 }
 
-// MsgCreate is a message to create a new contract using code as deployment
-// code.
+// MsgCreate is a message to create a contract with the CREATE opcode.
 message MsgCreate {
   option (cosmos.msg.v1.signer) = "sender";
   option (amino.name)           = "evm/MsgCreate";
@@ -37,6 +38,29 @@ message MsgCreate {
 
 // MsgCreateResponse defines the Msg/Create response type.
 message MsgCreateResponse {
+  string result = 1;
+
+  // hex encoded address
+  string contract_addr = 2;
+}
+
+// MsgCreate2 is a message to create a contract with the CREATE2 opcode.
+message MsgCreate2 {
+  option (cosmos.msg.v1.signer) = "sender";
+  option (amino.name)           = "evm/MsgCreate2";
+
+  // Sender is the that actor that signed the messages
+  string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // Code is hex encoded raw contract bytes code.
+  string code = 2;
+  
+  // Salt is a random value to distinguish contract creation.
+  uint64 salt = 3;
+}
+
+// MsgCreate2Response defines the Msg/Create2 response type.
+message MsgCreate2Response {
   string result = 1;
 
   // hex encoded address

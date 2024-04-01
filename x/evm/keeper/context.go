@@ -259,11 +259,18 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 
 // EVMCreate creates a new contract with the given code.
 func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []byte) ([]byte, common.Address, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, nil)
+	return k.EVMCreateWithTracer(ctx, caller, codeBz, nil, nil)
+}
+
+// EVMCreate creates a new contract with the given code.
+func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, salt uint64) ([]byte, common.Address, error) {
+	return k.EVMCreateWithTracer(ctx, caller, codeBz, &salt, nil)
 }
 
 // EVMCreateWithTracer creates a new contract with the given code and tracer.
-func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, tracer *tracing.Hooks) ([]byte, common.Address, error) {
+// if salt is nil, it will create a contract with the CREATE opcode.
+// if salt is not nil, it will create a contract with the CREATE2 opcode.
+func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, salt *uint64, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, err error) {
 	ctx, evm, err := k.createEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, common.Address{}, err
@@ -271,12 +278,24 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
-	retBz, contractAddr, gasRemaining, err := evm.Create(
-		vm.AccountRef(caller),
-		codeBz,
-		gasBalance,
-		uint256.NewInt(0),
-	)
+
+	var gasRemaining uint64
+	if salt == nil {
+		retBz, contractAddr, gasRemaining, err = evm.Create(
+			vm.AccountRef(caller),
+			codeBz,
+			gasBalance,
+			uint256.NewInt(0),
+		)
+	} else {
+		retBz, contractAddr, gasRemaining, err = evm.Create2(
+			vm.AccountRef(caller),
+			codeBz,
+			gasBalance,
+			uint256.NewInt(0),
+			uint256.NewInt(*salt),
+		)
+	}
 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
@@ -339,7 +358,8 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	return retBz, contractAddr, nil
 }
 
-// nextContractAddress returns the next contract address which will be created by the given caller.
+// nextContractAddress returns the next contract address which will be created by the given caller
+// in CREATE opcode.
 func (k Keeper) nextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
 	stateDB, err := k.newStateDB(ctx)
 	if err != nil {

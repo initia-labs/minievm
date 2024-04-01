@@ -31,8 +31,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MsgCreate is a message to create a new contract using code as deployment
-// code.
+// MsgCreate is a message to create a contract with the CREATE opcode.
 type MsgCreate struct {
 	// Sender is the that actor that signed the messages
 	Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -141,6 +140,124 @@ func (m *MsgCreateResponse) GetContractAddr() string {
 	return ""
 }
 
+// MsgCreate2 is a message to create a contract with the CREATE2 opcode.
+type MsgCreate2 struct {
+	// Sender is the that actor that signed the messages
+	Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
+	// Code is hex encoded raw contract bytes code.
+	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	// Salt is a random value to distinguish contract creation.
+	Salt uint64 `protobuf:"varint,3,opt,name=salt,proto3" json:"salt,omitempty"`
+}
+
+func (m *MsgCreate2) Reset()         { *m = MsgCreate2{} }
+func (m *MsgCreate2) String() string { return proto.CompactTextString(m) }
+func (*MsgCreate2) ProtoMessage()    {}
+func (*MsgCreate2) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d925564029372f6a, []int{2}
+}
+func (m *MsgCreate2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCreate2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCreate2.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCreate2) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCreate2.Merge(m, src)
+}
+func (m *MsgCreate2) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCreate2) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCreate2.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCreate2 proto.InternalMessageInfo
+
+func (m *MsgCreate2) GetSender() string {
+	if m != nil {
+		return m.Sender
+	}
+	return ""
+}
+
+func (m *MsgCreate2) GetCode() string {
+	if m != nil {
+		return m.Code
+	}
+	return ""
+}
+
+func (m *MsgCreate2) GetSalt() uint64 {
+	if m != nil {
+		return m.Salt
+	}
+	return 0
+}
+
+// MsgCreate2Response defines the Msg/Create2 response type.
+type MsgCreate2Response struct {
+	Result string `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	// hex encoded address
+	ContractAddr string `protobuf:"bytes,2,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
+}
+
+func (m *MsgCreate2Response) Reset()         { *m = MsgCreate2Response{} }
+func (m *MsgCreate2Response) String() string { return proto.CompactTextString(m) }
+func (*MsgCreate2Response) ProtoMessage()    {}
+func (*MsgCreate2Response) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d925564029372f6a, []int{3}
+}
+func (m *MsgCreate2Response) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCreate2Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCreate2Response.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCreate2Response) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCreate2Response.Merge(m, src)
+}
+func (m *MsgCreate2Response) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCreate2Response) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCreate2Response.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCreate2Response proto.InternalMessageInfo
+
+func (m *MsgCreate2Response) GetResult() string {
+	if m != nil {
+		return m.Result
+	}
+	return ""
+}
+
+func (m *MsgCreate2Response) GetContractAddr() string {
+	if m != nil {
+		return m.ContractAddr
+	}
+	return ""
+}
+
 // MsgCall is a message to call an Ethereum contract.
 type MsgCall struct {
 	// Sender is the that actor that signed the messages
@@ -156,7 +273,7 @@ func (m *MsgCall) Reset()         { *m = MsgCall{} }
 func (m *MsgCall) String() string { return proto.CompactTextString(m) }
 func (*MsgCall) ProtoMessage()    {}
 func (*MsgCall) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d925564029372f6a, []int{2}
+	return fileDescriptor_d925564029372f6a, []int{4}
 }
 func (m *MsgCall) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -216,7 +333,7 @@ func (m *MsgCallResponse) Reset()         { *m = MsgCallResponse{} }
 func (m *MsgCallResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgCallResponse) ProtoMessage()    {}
 func (*MsgCallResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d925564029372f6a, []int{3}
+	return fileDescriptor_d925564029372f6a, []int{5}
 }
 func (m *MsgCallResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -274,7 +391,7 @@ func (m *MsgUpdateParams) Reset()         { *m = MsgUpdateParams{} }
 func (m *MsgUpdateParams) String() string { return proto.CompactTextString(m) }
 func (*MsgUpdateParams) ProtoMessage()    {}
 func (*MsgUpdateParams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d925564029372f6a, []int{4}
+	return fileDescriptor_d925564029372f6a, []int{6}
 }
 func (m *MsgUpdateParams) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -326,7 +443,7 @@ func (m *MsgUpdateParamsResponse) Reset()         { *m = MsgUpdateParamsResponse
 func (m *MsgUpdateParamsResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgUpdateParamsResponse) ProtoMessage()    {}
 func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d925564029372f6a, []int{5}
+	return fileDescriptor_d925564029372f6a, []int{7}
 }
 func (m *MsgUpdateParamsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -358,6 +475,8 @@ var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*MsgCreate)(nil), "minievm.evm.v1.MsgCreate")
 	proto.RegisterType((*MsgCreateResponse)(nil), "minievm.evm.v1.MsgCreateResponse")
+	proto.RegisterType((*MsgCreate2)(nil), "minievm.evm.v1.MsgCreate2")
+	proto.RegisterType((*MsgCreate2Response)(nil), "minievm.evm.v1.MsgCreate2Response")
 	proto.RegisterType((*MsgCall)(nil), "minievm.evm.v1.MsgCall")
 	proto.RegisterType((*MsgCallResponse)(nil), "minievm.evm.v1.MsgCallResponse")
 	proto.RegisterType((*MsgUpdateParams)(nil), "minievm.evm.v1.MsgUpdateParams")
@@ -367,41 +486,44 @@ func init() {
 func init() { proto.RegisterFile("minievm/evm/v1/tx.proto", fileDescriptor_d925564029372f6a) }
 
 var fileDescriptor_d925564029372f6a = []byte{
-	// 535 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0xc1, 0x6b, 0x13, 0x4f,
-	0x14, 0xce, 0x36, 0x69, 0x7e, 0x64, 0xd2, 0xf6, 0x47, 0xc7, 0xd0, 0x24, 0x2b, 0x6e, 0xeb, 0x7a,
-	0xb0, 0x04, 0x9a, 0xb5, 0x11, 0x04, 0x73, 0xd2, 0x28, 0x9e, 0x2c, 0x94, 0x88, 0x20, 0x82, 0x94,
-	0xc9, 0xee, 0x30, 0x1d, 0xd8, 0xdd, 0x59, 0x66, 0x26, 0xa1, 0xbd, 0x89, 0x47, 0x4f, 0x82, 0xfe,
-	0x11, 0x1e, 0x73, 0xf0, 0x8f, 0xe8, 0xb1, 0x78, 0xf2, 0x24, 0x92, 0x1c, 0x72, 0xf5, 0x4f, 0x90,
-	0x99, 0x9d, 0xdd, 0xb6, 0x4b, 0x4b, 0xc4, 0xc3, 0x86, 0x79, 0xf3, 0xbe, 0xf7, 0x7d, 0xef, 0x7b,
-	0x99, 0x07, 0x9a, 0x11, 0x8d, 0x29, 0x9e, 0x44, 0x9e, 0xfa, 0x26, 0xfb, 0x9e, 0x3c, 0xe9, 0x26,
-	0x9c, 0x49, 0x06, 0x37, 0x4c, 0xa2, 0xab, 0xbe, 0xc9, 0xbe, 0xbd, 0x89, 0x22, 0x1a, 0x33, 0x4f,
-	0xff, 0xa6, 0x10, 0xbb, 0xe9, 0x33, 0x11, 0x31, 0xe1, 0x45, 0x82, 0xa8, 0xd2, 0x48, 0x10, 0x93,
-	0x68, 0xa7, 0x89, 0x23, 0x1d, 0x79, 0x69, 0x60, 0x52, 0x0d, 0xc2, 0x08, 0x4b, 0xef, 0xd5, 0xc9,
-	0xdc, 0xda, 0xc5, 0x2e, 0x4e, 0x13, 0x6c, 0x2a, 0xdc, 0x04, 0xd4, 0x0e, 0x04, 0x79, 0xc6, 0x31,
-	0x92, 0x18, 0x3e, 0x00, 0x55, 0x81, 0xe3, 0x00, 0xf3, 0x96, 0xb5, 0x63, 0xed, 0xd6, 0x06, 0xad,
-	0xef, 0xdf, 0xf6, 0x1a, 0x46, 0xe0, 0x69, 0x10, 0x70, 0x2c, 0xc4, 0x2b, 0xc9, 0x69, 0x4c, 0x86,
-	0x06, 0x07, 0x21, 0xa8, 0xf8, 0x2c, 0xc0, 0xad, 0x15, 0x85, 0x1f, 0xea, 0x73, 0xff, 0xce, 0x87,
-	0xc5, 0xb4, 0x63, 0x00, 0x1f, 0x17, 0xd3, 0xce, 0xba, 0x92, 0xcd, 0x45, 0xdc, 0x43, 0xb0, 0x99,
-	0x07, 0x43, 0x2c, 0x12, 0x16, 0x0b, 0x0c, 0xb7, 0x40, 0x95, 0x63, 0x31, 0x0e, 0x65, 0xaa, 0x3c,
-	0x34, 0x11, 0xbc, 0x07, 0xd6, 0x7d, 0x16, 0x4b, 0x8e, 0x7c, 0x79, 0x84, 0x82, 0x80, 0x1b, 0xa1,
-	0xb5, 0xec, 0x52, 0x75, 0xe5, 0x7e, 0xb6, 0xc0, 0x7f, 0x8a, 0x12, 0x85, 0xe1, 0x3f, 0x58, 0xf8,
-	0x1b, 0x09, 0xd8, 0x00, 0xab, 0x34, 0x4e, 0xc6, 0xb2, 0x55, 0xd6, 0xc9, 0x34, 0xe8, 0xdf, 0x2e,
-	0x38, 0xad, 0x67, 0x4e, 0x51, 0x18, 0xba, 0xef, 0xc0, 0xff, 0xe6, 0xb8, 0xd4, 0x65, 0x0f, 0x54,
-	0x42, 0x46, 0x44, 0x6b, 0x65, 0xa7, 0xbc, 0x5b, 0xef, 0xdd, 0xea, 0x5e, 0x7d, 0x1c, 0xdd, 0x97,
-	0x8c, 0x0c, 0x6a, 0x67, 0x3f, 0xb7, 0x4b, 0x5f, 0x17, 0xd3, 0x8e, 0x35, 0xd4, 0x58, 0xf7, 0x8b,
-	0xa5, 0xf9, 0x5f, 0x27, 0x01, 0x92, 0xf8, 0x10, 0x71, 0x14, 0x09, 0xf8, 0x08, 0xd4, 0xd0, 0x58,
-	0x1e, 0x33, 0x4e, 0xe5, 0xe9, 0x52, 0xff, 0x17, 0x50, 0xf8, 0x18, 0x54, 0x13, 0xcd, 0xa0, 0xbd,
-	0xd7, 0x7b, 0x5b, 0xc5, 0x0e, 0x52, 0xfe, 0xcb, 0x4d, 0x98, 0x82, 0xfe, 0x86, 0x1a, 0xc1, 0x05,
-	0x95, 0xdb, 0x06, 0xcd, 0x42, 0x57, 0x99, 0xfb, 0xde, 0x6f, 0x0b, 0x94, 0x0f, 0x04, 0x81, 0x2f,
-	0x40, 0xd5, 0xbc, 0xb7, 0x76, 0x51, 0x27, 0x7f, 0x18, 0xf6, 0xdd, 0x1b, 0x53, 0xf9, 0x34, 0x9f,
-	0x80, 0x8a, 0xfe, 0xcb, 0x9b, 0xd7, 0x41, 0x51, 0x18, 0xda, 0xdb, 0x37, 0x24, 0x72, 0x86, 0x37,
-	0x60, 0xed, 0xca, 0xfc, 0xae, 0x2b, 0xb8, 0x0c, 0xb0, 0xef, 0x2f, 0x01, 0x64, 0xcc, 0xf6, 0xea,
-	0x7b, 0x35, 0xa5, 0xc1, 0xf3, 0xb3, 0x99, 0x63, 0x9d, 0xcf, 0x1c, 0xeb, 0xd7, 0xcc, 0xb1, 0x3e,
-	0xcd, 0x9d, 0xd2, 0xf9, 0xdc, 0x29, 0xfd, 0x98, 0x3b, 0xa5, 0xb7, 0x1d, 0x42, 0xe5, 0xf1, 0x78,
-	0xd4, 0xf5, 0x59, 0xe4, 0xd1, 0x98, 0x4a, 0x8a, 0xf6, 0x42, 0x34, 0x12, 0x5e, 0xb6, 0xaa, 0x27,
-	0x7a, 0x59, 0xf5, 0xa6, 0x8e, 0xaa, 0x7a, 0x55, 0x1f, 0xfe, 0x09, 0x00, 0x00, 0xff, 0xff, 0xc7,
-	0x2b, 0x8c, 0xd8, 0x4e, 0x04, 0x00, 0x00,
+	// 588 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x41, 0x8b, 0xd3, 0x4e,
+	0x14, 0x6f, 0xda, 0x6e, 0x97, 0xbe, 0xee, 0xf6, 0xcf, 0xe6, 0x5f, 0xb6, 0x6d, 0xc4, 0x6c, 0x8d,
+	0x07, 0x4b, 0x61, 0x1b, 0x37, 0x82, 0x60, 0x4f, 0x5a, 0x45, 0x10, 0x5c, 0x58, 0x23, 0x82, 0x08,
+	0xb2, 0x4c, 0x9b, 0x21, 0x1b, 0x48, 0x32, 0x21, 0x33, 0x2d, 0xbb, 0x37, 0xf1, 0xe0, 0xc1, 0x93,
+	0xa0, 0x1f, 0xc2, 0x63, 0x0f, 0xde, 0xfc, 0x02, 0x7b, 0x5c, 0x3c, 0x79, 0x12, 0x69, 0x0f, 0xfd,
+	0x1a, 0x92, 0xc9, 0x24, 0xdd, 0x86, 0x2d, 0x15, 0xd9, 0xc3, 0x94, 0x79, 0xef, 0xfd, 0xde, 0xef,
+	0xbd, 0xdf, 0xf4, 0xe5, 0x41, 0xdd, 0x73, 0x7c, 0x07, 0x8f, 0x3d, 0x3d, 0x3a, 0xe3, 0x03, 0x9d,
+	0x9d, 0x76, 0x83, 0x90, 0x30, 0x22, 0x57, 0x45, 0xa0, 0x1b, 0x9d, 0xf1, 0x81, 0xb2, 0x83, 0x3c,
+	0xc7, 0x27, 0x3a, 0xff, 0x8d, 0x21, 0x4a, 0x7d, 0x48, 0xa8, 0x47, 0xa8, 0xee, 0x51, 0x3b, 0x4a,
+	0xf5, 0xa8, 0x2d, 0x02, 0xcd, 0x38, 0x70, 0xcc, 0x2d, 0x3d, 0x36, 0x44, 0xa8, 0x66, 0x13, 0x9b,
+	0xc4, 0xfe, 0xe8, 0x26, 0xbc, 0x4a, 0xb6, 0x8b, 0xb3, 0x00, 0x8b, 0x0c, 0x2d, 0x80, 0xf2, 0x21,
+	0xb5, 0x1f, 0x87, 0x18, 0x31, 0x2c, 0xdf, 0x85, 0x12, 0xc5, 0xbe, 0x85, 0xc3, 0x86, 0xd4, 0x92,
+	0xda, 0xe5, 0x7e, 0xe3, 0xc7, 0xb7, 0xfd, 0x9a, 0x28, 0xf0, 0xc8, 0xb2, 0x42, 0x4c, 0xe9, 0x4b,
+	0x16, 0x3a, 0xbe, 0x6d, 0x0a, 0x9c, 0x2c, 0x43, 0x71, 0x48, 0x2c, 0xdc, 0xc8, 0x47, 0x78, 0x93,
+	0xdf, 0x7b, 0x37, 0xdf, 0xcf, 0x27, 0x1d, 0x01, 0xf8, 0x38, 0x9f, 0x74, 0xb6, 0xa3, 0xb2, 0x69,
+	0x11, 0xed, 0x08, 0x76, 0x52, 0xc3, 0xc4, 0x34, 0x20, 0x3e, 0xc5, 0xf2, 0x2e, 0x94, 0x42, 0x4c,
+	0x47, 0x2e, 0x8b, 0x2b, 0x9b, 0xc2, 0x92, 0x6f, 0xc3, 0xf6, 0x90, 0xf8, 0x2c, 0x44, 0x43, 0x76,
+	0x8c, 0x2c, 0x2b, 0x14, 0x85, 0xb6, 0x12, 0x67, 0xd4, 0x95, 0xf6, 0x41, 0x02, 0x48, 0x29, 0x8d,
+	0xeb, 0x51, 0x11, 0xf9, 0x28, 0x72, 0x59, 0xa3, 0xd0, 0x92, 0xda, 0x45, 0x93, 0xdf, 0x7b, 0x6a,
+	0x46, 0x59, 0x75, 0x49, 0x99, 0xa1, 0xbd, 0x00, 0x79, 0x61, 0x5d, 0x8f, 0xb6, 0xcf, 0x12, 0x6c,
+	0x46, 0x9c, 0xc8, 0x75, 0xff, 0x41, 0xd8, 0xdf, 0x94, 0x90, 0x6b, 0xb0, 0xe1, 0xf8, 0xc1, 0x28,
+	0x96, 0x5a, 0x36, 0x63, 0xa3, 0x77, 0x23, 0xa3, 0xb5, 0x92, 0x68, 0x45, 0xae, 0xab, 0xbd, 0x85,
+	0xff, 0xc4, 0x75, 0xad, 0x4a, 0x03, 0x8a, 0x2e, 0xb1, 0x69, 0x23, 0xdf, 0x2a, 0xb4, 0x2b, 0xc6,
+	0xff, 0xdd, 0xe5, 0xc1, 0xef, 0x3e, 0x27, 0x76, 0xbf, 0x7c, 0xfe, 0x6b, 0x2f, 0xf7, 0x75, 0x3e,
+	0xe9, 0x48, 0x26, 0xc7, 0x6a, 0x5f, 0x24, 0xce, 0xff, 0x2a, 0xb0, 0x10, 0xc3, 0x47, 0x28, 0x44,
+	0x1e, 0x95, 0xef, 0x43, 0x19, 0x8d, 0xd8, 0x09, 0x09, 0x1d, 0x76, 0xb6, 0x56, 0xff, 0x02, 0x2a,
+	0x3f, 0x80, 0x52, 0xc0, 0x19, 0xb8, 0xf6, 0x8a, 0xb1, 0x9b, 0xed, 0x20, 0xe6, 0xbf, 0xdc, 0x84,
+	0x48, 0xe8, 0x55, 0xa3, 0x27, 0x58, 0x50, 0x69, 0x4d, 0xa8, 0x67, 0xba, 0x4a, 0xd4, 0x1b, 0xdf,
+	0xf3, 0x50, 0x38, 0xa4, 0xb6, 0xfc, 0x14, 0x4a, 0xe2, 0x5b, 0x6a, 0x66, 0xeb, 0xa4, 0x93, 0xa1,
+	0xdc, 0x5a, 0x19, 0x4a, 0x5f, 0xf3, 0x19, 0x6c, 0x26, 0xe3, 0xac, 0xac, 0x44, 0x1b, 0x8a, 0xb6,
+	0x3a, 0x96, 0x52, 0x3d, 0x84, 0x22, 0x9f, 0x9e, 0xfa, 0x55, 0x58, 0xe4, 0xba, 0xca, 0xde, 0x8a,
+	0x40, 0xca, 0xf0, 0x1a, 0xb6, 0x96, 0xfe, 0x8a, 0xab, 0x12, 0x2e, 0x03, 0x94, 0x3b, 0x6b, 0x00,
+	0x09, 0xb3, 0xb2, 0xf1, 0x2e, 0x7a, 0xf0, 0xfe, 0x93, 0xf3, 0xa9, 0x2a, 0x5d, 0x4c, 0x55, 0xe9,
+	0xf7, 0x54, 0x95, 0x3e, 0xcd, 0xd4, 0xdc, 0xc5, 0x4c, 0xcd, 0xfd, 0x9c, 0xa9, 0xb9, 0x37, 0x1d,
+	0xdb, 0x61, 0x27, 0xa3, 0x41, 0x77, 0x48, 0x3c, 0xdd, 0xf1, 0x1d, 0xe6, 0xa0, 0x7d, 0x17, 0x0d,
+	0xa8, 0x9e, 0x6c, 0xb4, 0x53, 0xbe, 0xd3, 0xf8, 0x42, 0x1b, 0x94, 0xf8, 0x46, 0xbb, 0xf7, 0x27,
+	0x00, 0x00, 0xff, 0xff, 0x6e, 0xbf, 0xc6, 0x34, 0x75, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -416,8 +538,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// Create defines a method submitting Ethereum contract byte code.
+	// Create defines a method calling create of EVM.
 	Create(ctx context.Context, in *MsgCreate, opts ...grpc.CallOption) (*MsgCreateResponse, error)
+	// Create2 defines a method calling create2 of EVM.
+	Create2(ctx context.Context, in *MsgCreate2, opts ...grpc.CallOption) (*MsgCreate2Response, error)
 	// Call defines a method submitting Ethereum transactions.
 	Call(ctx context.Context, in *MsgCall, opts ...grpc.CallOption) (*MsgCallResponse, error)
 	// UpdateParams defines an operation for updating the x/evm module
@@ -436,6 +560,15 @@ func NewMsgClient(cc grpc1.ClientConn) MsgClient {
 func (c *msgClient) Create(ctx context.Context, in *MsgCreate, opts ...grpc.CallOption) (*MsgCreateResponse, error) {
 	out := new(MsgCreateResponse)
 	err := c.cc.Invoke(ctx, "/minievm.evm.v1.Msg/Create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) Create2(ctx context.Context, in *MsgCreate2, opts ...grpc.CallOption) (*MsgCreate2Response, error) {
+	out := new(MsgCreate2Response)
+	err := c.cc.Invoke(ctx, "/minievm.evm.v1.Msg/Create2", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -462,8 +595,10 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// Create defines a method submitting Ethereum contract byte code.
+	// Create defines a method calling create of EVM.
 	Create(context.Context, *MsgCreate) (*MsgCreateResponse, error)
+	// Create2 defines a method calling create2 of EVM.
+	Create2(context.Context, *MsgCreate2) (*MsgCreate2Response, error)
 	// Call defines a method submitting Ethereum transactions.
 	Call(context.Context, *MsgCall) (*MsgCallResponse, error)
 	// UpdateParams defines an operation for updating the x/evm module
@@ -477,6 +612,9 @@ type UnimplementedMsgServer struct {
 
 func (*UnimplementedMsgServer) Create(ctx context.Context, req *MsgCreate) (*MsgCreateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (*UnimplementedMsgServer) Create2(ctx context.Context, req *MsgCreate2) (*MsgCreate2Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create2 not implemented")
 }
 func (*UnimplementedMsgServer) Call(ctx context.Context, req *MsgCall) (*MsgCallResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
@@ -503,6 +641,24 @@ func _Msg_Create_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).Create(ctx, req.(*MsgCreate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_Create2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCreate2)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).Create2(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/minievm.evm.v1.Msg/Create2",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).Create2(ctx, req.(*MsgCreate2))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -550,6 +706,10 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _Msg_Create_Handler,
+		},
+		{
+			MethodName: "Create2",
+			Handler:    _Msg_Create2_Handler,
 		},
 		{
 			MethodName: "Call",
@@ -617,6 +777,85 @@ func (m *MsgCreateResponse) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *MsgCreateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ContractAddr) > 0 {
+		i -= len(m.ContractAddr)
+		copy(dAtA[i:], m.ContractAddr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ContractAddr)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Result) > 0 {
+		i -= len(m.Result)
+		copy(dAtA[i:], m.Result)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Result)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCreate2) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCreate2) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCreate2) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Salt != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.Salt))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Code) > 0 {
+		i -= len(m.Code)
+		copy(dAtA[i:], m.Code)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Code)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCreate2Response) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCreate2Response) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCreate2Response) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -818,6 +1057,43 @@ func (m *MsgCreate) Size() (n int) {
 }
 
 func (m *MsgCreateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Result)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.ContractAddr)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgCreate2) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Sender)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Code)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.Salt != 0 {
+		n += 1 + sovTx(uint64(m.Salt))
+	}
+	return n
+}
+
+func (m *MsgCreate2Response) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1045,6 +1321,253 @@ func (m *MsgCreateResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgCreateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Result = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractAddr", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ContractAddr = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCreate2) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCreate2: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCreate2: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Code", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Code = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Salt", wireType)
+			}
+			m.Salt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Salt |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCreate2Response) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCreate2Response: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCreate2Response: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

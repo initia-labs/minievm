@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/keeper"
@@ -15,6 +16,7 @@ import (
 func Test_MsgServer_Create(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
 
 	msgServer := keeper.NewMsgServerImpl(&input.EVMKeeper)
 	res, err := msgServer.Create(ctx, &types.MsgCreate{
@@ -24,6 +26,10 @@ func Test_MsgServer_Create(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, res.Result)
 	require.True(t, common.IsHexAddress(res.ContractAddr))
+
+	// check generated contract address
+	expectedContractAddr := crypto.CreateAddress(evmAddr, 0)
+	require.Equal(t, expectedContractAddr, common.HexToAddress(res.ContractAddr))
 
 	// update params to set allowed publishers
 	params := types.DefaultParams()
@@ -47,6 +53,26 @@ func Test_MsgServer_Create(t *testing.T) {
 		Code:   counter.CounterBin,
 	})
 	require.Error(t, err)
+}
+
+func Test_MsgServer_Create2(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	msgServer := keeper.NewMsgServerImpl(&input.EVMKeeper)
+	res, err := msgServer.Create2(ctx, &types.MsgCreate2{
+		Sender: addr.String(),
+		Code:   counter.CounterBin,
+		Salt:   1,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, res.Result)
+
+	// check generated contract address
+	salt := uint256.NewInt(1)
+	expectedContractAddr := crypto.CreateAddress2(evmAddr, salt.Bytes32(), crypto.Keccak256Hash(hexutil.MustDecode(counter.CounterBin)).Bytes())
+	require.Equal(t, expectedContractAddr, common.HexToAddress(res.ContractAddr))
 }
 
 func Test_MsgServer_Call(t *testing.T) {
