@@ -2,8 +2,6 @@
 
 set -eo pipefail
 
-git config --global url."https://x-access-token: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@github.com/".insteadOf "https://github.com/"
-
 # clone dependency proto files
 COSMOS_URL=github.com/cosmos/cosmos-sdk
 IBC_URL=github.com/cosmos/ibc-go
