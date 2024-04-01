@@ -3,7 +3,7 @@ package types
 const (
 	EventTypeCall   = "call"
 	EventTypeCreate = "create"
-	EventTypeLogs   = "logs"
+	EventTypeEVM    = "evm"
 
 	// erc20 events
 	EventTypeERC20Created = "erc20_created"

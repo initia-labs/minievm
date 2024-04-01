@@ -244,7 +244,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		attrs[i] = sdk.NewAttribute(types.AttributeKeyLog, string(jsonBz))
 	}
 	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeLogs,
+		types.EventTypeEVM,
 		attrs...,
 	))
 
@@ -345,7 +345,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 		attrs[i] = sdk.NewAttribute(types.AttributeKeyLog, string(jsonBz))
 	}
 	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
-		types.EventTypeLogs,
+		types.EventTypeEVM,
 		attrs...,
 	))
 
