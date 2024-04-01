@@ -88,7 +88,7 @@ func (h EVMHooks) onAckIcs20Packet(
 // 	_, err = h.execMsg(ctx, &evmtypes.MsgCall{
 // 		Sender:       data.Sender,
 // 		ContractAddr: callback.ContractAddress,
-// 		Input:        hex.EncodeToString(inputBz),
+// 		Input:        hexutil.Encode(inputBz),
 // 	})
 // 	if err != nil {
 // 		return err
