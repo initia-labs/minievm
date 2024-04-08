@@ -14,6 +14,7 @@ import (
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgCall{}, "evm/MsgCall")
 	legacy.RegisterAminoMsg(cdc, &MsgCreate{}, "evm/MsgCreate")
+	legacy.RegisterAminoMsg(cdc, &MsgCreate2{}, "evm/MsgCreate2")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "evm/MsgUpdateParams")
 
 	cdc.RegisterConcrete(&ContractAccount{}, "evm/ContractAccount", nil)
@@ -25,6 +26,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		(*sdk.Msg)(nil),
 		&MsgCall{},
 		&MsgCreate{},
+		&MsgCreate2{},
 		&MsgUpdateParams{},
 	)
 
