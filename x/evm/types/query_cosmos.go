@@ -16,15 +16,15 @@ type QueryCosmosWhitelist map[string]ProtoSet
 
 func DefaultQueryCosmosWhitelist() QueryCosmosWhitelist {
 	res := make(QueryCosmosWhitelist)
-	res["/slinky.oracle.v1.Query/Prices"] = ProtoSet{
+	res["/slinky.oracle.v1.Query/GetPrices"] = ProtoSet{
 		Request:  &oracletypes.GetPricesRequest{},
 		Response: &oracletypes.GetPricesResponse{},
 	}
-	res["/slinky.oracle.v1.Query/Price"] = ProtoSet{
+	res["/slinky.oracle.v1.Query/GetPrice"] = ProtoSet{
 		Request:  &oracletypes.GetPriceRequest{},
 		Response: &oracletypes.GetPriceResponse{},
 	}
-	res["/slinky.oracle.v1.Query/AllCurrencyPairs"] = ProtoSet{
+	res["/slinky.oracle.v1.Query/GetAllCurrencyPairs"] = ProtoSet{
 		Request:  &oracletypes.GetAllCurrencyPairsRequest{},
 		Response: &oracletypes.GetAllCurrencyPairsResponse{},
 	}
