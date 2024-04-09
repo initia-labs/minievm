@@ -108,7 +108,7 @@ $ %s tx evm create2 \
 `, version.AppName,
 			),
 		),
-		Args:    cobra.RangeArgs(2, 100),
+		Args:    cobra.RangeArgs(1, 100),
 		Aliases: []string{"CREATE2"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
