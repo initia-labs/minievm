@@ -247,8 +247,12 @@ func Test_QueryCosmos(t *testing.T) {
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.QUERY_COSMOS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
+	// unpack response
+	unpackedRet, err := abi.Methods["query_cosmos"].Outputs.Unpack(retBz)
+	require.NoError(t, err)
+
 	var ret oracletypes.GetPricesResponse
-	err = cdc.UnmarshalJSON(retBz, &ret)
+	err = cdc.UnmarshalJSON([]byte(unpackedRet[0].(string)), &ret)
 	require.NoError(t, err)
 
 	require.Equal(t, expectedRet, ret)

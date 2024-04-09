@@ -218,6 +218,11 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), err
 		}
 
+		// abi encode the response
+		resBz, err = method.Outputs.Pack(string(resBz))
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
 	default:
 		return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrUnknownPrecompileMethod.Wrap(method.Name)
 	}
