@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"cosmossdk.io/core/address"
@@ -94,7 +95,7 @@ $ %s tx evm create \
 
 func Create2Cmd(ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create2 [bin file1] [bin file2] [...]",
+		Use:   "create2 [slat]:[bin file1] [salt]:[bin file2] [...]",
 		Short: "Deploy evm contracts with CREATE2 opcode",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`
@@ -102,12 +103,12 @@ Deploy evm contracts. allowed to upload up to 100 files at once.
 
 Example:
 $ %s tx evm create2 \
-    ERC20.bin \
+    1:ERC20.bin \
 	CustomDex.bin --from mykey
 `, version.AppName,
 			),
 		),
-		Args:    cobra.RangeArgs(1, 100),
+		Args:    cobra.RangeArgs(2, 100),
 		Aliases: []string{"CREATE2"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -115,9 +116,20 @@ $ %s tx evm create2 \
 				return err
 			}
 
+			salts := make([]uint64, len(args))
 			contracts := make([][]byte, len(args))
 			for i, arg := range args {
-				hexStrBz, err := os.ReadFile(arg)
+				s := strings.Split(arg, ":")
+				if len(s) != 2 {
+					return fmt.Errorf("invalid argument: %s", arg)
+				}
+
+				salts[i], err = strconv.ParseUint(s[0], 10, 64)
+				if err != nil {
+					return err
+				}
+
+				hexStrBz, err := os.ReadFile(s[1])
 				if err != nil {
 					return err
 				}
@@ -137,6 +149,7 @@ $ %s tx evm create2 \
 			for i, contract := range contracts {
 				msgs[i] = &types.MsgCreate2{
 					Sender: sender,
+					Salt:   salts[i],
 					Code:   hexutil.Encode(contract),
 				}
 			}
