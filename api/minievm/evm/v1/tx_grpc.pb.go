@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	Msg_Create_FullMethodName       = "/minievm.evm.v1.Msg/Create"
+	Msg_Create2_FullMethodName      = "/minievm.evm.v1.Msg/Create2"
 	Msg_Call_FullMethodName         = "/minievm.evm.v1.Msg/Call"
 	Msg_UpdateParams_FullMethodName = "/minievm.evm.v1.Msg/UpdateParams"
 )
@@ -28,8 +29,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MsgClient interface {
-	// Create defines a method submitting Ethereum contract byte code.
+	// Create defines a method calling create of EVM.
 	Create(ctx context.Context, in *MsgCreate, opts ...grpc.CallOption) (*MsgCreateResponse, error)
+	// Create2 defines a method calling create2 of EVM.
+	Create2(ctx context.Context, in *MsgCreate2, opts ...grpc.CallOption) (*MsgCreate2Response, error)
 	// Call defines a method submitting Ethereum transactions.
 	Call(ctx context.Context, in *MsgCall, opts ...grpc.CallOption) (*MsgCallResponse, error)
 	// UpdateParams defines an operation for updating the x/evm module
@@ -48,6 +51,15 @@ func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 func (c *msgClient) Create(ctx context.Context, in *MsgCreate, opts ...grpc.CallOption) (*MsgCreateResponse, error) {
 	out := new(MsgCreateResponse)
 	err := c.cc.Invoke(ctx, Msg_Create_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) Create2(ctx context.Context, in *MsgCreate2, opts ...grpc.CallOption) (*MsgCreate2Response, error) {
+	out := new(MsgCreate2Response)
+	err := c.cc.Invoke(ctx, Msg_Create2_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +88,10 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
 type MsgServer interface {
-	// Create defines a method submitting Ethereum contract byte code.
+	// Create defines a method calling create of EVM.
 	Create(context.Context, *MsgCreate) (*MsgCreateResponse, error)
+	// Create2 defines a method calling create2 of EVM.
+	Create2(context.Context, *MsgCreate2) (*MsgCreate2Response, error)
 	// Call defines a method submitting Ethereum transactions.
 	Call(context.Context, *MsgCall) (*MsgCallResponse, error)
 	// UpdateParams defines an operation for updating the x/evm module
@@ -92,6 +106,9 @@ type UnimplementedMsgServer struct {
 
 func (UnimplementedMsgServer) Create(context.Context, *MsgCreate) (*MsgCreateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedMsgServer) Create2(context.Context, *MsgCreate2) (*MsgCreate2Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create2 not implemented")
 }
 func (UnimplementedMsgServer) Call(context.Context, *MsgCall) (*MsgCallResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
@@ -126,6 +143,24 @@ func _Msg_Create_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).Create(ctx, req.(*MsgCreate))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_Create2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCreate2)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).Create2(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_Create2_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).Create2(ctx, req.(*MsgCreate2))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -176,6 +211,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _Msg_Create_Handler,
+		},
+		{
+			MethodName: "Create2",
+			Handler:    _Msg_Create2_Handler,
 		},
 		{
 			MethodName: "Call",

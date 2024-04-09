@@ -31,7 +31,7 @@ var (
 
 // ICosmosMetaData contains all meta data concerning the ICosmos contract.
 var ICosmosMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"}],\"name\":\"execute_cosmos\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"}],\"name\":\"execute_cosmos\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"name\":\"to_denom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"to_erc20\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // ICosmosABI is the input ABI used to generate the binding from.
@@ -241,6 +241,48 @@ func (_ICosmos *ICosmosSession) ToCosmosAddress(evm_address common.Address) (*ty
 // Solidity: function to_cosmos_address(address evm_address) returns(string cosmos_address)
 func (_ICosmos *ICosmosTransactorSession) ToCosmosAddress(evm_address common.Address) (*types.Transaction, error) {
 	return _ICosmos.Contract.ToCosmosAddress(&_ICosmos.TransactOpts, evm_address)
+}
+
+// ToDenom is a paid mutator transaction binding the contract method 0x81cf0f6a.
+//
+// Solidity: function to_denom(address erc20_address) returns(string denom)
+func (_ICosmos *ICosmosTransactor) ToDenom(opts *bind.TransactOpts, erc20_address common.Address) (*types.Transaction, error) {
+	return _ICosmos.contract.Transact(opts, "to_denom", erc20_address)
+}
+
+// ToDenom is a paid mutator transaction binding the contract method 0x81cf0f6a.
+//
+// Solidity: function to_denom(address erc20_address) returns(string denom)
+func (_ICosmos *ICosmosSession) ToDenom(erc20_address common.Address) (*types.Transaction, error) {
+	return _ICosmos.Contract.ToDenom(&_ICosmos.TransactOpts, erc20_address)
+}
+
+// ToDenom is a paid mutator transaction binding the contract method 0x81cf0f6a.
+//
+// Solidity: function to_denom(address erc20_address) returns(string denom)
+func (_ICosmos *ICosmosTransactorSession) ToDenom(erc20_address common.Address) (*types.Transaction, error) {
+	return _ICosmos.Contract.ToDenom(&_ICosmos.TransactOpts, erc20_address)
+}
+
+// ToErc20 is a paid mutator transaction binding the contract method 0x2b3324ce.
+//
+// Solidity: function to_erc20(string denom) returns(address erc20_address)
+func (_ICosmos *ICosmosTransactor) ToErc20(opts *bind.TransactOpts, denom string) (*types.Transaction, error) {
+	return _ICosmos.contract.Transact(opts, "to_erc20", denom)
+}
+
+// ToErc20 is a paid mutator transaction binding the contract method 0x2b3324ce.
+//
+// Solidity: function to_erc20(string denom) returns(address erc20_address)
+func (_ICosmos *ICosmosSession) ToErc20(denom string) (*types.Transaction, error) {
+	return _ICosmos.Contract.ToErc20(&_ICosmos.TransactOpts, denom)
+}
+
+// ToErc20 is a paid mutator transaction binding the contract method 0x2b3324ce.
+//
+// Solidity: function to_erc20(string denom) returns(address erc20_address)
+func (_ICosmos *ICosmosTransactorSession) ToErc20(denom string) (*types.Transaction, error) {
+	return _ICosmos.Contract.ToErc20(&_ICosmos.TransactOpts, denom)
 }
 
 // ToEvmAddress is a paid mutator transaction binding the contract method 0x4f94a155.

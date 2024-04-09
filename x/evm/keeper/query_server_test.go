@@ -41,7 +41,7 @@ func Test_Query_Call(t *testing.T) {
 		Sender:       addr.String(),
 		ContractAddr: fooContractAddr.String(),
 		Input:        hexutil.Encode(inputBz),
-		WithTrace:    true,
+		TraceOptions: &types.TraceOptions{},
 	})
 	require.NoError(t, err)
 

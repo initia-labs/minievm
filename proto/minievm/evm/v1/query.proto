@@ -85,7 +85,20 @@ message QueryCallRequest {
   // hex encoded call input
   string input = 3;
   // whether to trace the call
-  bool with_trace = 4;
+  // `nil` means no trace
+  TraceOptions trace_options = 4;
+}
+
+// TraceOption is the option for tracing
+message TraceOptions {
+  // whether to trace memory
+  bool with_memory = 1;
+  // whether to trace stack
+  bool with_stack = 2;
+  // wtether to trace storage
+  bool with_storage = 3;
+  // whether to return data trace
+  bool with_return_data = 4;
 }
 
 // QueryCallResponse is the response type for the Query/Call RPC

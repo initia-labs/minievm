@@ -11,12 +11,12 @@ import (
 
 const DENOM_PREFIX = "evm/"
 
-type ERC20Keeper interface {
+type ERC20DenomKeeper interface {
 	GetContractAddrByDenom(context.Context, string) (common.Address, error)
 	GetDenomByContractAddr(context.Context, common.Address) (string, error)
 }
 
-func DenomToContractAddr(ctx context.Context, k ERC20Keeper, denom string) (common.Address, error) {
+func DenomToContractAddr(ctx context.Context, k ERC20DenomKeeper, denom string) (common.Address, error) {
 	if strings.HasPrefix(denom, DENOM_PREFIX) {
 		contractAddrInString := strings.TrimPrefix(denom, DENOM_PREFIX)
 		if !common.IsHexAddress(contractAddrInString) {
@@ -29,7 +29,7 @@ func DenomToContractAddr(ctx context.Context, k ERC20Keeper, denom string) (comm
 	return k.GetContractAddrByDenom(ctx, denom)
 }
 
-func ContractAddrToDenom(ctx context.Context, k ERC20Keeper, contractAddr common.Address) (string, error) {
+func ContractAddrToDenom(ctx context.Context, k ERC20DenomKeeper, contractAddr common.Address) (string, error) {
 	denom, err := k.GetDenomByContractAddr(ctx, contractAddr)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return DENOM_PREFIX + strings.TrimPrefix(contractAddr.Hex(), "0x"), nil

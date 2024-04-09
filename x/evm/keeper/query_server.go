@@ -53,12 +53,12 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 
 	var tracer *tracing.Hooks
 	tracerOutput := new(strings.Builder)
-	if req.WithTrace {
+	if req.TraceOptions != nil {
 		tracer = logger.NewJSONLogger(&logger.Config{
-			EnableMemory:     qs.config.TracingEnableMemory,
-			DisableStack:     !qs.config.TracingEnableStack,
-			DisableStorage:   !qs.config.TracingEnableStorage,
-			EnableReturnData: qs.config.TracingEnableReturnData,
+			EnableMemory:     req.TraceOptions.WithMemory,
+			DisableStack:     !req.TraceOptions.WithStack,
+			DisableStorage:   !req.TraceOptions.WithStorage,
+			EnableReturnData: req.TraceOptions.WithReturnData,
 		}, tracerOutput)
 	}
 

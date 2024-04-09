@@ -15,7 +15,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	// "github.com/initia-labs/minievm/x/evm/client/cli"
+	"github.com/initia-labs/minievm/x/evm/client/cli"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
@@ -79,9 +79,14 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 	types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx)) //nolint:errcheck
 }
 
+// GetTxCmd returns the root tx command for the evm module.
 func (am AppModuleBasic) GetTxCmd() *cobra.Command {
-	// return cli.GetTxCmd(am.cdc.InterfaceRegistry().SigningContext().AddressCodec())
-	return &cobra.Command{}
+	return cli.GetTxCmd(am.cdc.InterfaceRegistry().SigningContext().AddressCodec())
+}
+
+// GetQueryCmd returns no root query command for the evm module.
+func (b AppModuleBasic) GetQueryCmd() *cobra.Command {
+	return cli.GetQueryCmd(b.cdc.InterfaceRegistry().SigningContext().AddressCodec())
 }
 
 // ----------------------------------------------------------------------------

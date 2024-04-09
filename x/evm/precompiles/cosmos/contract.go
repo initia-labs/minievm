@@ -34,6 +34,7 @@ type CosmosPrecompile struct {
 	ac  address.Codec
 
 	ak         types.AccountKeeper
+	edk        types.ERC20DenomKeeper
 	grpcRouter types.GRPCRouter
 
 	queryWhitelist types.QueryCosmosWhitelist
@@ -43,6 +44,7 @@ func NewCosmosPrecompile(
 	cdc codec.Codec,
 	ac address.Codec,
 	ak types.AccountKeeper,
+	edk types.ERC20DenomKeeper,
 	grpcRouter types.GRPCRouter,
 	queryWhitelist types.QueryCosmosWhitelist,
 ) (CosmosPrecompile, error) {
@@ -56,6 +58,7 @@ func NewCosmosPrecompile(
 		cdc:            cdc,
 		ac:             ac,
 		ak:             ak,
+		edk:            edk,
 		grpcRouter:     grpcRouter,
 		queryWhitelist: queryWhitelist,
 	}, nil
@@ -65,13 +68,6 @@ func (e CosmosPrecompile) WithContext(ctx context.Context) vm.PrecompiledContrac
 	e.ctx = ctx
 	return e
 }
-
-const (
-	METHOD_TO_COSMOS_ADDRESS = "to_cosmos_address"
-	METHOD_TO_EVM_ADDRESS    = "to_evm_address"
-	METHOD_EXECUTE_COSMOS    = "execute_cosmos"
-	METHOD_QUERY_COSMOS      = "query_cosmos"
-)
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
 func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
@@ -104,6 +100,7 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
+		// abi encode the response
 		resBz, err = method.Outputs.Pack(addr)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
@@ -126,6 +123,7 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrInvalidAddressLength.Wrap(hexutil.Encode(addr))
 		}
 
+		// abi encode the response
 		resBz, err = method.Outputs.Pack(common.BytesToAddress(addr))
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
@@ -210,16 +208,52 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			Path: queryCosmosArguments.Path,
 		})
 		if err != nil {
-			return nil, ctx.GasMeter().GasConsumedToLimit(), err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
 		resBz, err = types.ConvertProtoToJSON(e.cdc, protoSet.Response, res.Value)
 		if err != nil {
-			return nil, ctx.GasMeter().GasConsumedToLimit(), err
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
 		// abi encode the response
 		resBz, err = method.Outputs.Pack(string(resBz))
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+	case METHOD_TO_DENOM:
+		ctx.GasMeter().ConsumeGas(TO_DENOM_GAS, "to_denom")
+
+		var toDenomArguments ToDenomArguments
+		if err := method.Inputs.Copy(&toDenomArguments, args); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		denom, err := e.edk.GetDenomByContractAddr(ctx, toDenomArguments.ERC20Address)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		// abi encode the response
+		resBz, err = method.Outputs.Pack(denom)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+	case METHOD_TO_ERC20:
+		ctx.GasMeter().ConsumeGas(TO_ERC20_GAS, "to_erc20")
+
+		var toERC20Arguments ToERC20Arguments
+		if err := method.Inputs.Copy(&toERC20Arguments, args); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		contractAddr, err := e.edk.GetContractAddrByDenom(ctx, toERC20Arguments.Denom)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		// abi encode the response
+		resBz, err = method.Outputs.Pack(contractAddr)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}

@@ -62,7 +62,7 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper) {
 func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	ctx, cdc, ac, ak := setup()
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil, nil)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
@@ -93,7 +93,7 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 
 func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	ctx, cdc, ac, ak := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil, nil)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
@@ -124,7 +124,7 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 
 func Test_ExecuteCosmos(t *testing.T) {
 	ctx, cdc, ac, ak := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil, nil)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
@@ -205,7 +205,7 @@ func Test_QueryCosmos(t *testing.T) {
 			},
 		},
 	}
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, MockGRPCRouter{
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, MockGRPCRouter{
 		routes: map[string]baseapp.GRPCQueryHandler{
 			queryPath: func(ctx sdk.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
 				resBz, err := cdc.Marshal(&expectedRet)
@@ -258,6 +258,90 @@ func Test_QueryCosmos(t *testing.T) {
 	require.Equal(t, expectedRet, ret)
 }
 
+func Test_ToDenom(t *testing.T) {
+	ctx, cdc, ac, ak := setup()
+
+	erc20Addr := common.HexToAddress("0x123")
+	denom := "evm/0000000000000000000000000000000000000123"
+
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, &MockERC20DenomKeeper{
+		denomMap: map[string]common.Address{
+			denom: erc20Addr,
+		},
+		addrMap: map[common.Address]string{
+			erc20Addr: denom,
+		},
+	}, nil, nil)
+	require.NoError(t, err)
+
+	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+
+	evmAddr := common.HexToAddress("0x1")
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// pack to_denom
+	inputBz, err := abi.Pack(precompiles.METHOD_TO_DENOM, erc20Addr)
+	require.NoError(t, err)
+
+	// out of gas panic
+	require.Panics(t, func() {
+		_, _, _ = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_DENOM_GAS-1, false)
+	})
+
+	// succeed
+	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_DENOM_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	// unpack response
+	unpackedRet, err := abi.Methods["to_denom"].Outputs.Unpack(retBz)
+	require.NoError(t, err)
+	require.Equal(t, denom, unpackedRet[0].(string))
+}
+
+func Test_ToErc20(t *testing.T) {
+	ctx, cdc, ac, ak := setup()
+
+	erc20Addr := common.HexToAddress("0x123")
+	denom := "evm/0000000000000000000000000000000000000123"
+
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, &MockERC20DenomKeeper{
+		denomMap: map[string]common.Address{
+			denom: erc20Addr,
+		},
+		addrMap: map[common.Address]string{
+			erc20Addr: denom,
+		},
+	}, nil, nil)
+	require.NoError(t, err)
+
+	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+
+	evmAddr := common.HexToAddress("0x1")
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// pack to_erc20
+	inputBz, err := abi.Pack(precompiles.METHOD_TO_ERC20, denom)
+	require.NoError(t, err)
+
+	// out of gas panic
+	require.Panics(t, func() {
+		_, _, _ = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_ERC20_GAS-1, false)
+	})
+
+	// succeed
+	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_ERC20_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	// unpack response
+	unpackedRet, err := abi.Methods["to_erc20"].Outputs.Unpack(retBz)
+	require.NoError(t, err)
+	require.Equal(t, erc20Addr, unpackedRet[0].(common.Address))
+}
+
 var _ types.AccountKeeper = &MockAccountKeeper{}
 
 // mock account keeper for testing
@@ -305,4 +389,31 @@ type MockGRPCRouter struct {
 
 func (router MockGRPCRouter) Route(path string) baseapp.GRPCQueryHandler {
 	return router.routes[path]
+}
+
+var _ types.ERC20DenomKeeper = &MockERC20DenomKeeper{}
+
+type MockERC20DenomKeeper struct {
+	denomMap map[string]common.Address
+	addrMap  map[common.Address]string
+}
+
+// GetContractAddrByDenom implements types.ERC20DenomKeeper.
+func (e *MockERC20DenomKeeper) GetContractAddrByDenom(_ context.Context, denom string) (common.Address, error) {
+	addr, found := e.denomMap[denom]
+	if !found {
+		return common.Address{}, sdkerrors.ErrNotFound
+	}
+
+	return addr, nil
+}
+
+// GetDenomByContractAddr implements types.ERC20DenomKeeper.
+func (e *MockERC20DenomKeeper) GetDenomByContractAddr(_ context.Context, addr common.Address) (string, error) {
+	denom, found := e.addrMap[addr]
+	if !found {
+		return "", sdkerrors.ErrNotFound
+	}
+
+	return denom, nil
 }
