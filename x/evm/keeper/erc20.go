@@ -42,7 +42,7 @@ func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 
 // BurnCoins implements IERC20Keeper.
 func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error {
-	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 
 // GetBalance implements IERC20Keeper.
 func (k ERC20Keeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) (math.Int, error) {
-	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
 	if err != nil {
 		return math.ZeroInt(), err
 	}
@@ -156,7 +156,7 @@ func (k ERC20Keeper) GetMetadata(ctx context.Context, denom string) (banktypes.M
 
 // GetPaginatedBalances implements IERC20Keeper.
 func (k ERC20Keeper) GetPaginatedBalances(ctx context.Context, pageReq *query.PageRequest, addr sdk.AccAddress) (sdk.Coins, *query.PageResponse, error) {
-	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -222,7 +222,7 @@ func (k ERC20Keeper) HasSupply(ctx context.Context, denom string) (bool, error) 
 
 // IterateAccountBalances implements IERC20Keeper.
 func (k ERC20Keeper) IterateAccountBalances(ctx context.Context, addr sdk.AccAddress, cb func(sdk.Coin) (bool, error)) error {
-	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
 	if err != nil {
 		return err
 	}
@@ -267,7 +267,7 @@ func (k ERC20Keeper) IterateSupply(ctx context.Context, cb func(supply sdk.Coin)
 // MintCoins implements IERC20Keeper.
 func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	evmAddr, err := k.convertToEVMAddress(ctx, addr)
+	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
 	if err != nil {
 		return err
 	}
@@ -338,11 +338,11 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 
 // SendCoins implements IERC20Keeper.
 func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
-	evmFromAddr, err := k.convertToEVMAddress(ctx, fromAddr)
+	evmFromAddr, err := k.convertToEVMAddress(ctx, fromAddr, true)
 	if err != nil {
 		return err
 	}
-	evmToAddr, err := k.convertToEVMAddress(ctx, toAddr)
+	evmToAddr, err := k.convertToEVMAddress(ctx, toAddr, false)
 	if err != nil {
 		return err
 	}

@@ -27,7 +27,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// argument validation
-	caller, err := ms.convertToEVMAddress(ctx, sender)
+	caller, err := ms.convertToEVMAddress(ctx, sender, true)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// argument validation
-	caller, err := ms.convertToEVMAddress(ctx, sender)
+	caller, err := ms.convertToEVMAddress(ctx, sender, true)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	}
 
 	// argument validation
-	caller, err := ms.convertToEVMAddress(ctx, sender)
+	caller, err := ms.convertToEVMAddress(ctx, sender, true)
 	if err != nil {
 		return nil, err
 	}

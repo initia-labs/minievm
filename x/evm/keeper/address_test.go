@@ -45,17 +45,31 @@ func Test_AllowLongCosmosAddress(t *testing.T) {
 	))
 	require.NoError(t, err)
 
-	// should be failed with already existing address
+	// should be be allowed because the address is not taken yet
 	err = erc20Keeper.SendCoins(ctx, addr, addr4, sdk.NewCoins(
+		sdk.NewCoin("bar", math.NewInt(100)),
+		sdk.NewCoin(fooDenom, math.NewInt(50)),
+	))
+	require.NoError(t, err)
+
+	// take the address ownership
+	err = erc20Keeper.SendCoins(ctx, addr3, addr, sdk.NewCoins(
+		sdk.NewCoin("bar", math.NewInt(100)),
+		sdk.NewCoin(fooDenom, math.NewInt(50)),
+	))
+	require.NoError(t, err)
+
+	// then other account can't use this address
+	err = erc20Keeper.SendCoins(ctx, addr4, addr, sdk.NewCoins(
 		sdk.NewCoin("bar", math.NewInt(100)),
 		sdk.NewCoin(fooDenom, math.NewInt(50)),
 	))
 	require.ErrorContains(t, err, types.ErrAddressAlreadyExists.Error())
 
-	// but still can send to the same address
-	err = erc20Keeper.SendCoins(ctx, addr, addr3, sdk.NewCoins(
+	// also can't use the address as a receive
+	err = erc20Keeper.SendCoins(ctx, addr, addr4, sdk.NewCoins(
 		sdk.NewCoin("bar", math.NewInt(100)),
 		sdk.NewCoin(fooDenom, math.NewInt(50)),
 	))
-	require.NoError(t, err)
+	require.ErrorContains(t, err, types.ErrAddressAlreadyExists.Error())
 }
