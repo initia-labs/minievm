@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS go-builder
+FROM golang:1.22-alpine3.19 AS go-builder
 #ARG arch=x86_64
 
 # this comes from standard alpine nightly file
@@ -24,7 +24,7 @@ RUN git config --global url."https://${GITHUB_ACCESS_TOKEN}:x-oauth-basic@github
 # TODO - should we remove static flags?
 RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LDFLAGS="-linkmode=external -extldflags \"-L/code/mimalloc/build -lmimalloc -Wl,-z,muldefs -static\"" make build
 
-FROM alpine:3.15.4
+FROM alpine:3.19
 
 RUN addgroup minitia \
     && adduser -G minitia -D -h /minitia minitia

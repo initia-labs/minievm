@@ -125,10 +125,11 @@ func SetupWithGenesisAccounts(
 	// set validators and delegations
 	var opchildGenesis opchildtypes.GenesisState
 	app.AppCodec().MustUnmarshalJSON(genesisState[opchildtypes.ModuleName], &opchildGenesis)
+	opchildGenesis.Params.Admin = sdk.AccAddress(valSet.Validators[0].Address.Bytes()).String()
 	opchildGenesis.Params.BridgeExecutor = sdk.AccAddress(valSet.Validators[0].Address.Bytes()).String()
 
 	// set validators and delegations
-	opchildGenesis = *opchildtypes.NewGenesisState(opchildGenesis.Params, validators)
+	opchildGenesis = *opchildtypes.NewGenesisState(opchildGenesis.Params, validators, nil)
 	genesisState[opchildtypes.ModuleName] = app.AppCodec().MustMarshalJSON(&opchildGenesis)
 
 	// update total supply
