@@ -102,8 +102,8 @@ import (
 
 	// initia imports
 
-	initiaapplanes "github.com/initia-labs/initia/app/lanes"
-	initiaappparams "github.com/initia-labs/initia/app/params"
+	initialanes "github.com/initia-labs/initia/app/lanes"
+	"github.com/initia-labs/initia/app/params"
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookskeeper "github.com/initia-labs/initia/x/ibc-hooks/keeper"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
@@ -118,6 +118,7 @@ import (
 	// OPinit imports
 	opchild "github.com/initia-labs/OPinit/x/opchild"
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
+	opchildlanes "github.com/initia-labs/OPinit/x/opchild/lanes"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	// skip imports
@@ -139,7 +140,6 @@ import (
 	apphook "github.com/initia-labs/minievm/app/hook"
 	ibcevmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	appkeepers "github.com/initia-labs/minievm/app/keepers"
-	applanes "github.com/initia-labs/minievm/app/lanes"
 
 	"github.com/initia-labs/minievm/x/bank"
 	bankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
@@ -258,7 +258,7 @@ func NewMinitiaApp(
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *MinitiaApp {
-	encodingConfig := initiaappparams.MakeEncodingConfig()
+	encodingConfig := params.MakeEncodingConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
@@ -369,6 +369,7 @@ func NewMinitiaApp(
 		apphook.NewEVMBridgeHook(ac, app.EVMKeeper).Hook,
 		app.MsgServiceRouter(),
 		authorityAddr,
+		ac,
 		vc,
 		cc,
 	)
@@ -657,7 +658,7 @@ func NewMinitiaApp(
 		app.keys[auctiontypes.StoreKey],
 		app.AccountKeeper,
 		app.BankKeeper,
-		applanes.NewRewardsAddressProvider(authtypes.FeeCollectorName),
+		opchildlanes.NewRewardsAddressProvider(authtypes.FeeCollectorName),
 		authorityAddr,
 	)
 	app.AuctionKeeper = &auctionKeeper
@@ -814,7 +815,10 @@ func NewMinitiaApp(
 		MaxTxs:          100,
 		SignerExtractor: signerExtractor,
 	}
-	freeLane := initiaapplanes.NewFreeLane(freeConfig, applanes.FreeLaneMatchHandler())
+	freeLane := initialanes.NewFreeLane(
+		freeConfig,
+		opchildlanes.NewFreeLaneMatchHandler(ac, app.OPChildKeeper).MatchHandler(),
+	)
 
 	defaultLaneConfig := blockbase.LaneConfig{
 		Logger:          app.Logger(),
@@ -824,7 +828,7 @@ func NewMinitiaApp(
 		MaxTxs:          0,
 		SignerExtractor: signerExtractor,
 	}
-	defaultLane := initiaapplanes.NewDefaultLane(defaultLaneConfig)
+	defaultLane := initialanes.NewDefaultLane(defaultLaneConfig)
 
 	lanes := []block.Lane{mevLane, freeLane, defaultLane}
 	mempool, err := block.NewLanedMempool(app.Logger(), lanes)
