@@ -12,9 +12,9 @@ import (
 	opchildante "github.com/initia-labs/OPinit/x/opchild/ante"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
-	"github.com/skip-mev/block-sdk/block"
-	auctionante "github.com/skip-mev/block-sdk/x/auction/ante"
-	auctionkeeper "github.com/skip-mev/block-sdk/x/auction/keeper"
+	"github.com/skip-mev/block-sdk/v2/block"
+	auctionante "github.com/skip-mev/block-sdk/v2/x/auction/ante"
+	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
 )
 
 // HandlerOptions extends the SDK's AnteHandler options by requiring the IBC
