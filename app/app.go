@@ -363,15 +363,6 @@ func NewMinitiaApp(
 
 	communityPoolKeeper := appkeepers.NewCommunityPoolKeeper(app.BankKeeper, authtypes.FeeCollectorName)
 
-	// initialize oracle keeper
-	oracleKeeper := oraclekeeper.NewKeeper(
-		runtime.NewKVStoreService(keys[oracletypes.StoreKey]),
-		appCodec,
-		nil,
-		authorityAccAddr,
-	)
-	app.OracleKeeper = &oracleKeeper
-
 	////////////////////////////////
 	// OPChildKeeper Configuration //
 	////////////////////////////////
