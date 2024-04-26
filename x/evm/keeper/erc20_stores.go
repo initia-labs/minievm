@@ -38,22 +38,10 @@ func (k ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddres
 
 // Register registers the erc20 contract address to the store.
 func (k ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Address) error {
-	if found, err := k.ERC20DenomsByContractAddr.Has(ctx, contractAddr.Bytes()); err != nil {
+	if found, err := k.ERC20s.Has(ctx, contractAddr.Bytes()); err != nil {
 		return err
-	} else if !found {
-		// register denom and contract address conversion to the store
-		denom, err := types.ContractAddrToDenom(ctx, k, contractAddr)
-		if err != nil {
-			return err
-		}
-
-		if err := k.ERC20DenomsByContractAddr.Set(ctx, contractAddr.Bytes(), denom); err != nil {
-			return err
-		}
-
-		if err := k.ERC20ContractAddrsByDenom.Set(ctx, denom, contractAddr.Bytes()); err != nil {
-			return err
-		}
+	} else if found {
+		return nil
 	}
 
 	return k.ERC20s.Set(ctx, contractAddr.Bytes())

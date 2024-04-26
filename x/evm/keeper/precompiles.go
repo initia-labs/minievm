@@ -8,6 +8,7 @@ import (
 
 	cosmosprecompile "github.com/initia-labs/minievm/x/evm/precompiles/cosmos"
 	erc20registryprecompile "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"
+	erc721registryprecompile "github.com/initia-labs/minievm/x/evm/precompiles/erc721_registry"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -20,6 +21,11 @@ type precompile struct {
 // loadPrecompiles loads the precompiled contracts.
 func (k *Keeper) loadPrecompiles() error {
 	erc20RegistryPrecompile, err := erc20registryprecompile.NewERC20RegistryPrecompile(k.erc20StoresKeeper)
+	if err != nil {
+		return err
+	}
+
+	erc721RegistryPrecompile, err := erc721registryprecompile.NewERC721RegistryPrecompile(k.erc721StoresKeeper)
 	if err != nil {
 		return err
 	}
@@ -39,11 +45,15 @@ func (k *Keeper) loadPrecompiles() error {
 	k.precompiles = precompiles{
 		{
 			addr:     common.BytesToAddress([]byte{0xf1}),
-			contract: erc20RegistryPrecompile,
+			contract: cosmosPrecompile,
 		},
 		{
 			addr:     common.BytesToAddress([]byte{0xf2}),
-			contract: cosmosPrecompile,
+			contract: erc20RegistryPrecompile,
+		},
+		{
+			addr:     common.BytesToAddress([]byte{0xf3}),
+			contract: erc721RegistryPrecompile,
 		},
 	}
 

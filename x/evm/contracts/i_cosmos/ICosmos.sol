@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 /// @dev The ICosmos contract's address.
-address constant COSMOS_ADDRESS = 0x00000000000000000000000000000000000000F2;
+address constant COSMOS_ADDRESS = 0x00000000000000000000000000000000000000f1;
 
 /// @dev The ICosmos contract's instance.
 ICosmos constant COSMOS_CONTRACT = ICosmos(COSMOS_ADDRESS);

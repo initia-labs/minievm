@@ -56,6 +56,21 @@ type IERC20Keeper interface {
 	GetMetadata(ctx context.Context, denom string) (banktypes.Metadata, error)
 }
 
+type IERC721StoresKeeper interface {
+	Register(ctx context.Context, contractAddr common.Address) error
+	RegisterStore(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) error
+	IsStoreRegistered(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) (bool, error)
+}
+
+type IERC721Keeper interface {
+	CreateOrUpdateClass(ctx context.Context, classId, classUri, classData string) error
+	Transfers(ctx context.Context, sender, escrowAddress sdk.AccAddress, classId string, tokenIds []string) error
+	Burns(ctx context.Context, owner sdk.AccAddress, classId string, tokenIds []string) error
+	Mints(ctx context.Context, receiver sdk.AccAddress, classId string, tokenIds, tokenUris []string, tokenData []string) error
+	GetClassInfo(ctx context.Context, classId string) (classUri string, classData string, err error)
+	GetTokenInfos(ctx context.Context, classId string, tokenIds []string) (tokenUris []string, tokenData []string, err error)
+}
+
 type WithContext interface {
 	WithContext(ctx context.Context) vm.PrecompiledContract
 }

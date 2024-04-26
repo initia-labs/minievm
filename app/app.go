@@ -73,9 +73,6 @@ import (
 	packetforward "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward"
 	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/keeper"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
-	icq "github.com/cosmos/ibc-apps/modules/async-icq/v8"
-	icqkeeper "github.com/cosmos/ibc-apps/modules/async-icq/v8/keeper"
-	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v8/types"
 	"github.com/cosmos/ibc-go/modules/capability"
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
@@ -107,9 +104,12 @@ import (
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookskeeper "github.com/initia-labs/initia/x/ibc-hooks/keeper"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
-	"github.com/initia-labs/initia/x/ibc/fetchprice"
-	fetchpricekeeper "github.com/initia-labs/initia/x/ibc/fetchprice/keeper"
-	fetchpricetypes "github.com/initia-labs/initia/x/ibc/fetchprice/types"
+	ibcnfttransfer "github.com/initia-labs/initia/x/ibc/nft-transfer"
+	ibcnfttransferkeeper "github.com/initia-labs/initia/x/ibc/nft-transfer/keeper"
+	ibcnfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
+	ibcperm "github.com/initia-labs/initia/x/ibc/perm"
+	ibcpermkeeper "github.com/initia-labs/initia/x/ibc/perm/keeper"
+	ibcpermtypes "github.com/initia-labs/initia/x/ibc/perm/types"
 	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
 	icaauth "github.com/initia-labs/initia/x/intertx"
 	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
@@ -213,29 +213,28 @@ type MinitiaApp struct {
 	ConsensusParamsKeeper *consensusparamkeeper.Keeper
 	IBCKeeper             *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	TransferKeeper        *ibctransferkeeper.Keeper
+	NftTransferKeeper     *ibcnfttransferkeeper.Keeper
 	AuthzKeeper           *authzkeeper.Keeper
 	FeeGrantKeeper        *feegrantkeeper.Keeper
 	ICAHostKeeper         *icahostkeeper.Keeper
 	ICAControllerKeeper   *icacontrollerkeeper.Keeper
 	ICAAuthKeeper         *icaauthkeeper.Keeper
 	IBCFeeKeeper          *ibcfeekeeper.Keeper
+	IBCPermKeeper         *ibcpermkeeper.Keeper
 	EVMKeeper             *evmkeeper.Keeper
 	OPChildKeeper         *opchildkeeper.Keeper
 	AuctionKeeper         *auctionkeeper.Keeper // x/auction keeper used to process bids for POB auctions
 	PacketForwardKeeper   *packetforwardkeeper.Keeper
-	ICQKeeper             *icqkeeper.Keeper
 	OracleKeeper          *oraclekeeper.Keeper // x/oracle keeper used for the slinky oracle
-	FetchPriceKeeper      *fetchpricekeeper.Keeper
 	IBCHooksKeeper        *ibchookskeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
+	ScopedNftTransferKeeper   capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAAuthKeeper       capabilitykeeper.ScopedKeeper
-	ScopedICQKeeper           capabilitykeeper.ScopedKeeper
-	ScopedFetchPriceKeeper    capabilitykeeper.ScopedKeeper
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -276,11 +275,12 @@ func NewMinitiaApp(
 	keys := storetypes.NewKVStoreKeys(
 		authtypes.StoreKey, banktypes.StoreKey, group.StoreKey, consensusparamtypes.StoreKey,
 		ibcexported.StoreKey, upgradetypes.StoreKey, ibctransfertypes.StoreKey,
+		ibcnfttransfertypes.StoreKey,
 		capabilitytypes.StoreKey, authzkeeper.StoreKey, feegrant.StoreKey,
 		icahosttypes.StoreKey, icacontrollertypes.StoreKey, icaauthtypes.StoreKey,
-		ibcfeetypes.StoreKey, evmtypes.StoreKey, opchildtypes.StoreKey,
-		auctiontypes.StoreKey, packetforwardtypes.StoreKey, icqtypes.StoreKey,
-		oracletypes.StoreKey, fetchpricetypes.StoreKey, ibchookstypes.StoreKey,
+		ibcfeetypes.StoreKey, ibcpermtypes.StoreKey, evmtypes.StoreKey, opchildtypes.StoreKey,
+		auctiontypes.StoreKey, packetforwardtypes.StoreKey,
+		oracletypes.StoreKey, ibchookstypes.StoreKey,
 	)
 	tkeys := storetypes.NewTransientStoreKeys()
 	memKeys := storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -322,11 +322,10 @@ func NewMinitiaApp(
 	// grant capabilities for the ibc and ibc-transfer modules
 	app.ScopedIBCKeeper = app.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
 	app.ScopedTransferKeeper = app.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+	app.ScopedNftTransferKeeper = app.CapabilityKeeper.ScopeToModule(ibcnfttransfertypes.ModuleName)
 	app.ScopedICAHostKeeper = app.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 	app.ScopedICAControllerKeeper = app.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
 	app.ScopedICAAuthKeeper = app.CapabilityKeeper.ScopeToModule(icaauthtypes.ModuleName)
-	app.ScopedICQKeeper = app.CapabilityKeeper.ScopeToModule(icqtypes.ModuleName)
-	app.ScopedFetchPriceKeeper = app.CapabilityKeeper.ScopeToModule(fetchpricetypes.ModuleName)
 
 	app.CapabilityKeeper.Seal()
 
@@ -357,6 +356,15 @@ func NewMinitiaApp(
 
 	communityPoolKeeper := appkeepers.NewCommunityPoolKeeper(app.BankKeeper, authtypes.FeeCollectorName)
 
+	// initialize oracle keeper
+	oracleKeeper := oraclekeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[oracletypes.StoreKey]),
+		appCodec,
+		nil,
+		authorityAccAddr,
+	)
+	app.OracleKeeper = &oracleKeeper
+
 	////////////////////////////////
 	// OPChildKeeper Configuration //
 	////////////////////////////////
@@ -367,11 +375,13 @@ func NewMinitiaApp(
 		app.AccountKeeper,
 		app.BankKeeper,
 		apphook.NewEVMBridgeHook(ac, app.EVMKeeper).Hook,
+		app.OracleKeeper,
 		app.MsgServiceRouter(),
 		authorityAddr,
 		ac,
 		vc,
 		cc,
+		app.Logger(),
 	)
 
 	// get skipUpgradeHeights from the app options
@@ -412,14 +422,6 @@ func NewMinitiaApp(
 	)
 	app.GroupKeeper = &groupKeeper
 
-	// initialize oracle keeper
-	oracleKeeper := oraclekeeper.NewKeeper(
-		runtime.NewKVStoreService(keys[oracletypes.StoreKey]),
-		appCodec,
-		authorityAccAddr,
-	)
-	app.OracleKeeper = &oracleKeeper
-
 	// Create IBC Keeper
 	app.IBCKeeper = ibckeeper.NewKeeper(
 		appCodec,
@@ -441,6 +443,13 @@ func NewMinitiaApp(
 		app.BankKeeper,
 	)
 	app.IBCFeeKeeper = &ibcFeeKeeper
+
+	app.IBCPermKeeper = ibcpermkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[ibcpermtypes.StoreKey]),
+		authorityAddr,
+		ac,
+	)
 
 	app.IBCHooksKeeper = ibchookskeeper.NewKeeper(
 		appCodec,
@@ -516,6 +525,60 @@ func NewMinitiaApp(
 			// ics4wrapper: transfer -> packet forward -> evm -> fee -> channel
 			*app.IBCFeeKeeper,
 		)
+
+		// create perm middleware for transfer
+		transferStack = ibcperm.NewIBCMiddleware(
+			// receive: perm -> fee -> move -> packet forward -> forwarding -> transfer
+			transferStack,
+			// ics4wrapper: not used
+			nil,
+			*app.IBCPermKeeper,
+		)
+	}
+
+	////////////////////////////////
+	// Nft Transfer configuration //
+	////////////////////////////////
+
+	var nftTransferStack porttypes.IBCModule
+	{
+		// Create Transfer Keepers
+		app.NftTransferKeeper = ibcnfttransferkeeper.NewKeeper(
+			appCodec,
+			runtime.NewKVStoreService(keys[ibcnfttransfertypes.StoreKey]),
+			// ics4wrapper: nft transfer -> fee -> channel
+			app.IBCFeeKeeper,
+			app.IBCKeeper.ChannelKeeper,
+			app.IBCKeeper.PortKeeper,
+			app.AccountKeeper,
+			app.EVMKeeper.ERC721Keeper(),
+			app.ScopedNftTransferKeeper,
+			authorityAddr,
+		)
+		nftTransferIBCModule := ibcnfttransfer.NewIBCModule(*app.NftTransferKeeper)
+
+		// create move middleware for nft-transfer
+		hookMiddleware := ibchooks.NewIBCMiddleware(
+			// receive: move -> nft-transfer
+			nftTransferIBCModule,
+			ibchooks.NewICS4Middleware(
+				nil, /* ics4wrapper: not used */
+				ibcevmhooks.NewEVMHooks(appCodec, ac, app.EVMKeeper),
+			),
+			app.IBCHooksKeeper,
+		)
+
+		nftTransferStack = ibcperm.NewIBCMiddleware(
+			// receive: perm -> fee -> nft transfer
+			ibcfee.NewIBCMiddleware(
+				// receive: channel -> fee -> move -> nft transfer
+				hookMiddleware,
+				*app.IBCFeeKeeper,
+			),
+			// ics4wrapper: not used
+			nil,
+			*app.IBCPermKeeper,
+		)
 	}
 
 	///////////////////////
@@ -560,59 +623,20 @@ func NewMinitiaApp(
 
 		icaAuthIBCModule := icaauth.NewIBCModule(*app.ICAAuthKeeper)
 		icaHostIBCModule := icahost.NewIBCModule(*app.ICAHostKeeper)
-		icaHostStack = ibcfee.NewIBCMiddleware(icaHostIBCModule, *app.IBCFeeKeeper)
+		icaHostStack = ibcperm.NewIBCMiddleware(
+			// receive: perm -> fee -> ica host
+			ibcfee.NewIBCMiddleware(icaHostIBCModule, *app.IBCFeeKeeper),
+			// ics4wrapper: not used
+			nil,
+			*app.IBCPermKeeper,
+		)
 		icaControllerIBCModule := icacontroller.NewIBCMiddleware(icaAuthIBCModule, *app.ICAControllerKeeper)
-		icaControllerStack = ibcfee.NewIBCMiddleware(icaControllerIBCModule, *app.IBCFeeKeeper)
-	}
-
-	///////////////////////
-	// ICQ configuration //
-	///////////////////////
-	var icqStack porttypes.IBCModule
-	{
-		icqKeeper := icqkeeper.NewKeeper(
-			appCodec,
-			app.keys[icqtypes.StoreKey],
-			// ics4wrapper: icq -> fee -> channel
-			app.IBCFeeKeeper,
-			app.IBCKeeper.ChannelKeeper,
-			app.IBCKeeper.PortKeeper,
-			app.ScopedICQKeeper,
-			bApp.GRPCQueryRouter(),
-			authorityAddr,
-		)
-		app.ICQKeeper = &icqKeeper
-
-		// Create Async ICQ module
-		icqModule := icq.NewIBCModule(*app.ICQKeeper)
-		icqStack = ibcfee.NewIBCMiddleware(icqModule, *app.IBCFeeKeeper)
-	}
-
-	//////////////////////////////
-	// FetchPrice configuration //
-	//////////////////////////////
-
-	var fetchpriceStack porttypes.IBCModule
-	{
-		app.FetchPriceKeeper = fetchpricekeeper.NewKeeper(
-			appCodec,
-			runtime.NewKVStoreService(app.keys[fetchpricetypes.StoreKey]),
-			// ics4wrapper: fetchprice -> fee -> channel
-			app.IBCFeeKeeper,
-			app.IBCKeeper.ChannelKeeper,
-			app.IBCKeeper.PortKeeper,
-			app.AccountKeeper,
-			app.OracleKeeper,
-			app.ScopedFetchPriceKeeper,
-			authorityAddr,
-		)
-
-		// Create FetchPrice module
-		fetchpriceModule := fetchprice.NewIBCModule(*app.FetchPriceKeeper)
-		fetchpriceStack = ibcfee.NewIBCMiddleware(
-			// receive: fee -> fetchprice
-			fetchpriceModule,
-			*app.IBCFeeKeeper,
+		icaControllerStack = ibcperm.NewIBCMiddleware(
+			// receive: perm -> fee -> ica controller
+			ibcfee.NewIBCMiddleware(icaControllerIBCModule, *app.IBCFeeKeeper),
+			// ics4wrapper: not used
+			nil,
+			*app.IBCPermKeeper,
 		)
 	}
 
@@ -626,8 +650,7 @@ func NewMinitiaApp(
 		AddRoute(icahosttypes.SubModuleName, icaHostStack).
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(icaauthtypes.ModuleName, icaControllerStack).
-		AddRoute(icqtypes.ModuleName, icqStack).
-		AddRoute(fetchpricetypes.ModuleName, fetchpriceStack)
+		AddRoute(ibcnfttransfertypes.ModuleName, nftTransferStack)
 
 	app.IBCKeeper.SetRouter(ibcRouter)
 
@@ -689,14 +712,14 @@ func NewMinitiaApp(
 		// ibc modules
 		ibc.NewAppModule(app.IBCKeeper),
 		ibctransfer.NewAppModule(*app.TransferKeeper),
+		ibcnfttransfer.NewAppModule(appCodec, *app.NftTransferKeeper),
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
 		icaauth.NewAppModule(appCodec, *app.ICAAuthKeeper),
 		ibcfee.NewAppModule(*app.IBCFeeKeeper),
+		ibcperm.NewAppModule(*app.IBCPermKeeper),
 		ibctm.NewAppModule(),
 		solomachine.NewAppModule(),
 		packetforward.NewAppModule(app.PacketForwardKeeper, nil),
-		icq.NewAppModule(*app.ICQKeeper, nil),
-		fetchprice.NewAppModule(appCodec, *app.FetchPriceKeeper),
 		ibchooks.NewAppModule(appCodec, *app.IBCHooksKeeper),
 		// slinky modules
 		oracle.NewAppModule(appCodec, *app.OracleKeeper),
@@ -746,9 +769,9 @@ func NewMinitiaApp(
 		capabilitytypes.ModuleName, authtypes.ModuleName, evmtypes.ModuleName, banktypes.ModuleName,
 		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName,
 		upgradetypes.ModuleName, feegrant.ModuleName, consensusparamtypes.ModuleName, ibcexported.ModuleName,
-		ibctransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
-		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
-		packetforwardtypes.ModuleName, icqtypes.ModuleName, fetchpricetypes.ModuleName,
+		ibctransfertypes.ModuleName, ibcnfttransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
+		ibcfeetypes.ModuleName, ibcpermtypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
+		packetforwardtypes.ModuleName,
 		ibchookstypes.ModuleName,
 	}
 
