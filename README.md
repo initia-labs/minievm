@@ -2,6 +2,10 @@
 
 minievm is an optimistic rollup consumer chain powered by EVM. It is a framework designed to simplify the process of bootstrapping an L2 network. The main advantage of using minievm is that you can leverage the OPinit stack for enhanced security and utilize all the initia ecosystem tooling from day one, without the need to prepare a validator group or build your own ecosystem tools.
 
+## Prerequisites
+
+- Go v1.22.2+
+
 ## Getting Started
 
 To get started with L2, please visit the documentation.
