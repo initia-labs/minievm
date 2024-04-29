@@ -107,9 +107,6 @@ import (
 	ibcnfttransfer "github.com/initia-labs/initia/x/ibc/nft-transfer"
 	ibcnfttransferkeeper "github.com/initia-labs/initia/x/ibc/nft-transfer/keeper"
 	ibcnfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
-	ibcperm "github.com/initia-labs/initia/x/ibc/perm"
-	ibcpermkeeper "github.com/initia-labs/initia/x/ibc/perm/keeper"
-	ibcpermtypes "github.com/initia-labs/initia/x/ibc/perm/types"
 	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
 	icaauth "github.com/initia-labs/initia/x/intertx"
 	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
@@ -226,7 +223,6 @@ type MinitiaApp struct {
 	ICAControllerKeeper   *icacontrollerkeeper.Keeper
 	ICAAuthKeeper         *icaauthkeeper.Keeper
 	IBCFeeKeeper          *ibcfeekeeper.Keeper
-	IBCPermKeeper         *ibcpermkeeper.Keeper
 	EVMKeeper             *evmkeeper.Keeper
 	OPChildKeeper         *opchildkeeper.Keeper
 	AuctionKeeper         *auctionkeeper.Keeper // x/auction keeper used to process bids for POB auctions
@@ -339,6 +335,7 @@ func NewMinitiaApp(
 	// add keepers
 	app.EVMKeeper = &evmkeeper.Keeper{}
 	erc20Keeper := new(evmkeeper.ERC20Keeper)
+	erc721Keeper := new(evmkeeper.ERC721Keeper)
 
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
@@ -456,13 +453,6 @@ func NewMinitiaApp(
 	)
 	app.IBCFeeKeeper = &ibcFeeKeeper
 
-	app.IBCPermKeeper = ibcpermkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[ibcpermtypes.StoreKey]),
-		authorityAddr,
-		ac,
-	)
-
 	app.IBCHooksKeeper = ibchookskeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[ibchookstypes.StoreKey]),
@@ -557,15 +547,6 @@ func NewMinitiaApp(
 			// ics4wrapper: transfer -> packet forward -> evm -> fee -> channel
 			*app.IBCFeeKeeper,
 		)
-
-		// create perm middleware for transfer
-		transferStack = ibcperm.NewIBCMiddleware(
-			// receive: perm -> fee -> move -> packet forward -> forwarding -> transfer
-			transferStack,
-			// ics4wrapper: not used
-			nil,
-			*app.IBCPermKeeper,
-		)
 	}
 
 	////////////////////////////////
@@ -583,7 +564,7 @@ func NewMinitiaApp(
 			app.IBCKeeper.ChannelKeeper,
 			app.IBCKeeper.PortKeeper,
 			app.AccountKeeper,
-			app.EVMKeeper.ERC721Keeper(),
+			erc721Keeper,
 			app.ScopedNftTransferKeeper,
 			authorityAddr,
 		)
@@ -600,16 +581,10 @@ func NewMinitiaApp(
 			app.IBCHooksKeeper,
 		)
 
-		nftTransferStack = ibcperm.NewIBCMiddleware(
-			// receive: perm -> fee -> nft transfer
-			ibcfee.NewIBCMiddleware(
-				// receive: channel -> fee -> move -> nft transfer
-				hookMiddleware,
-				*app.IBCFeeKeeper,
-			),
-			// ics4wrapper: not used
-			nil,
-			*app.IBCPermKeeper,
+		nftTransferStack = ibcfee.NewIBCMiddleware(
+			// receive: channel -> fee -> evm -> nft transfer
+			hookMiddleware,
+			*app.IBCFeeKeeper,
 		)
 	}
 
@@ -655,21 +630,9 @@ func NewMinitiaApp(
 
 		icaAuthIBCModule := icaauth.NewIBCModule(*app.ICAAuthKeeper)
 		icaHostIBCModule := icahost.NewIBCModule(*app.ICAHostKeeper)
-		icaHostStack = ibcperm.NewIBCMiddleware(
-			// receive: perm -> fee -> ica host
-			ibcfee.NewIBCMiddleware(icaHostIBCModule, *app.IBCFeeKeeper),
-			// ics4wrapper: not used
-			nil,
-			*app.IBCPermKeeper,
-		)
+		icaHostStack = ibcfee.NewIBCMiddleware(icaHostIBCModule, *app.IBCFeeKeeper)
 		icaControllerIBCModule := icacontroller.NewIBCMiddleware(icaAuthIBCModule, *app.ICAControllerKeeper)
-		icaControllerStack = ibcperm.NewIBCMiddleware(
-			// receive: perm -> fee -> ica controller
-			ibcfee.NewIBCMiddleware(icaControllerIBCModule, *app.IBCFeeKeeper),
-			// ics4wrapper: not used
-			nil,
-			*app.IBCPermKeeper,
-		)
+		icaControllerStack = ibcfee.NewIBCMiddleware(icaControllerIBCModule, *app.IBCFeeKeeper)
 	}
 
 	//////////////////////////////
@@ -704,6 +667,7 @@ func NewMinitiaApp(
 		evmtypes.DefaultQueryCosmosWhitelist(),
 	)
 	*erc20Keeper = *app.EVMKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
+	*erc721Keeper = *app.EVMKeeper.ERC721Keeper().(*evmkeeper.ERC721Keeper)
 
 	// x/auction module keeper initialization
 
@@ -748,7 +712,6 @@ func NewMinitiaApp(
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
 		icaauth.NewAppModule(appCodec, *app.ICAAuthKeeper),
 		ibcfee.NewAppModule(*app.IBCFeeKeeper),
-		ibcperm.NewAppModule(*app.IBCPermKeeper),
 		ibctm.NewAppModule(),
 		solomachine.NewAppModule(),
 		packetforward.NewAppModule(app.PacketForwardKeeper, nil),
@@ -806,7 +769,7 @@ func NewMinitiaApp(
 		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName,
 		upgradetypes.ModuleName, feegrant.ModuleName, consensusparamtypes.ModuleName, ibcexported.ModuleName,
 		ibctransfertypes.ModuleName, ibcnfttransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
-		ibcfeetypes.ModuleName, ibcpermtypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
+		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
 		packetforwardtypes.ModuleName, forwardingtypes.ModuleName,
 		ibchookstypes.ModuleName,
 	}

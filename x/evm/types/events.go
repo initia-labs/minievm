@@ -19,6 +19,7 @@ const (
 	AttributeKeyRet      = "ret"
 	AttributeKeyDenom    = "denom"
 
-	AttributeKeyClassId = "class_id"
-	AttributeKeyTokenId = "token_id"
+	AttributeKeyClassId       = "class_id"
+	AttributeKeyTokenId       = "token_id"
+	AttributeKeyTokenOriginId = "token_origin_id"
 )

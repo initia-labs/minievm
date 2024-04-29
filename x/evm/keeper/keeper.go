@@ -139,7 +139,7 @@ func NewKeeper(
 	return k
 }
 
-// GetAuthority returns the x/move module's authority.
+// GetAuthority returns the x/evm module's authority.
 func (ak Keeper) GetAuthority() string {
 	return ak.authority
 }

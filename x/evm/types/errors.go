@@ -24,4 +24,5 @@ var (
 	ErrPrecompileFailed          = errorsmod.Register(ModuleName, 16, "Precompile failed")
 	ErrNotSupportedCosmosMessage = errorsmod.Register(ModuleName, 17, "Not supported cosmos message")
 	ErrNotSupportedCosmosQuery   = errorsmod.Register(ModuleName, 18, "Not supported cosmos query")
+	ErrInvalidTokenId            = errorsmod.Register(ModuleName, 19, "Invalid token id")
 )

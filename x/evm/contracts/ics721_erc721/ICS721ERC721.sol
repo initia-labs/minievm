@@ -11,11 +11,12 @@ contract ICS721ERC721 is ERC721, Ownable, ERC721Registry {
     string private uri;
 
     mapping(uint256 => string) private tokenUris;
+    mapping(uint256 => string) private tokenOriginIds;
     constructor(string memory name_, string memory symbol_, string memory uri_) ERC721(name_, symbol_) Ownable() register_erc721 {
         uri = uri_;
     }
 
-    function burn(uint256 tokenId) external {
+    function burn(uint256 tokenId) public {
         address owner = _requireOwned(tokenId);
         if (!_isAuthorized(owner, msg.sender, tokenId)) {
             revert ERC721InsufficientApproval(_msgSender(), tokenId);
@@ -24,8 +25,15 @@ contract ICS721ERC721 is ERC721, Ownable, ERC721Registry {
     }
 
     function mint(address receiver, uint256 tokenId, string memory _tokenUri) public onlyOwner register_erc721_store(receiver){
+        // _safeMint(receiver, tokenId);
+        // tokenUris[tokenId] = _tokenUri;
+        mint(receiver, tokenId, _tokenUri, "");
+    }
+
+    function mint(address receiver, uint256 tokenId, string memory _tokenUri, string memory _tokenOriginId) public onlyOwner register_erc721_store(receiver){
         _safeMint(receiver, tokenId);
         tokenUris[tokenId] = _tokenUri;
+        tokenOriginIds[tokenId] = _tokenOriginId;
     }
 
     function classURI() public view returns (string memory) {
@@ -34,6 +42,10 @@ contract ICS721ERC721 is ERC721, Ownable, ERC721Registry {
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         return tokenUris[tokenId];
+    }
+
+    function tokenOriginId(uint256 tokenId) public view returns (string memory) {
+        return tokenOriginIds[tokenId];
     }
 
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override register_erc721_store(to) {

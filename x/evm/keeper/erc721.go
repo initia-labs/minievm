@@ -35,19 +35,19 @@ func NewERC721Keeper(k *Keeper) (types.IERC721Keeper, error) {
 	return &ERC721Keeper{k, abi, erc721Bin}, nil
 }
 
-func (k ERC721Keeper) isCollectionInitialized(ctx context.Context, contractAddr common.Address) (bool, error) {
-	return k.ERC721ClassIdsByContractAddr.Has(ctx, contractAddr.Bytes())
+func (k ERC721Keeper) isCollectionInitialized(ctx context.Context, classId string) (bool, error) {
+	return k.ERC721ContractAddrsByClassId.Has(ctx, classId)
 }
 
 func (k ERC721Keeper) CreateOrUpdateClass(ctx context.Context, classId, classUri, classData string) error {
-	contractAddr, err := types.ClassIdToContractAddr(ctx, k, classId)
-	if err != nil {
-		return err
-	}
-
-	if ok, err := k.isCollectionInitialized(ctx, contractAddr); err != nil {
+	if ok, err := k.isCollectionInitialized(ctx, classId); err != nil {
 		return err
 	} else if !ok {
+		contractAddr, err := k.nextContractAddress(ctx, types.StdAddress)
+		if err != nil {
+			return err
+		}
+
 		inputBz, err := k.ABI.Pack("", classId, classId, classUri)
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
@@ -91,12 +91,16 @@ func (k ERC721Keeper) Transfers(ctx context.Context, sender, receiver sdk.AccAdd
 	}
 
 	for _, tokenId := range tokenIds {
-		contractAddr, err := types.ClassIdToContractAddr(ctx, k, classId)
+		contractAddr, err := k.GetContractAddrByClassId(ctx, classId)
 		if err != nil {
 			return err
 		}
 
-		inputBz, err := k.ABI.Pack("safeTransferFrom", senderAddr, receiverAddr, tokenId)
+		intTokenId, ok := types.TokenIdToBigInt(classId, tokenId)
+		if !ok {
+			return types.ErrInvalidTokenId
+		}
+		inputBz, err := k.ABI.Pack("safeTransferFrom", senderAddr, receiverAddr, intTokenId)
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -112,14 +116,14 @@ func (k ERC721Keeper) Transfers(ctx context.Context, sender, receiver sdk.AccAdd
 
 func (k ERC721Keeper) Burn(
 	ctx context.Context, owner common.Address,
-	tokenId string, contractAddr common.Address,
+	tokenId *big.Int, contractAddr common.Address,
 ) error {
 	inputBz, err := k.ABI.Pack("burn", tokenId)
 	if err != nil {
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz)
+	_, _, err = k.EVMCall(ctx, owner, contractAddr, inputBz)
 	if err != nil {
 		return err
 	}
@@ -130,7 +134,7 @@ func (k ERC721Keeper) Burn(
 		sdk.NewEvent(
 			types.EventTypeERC721Burned,
 			sdk.NewAttribute(types.AttributeKeyContract, contractAddr.String()),
-			sdk.NewAttribute(types.AttributeKeyTokenId, tokenId),
+			sdk.NewAttribute(types.AttributeKeyTokenId, tokenId.String()),
 		),
 	)
 	return nil
@@ -143,9 +147,12 @@ func (k ERC721Keeper) Burns(ctx context.Context, owner sdk.AccAddress, classId s
 	}
 
 	ownerAddr, err := k.convertToEVMAddress(ctx, owner, false)
-
 	for _, tokenId := range tokenIds {
-		err := k.Burn(ctx, ownerAddr, tokenId, common.BytesToAddress(contractAddr))
+		intTokenId, ok := types.TokenIdToBigInt(classId, tokenId)
+		if !ok {
+			return types.ErrInvalidTokenId
+		}
+		err := k.Burn(ctx, ownerAddr, intTokenId, common.BytesToAddress(contractAddr))
 		if err != nil {
 			return err
 		}
@@ -156,9 +163,9 @@ func (k ERC721Keeper) Burns(ctx context.Context, owner sdk.AccAddress, classId s
 
 func (k ERC721Keeper) Mint(
 	ctx context.Context, receiver common.Address,
-	tokenId, tokenUri string, contractAddr common.Address,
+	tokenId *big.Int, tokenOriginId, tokenUri string, contractAddr common.Address,
 ) error {
-	inputBz, err := k.ABI.Pack("mint", receiver, tokenId, tokenUri, uint8(0))
+	inputBz, err := k.ABI.Pack("mint", receiver, tokenId, tokenUri, tokenOriginId)
 	if err != nil {
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -174,7 +181,8 @@ func (k ERC721Keeper) Mint(
 		sdk.NewEvent(
 			types.EventTypeERC721Minted,
 			sdk.NewAttribute(types.AttributeKeyContract, contractAddr.String()),
-			sdk.NewAttribute(types.AttributeKeyTokenId, tokenId),
+			sdk.NewAttribute(types.AttributeKeyTokenId, tokenId.String()),
+			sdk.NewAttribute(types.AttributeKeyTokenOriginId, tokenOriginId),
 		),
 	)
 	return nil
@@ -192,7 +200,11 @@ func (k ERC721Keeper) Mints(
 	receiverAddr, err := k.convertToEVMAddress(ctx, receiver, false)
 
 	for i, tokenId := range tokenIds {
-		err := k.Mint(ctx, receiverAddr, tokenId, tokenUris[i], common.BytesToAddress(contractAddr))
+		intTokenId, ok := types.TokenIdToBigInt(classId, tokenId)
+		if !ok {
+			return types.ErrInvalidTokenId
+		}
+		err := k.Mint(ctx, receiverAddr, intTokenId, tokenId, tokenUris[i], common.BytesToAddress(contractAddr))
 		if err != nil {
 			return err
 		}
@@ -225,14 +237,17 @@ func (k ERC721Keeper) GetTokenInfos(ctx context.Context, classId string, tokenId
 
 	tokenUris = make([]string, len(tokenIds))
 	for i, tokenId := range tokenIds {
-		intTokenId := types.TokenIdToBigInt(tokenId)
+		intTokenId, ok := types.TokenIdToBigInt(classId, tokenId)
+		if !ok {
+			return nil, nil, types.ErrInvalidTokenId
+		}
 		tokenUri, err := k.tokenURI(ctx, intTokenId, contractAddr)
 		if err != nil {
 			return nil, nil, err
 		}
 		tokenUris[i] = tokenUri
 	}
-	return tokenUris, nil, err
+	return tokenUris, make([]string, len(tokenIds)), err
 }
 
 func (k ERC721Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Address) (math.Int, error) {
@@ -259,6 +274,20 @@ func (k ERC721Keeper) balanceOf(ctx context.Context, addr, contractAddr common.A
 	return math.NewIntFromBigInt(balance), nil
 }
 
+func (k ERC721Keeper) BalanceOf(ctx context.Context, addr sdk.AccAddress, classId string) (math.Int, error) {
+	contractAddr, err := k.GetContractAddrByClassId(ctx, classId)
+	if err != nil {
+		return math.ZeroInt(), err
+	}
+
+	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
+	if err != nil {
+		return math.ZeroInt(), err
+	}
+
+	return k.balanceOf(ctx, evmAddr, contractAddr)
+}
+
 func (k ERC721Keeper) ownerOf(ctx context.Context, tokenId *big.Int, contractAddr common.Address) (common.Address, error) {
 	inputBz, err := k.ABI.Pack("ownerOf", tokenId)
 	if err != nil {
@@ -281,6 +310,20 @@ func (k ERC721Keeper) ownerOf(ctx context.Context, tokenId *big.Int, contractAdd
 	}
 
 	return owner, nil
+}
+
+func (k ERC721Keeper) OwnerOf(ctx context.Context, tokenId string, classId string) (common.Address, error) {
+	contractAddr, err := k.GetContractAddrByClassId(ctx, classId)
+	if err != nil {
+		return types.NullAddress, err
+	}
+
+	tokenIdInt, ok := types.TokenIdToBigInt(classId, tokenId)
+	if !ok {
+		return types.NullAddress, types.ErrInvalidTokenId
+	}
+
+	return k.ownerOf(ctx, tokenIdInt, contractAddr)
 }
 
 func (k ERC721Keeper) name(ctx context.Context, contractAddr common.Address) (string, error) {
