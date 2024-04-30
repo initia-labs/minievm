@@ -405,7 +405,7 @@ func (suite *KeeperTestSuite) receiverNft(
 
 	ctx := toEndpoint.Chain.GetContext()
 
-	classUri, _, err := toNftKeeper.GetClassInfo(ctx, classId)
+	_, classUri, _, err := toNftKeeper.GetClassInfo(ctx, classId)
 	suite.Require().NoError(err, "not found class")
 	suite.Require().Equal(classUri, data.GetClassUri(), "class uri not equal")
 	return classId

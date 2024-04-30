@@ -1,8 +1,6 @@
 package keeper_test
 
 import (
-	"encoding/base64"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,11 +33,9 @@ func Test_CreateCollection(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, contractAddr, common.BytesToAddress(_contractAddr))
 
-	_classUri, _classData, err := erc721Keeper.GetClassInfo(ctx, classId)
+	_, _classUri, _, err := erc721Keeper.GetClassInfo(ctx, classId)
 	require.NoError(t, err)
 	require.Equal(t, classUri, _classUri)
-	classDesc := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("{\"name\":\"%s\"}", classId)))
-	require.Equal(t, classDesc, _classData)
 }
 
 func Test_CreateNFT(t *testing.T) {

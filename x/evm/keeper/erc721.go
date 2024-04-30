@@ -13,8 +13,6 @@ import (
 
 	erc721 "github.com/initia-labs/minievm/x/evm/contracts/ics721_erc721"
 	"github.com/initia-labs/minievm/x/evm/types"
-
-	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 )
 
 type ERC721Keeper struct {
@@ -219,24 +217,18 @@ func (k ERC721Keeper) Mints(
 	return nil
 }
 
-func (k ERC721Keeper) GetClassInfo(ctx context.Context, classId string) (classUri string, classDescs string, err error) {
+func (k ERC721Keeper) GetClassInfo(ctx context.Context, classId string) (className string, classUri string, classDescs string, err error) {
 	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	classUri, err = k.classURI(ctx, contractAddr)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	className, err := k.name(ctx, contractAddr)
-	if err != nil {
-		return "", "", err
-	}
-
-	classDesc, err := nfttransfertypes.ConvertClassDataToICS721(className, "")
-	return classUri, classDesc, err
+	return className, classUri, "", err
 }
 
 func (k ERC721Keeper) GetTokenInfos(ctx context.Context, classId string, tokenIds []string) (tokenUris []string, tokenDescs []string, err error) {
