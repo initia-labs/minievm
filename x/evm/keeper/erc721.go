@@ -2,8 +2,10 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"math/big"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,7 +15,11 @@ import (
 
 	erc721 "github.com/initia-labs/minievm/x/evm/contracts/ics721_erc721"
 	"github.com/initia-labs/minievm/x/evm/types"
+
+	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 )
+
+var _ nfttransfertypes.NftKeeper = ERC721Keeper{}
 
 type ERC721Keeper struct {
 	*Keeper
@@ -43,17 +49,12 @@ func (k ERC721Keeper) CreateOrUpdateClass(ctx context.Context, classId, classUri
 	if ok, err := k.isCollectionInitialized(ctx, classId); err != nil {
 		return err
 	} else if !ok {
-		contractAddr, err := k.nextContractAddress(ctx, types.StdAddress)
-		if err != nil {
-			return err
-		}
-
-		inputBz, err := k.ABI.Pack("", classId, classId, classUri)
+		inputBz, err := k.ABI.Pack("", classId, classId)
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
 
-		ret, _, err := k.EVMCreate(ctx, types.StdAddress, append(k.ERC721Bin, inputBz...))
+		ret, contractAddr, err := k.EVMCreate(ctx, types.StdAddress, append(k.ERC721Bin, inputBz...))
 		if err != nil {
 			return err
 		}
@@ -67,6 +68,7 @@ func (k ERC721Keeper) CreateOrUpdateClass(ctx context.Context, classId, classUri
 		}
 
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
+
 		// emit erc721 created event
 		sdkCtx.EventManager().EmitEvent(
 			sdk.NewEvent(
@@ -75,7 +77,17 @@ func (k ERC721Keeper) CreateOrUpdateClass(ctx context.Context, classId, classUri
 				sdk.NewAttribute(types.AttributeKeyContract, hexutil.Encode(ret)),
 			),
 		)
-	} // update not supported; ignore
+	}
+
+	// update class uri
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
+	if err != nil {
+		return err
+	}
+
+	if err := k.ERC721ClassURIs.Set(ctx, contractAddr.Bytes(), classUri); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -96,10 +108,6 @@ func (k ERC721Keeper) Transfers(ctx context.Context, sender, receiver sdk.AccAdd
 	}
 
 	for _, tokenId := range tokenIds {
-		if err != nil {
-			return err
-		}
-
 		intTokenId, ok := types.TokenIdToBigInt(classId, tokenId)
 		if !ok {
 			return types.ErrInvalidTokenId
@@ -132,8 +140,8 @@ func (k ERC721Keeper) Burn(
 		return err
 	}
 
+	// emit erc721 burned event
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	// emit erc721 minted event
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			types.EventTypeERC721Burned,
@@ -151,11 +159,16 @@ func (k ERC721Keeper) Burns(ctx context.Context, owner sdk.AccAddress, classId s
 	}
 
 	ownerAddr, err := k.convertToEVMAddress(ctx, owner, false)
+	if err != nil {
+		return err
+	}
+
 	for _, tokenId := range tokenIds {
 		intTokenId, ok := types.TokenIdToBigInt(classId, tokenId)
 		if !ok {
 			return types.ErrInvalidTokenId
 		}
+
 		err := k.Burn(ctx, ownerAddr, intTokenId, contractAddr)
 		if err != nil {
 			return err
@@ -179,8 +192,8 @@ func (k ERC721Keeper) Mint(
 		return err
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	// emit erc721 minted event
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			types.EventTypeERC721Minted,
@@ -202,12 +215,16 @@ func (k ERC721Keeper) Mints(
 	}
 
 	receiverAddr, err := k.convertToEVMAddress(ctx, receiver, false)
+	if err != nil {
+		return err
+	}
 
 	for i, tokenId := range tokenIds {
 		intTokenId, ok := types.TokenIdToBigInt(classId, tokenId)
 		if !ok {
 			return types.ErrInvalidTokenId
 		}
+
 		err := k.Mint(ctx, receiverAddr, intTokenId, tokenId, tokenUris[i], contractAddr)
 		if err != nil {
 			return err
@@ -223,7 +240,15 @@ func (k ERC721Keeper) GetClassInfo(ctx context.Context, classId string) (classNa
 		return "", "", "", err
 	}
 
-	classUri, err = k.classURI(ctx, contractAddr)
+	// ERC721s relayed from the other chains via IBC have classUri else return empty str.
+	classUri, err = k.ERC721ClassURIs.Get(ctx, contractAddr.Bytes())
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return "", "", "", err
+	} else if err != nil {
+		classUri = ""
+	}
+
+	className, err = k.name(ctx, contractAddr)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -350,54 +375,6 @@ func (k ERC721Keeper) name(ctx context.Context, contractAddr common.Address) (st
 	}
 
 	return name, nil
-}
-
-func (k ERC721Keeper) symbol(ctx context.Context, contractAddr common.Address) (string, error) {
-	inputBz, err := k.ABI.Pack("symbol")
-	if err != nil {
-		return "", types.ErrFailedToPackABI.Wrap(err.Error())
-	}
-
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
-	if err != nil {
-		return "", err
-	}
-
-	res, err := k.ABI.Unpack("symbol", retBz)
-	if err != nil {
-		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
-	}
-
-	symbol, ok := res[0].(string)
-	if !ok {
-		return symbol, types.ErrFailedToDecodeOutput
-	}
-
-	return symbol, nil
-}
-
-func (k ERC721Keeper) classURI(ctx context.Context, contractAddr common.Address) (string, error) {
-	inputBz, err := k.ABI.Pack("classURI")
-	if err != nil {
-		return "", types.ErrFailedToPackABI.Wrap(err.Error())
-	}
-
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
-	if err != nil {
-		return "", err
-	}
-
-	res, err := k.ABI.Unpack("classURI", retBz)
-	if err != nil {
-		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
-	}
-
-	classUri, ok := res[0].(string)
-	if !ok {
-		return classUri, types.ErrFailedToDecodeOutput
-	}
-
-	return classUri, nil
 }
 
 func (k ERC721Keeper) tokenURI(ctx context.Context, tokenId *big.Int, contractAddr common.Address) (string, error) {

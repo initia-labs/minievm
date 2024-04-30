@@ -26,10 +26,9 @@ var (
 	ERC20DenomsByContractAddrPrefix = []byte{0x33} // prefix for erc20 denoms
 	ERC20ContractAddrsByDenomPrefix = []byte{0x34} // prefix for erc20 denoms
 
-	ERC721sPrefix                      = []byte{0x41} // prefix for erc721 stores
-	ERC721StoresPrefix                 = []byte{0x42} // prefix for erc721 stores
-	ERC721ClassIdsByContractAddrPrefix = []byte{0x43} // prefix for erc721 denoms
-	ERC721ContractAddrsByClassIdPrefix = []byte{0x44} // prefix for erc721 denoms
+	ERC721ClassURIPrefix               = []byte{0x41} // prefix for erc721 class uris
+	ERC721ClassIdsByContractAddrPrefix = []byte{0x42} // prefix for erc721 class ids
+	ERC721ContractAddrsByClassIdPrefix = []byte{0x43} // prefix for erc721 contract addresses
 
 	ParamsKey = []byte{0x51} // key of parameters for module x/evm
 	VMRootKey = []byte{0x61} // key of evm state root

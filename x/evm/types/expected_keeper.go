@@ -56,12 +56,6 @@ type IERC20Keeper interface {
 	GetMetadata(ctx context.Context, denom string) (banktypes.Metadata, error)
 }
 
-type IERC721StoresKeeper interface {
-	Register(ctx context.Context, contractAddr common.Address) error
-	RegisterStore(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) error
-	IsStoreRegistered(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) (bool, error)
-}
-
 type IERC721Keeper interface {
 	CreateOrUpdateClass(ctx context.Context, classId, classUri, classData string) error
 	Transfers(ctx context.Context, sender, escrowAddress sdk.AccAddress, classId string, tokenIds []string) error

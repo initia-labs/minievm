@@ -133,7 +133,7 @@ func (suite *KeeperTestSuite) CreateNftClass(
 	createAccount := endpoint.Chain.SenderAccounts[5].SenderAccount.GetAddress()
 	createAccountAddr := common.BytesToAddress(createAccount)
 
-	inputBz, err := nftKeeper.ABI.Pack("", name, name, uri)
+	inputBz, err := nftKeeper.ABI.Pack("", name, name)
 	suite.Require().NoError(err)
 
 	_, contractAddr, err := evmKeeper.EVMCreate(ctx, createAccountAddr, append(nftKeeper.ERC721Bin, inputBz...))

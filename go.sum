@@ -782,8 +782,6 @@ github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e h1:1gkMWkAgVhYFhE
 github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e/go.mod h1:jLeUvm6bGT1YutCaL2fIar/8vGUE8cPZvh/gXEWDaDM=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c h1:FDwh5zZbm9v7C37ni4FytQQ9Os5XxYp1px5U7Nqdu2Y=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c/go.mod h1:wj3qx75iC/XNnsMqbPDCIGs0G6Y3E/lo3bdqCyoCy+8=
-github.com/initia-labs/initia v0.2.7 h1:avSfEh+nheYC7gFxnfHaXSHRBZYWHI19vn/T0luI4y8=
-github.com/initia-labs/initia v0.2.7/go.mod h1:PFWX4I983j462shp3a1lLRheBiIfZrRoF/MQI/CsL9o=
 github.com/initia-labs/movevm v0.2.7 h1:6UM35Cp6XQ1LgM7gnaSYouc7osSwxSQJsZgQdpXnBM4=
 github.com/initia-labs/movevm v0.2.7/go.mod h1:6MxR4GP5zH3JUc1IMgfqAe1e483mZVS7fshPknZPJ30=
 github.com/initia-labs/slinky v0.0.0-20240418051646-d45167cc66b1 h1:7mXLhI/X+GLdAYNmzXE5CIvTuOgETUMB7tR6VHvX/tY=
