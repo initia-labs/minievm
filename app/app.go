@@ -256,7 +256,7 @@ func NewMinitiaApp(
 	db dbm.DB,
 	traceStore io.Writer,
 	loadLatest bool,
-	moveConfig evmconfig.EVMConfig,
+	evmConfig evmconfig.EVMConfig,
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *MinitiaApp {
@@ -652,7 +652,6 @@ func NewMinitiaApp(
 	//////////////////////////////
 	// EVMKeeper Configuration //
 	//////////////////////////////
-	evmConfig := evmconfig.GetConfig(appOpts)
 
 	app.EVMKeeper = evmkeeper.NewKeeper(
 		ac,

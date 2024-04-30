@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"encoding/base64"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,11 +21,10 @@ func Test_CreateCollection(t *testing.T) {
 
 	classId := "test-class-id"
 	classUri := "test-class-uri"
-	classData := "test-class-data"
 
 	contractAddr := crypto.CreateAddress(types.StdAddress, 0)
 
-	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, classData)
+	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, "")
 	require.NoError(t, err)
 
 	_classId, err := evmKeeper.ERC721ClassIdsByContractAddr.Get(ctx, contractAddr.Bytes())
@@ -37,8 +38,8 @@ func Test_CreateCollection(t *testing.T) {
 	_classUri, _classData, err := erc721Keeper.GetClassInfo(ctx, classId)
 	require.NoError(t, err)
 	require.Equal(t, classUri, _classUri)
-	// not store classdata
-	require.Equal(t, "", _classData)
+	classDesc := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("{\"name\":\"%s\"}", classId)))
+	require.Equal(t, classDesc, _classData)
 }
 
 func Test_CreateNFT(t *testing.T) {

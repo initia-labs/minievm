@@ -22,7 +22,7 @@ var _ cosmosbank.Keeper = (*BaseKeeper)(nil)
 
 // BaseKeeper manages transfers between accounts. It implements the Keeper interface.
 type BaseKeeper struct {
-	MoveSendKeeper
+	EVMSendKeeper
 
 	ak                     types.AccountKeeper
 	cdc                    codec.BinaryCodec
@@ -54,7 +54,7 @@ func NewBaseKeeper(
 	}
 
 	return BaseKeeper{
-		MoveSendKeeper:         NewMoveSendKeeper(cdc, storeService, ak, ek, blockedAddrs, authority),
+		EVMSendKeeper:          NewEVMSendKeeper(cdc, storeService, ak, ek, blockedAddrs, authority),
 		ak:                     ak,
 		cdc:                    cdc,
 		storeService:           storeService,
@@ -173,13 +173,13 @@ func (k BaseKeeper) HasSupply(ctx context.Context, denom string) bool {
 // GetDenomMetaData retrieves the denomination metadata. returns the metadata and true if the denom exists,
 // false otherwise.
 func (k BaseKeeper) GetDenomMetaData(ctx context.Context, denom string) (types.Metadata, bool) {
-	m, err := k.MoveViewKeeper.DenomMetadata.Get(ctx, denom)
+	m, err := k.EVMViewKeeper.DenomMetadata.Get(ctx, denom)
 	return m, err == nil
 }
 
 // HasDenomMetaData checks if the denomination metadata exists in store.
 func (k BaseKeeper) HasDenomMetaData(ctx context.Context, denom string) bool {
-	has, err := k.MoveViewKeeper.DenomMetadata.Has(ctx, denom)
+	has, err := k.EVMViewKeeper.DenomMetadata.Has(ctx, denom)
 	return has && err == nil
 }
 
@@ -198,7 +198,7 @@ func (k BaseKeeper) GetAllDenomMetaData(ctx context.Context) []types.Metadata {
 // provides the metadata to a callback. If true is returned from the
 // callback, iteration is halted.
 func (k BaseKeeper) IterateAllDenomMetaData(ctx context.Context, cb func(types.Metadata) bool) {
-	err := k.MoveViewKeeper.DenomMetadata.Walk(ctx, nil, func(_ string, metadata types.Metadata) (stop bool, err error) {
+	err := k.EVMViewKeeper.DenomMetadata.Walk(ctx, nil, func(_ string, metadata types.Metadata) (stop bool, err error) {
 		return cb(metadata), nil
 	})
 	if err != nil {
@@ -208,7 +208,7 @@ func (k BaseKeeper) IterateAllDenomMetaData(ctx context.Context, cb func(types.M
 
 // SetDenomMetaData sets the denominations metadata
 func (k BaseKeeper) SetDenomMetaData(ctx context.Context, denomMetaData types.Metadata) {
-	_ = k.MoveViewKeeper.DenomMetadata.Set(ctx, denomMetaData.Base, denomMetaData)
+	_ = k.EVMViewKeeper.DenomMetadata.Set(ctx, denomMetaData.Base, denomMetaData)
 }
 
 // SendCoinsFromModuleToAccount transfers coins from a ModuleAccount to an AccAddress.
@@ -366,7 +366,7 @@ func (k BaseKeeper) BurnCoins(ctx context.Context, moduleName string, amounts sd
 // IterateTotalSupply iterates over the total supply calling the given cb (callback) function
 // with the balance of each coin.
 // The iteration stops if the callback returns true.
-func (k MoveViewKeeper) IterateTotalSupply(ctx context.Context, cb func(sdk.Coin) bool) {
+func (k EVMViewKeeper) IterateTotalSupply(ctx context.Context, cb func(sdk.Coin) bool) {
 	err := k.ek.IterateSupply(ctx, func(supply sdk.Coin) (bool, error) {
 		return cb(supply), nil
 	})

@@ -13,6 +13,8 @@ import (
 
 	erc721 "github.com/initia-labs/minievm/x/evm/contracts/ics721_erc721"
 	"github.com/initia-labs/minievm/x/evm/types"
+
+	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 )
 
 type ERC721Keeper struct {
@@ -90,8 +92,12 @@ func (k ERC721Keeper) Transfers(ctx context.Context, sender, receiver sdk.AccAdd
 		return err
 	}
 
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
+	if err != nil {
+		return err
+	}
+
 	for _, tokenId := range tokenIds {
-		contractAddr, err := k.GetContractAddrByClassId(ctx, classId)
 		if err != nil {
 			return err
 		}
@@ -141,7 +147,7 @@ func (k ERC721Keeper) Burn(
 }
 
 func (k ERC721Keeper) Burns(ctx context.Context, owner sdk.AccAddress, classId string, tokenIds []string) error {
-	contractAddr, err := k.ERC721ContractAddrsByClassId.Get(ctx, classId)
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
 	if err != nil {
 		return err
 	}
@@ -152,7 +158,7 @@ func (k ERC721Keeper) Burns(ctx context.Context, owner sdk.AccAddress, classId s
 		if !ok {
 			return types.ErrInvalidTokenId
 		}
-		err := k.Burn(ctx, ownerAddr, intTokenId, common.BytesToAddress(contractAddr))
+		err := k.Burn(ctx, ownerAddr, intTokenId, contractAddr)
 		if err != nil {
 			return err
 		}
@@ -192,7 +198,7 @@ func (k ERC721Keeper) Mints(
 	ctx context.Context, receiver sdk.AccAddress,
 	classId string, tokenIds, tokenUris, tokenData []string,
 ) error {
-	contractAddr, err := k.ERC721ContractAddrsByClassId.Get(ctx, classId)
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
 	if err != nil {
 		return err
 	}
@@ -204,7 +210,7 @@ func (k ERC721Keeper) Mints(
 		if !ok {
 			return types.ErrInvalidTokenId
 		}
-		err := k.Mint(ctx, receiverAddr, intTokenId, tokenId, tokenUris[i], common.BytesToAddress(contractAddr))
+		err := k.Mint(ctx, receiverAddr, intTokenId, tokenId, tokenUris[i], contractAddr)
 		if err != nil {
 			return err
 		}
@@ -214,26 +220,30 @@ func (k ERC721Keeper) Mints(
 }
 
 func (k ERC721Keeper) GetClassInfo(ctx context.Context, classId string) (classUri string, classDescs string, err error) {
-	contractAddrBz, err := k.ERC721ContractAddrsByClassId.Get(ctx, classId)
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
 	if err != nil {
 		return "", "", err
 	}
-	contractAddr := common.BytesToAddress(contractAddrBz)
 
 	classUri, err = k.classURI(ctx, contractAddr)
 	if err != nil {
 		return "", "", err
 	}
 
-	return classUri, "", err
+	className, err := k.name(ctx, contractAddr)
+	if err != nil {
+		return "", "", err
+	}
+
+	classDesc, err := nfttransfertypes.ConvertClassDataToICS721(className, "")
+	return classUri, classDesc, err
 }
 
 func (k ERC721Keeper) GetTokenInfos(ctx context.Context, classId string, tokenIds []string) (tokenUris []string, tokenDescs []string, err error) {
-	contractAddrBz, err := k.ERC721ContractAddrsByClassId.Get(ctx, classId)
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
 	if err != nil {
 		return nil, nil, err
 	}
-	contractAddr := common.BytesToAddress(contractAddrBz)
 
 	tokenUris = make([]string, len(tokenIds))
 	for i, tokenId := range tokenIds {
@@ -275,7 +285,7 @@ func (k ERC721Keeper) balanceOf(ctx context.Context, addr, contractAddr common.A
 }
 
 func (k ERC721Keeper) BalanceOf(ctx context.Context, addr sdk.AccAddress, classId string) (math.Int, error) {
-	contractAddr, err := k.GetContractAddrByClassId(ctx, classId)
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
 	if err != nil {
 		return math.ZeroInt(), err
 	}
@@ -313,7 +323,7 @@ func (k ERC721Keeper) ownerOf(ctx context.Context, tokenId *big.Int, contractAdd
 }
 
 func (k ERC721Keeper) OwnerOf(ctx context.Context, tokenId string, classId string) (common.Address, error) {
-	contractAddr, err := k.GetContractAddrByClassId(ctx, classId)
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
 	if err != nil {
 		return types.NullAddress, err
 	}
