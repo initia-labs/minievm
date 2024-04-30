@@ -34,7 +34,7 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.2.4
 	github.com/initia-labs/OPinit v0.2.6
-	github.com/initia-labs/initia v0.2.6
+	github.com/initia-labs/initia v0.2.7
 	github.com/noble-assets/forwarding v0.0.0-20240416085758-ed8e9efaf69a
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
@@ -268,6 +268,5 @@ replace (
 	github.com/cosmos/iavl => github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240327052100-aa794f2fc009
-
 	github.com/skip-mev/slinky => github.com/initia-labs/slinky v0.0.0-20240418051646-d45167cc66b1
 )

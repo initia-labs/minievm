@@ -36359,6 +36359,7 @@ paths:
         - Query
   /opinit/opchild/v1/bridge_info:
     get:
+      summary: BridgeInfo queries the bridge information.
       operationId: BridgeInfo
       responses:
         '200':
@@ -36379,6 +36380,17 @@ paths:
                   bridge_addr:
                     type: string
                     description: bridge_addr is the address of the bridge on l1.
+                  l1_chain_id:
+                    type: string
+                    description: l1_chain_id is the chain id of the l1 chain.
+                  l1_client_id:
+                    type: string
+                    description: >-
+                      l1_client_id is the IBC client ID, which is allocated for
+                      l1 chain, in l2 chain state.
+
+                      This is used to verify the validator set in oracle update
+                      messages.
                   bridge_config:
                     description: bridge_config is the configuration of the bridge.
                     type: object
@@ -62162,6 +62174,16 @@ definitions:
       bridge_addr:
         type: string
         description: bridge_addr is the address of the bridge on l1.
+      l1_chain_id:
+        type: string
+        description: l1_chain_id is the chain id of the l1 chain.
+      l1_client_id:
+        type: string
+        description: >-
+          l1_client_id is the IBC client ID, which is allocated for l1 chain, in
+          l2 chain state.
+
+          This is used to verify the validator set in oracle update messages.
       bridge_config:
         description: bridge_config is the configuration of the bridge.
         type: object
@@ -62249,7 +62271,7 @@ definitions:
         items:
           type: string
         description: the list of addresses that are allowed to pay zero fee.
-    description: Params defines the set of move parameters.
+    description: Params defines the set of opchild parameters.
   opinit.opchild.v1.QueryBridgeInfoResponse:
     type: object
     properties:
@@ -62266,6 +62288,17 @@ definitions:
           bridge_addr:
             type: string
             description: bridge_addr is the address of the bridge on l1.
+          l1_chain_id:
+            type: string
+            description: l1_chain_id is the chain id of the l1 chain.
+          l1_client_id:
+            type: string
+            description: >-
+              l1_client_id is the IBC client ID, which is allocated for l1
+              chain, in l2 chain state.
+
+              This is used to verify the validator set in oracle update
+              messages.
           bridge_config:
             description: bridge_config is the configuration of the bridge.
             type: object

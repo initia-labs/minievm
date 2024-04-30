@@ -42,12 +42,8 @@ func isIcs20Packet(packetData []byte) (isIcs20 bool, ics20data transfertypes.Fun
 	return true, data
 }
 
-func isIcs721Packet(packetData []byte) (isIcs721 bool, ics721data nfttransfertypes.NonFungibleTokenPacketData) {
-	// Use evm port prefix to ack like normal evm chain.
-	//
-	// initia l1 is handling encoding and decoding depends on port id,
-	// so minievm should ack like normal evm chain.
-	if data, err := nfttransfertypes.DecodePacketData(packetData, "ics721"); err != nil {
+func isIcs721Packet(packetData []byte, counterPartyPort string) (isIcs721 bool, ics721data nfttransfertypes.NonFungibleTokenPacketData) {
+	if data, err := nfttransfertypes.DecodePacketData(packetData, counterPartyPort); err != nil {
 		return false, data
 	} else {
 		return true, data

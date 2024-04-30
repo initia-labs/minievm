@@ -86,6 +86,10 @@ func InitCmd(mbm module.BasicManager, defaultNodeHome string) *cobra.Command {
 			config := serverCtx.Config
 			config.SetRoot(clientCtx.HomeDir)
 
+			// Configure the server to open RPC port to everyone and allow every origins
+			config.RPC.ListenAddress = "tcp://0.0.0.0:26657"
+			config.RPC.CORSAllowedOrigins = []string{"*"}
+
 			chainID, _ := cmd.Flags().GetString(flags.FlagChainID)
 			if chainID == "" {
 				chainID = fmt.Sprintf("test-chain-%v", cometrand.Str(6))
