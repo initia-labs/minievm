@@ -572,7 +572,7 @@ func NewMinitiaApp(
 
 		// create move middleware for nft-transfer
 		hookMiddleware := ibchooks.NewIBCMiddleware(
-			// receive: move -> nft-transfer
+			// receive: evm -> nft-transfer
 			nftTransferIBCModule,
 			ibchooks.NewICS4Middleware(
 				nil, /* ics4wrapper: not used */
