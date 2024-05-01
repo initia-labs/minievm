@@ -179,12 +179,15 @@ proto-check-breaking:
 ###                           Tests 
 ###############################################################################
 
-test: contracts-gen test-unit
+test: contracts-gen test-unit test-integration
 
-test-all: contracts-gen test-unit test-race test-cover
+test-all: contracts-gen test-unit test-race test-cover test-integration
 
 test-unit:
 	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
+
+test-integration:
+	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./integration-tests/...
 
 test-race:
 	@VERSION=$(VERSION) go test -mod=readonly -race -tags='ledger test_ledger_mock' ./...

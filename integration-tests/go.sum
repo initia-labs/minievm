@@ -204,8 +204,6 @@ cosmossdk.io/simapp v0.0.0-20231211060251-d8fb76d4c267 h1:fLJ+ng4SiuEK7NhKPIAn7Q
 cosmossdk.io/simapp v0.0.0-20231211060251-d8fb76d4c267/go.mod h1:ril3K+x7sdvOTVZsBv0PGDePO54m64HLDq1AmVEREl8=
 cosmossdk.io/store v1.1.0 h1:LnKwgYMc9BInn9PhpTFEQVbL9UK475G2H911CGGnWHk=
 cosmossdk.io/store v1.1.0/go.mod h1:oZfW/4Fc/zYqu3JmQcQdUJ3fqu5vnYTn3LZFFy8P8ng=
-cosmossdk.io/tools/confix v0.1.1 h1:aexyRv9+y15veH3Qw16lxQwo+ki7r2I+g0yNTEFEQM8=
-cosmossdk.io/tools/confix v0.1.1/go.mod h1:nQVvP1tHsGXS83PonPVWJtSbddIqyjEw99L4M3rPJyQ=
 cosmossdk.io/x/circuit v0.1.0 h1:IAej8aRYeuOMritczqTlljbUVHq1E85CpBqaCTwYgXs=
 cosmossdk.io/x/circuit v0.1.0/go.mod h1:YDzblVE8+E+urPYQq5kq5foRY/IzhXovSYXb4nwd39w=
 cosmossdk.io/x/evidence v0.1.0 h1:J6OEyDl1rbykksdGynzPKG5R/zm6TacwW2fbLTW4nCk=
@@ -406,10 +404,6 @@ github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233 h1:d28BXYi+wUp
 github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233/go.mod h1:geZJZH3SzKCqnz5VT0q/DyIG/tvu/dZk+VIfXicupJs=
 github.com/crate-crypto/go-kzg-4844 v1.0.0 h1:TsSgHwrkTKecKJ4kadtHi4b3xHW5dCFUDFnUp1TsawI=
 github.com/crate-crypto/go-kzg-4844 v1.0.0/go.mod h1:1kMhvPgI0Ky3yIa+9lFySEBUBXkYxeOi8ZF1sYioxhc=
-github.com/creachadair/atomicfile v0.3.1 h1:yQORkHjSYySh/tv5th1dkKcn02NEW5JleB84sjt+W4Q=
-github.com/creachadair/atomicfile v0.3.1/go.mod h1:mwfrkRxFKwpNAflYZzytbSwxvbK6fdGRRlp0KEQc0qU=
-github.com/creachadair/tomledit v0.0.24 h1:5Xjr25R2esu1rKCbQEmjZYlrhFkDspoAbAKb6QKQDhQ=
-github.com/creachadair/tomledit v0.0.24/go.mod h1:9qHbShRWQzSCcn617cMzg4eab1vbLCOjOshAWSzWr8U=
 github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7DoTY=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/danieljoos/wincred v1.1.2 h1:QLdCxFs1/Yl4zduvBdcHB8goaYk9RARS2SgLLRuAyr0=
@@ -784,6 +778,8 @@ github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c h1:FDwh5zZbm
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c/go.mod h1:wj3qx75iC/XNnsMqbPDCIGs0G6Y3E/lo3bdqCyoCy+8=
 github.com/initia-labs/initia v0.2.7 h1:avSfEh+nheYC7gFxnfHaXSHRBZYWHI19vn/T0luI4y8=
 github.com/initia-labs/initia v0.2.7/go.mod h1:PFWX4I983j462shp3a1lLRheBiIfZrRoF/MQI/CsL9o=
+github.com/initia-labs/minievm v0.2.1 h1:ATlibtP7d7obMquzvZrEC/iIWTRmVQquiHUp0JSHZGI=
+github.com/initia-labs/minievm v0.2.1/go.mod h1:64vJt5TxE1uzHGyelnzL2WzvLWxzc8LBWCidPxgsBOw=
 github.com/initia-labs/movevm v0.2.7 h1:6UM35Cp6XQ1LgM7gnaSYouc7osSwxSQJsZgQdpXnBM4=
 github.com/initia-labs/movevm v0.2.7/go.mod h1:6MxR4GP5zH3JUc1IMgfqAe1e483mZVS7fshPknZPJ30=
 github.com/initia-labs/slinky v0.0.0-20240418051646-d45167cc66b1 h1:7mXLhI/X+GLdAYNmzXE5CIvTuOgETUMB7tR6VHvX/tY=
@@ -1195,6 +1191,8 @@ go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/goleak v1.1.10/go.mod h1:8a7PlsEVH3e/a/GLqe5IIrQx6GzcnRmZEufDUTk4A7A=
+go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
+go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.uber.org/mock v0.4.0 h1:VcM4ZOtdbR4f6VXfiOpwpVJDL6lCReaZ6mw31wqh7KU=
 go.uber.org/mock v0.4.0/go.mod h1:a6FSlNadKUHUa9IP5Vyt1zh4fC7uAwxMutEAscFbkZc=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
