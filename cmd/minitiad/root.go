@@ -140,7 +140,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 }
 
 func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, basicManager module.BasicManager) {
-	a := appCreator{nil, encodingConfig}
+	a := &appCreator{nil, encodingConfig}
 	// you can get app from a.app in post setup handler
 
 	rootCmd.AddCommand(
