@@ -140,7 +140,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 }
 
 func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, basicManager module.BasicManager) {
-	a := appCreator{encodingConfig}
+	a := appCreator{nil, encodingConfig}
+	// you can get app from a.app in post setup handler
 
 	rootCmd.AddCommand(
 		InitCmd(basicManager, minitiaapp.DefaultNodeHome),
@@ -235,19 +236,25 @@ func txCommand() *cobra.Command {
 }
 
 type appCreator struct {
+	app            servertypes.Application
 	encodingConfig params.EncodingConfig
 }
 
 // newApp is an AppCreator
-func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
+func (a *appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
 	baseappOptions := server.DefaultBaseappOptions(appOpts)
 
-	return minitiaapp.NewMinitiaApp(
+	app := minitiaapp.NewMinitiaApp(
 		logger, db, traceStore, true,
 		evmconfig.GetConfig(appOpts),
 		appOpts,
 		baseappOptions...,
 	)
+
+	// store app in creator
+	a.app = app
+
+	return app
 }
 
 func (a appCreator) appExport(
