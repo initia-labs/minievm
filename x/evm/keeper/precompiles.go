@@ -39,11 +39,11 @@ func (k *Keeper) loadPrecompiles() error {
 	k.precompiles = precompiles{
 		{
 			addr:     common.BytesToAddress([]byte{0xf1}),
-			contract: erc20RegistryPrecompile,
+			contract: cosmosPrecompile,
 		},
 		{
 			addr:     common.BytesToAddress([]byte{0xf2}),
-			contract: cosmosPrecompile,
+			contract: erc20RegistryPrecompile,
 		},
 	}
 

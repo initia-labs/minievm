@@ -16,12 +16,12 @@ import (
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
-var _ cosmosbank.SendKeeper = (*MoveSendKeeper)(nil)
+var _ cosmosbank.SendKeeper = (*EVMSendKeeper)(nil)
 
-// MoveSendKeeper only allows transfers between accounts without the possibility of
+// EVMSendKeeper only allows transfers between accounts without the possibility of
 // creating coins. It implements the SendKeeper interface.
-type MoveSendKeeper struct {
-	MoveViewKeeper
+type EVMSendKeeper struct {
+	EVMViewKeeper
 
 	cdc          codec.BinaryCodec
 	ak           types.AccountKeeper
@@ -37,20 +37,20 @@ type MoveSendKeeper struct {
 	sendRestriction *sendRestriction
 }
 
-func NewMoveSendKeeper(
+func NewEVMSendKeeper(
 	cdc codec.BinaryCodec,
 	storeService store.KVStoreService,
 	ak types.AccountKeeper,
 	ek evmtypes.IERC20Keeper,
 	blockedAddrs map[string]bool,
 	authority string,
-) MoveSendKeeper {
+) EVMSendKeeper {
 	if _, err := ak.AddressCodec().StringToBytes(authority); err != nil {
 		panic(fmt.Errorf("invalid bank authority address: %w", err))
 	}
 
-	return MoveSendKeeper{
-		MoveViewKeeper:  NewMoveViewKeeper(cdc, storeService, ak, ek),
+	return EVMSendKeeper{
+		EVMViewKeeper:   NewEVMViewKeeper(cdc, storeService, ak, ek),
 		cdc:             cdc,
 		ak:              ak,
 		storeService:    storeService,
@@ -61,27 +61,27 @@ func NewMoveSendKeeper(
 }
 
 // AppendSendRestriction adds the provided SendRestrictionFn to run after previously provided restrictions.
-func (k MoveSendKeeper) AppendSendRestriction(restriction types.SendRestrictionFn) {
+func (k EVMSendKeeper) AppendSendRestriction(restriction types.SendRestrictionFn) {
 	k.sendRestriction.append(restriction)
 }
 
 // PrependSendRestriction adds the provided SendRestrictionFn to run before previously provided restrictions.
-func (k MoveSendKeeper) PrependSendRestriction(restriction types.SendRestrictionFn) {
+func (k EVMSendKeeper) PrependSendRestriction(restriction types.SendRestrictionFn) {
 	k.sendRestriction.prepend(restriction)
 }
 
 // ClearSendRestriction removes the send restriction (if there is one).
-func (k MoveSendKeeper) ClearSendRestriction() {
+func (k EVMSendKeeper) ClearSendRestriction() {
 	k.sendRestriction.clear()
 }
 
 // GetAuthority returns the x/bank module's authority.
-func (k MoveSendKeeper) GetAuthority() string {
+func (k EVMSendKeeper) GetAuthority() string {
 	return k.authority
 }
 
 // GetParams returns the total set of bank parameters.
-func (k MoveSendKeeper) GetParams(ctx context.Context) (params types.Params) {
+func (k EVMSendKeeper) GetParams(ctx context.Context) (params types.Params) {
 	p, _ := k.Params.Get(ctx)
 	return p
 }
@@ -91,7 +91,7 @@ func (k MoveSendKeeper) GetParams(ctx context.Context) (params types.Params) {
 // Note: params.SendEnabled is deprecated but it should be here regardless.
 //
 //nolint:staticcheck
-func (k MoveSendKeeper) SetParams(ctx context.Context, params types.Params) error {
+func (k EVMSendKeeper) SetParams(ctx context.Context, params types.Params) error {
 	// Normally SendEnabled is deprecated but we still support it for backwards
 	// compatibility. Using params.Validate() would fail due to the SendEnabled
 	// deprecation.
@@ -107,13 +107,13 @@ func (k MoveSendKeeper) SetParams(ctx context.Context, params types.Params) erro
 // InputOutputCoins performs multi-send functionality. It accepts a series of
 // inputs that correspond to a series of outputs. It returns an error if the
 // inputs and outputs don't lineup or if any single transfer of tokens fails.
-func (k MoveSendKeeper) InputOutputCoins(ctx context.Context, inputs types.Input, outputs []types.Output) error {
+func (k EVMSendKeeper) InputOutputCoins(ctx context.Context, inputs types.Input, outputs []types.Output) error {
 	return sdkerrors.ErrNotSupported
 }
 
 // SendCoins transfers amt coins from a sending account to a receiving account.
 // An error is returned upon failure.
-func (k MoveSendKeeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+func (k EVMSendKeeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 	toAddr, err := k.sendRestriction.apply(ctx, fromAddr, toAddr, amt)
 	if err != nil {
 		return err
@@ -164,14 +164,14 @@ func (k MoveSendKeeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, 
 
 // initBalances sets the balance (multiple coins) for an account by address.
 // An error is returned upon failure.
-func (k MoveSendKeeper) initBalances(ctx context.Context, addr sdk.AccAddress, balances sdk.Coins) error {
+func (k EVMSendKeeper) initBalances(ctx context.Context, addr sdk.AccAddress, balances sdk.Coins) error {
 	return k.ek.MintCoins(ctx, addr, balances)
 }
 
 // IsSendEnabledCoins checks the coins provided and returns an ErrSendDisabled
 // if any of the coins are not configured for sending. Returns nil if sending is
 // enabled for all provided coins.
-func (k MoveSendKeeper) IsSendEnabledCoins(ctx context.Context, coins ...sdk.Coin) error {
+func (k EVMSendKeeper) IsSendEnabledCoins(ctx context.Context, coins ...sdk.Coin) error {
 	if len(coins) == 0 {
 		return nil
 	}
@@ -188,29 +188,29 @@ func (k MoveSendKeeper) IsSendEnabledCoins(ctx context.Context, coins ...sdk.Coi
 }
 
 // IsSendEnabledCoin returns the current SendEnabled status of the provided coin's denom
-func (k MoveSendKeeper) IsSendEnabledCoin(ctx context.Context, coin sdk.Coin) bool {
+func (k EVMSendKeeper) IsSendEnabledCoin(ctx context.Context, coin sdk.Coin) bool {
 	return k.IsSendEnabledDenom(ctx, coin.Denom)
 }
 
 // BlockedAddr checks if a given address is restricted from
 // receiving funds.
-func (k MoveSendKeeper) BlockedAddr(addr sdk.AccAddress) bool {
+func (k EVMSendKeeper) BlockedAddr(addr sdk.AccAddress) bool {
 	return k.blockedAddrs[addr.String()]
 }
 
 // GetBlockedAddresses returns the full list of addresses restricted from receiving funds.
-func (k MoveSendKeeper) GetBlockedAddresses() map[string]bool {
+func (k EVMSendKeeper) GetBlockedAddresses() map[string]bool {
 	return k.blockedAddrs
 }
 
 // IsSendEnabledDenom returns the current SendEnabled status of the provided denom.
-func (k MoveSendKeeper) IsSendEnabledDenom(ctx context.Context, denom string) bool {
+func (k EVMSendKeeper) IsSendEnabledDenom(ctx context.Context, denom string) bool {
 	return k.getSendEnabledOrDefault(ctx, denom, k.GetParams(ctx).DefaultSendEnabled)
 }
 
 // GetSendEnabledEntry gets a SendEnabled entry for the given denom.
 // The second return argument is true iff a specific entry exists for the given denom.
-func (k MoveSendKeeper) GetSendEnabledEntry(ctx context.Context, denom string) (types.SendEnabled, bool) {
+func (k EVMSendKeeper) GetSendEnabledEntry(ctx context.Context, denom string) (types.SendEnabled, bool) {
 	sendEnabled, found := k.getSendEnabled(ctx, denom)
 	if !found {
 		return types.SendEnabled{}, false
@@ -220,12 +220,12 @@ func (k MoveSendKeeper) GetSendEnabledEntry(ctx context.Context, denom string) (
 }
 
 // SetSendEnabled sets the SendEnabled flag for a denom to the provided value.
-func (k MoveSendKeeper) SetSendEnabled(ctx context.Context, denom string, value bool) {
+func (k EVMSendKeeper) SetSendEnabled(ctx context.Context, denom string, value bool) {
 	_ = k.SendEnabled.Set(ctx, denom, value)
 }
 
 // SetAllSendEnabled sets all the provided SendEnabled entries in the bank store.
-func (k MoveSendKeeper) SetAllSendEnabled(ctx context.Context, entries []*types.SendEnabled) {
+func (k EVMSendKeeper) SetAllSendEnabled(ctx context.Context, entries []*types.SendEnabled) {
 	for _, entry := range entries {
 		_ = k.SendEnabled.Set(ctx, entry.Denom, entry.Enabled)
 	}
@@ -233,14 +233,14 @@ func (k MoveSendKeeper) SetAllSendEnabled(ctx context.Context, entries []*types.
 
 // DeleteSendEnabled deletes the SendEnabled flags for one or more denoms.
 // If a denom is provided that doesn't have a SendEnabled entry, it is ignored.
-func (k MoveSendKeeper) DeleteSendEnabled(ctx context.Context, denoms ...string) {
+func (k EVMSendKeeper) DeleteSendEnabled(ctx context.Context, denoms ...string) {
 	for _, denom := range denoms {
 		_ = k.SendEnabled.Remove(ctx, denom)
 	}
 }
 
 // IterateSendEnabledEntries iterates over all the SendEnabled entries.
-func (k MoveSendKeeper) IterateSendEnabledEntries(ctx context.Context, cb func(denom string, sendEnabled bool) bool) {
+func (k EVMSendKeeper) IterateSendEnabledEntries(ctx context.Context, cb func(denom string, sendEnabled bool) bool) {
 	err := k.SendEnabled.Walk(ctx, nil, func(key string, value bool) (stop bool, err error) {
 		return cb(key, value), nil
 	})
@@ -251,7 +251,7 @@ func (k MoveSendKeeper) IterateSendEnabledEntries(ctx context.Context, cb func(d
 
 // GetAllSendEnabledEntries gets all the SendEnabled entries that are stored.
 // Any denominations not returned use the default value (set in Params).
-func (k MoveSendKeeper) GetAllSendEnabledEntries(ctx context.Context) []types.SendEnabled {
+func (k EVMSendKeeper) GetAllSendEnabledEntries(ctx context.Context) []types.SendEnabled {
 	var rv []types.SendEnabled
 	k.IterateSendEnabledEntries(ctx, func(denom string, sendEnabled bool) bool {
 		rv = append(rv, types.SendEnabled{Denom: denom, Enabled: sendEnabled})
@@ -271,7 +271,7 @@ func (k MoveSendKeeper) GetAllSendEnabledEntries(ctx context.Context) []types.Se
 //	if !found {
 //	    sendEnabled = DefaultSendEnabled
 //	}
-func (k MoveSendKeeper) getSendEnabled(ctx context.Context, denom string) (bool, bool) {
+func (k EVMSendKeeper) getSendEnabled(ctx context.Context, denom string) (bool, bool) {
 	has, err := k.SendEnabled.Has(ctx, denom)
 	if err != nil || !has {
 		return false, false
@@ -287,7 +287,7 @@ func (k MoveSendKeeper) getSendEnabled(ctx context.Context, denom string) (bool,
 
 // getSendEnabledOrDefault gets the SendEnabled value for a denom. If it's not
 // in the store, this will return defaultVal.
-func (k MoveSendKeeper) getSendEnabledOrDefault(ctx context.Context, denom string, defaultVal bool) bool {
+func (k EVMSendKeeper) getSendEnabledOrDefault(ctx context.Context, denom string, defaultVal bool) bool {
 	sendEnabled, found := k.getSendEnabled(ctx, denom)
 	if found {
 		return sendEnabled

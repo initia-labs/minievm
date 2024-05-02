@@ -16,7 +16,7 @@ import (
 func GetQueryCmd(ac address.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
-		Short:                      "Querying commands for the move module",
+		Short:                      "Querying commands for the evm module",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,

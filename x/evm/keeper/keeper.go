@@ -25,6 +25,7 @@ type Keeper struct {
 	communityPoolKeeper types.CommunityPoolKeeper
 	erc20Keeper         types.IERC20Keeper
 	erc20StoresKeeper   types.IERC20StoresKeeper
+	erc721Keeper        types.IERC721Keeper
 
 	// grpc routers
 	msgRouter  baseapp.MessageRouter
@@ -46,6 +47,11 @@ type Keeper struct {
 	ERC20Stores               collections.KeySet[collections.Pair[[]byte, []byte]]
 	ERC20DenomsByContractAddr collections.Map[[]byte, string]
 	ERC20ContractAddrsByDenom collections.Map[string, []byte]
+
+	// erc721 stores of users
+	ERC721ClassURIs              collections.Map[[]byte, string]
+	ERC721ClassIdsByContractAddr collections.Map[[]byte, string]
+	ERC721ContractAddrsByClassId collections.Map[string, []byte]
 
 	precompiles          precompiles
 	queryCosmosWhitelist types.QueryCosmosWhitelist
@@ -95,6 +101,10 @@ func NewKeeper(
 		ERC20DenomsByContractAddr: collections.NewMap(sb, types.ERC20DenomsByContractAddrPrefix, "erc20_denoms_by_contract_addr", collections.BytesKey, collections.StringValue),
 		ERC20ContractAddrsByDenom: collections.NewMap(sb, types.ERC20ContractAddrsByDenomPrefix, "erc20_contract_addrs_by_denom", collections.StringKey, collections.BytesValue),
 
+		ERC721ClassURIs:              collections.NewMap(sb, types.ERC721ClassURIPrefix, "erc721_class_uris", collections.BytesKey, collections.StringValue),
+		ERC721ClassIdsByContractAddr: collections.NewMap(sb, types.ERC721ClassIdsByContractAddrPrefix, "erc721_class_ids_by_contract_addr", collections.BytesKey, collections.StringValue),
+		ERC721ContractAddrsByClassId: collections.NewMap(sb, types.ERC721ContractAddrsByClassIdPrefix, "erc721_contract_addrs_by_class_id", collections.StringKey, collections.BytesValue),
+
 		precompiles:          []precompile{},
 		queryCosmosWhitelist: queryCosmosWhitelist,
 	}
@@ -112,6 +122,11 @@ func NewKeeper(
 		panic(err)
 	}
 
+	k.erc721Keeper, err = NewERC721Keeper(k)
+	if err != nil {
+		panic(err)
+	}
+
 	// setup precompiles
 	if err := k.loadPrecompiles(); err != nil {
 		panic(err)
@@ -120,7 +135,7 @@ func NewKeeper(
 	return k
 }
 
-// GetAuthority returns the x/move module's authority.
+// GetAuthority returns the x/evm module's authority.
 func (ak Keeper) GetAuthority() string {
 	return ak.authority
 }
@@ -141,6 +156,11 @@ func (k Keeper) ERC20StoresKeeper() types.IERC20StoresKeeper {
 	return k.erc20StoresKeeper
 }
 
+// ERC721Keeper returns the ERC721Keeper
+func (k Keeper) ERC721Keeper() types.IERC721Keeper {
+	return k.erc721Keeper
+}
+
 // GetContractAddrByDenom returns contract address by denom
 func (k Keeper) GetContractAddrByDenom(ctx context.Context, denom string) (common.Address, error) {
 	bz, err := k.ERC20ContractAddrsByDenom.Get(ctx, denom)
@@ -154,4 +174,19 @@ func (k Keeper) GetContractAddrByDenom(ctx context.Context, denom string) (commo
 // GetDenomByContractAddr returns denom by contract address
 func (k Keeper) GetDenomByContractAddr(ctx context.Context, contractAddr common.Address) (string, error) {
 	return k.ERC20DenomsByContractAddr.Get(ctx, contractAddr.Bytes())
+}
+
+// GetContractAddrByDenom returns contract address by denom
+func (k Keeper) GetContractAddrByClassId(ctx context.Context, classId string) (common.Address, error) {
+	bz, err := k.ERC721ContractAddrsByClassId.Get(ctx, classId)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	return common.BytesToAddress(bz), nil
+}
+
+// GetDenomByContractAddr returns denom by contract address
+func (k Keeper) GetClassIdByContractAddr(ctx context.Context, contractAddr common.Address) (string, error) {
+	return k.ERC721ClassIdsByContractAddr.Get(ctx, contractAddr.Bytes())
 }

@@ -104,6 +104,9 @@ import (
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookskeeper "github.com/initia-labs/initia/x/ibc-hooks/keeper"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
+	ibcnfttransfer "github.com/initia-labs/initia/x/ibc/nft-transfer"
+	ibcnfttransferkeeper "github.com/initia-labs/initia/x/ibc/nft-transfer/keeper"
+	ibcnfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
 	icaauth "github.com/initia-labs/initia/x/intertx"
 	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
@@ -213,6 +216,7 @@ type MinitiaApp struct {
 	ConsensusParamsKeeper *consensusparamkeeper.Keeper
 	IBCKeeper             *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	TransferKeeper        *ibctransferkeeper.Keeper
+	NftTransferKeeper     *ibcnfttransferkeeper.Keeper
 	AuthzKeeper           *authzkeeper.Keeper
 	FeeGrantKeeper        *feegrantkeeper.Keeper
 	ICAHostKeeper         *icahostkeeper.Keeper
@@ -230,6 +234,7 @@ type MinitiaApp struct {
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
+	ScopedNftTransferKeeper   capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAAuthKeeper       capabilitykeeper.ScopedKeeper
@@ -251,7 +256,7 @@ func NewMinitiaApp(
 	db dbm.DB,
 	traceStore io.Writer,
 	loadLatest bool,
-	moveConfig evmconfig.EVMConfig,
+	evmConfig evmconfig.EVMConfig,
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *MinitiaApp {
@@ -273,6 +278,7 @@ func NewMinitiaApp(
 	keys := storetypes.NewKVStoreKeys(
 		authtypes.StoreKey, banktypes.StoreKey, group.StoreKey, consensusparamtypes.StoreKey,
 		ibcexported.StoreKey, upgradetypes.StoreKey, ibctransfertypes.StoreKey,
+		ibcnfttransfertypes.StoreKey,
 		capabilitytypes.StoreKey, authzkeeper.StoreKey, feegrant.StoreKey,
 		icahosttypes.StoreKey, icacontrollertypes.StoreKey, icaauthtypes.StoreKey,
 		ibcfeetypes.StoreKey, evmtypes.StoreKey, opchildtypes.StoreKey,
@@ -319,6 +325,7 @@ func NewMinitiaApp(
 	// grant capabilities for the ibc and ibc-transfer modules
 	app.ScopedIBCKeeper = app.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
 	app.ScopedTransferKeeper = app.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+	app.ScopedNftTransferKeeper = app.CapabilityKeeper.ScopeToModule(ibcnfttransfertypes.ModuleName)
 	app.ScopedICAHostKeeper = app.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 	app.ScopedICAControllerKeeper = app.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
 	app.ScopedICAAuthKeeper = app.CapabilityKeeper.ScopeToModule(icaauthtypes.ModuleName)
@@ -328,6 +335,7 @@ func NewMinitiaApp(
 	// add keepers
 	app.EVMKeeper = &evmkeeper.Keeper{}
 	erc20Keeper := new(evmkeeper.ERC20Keeper)
+	erc721Keeper := new(evmkeeper.ERC721Keeper)
 
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
@@ -541,6 +549,45 @@ func NewMinitiaApp(
 		)
 	}
 
+	////////////////////////////////
+	// Nft Transfer configuration //
+	////////////////////////////////
+
+	var nftTransferStack porttypes.IBCModule
+	{
+		// Create Transfer Keepers
+		app.NftTransferKeeper = ibcnfttransferkeeper.NewKeeper(
+			appCodec,
+			runtime.NewKVStoreService(keys[ibcnfttransfertypes.StoreKey]),
+			// ics4wrapper: nft transfer -> fee -> channel
+			app.IBCFeeKeeper,
+			app.IBCKeeper.ChannelKeeper,
+			app.IBCKeeper.PortKeeper,
+			app.AccountKeeper,
+			erc721Keeper,
+			app.ScopedNftTransferKeeper,
+			authorityAddr,
+		)
+		nftTransferIBCModule := ibcnfttransfer.NewIBCModule(*app.NftTransferKeeper)
+
+		// create move middleware for nft-transfer
+		hookMiddleware := ibchooks.NewIBCMiddleware(
+			// receive: evm -> nft-transfer
+			nftTransferIBCModule,
+			ibchooks.NewICS4Middleware(
+				nil, /* ics4wrapper: not used */
+				ibcevmhooks.NewEVMHooks(appCodec, ac, app.EVMKeeper),
+			),
+			app.IBCHooksKeeper,
+		)
+
+		nftTransferStack = ibcfee.NewIBCMiddleware(
+			// receive: channel -> fee -> evm -> nft transfer
+			hookMiddleware,
+			*app.IBCFeeKeeper,
+		)
+	}
+
 	///////////////////////
 	// ICA configuration //
 	///////////////////////
@@ -597,14 +644,14 @@ func NewMinitiaApp(
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferStack).
 		AddRoute(icahosttypes.SubModuleName, icaHostStack).
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
-		AddRoute(icaauthtypes.ModuleName, icaControllerStack)
+		AddRoute(icaauthtypes.ModuleName, icaControllerStack).
+		AddRoute(ibcnfttransfertypes.ModuleName, nftTransferStack)
 
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	//////////////////////////////
 	// EVMKeeper Configuration //
 	//////////////////////////////
-	evmConfig := evmconfig.GetConfig(appOpts)
 
 	app.EVMKeeper = evmkeeper.NewKeeper(
 		ac,
@@ -619,6 +666,7 @@ func NewMinitiaApp(
 		evmtypes.DefaultQueryCosmosWhitelist(),
 	)
 	*erc20Keeper = *app.EVMKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
+	*erc721Keeper = *app.EVMKeeper.ERC721Keeper().(*evmkeeper.ERC721Keeper)
 
 	// x/auction module keeper initialization
 
@@ -659,6 +707,7 @@ func NewMinitiaApp(
 		// ibc modules
 		ibc.NewAppModule(app.IBCKeeper),
 		ibctransfer.NewAppModule(*app.TransferKeeper),
+		ibcnfttransfer.NewAppModule(appCodec, *app.NftTransferKeeper),
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
 		icaauth.NewAppModule(appCodec, *app.ICAAuthKeeper),
 		ibcfee.NewAppModule(*app.IBCFeeKeeper),
@@ -718,9 +767,10 @@ func NewMinitiaApp(
 		capabilitytypes.ModuleName, authtypes.ModuleName, evmtypes.ModuleName, banktypes.ModuleName,
 		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName,
 		upgradetypes.ModuleName, feegrant.ModuleName, consensusparamtypes.ModuleName, ibcexported.ModuleName,
-		ibctransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
+		ibctransfertypes.ModuleName, ibcnfttransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
 		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
-		packetforwardtypes.ModuleName, ibchookstypes.ModuleName, forwardingtypes.ModuleName,
+		packetforwardtypes.ModuleName, forwardingtypes.ModuleName,
+		ibchookstypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)

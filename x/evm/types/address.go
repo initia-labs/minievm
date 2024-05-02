@@ -12,11 +12,14 @@ var NullAddress common.Address = common.HexToAddress("0x0")
 // 0x1 std address
 var StdAddress common.Address = common.HexToAddress("0x1")
 
-// 0xf1 ERC20Registry precompile address
-var ERC20RegistryPrecompileAddress common.Address = common.HexToAddress("0xf1")
+// 0xf1 Cosmos precompile address
+var CosmosPrecompileAddress common.Address = common.HexToAddress("0xf1")
 
-// 0xf2 Cosmos precompile address
-var CosmosPrecompileAddress common.Address = common.HexToAddress("0xf2")
+// 0xf2 ERC20Registry precompile address
+var ERC20RegistryPrecompileAddress common.Address = common.HexToAddress("0xf2")
+
+// 0xf3 ERC721Registry precompile address
+var ERC721RegistryPrecompileAddress common.Address = common.HexToAddress("0xf3")
 
 // IsPrecompileAddress checks if the address is a precompile address
 func IsPrecompileAddress(addr common.Address) bool {

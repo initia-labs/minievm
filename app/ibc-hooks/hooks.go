@@ -46,9 +46,9 @@ func (h EVMHooks) OnRecvPacketOverride(im ibchooks.IBCMiddleware, ctx sdk.Contex
 		return h.onRecvIcs20Packet(ctx, im, packet, relayer, ics20Data)
 	}
 
-	// if isIcs721, ics721Data := isIcs721Packet(packet.GetData()); isIcs721 {
-	// 	return h.onRecvIcs721Packet(ctx, im, packet, relayer, ics721Data)
-	// }
+	if isIcs721, ics721Data := isIcs721Packet(packet.GetData(), packet.GetSourcePort()); isIcs721 {
+		return h.onRecvIcs721Packet(ctx, im, packet, relayer, ics721Data)
+	}
 
 	return im.App.OnRecvPacket(ctx, packet, relayer)
 }
@@ -58,9 +58,9 @@ func (h EVMHooks) OnAcknowledgementPacketOverride(im ibchooks.IBCMiddleware, ctx
 		return h.onAckIcs20Packet(ctx, im, packet, acknowledgement, relayer, ics20Data)
 	}
 
-	// if isIcs721, ics721Data := isIcs721Packet(packet.GetData()); isIcs721 {
-	// 	return h.onAckIcs721Packet(ctx, im, packet, acknowledgement, relayer, ics721Data)
-	// }
+	if isIcs721, ics721Data := isIcs721Packet(packet.GetData(), packet.GetDestPort()); isIcs721 {
+		return h.onAckIcs721Packet(ctx, im, packet, acknowledgement, relayer, ics721Data)
+	}
 
 	return im.App.OnAcknowledgementPacket(ctx, packet, acknowledgement, relayer)
 }
@@ -70,9 +70,9 @@ func (h EVMHooks) OnTimeoutPacketOverride(im ibchooks.IBCMiddleware, ctx sdk.Con
 		return h.onTimeoutIcs20Packet(ctx, im, packet, relayer, ics20Data)
 	}
 
-	// if isIcs721, ics721Data := isIcs721Packet(packet.GetData()); isIcs721 {
-	// 	return h.onTimeoutIcs721Packet(ctx, im, packet, relayer, ics721Data)
-	// }
+	if isIcs721, ics721Data := isIcs721Packet(packet.GetData(), packet.GetDestPort()); isIcs721 {
+		return h.onTimeoutIcs721Packet(ctx, im, packet, relayer, ics721Data)
+	}
 
 	return im.App.OnTimeoutPacket(ctx, packet, relayer)
 }
