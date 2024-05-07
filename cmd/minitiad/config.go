@@ -41,6 +41,7 @@ func initAppConfig() (string, interface{}) {
 
 	// Enable API and unsafe CORS (CORS allowed from any host)
 	srvCfg.API.Enable = true
+	srvCfg.API.Swagger = true
 	srvCfg.API.EnableUnsafeCORS = true
 	srvCfg.API.Address = "tcp://0.0.0.0:1317"
 
