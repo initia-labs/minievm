@@ -2,10 +2,13 @@ package keeper
 
 import (
 	"context"
+	"slices"
 
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -28,6 +31,12 @@ func (k ERC20StoresKeeper) IsStoreRegistered(ctx context.Context, addr sdk.AccAd
 
 // RegisterStore registers the erc20 contract address to user's store.
 func (k ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) error {
+	if found, err := k.ERC20s.Has(ctx, contractAddr.Bytes()); err != nil {
+		return err
+	} else if !found {
+		return nil
+	}
+
 	// create account if not exists
 	if !k.accountKeeper.HasAccount(ctx, addr) {
 		k.accountKeeper.SetAccount(ctx, k.accountKeeper.NewAccountWithAddress(ctx, addr))
@@ -38,10 +47,40 @@ func (k ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddres
 
 // Register registers the erc20 contract address to the store.
 func (k ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Address) error {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	if !params.AllowCustomERC20 {
+		return types.ErrCustomERC20NotAllowed
+	}
+
+	// default action is to allow all custom erc20s
+	// but if allowedCustomERC20s is set, only allow those
+	if len(params.AllowedCustomERC20s) > 0 {
+		if idx := slices.IndexFunc(params.AllowedCustomERC20s, func(s string) bool {
+			// skip error checking here because it's already checked in the params.Validate
+			allowedERC20Addr, _ := types.ContractAddressFromString(k.ac, s)
+			return contractAddr == allowedERC20Addr
+		}); idx == -1 {
+			return types.ErrCustomERC20NotAllowed
+		}
+	}
+
 	if found, err := k.ERC20s.Has(ctx, contractAddr.Bytes()); err != nil {
 		return err
 	} else if found {
 		return nil
+	}
+
+	return k.ERC20s.Set(ctx, contractAddr.Bytes())
+}
+
+// RegisterFromFactory registers the erc20 contract address to the store.
+func (k ERC20StoresKeeper) RegisterFromFactory(ctx context.Context, caller, contractAddr common.Address) error {
+	if caller != types.ERC20FactoryAddress() {
+		return types.ErrInvalidERC20FactoryAddr
 	}
 
 	return k.ERC20s.Set(ctx, contractAddr.Bytes())

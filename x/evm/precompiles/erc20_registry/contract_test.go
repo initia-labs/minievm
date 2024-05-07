@@ -41,6 +41,11 @@ func (e ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Add
 	return nil
 }
 
+func (e ERC20StoresKeeper) RegisterFromFactory(ctx context.Context, caller, contractAddr common.Address) error {
+	e.erc20s[contractAddr.Hex()] = true
+	return nil
+}
+
 // IsRegistered implements types.IERC20StoresKeeper.
 func (e ERC20StoresKeeper) IsStoreRegistered(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) (bool, error) {
 	store, ok := e.stores[addr.String()]
@@ -74,6 +79,8 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 
 	erc20Addr := common.HexToAddress("0x1")
 	accountAddr := common.HexToAddress("0x2")
+	erc20Addr2 := common.HexToAddress("0x3")
+	erc20FactoryAddr := common.HexToAddress("0x4")
 	abi, err := contracts.IErc20RegistryMetaData.GetAbi()
 	require.NoError(t, err)
 
@@ -95,8 +102,26 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, usedGas, uint64(precompiles.REGISTER_GAS)+uint64(len(bz)))
 
+	// register erc20 from factory
+	bz, err = abi.Pack(precompiles.METHOD_REGISTER_FROM_FACTORY, erc20Addr2)
+	require.NoError(t, err)
+
+	// out of gas panic
+	require.Panics(t, func() {
+		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS-1, false)
+	})
+
+	// non read only method fail
+	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS+uint64(len(bz)), true)
+	require.Error(t, err)
+
+	// success
+	_, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS+uint64(len(bz)), false)
+	require.NoError(t, err)
+	require.Equal(t, usedGas, uint64(precompiles.REGISTER_GAS)+uint64(len(bz)))
+
 	// check erc20 registered
-	require.True(t, k.(ERC20StoresKeeper).erc20s[erc20Addr.Hex()])
+	require.True(t, k.(ERC20StoresKeeper).erc20s[erc20Addr2.Hex()])
 
 	// check unregistered
 	bz, err = abi.Pack(precompiles.METHOD_IS_STORE_REGISTERED, accountAddr)

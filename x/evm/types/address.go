@@ -4,6 +4,11 @@ import (
 	"cosmossdk.io/core/address"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/holiman/uint256"
+
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 )
 
 // 0x0 null address
@@ -11,6 +16,9 @@ var NullAddress common.Address = common.HexToAddress("0x0")
 
 // 0x1 std address
 var StdAddress common.Address = common.HexToAddress("0x1")
+
+// ERC20FactorySalt is the salt used to create the ERC20 factory address
+var ERC20FactorySalt = uint64(1)
 
 // 0xf1 Cosmos precompile address
 var CosmosPrecompileAddress common.Address = common.HexToAddress("0xf1")
@@ -37,4 +45,24 @@ func ContractAddressFromString(ac address.Codec, contractAddrInString string) (c
 	}
 
 	return contractAddr, nil
+}
+
+// factoryCodeHash is the hash of the factory code
+var factoryCodeHash common.Hash
+var factoryAddr common.Address
+
+func init() {
+	// to avoid repeated hashing, we hash the factory code once at init
+	bz, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
+	if err != nil {
+		panic(err)
+	}
+
+	factoryCodeHash = crypto.Keccak256Hash(bz)
+	factoryAddr = crypto.CreateAddress2(StdAddress, uint256.NewInt(ERC20FactorySalt).Bytes32(), factoryCodeHash.Bytes())
+}
+
+// ERC20FactoryAddress returns the address of the ERC20 factory
+func ERC20FactoryAddress() common.Address {
+	return factoryAddr
 }
