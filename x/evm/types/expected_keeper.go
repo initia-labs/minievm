@@ -31,6 +31,7 @@ type CommunityPoolKeeper interface {
 
 type IERC20StoresKeeper interface {
 	Register(ctx context.Context, contractAddr common.Address) error
+	RegisterFromFactory(ctx context.Context, caller, contractAddr common.Address) error
 	RegisterStore(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) error
 	IsStoreRegistered(ctx context.Context, addr sdk.AccAddress, contractAddr common.Address) (bool, error)
 }

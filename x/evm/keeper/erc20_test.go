@@ -5,31 +5,28 @@ import (
 
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
 func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, denom string) common.Address {
-	abi, err := erc20.Erc20MetaData.GetAbi()
+	abi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
 	require.NoError(t, err)
 
-	inputBz, err := abi.Pack("", denom, denom, uint8(6))
+	inputBz, err := abi.Pack("createERC20", denom, denom, uint8(6))
 	require.NoError(t, err)
 
-	erc20Bin, err := hexutil.Decode(erc20.Erc20Bin)
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, types.ERC20FactoryAddress(), inputBz)
 	require.NoError(t, err)
 
-	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, caller, append(erc20Bin, inputBz...))
-	require.NoError(t, err)
-
-	return contractAddr
+	return common.BytesToAddress(ret[12:])
 }
 
 func mintERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipient common.Address, amount sdk.Coin) {

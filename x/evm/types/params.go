@@ -6,7 +6,9 @@ import (
 )
 
 func DefaultParams() Params {
-	return Params{}
+	return Params{
+		AllowCustomERC20: true,
+	}
 }
 
 func (p Params) String() string {
@@ -20,6 +22,13 @@ func (p Params) String() string {
 func (p Params) Validate(ac address.Codec) error {
 	for _, addr := range p.AllowedPublishers {
 		_, err := ac.StringToBytes(addr)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, addr := range p.AllowedCustomERC20s {
+		_, err := ContractAddressFromString(ac, addr)
 		if err != nil {
 			return err
 		}

@@ -34,7 +34,7 @@ func ContractAddressFromClassId(ctx context.Context, k ERC721ClassIdKeeper, clas
 	if strings.HasPrefix(classId, EVMPrefix) {
 		contractAddrInString := strings.TrimPrefix(classId, EVMPrefix)
 		if !common.IsHexAddress(contractAddrInString) {
-			return NullAddress, ErrInvalidClasssId
+			return NullAddress, ErrInvalidClassId
 		}
 
 		return common.HexToAddress(contractAddrInString), nil

@@ -39,9 +39,10 @@ func (e ERC20RegistryPrecompile) WithContext(ctx context.Context) vm.Precompiled
 }
 
 const (
-	METHOD_REGISTER            = "register_erc20"
-	METHOD_REGISTER_STORE      = "register_erc20_store"
-	METHOD_IS_STORE_REGISTERED = "is_erc20_store_registered"
+	METHOD_REGISTER              = "register_erc20"
+	METHOD_REGISTER_FROM_FACTORY = "register_erc20_from_factory"
+	METHOD_REGISTER_STORE        = "register_erc20_store"
+	METHOD_IS_STORE_REGISTERED   = "is_erc20_store_registered"
 )
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
@@ -68,6 +69,21 @@ func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte
 		}
 
 		if err := e.k.Register(ctx, caller.Address()); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+	case METHOD_REGISTER_FROM_FACTORY:
+		ctx.GasMeter().ConsumeGas(REGISTER_FROM_FACTORY_GAS, "register_erc20_from_factory")
+
+		if readOnly {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
+		}
+
+		var registerArgs RegisterERC20FromFactoryArguments
+		if err := method.Inputs.Copy(&registerArgs, args); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		if err := e.k.RegisterFromFactory(ctx, caller.Address(), registerArgs.ERC20); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_REGISTER_STORE:

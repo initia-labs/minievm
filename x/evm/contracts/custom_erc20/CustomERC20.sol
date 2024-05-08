@@ -5,7 +5,7 @@ import "../i_erc20/IERC20.sol";
 import "../ownable/Ownable.sol";
 import "../erc20_registry/ERC20Registry.sol";
 
-contract ERC20 is IERC20, Ownable, ERC20Registry {
+contract CustomERC20 is IERC20, Ownable, ERC20Registry {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
         address indexed owner,
@@ -20,8 +20,7 @@ contract ERC20 is IERC20, Ownable, ERC20Registry {
     uint8 public decimals;
     uint256 public totalSupply;
 
-    // for custom erc20s, you should add `register_erc20` modifier to the constructor
-    constructor(string memory _name, string memory _symbol, uint8 _decimals) {
+    constructor(string memory _name, string memory _symbol, uint8 _decimals) register_erc20 {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;

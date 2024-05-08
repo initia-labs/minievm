@@ -11,6 +11,7 @@ IERC20Registry constant ERC20_REGISTRY_CONTRACT = IERC20Registry(
 
 interface IERC20Registry {
     function register_erc20() external;
+    function register_erc20_from_factory(address erc20) external;
     function register_erc20_store(address account) external;
     function is_erc20_store_registered(
         address account
