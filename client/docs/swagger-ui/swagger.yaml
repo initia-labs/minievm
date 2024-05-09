@@ -33496,6 +33496,357 @@ paths:
                       format: byte
       tags:
         - Query
+  /ibc/apps/nft_transfer/v1/channels/{channel_id}/ports/{port_id}/escrow_address:
+    get:
+      summary: >-
+        EscrowAddress returns the escrow address for a particular port and
+        channel id.
+      operationId: IBCNftEscrowAddress
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              escrow_address:
+                type: string
+                title: the escrow account address
+            description: >-
+              QueryEscrowAddressResponse is the response type of the
+              EscrowAddress RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: channel_id
+          description: unique channel identifier
+          in: path
+          required: true
+          type: string
+        - name: port_id
+          description: unique port identifier
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /ibc/apps/nft_transfer/v1/class_hashs/{trace}:
+    get:
+      summary: ClassHash queries a class id hash information.
+      operationId: ClassHash
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              hash:
+                type: string
+                description: hash (in hex format) of the class id trace information.
+            description: >-
+              QueryClassHashResponse is the response type for the
+              Query/ClassHash RPC
+
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: trace
+          description: The class id trace ([port_id]/[channel_id])+/[class_id]
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /ibc/apps/nft_transfer/v1/class_traces:
+    get:
+      summary: ClassTraces queries all denomination traces.
+      operationId: ClassTraces
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              class_traces:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    path:
+                      type: string
+                      description: >-
+                        path defines the chain of port/channel identifiers used
+                        for tracing the
+
+                        source of the non fungible token.
+                    base_class_id:
+                      type: string
+                      description: base class id of the relayed non fungible token.
+                  description: >-
+                    ClassTrace contains the base class id for ICS721 non
+                    fungible tokens and the
+
+                    source tracing information path.
+                description: class_traces returns all class id traces information.
+              pagination:
+                description: pagination defines the pagination in the response.
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+            description: >-
+              QueryClassTracesResponse is the response type for the
+              Query/ClassTraces RPC
+
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+
+
+            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /ibc/apps/nft_transfer/v1/class_traces/{hash}:
+    get:
+      summary: ClassTrace queries a denomination trace information.
+      operationId: ClassTrace
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              class_trace:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    description: >-
+                      path defines the chain of port/channel identifiers used
+                      for tracing the
+
+                      source of the non fungible token.
+                  base_class_id:
+                    type: string
+                    description: base class id of the relayed non fungible token.
+                description: >-
+                  ClassTrace contains the base class id for ICS721 non fungible
+                  tokens and the
+
+                  source tracing information path.
+            description: >-
+              QueryClassTraceResponse is the response type for the
+              Query/ClassTrace RPC
+
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: hash
+          description: hash (in hex format) of the class id trace information.
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /ibc/apps/nft_transfer/v1/params:
+    get:
+      summary: Params queries all parameters of the ibc-transfer module.
+      operationId: IBCNftParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params defines the parameters of the module.
+                type: object
+                properties:
+                  send_enabled:
+                    type: boolean
+                    description: >-
+                      send_enabled enables or disables all cross-chain token
+                      transfers from this chain.
+                  receive_enabled:
+                    type: boolean
+                    description: >-
+                      receive_enabled enables or disables all cross-chain token
+                      transfers to this chain.
+            description: >-
+              QueryParamsResponse is the response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled:
     get:
       summary: >-
@@ -38089,6 +38440,17 @@ paths:
 
                       and an empty list is interpreted as allowing anyone to
                       distribute.
+                  allow_custom_erc20:
+                    type: boolean
+                    description: >-
+                      allow_custom_erc20 defines whether the chain allows custom
+                      erc20 tokens
+
+                      to be registered on cosmos bank interface.
+                  allowed_custom_erc20s:
+                    type: array
+                    items:
+                      type: string
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -61403,6 +61765,146 @@ definitions:
               allow_messages defines a list of sdk message typeURLs allowed to
               be executed on a host chain.
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
+  ibc.applications.nft_transfer.v1.ClassTrace:
+    type: object
+    properties:
+      path:
+        type: string
+        description: >-
+          path defines the chain of port/channel identifiers used for tracing
+          the
+
+          source of the non fungible token.
+      base_class_id:
+        type: string
+        description: base class id of the relayed non fungible token.
+    description: >-
+      ClassTrace contains the base class id for ICS721 non fungible tokens and
+      the
+
+      source tracing information path.
+  ibc.applications.nft_transfer.v1.Params:
+    type: object
+    properties:
+      send_enabled:
+        type: boolean
+        description: >-
+          send_enabled enables or disables all cross-chain token transfers from
+          this chain.
+      receive_enabled:
+        type: boolean
+        description: >-
+          receive_enabled enables or disables all cross-chain token transfers to
+          this chain.
+    description: Params defines the set of IBC nft transfer parameters.
+  ibc.applications.nft_transfer.v1.QueryClassHashResponse:
+    type: object
+    properties:
+      hash:
+        type: string
+        description: hash (in hex format) of the class id trace information.
+    description: |-
+      QueryClassHashResponse is the response type for the Query/ClassHash RPC
+      method.
+  ibc.applications.nft_transfer.v1.QueryClassTraceResponse:
+    type: object
+    properties:
+      class_trace:
+        type: object
+        properties:
+          path:
+            type: string
+            description: >-
+              path defines the chain of port/channel identifiers used for
+              tracing the
+
+              source of the non fungible token.
+          base_class_id:
+            type: string
+            description: base class id of the relayed non fungible token.
+        description: >-
+          ClassTrace contains the base class id for ICS721 non fungible tokens
+          and the
+
+          source tracing information path.
+    description: |-
+      QueryClassTraceResponse is the response type for the Query/ClassTrace RPC
+      method.
+  ibc.applications.nft_transfer.v1.QueryClassTracesResponse:
+    type: object
+    properties:
+      class_traces:
+        type: array
+        items:
+          type: object
+          properties:
+            path:
+              type: string
+              description: >-
+                path defines the chain of port/channel identifiers used for
+                tracing the
+
+                source of the non fungible token.
+            base_class_id:
+              type: string
+              description: base class id of the relayed non fungible token.
+          description: >-
+            ClassTrace contains the base class id for ICS721 non fungible tokens
+            and the
+
+            source tracing information path.
+        description: class_traces returns all class id traces information.
+      pagination:
+        description: pagination defines the pagination in the response.
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+    description: >-
+      QueryClassTracesResponse is the response type for the Query/ClassTraces
+      RPC
+
+      method.
+  ibc.applications.nft_transfer.v1.QueryEscrowAddressResponse:
+    type: object
+    properties:
+      escrow_address:
+        type: string
+        title: the escrow account address
+    description: >-
+      QueryEscrowAddressResponse is the response type of the EscrowAddress RPC
+      method.
+  ibc.applications.nft_transfer.v1.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params defines the parameters of the module.
+        type: object
+        properties:
+          send_enabled:
+            type: boolean
+            description: >-
+              send_enabled enables or disables all cross-chain token transfers
+              from this chain.
+          receive_enabled:
+            type: boolean
+            description: >-
+              receive_enabled enables or disables all cross-chain token
+              transfers to this chain.
+    description: QueryParamsResponse is the response type for the Query/Params RPC method.
   ibc.applications.fee.v1.Fee:
     type: object
     properties:
@@ -63107,6 +63609,17 @@ definitions:
         description: |-
           It is a list of addresses with permission to distribute contracts,
           and an empty list is interpreted as allowing anyone to distribute.
+      allow_custom_erc20:
+        type: boolean
+        description: >-
+          allow_custom_erc20 defines whether the chain allows custom erc20
+          tokens
+
+          to be registered on cosmos bank interface.
+      allowed_custom_erc20s:
+        type: array
+        items:
+          type: string
     description: Params defines the set of move parameters.
   minievm.evm.v1.QueryCallRequest:
     type: object
@@ -63223,6 +63736,17 @@ definitions:
             description: |-
               It is a list of addresses with permission to distribute contracts,
               and an empty list is interpreted as allowing anyone to distribute.
+          allow_custom_erc20:
+            type: boolean
+            description: >-
+              allow_custom_erc20 defines whether the chain allows custom erc20
+              tokens
+
+              to be registered on cosmos bank interface.
+          allowed_custom_erc20s:
+            type: array
+            items:
+              type: string
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
   minievm.evm.v1.QueryStateResponse:
     type: object
