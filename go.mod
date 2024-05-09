@@ -33,8 +33,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.2.4
-	github.com/initia-labs/OPinit v0.2.7
-	github.com/initia-labs/initia v0.2.7
+	github.com/initia-labs/OPinit v0.2.8
+	github.com/initia-labs/initia v0.2.8
 	github.com/noble-assets/forwarding v0.0.0-20240416085758-ed8e9efaf69a
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7

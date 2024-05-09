@@ -14,7 +14,7 @@ import (
 )
 
 // DefaultLaunchStepFactories is a list of default launch step factories.
-var DefaultLaunchStepFactories = []launchtools.LauncherStepFuncFactory[launchtools.Input]{
+var DefaultLaunchStepFactories = []launchtools.LauncherStepFuncFactory[*launchtools.Config]{
 	steps.InitializeConfig,
 	steps.InitializeRPCHelpers,
 
@@ -32,11 +32,15 @@ var DefaultLaunchStepFactories = []launchtools.LauncherStepFuncFactory[launchtoo
 		return "nft-transfer", "nft-transfer", "ics721-1"
 	}),
 
-	// Enable oracle..?
-	steps.EnableOracle,
-
 	// Create OP Bridge, using open channel states
 	steps.InitializeOpBridge,
+
+	// Set bridge info and update clients
+	steps.SetBridgeInfo,
+
+	// Get the L1 and L2 heights
+	steps.GetL1Height,
+	steps.GetL2Height,
 
 	// Cleanup
 	steps.StopApp,

@@ -802,8 +802,8 @@ github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANyt
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
-github.com/initia-labs/OPinit v0.2.7 h1:CK7+1UoaoVhQlgjw2xRUEtBZKuCJAVJtXvoA+8x/fCI=
-github.com/initia-labs/OPinit v0.2.7/go.mod h1:ih8DF/djza3oqMpKFeACPp7YtaJpMBPqO+cgKbKqeG8=
+github.com/initia-labs/OPinit v0.2.8 h1:qNEjQtZ5H5SDsLQgPEOUbSxQk/u2bu6hh+9kIWdVZT8=
+github.com/initia-labs/OPinit v0.2.8/go.mod h1:ih8DF/djza3oqMpKFeACPp7YtaJpMBPqO+cgKbKqeG8=
 github.com/initia-labs/OPinit/api v0.2.6 h1:his/7339UJbBcHOY4TcRzGxNWBtcpdt9bzfGKBh/d8w=
 github.com/initia-labs/OPinit/api v0.2.6/go.mod h1:oo8VsUFo1vVRg1jXhTMzlm5IF1JjU0I0u0OF/jo6iO4=
 github.com/initia-labs/cometbft v0.0.0-20240425025334-db711cb7c25d h1:PR3BwlnPSq37qF0HUQmnbA76YvlopD9prW9OYLDoKLk=
@@ -816,10 +816,10 @@ github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e h1:1gkMWkAgVhYFhE
 github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e/go.mod h1:jLeUvm6bGT1YutCaL2fIar/8vGUE8cPZvh/gXEWDaDM=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c h1:FDwh5zZbm9v7C37ni4FytQQ9Os5XxYp1px5U7Nqdu2Y=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c/go.mod h1:wj3qx75iC/XNnsMqbPDCIGs0G6Y3E/lo3bdqCyoCy+8=
-github.com/initia-labs/initia v0.2.7 h1:avSfEh+nheYC7gFxnfHaXSHRBZYWHI19vn/T0luI4y8=
-github.com/initia-labs/initia v0.2.7/go.mod h1:PFWX4I983j462shp3a1lLRheBiIfZrRoF/MQI/CsL9o=
-github.com/initia-labs/movevm v0.2.7 h1:6UM35Cp6XQ1LgM7gnaSYouc7osSwxSQJsZgQdpXnBM4=
-github.com/initia-labs/movevm v0.2.7/go.mod h1:6MxR4GP5zH3JUc1IMgfqAe1e483mZVS7fshPknZPJ30=
+github.com/initia-labs/initia v0.2.8 h1:ibwdGnvXCtxKzR7m/HbYR4/pb/RhCiDRw6oHgoSwlTQ=
+github.com/initia-labs/initia v0.2.8/go.mod h1:XGlsgJh+7SlY36YoqBCnMhEuuVnstaR/BqpmKnnp0bc=
+github.com/initia-labs/movevm v0.2.8 h1:4UCUOrYSRQbfBLHEryqG2U1i9Qme/ms14HoVhcpmUNI=
+github.com/initia-labs/movevm v0.2.8/go.mod h1:6MxR4GP5zH3JUc1IMgfqAe1e483mZVS7fshPknZPJ30=
 github.com/initia-labs/slinky v0.0.0-20240418051646-d45167cc66b1 h1:7mXLhI/X+GLdAYNmzXE5CIvTuOgETUMB7tR6VHvX/tY=
 github.com/initia-labs/slinky v0.0.0-20240418051646-d45167cc66b1/go.mod h1:ZK3DD0WLDIcBkyo8w2mr/KiIqCovVBNx82jSRhC2DTA=
 github.com/jackpal/go-nat-pmp v1.0.2 h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7BdWus=
