@@ -1,6 +1,7 @@
 # MiniEVM
 
 MiniEVM is an optimistic rollup consumer chain powered by EVM, designed to simplify the process of bootstrapping an L2 network. The main advantage of using MiniEVM is that the users can leverage the OPinit stack for enhanced security and utilize all the Initia ecosystem tooling from day one, without the need to prepare a validator group or build the users' own ecosystem tools.
+- https://github.com/initia-labs/evm
 
 ## Prerequisites
 
