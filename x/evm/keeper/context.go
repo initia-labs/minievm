@@ -149,7 +149,7 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	gasBalance := k.computeGasLimit(sdkCtx)
+	gasBalance := k.config.ContractQueryGasLimit
 
 	retBz, gasRemaining, err := evm.StaticCall(
 		vm.AccountRef(caller),
