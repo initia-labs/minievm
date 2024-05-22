@@ -151,31 +151,27 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
+		callerAddr := caller.Address().Bytes()
+		callerAccount := e.ak.GetAccount(ctx, callerAddr)
+
+		// if the caller is a shorthand account, then use shorthand account's original address
+		// as the caller address.
+		if shorthandCallerAccount, ok := callerAccount.(types.ShorthandAccountI); ok {
+			addr, err := shorthandCallerAccount.GetOriginalAddress(e.ac)
+			if err != nil {
+				return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+			}
+
+			callerAddr = addr.Bytes()
+		}
+
 		for _, signer := range signers {
-			if bytes.Equal(caller.Address().Bytes(), signer) {
-				continue
+			if !bytes.Equal(callerAddr, signer) {
+				return nil, ctx.GasMeter().GasConsumedToLimit(), sdkerrors.ErrUnauthorized.Wrapf(
+					"required signer: `%s`, given signer: `%s`",
+					hexutil.Encode(signer), caller.Address(),
+				)
 			}
-
-			// if signer is different from the caller, check if the signer is a shorthand account.
-			// and then check shorthand account's original address is the same with the caller.
-			if len(signer) != common.AddressLength {
-				signerAccount := e.ak.GetAccount(ctx, signer)
-				if shorthandCallerAccount, ok := signerAccount.(types.ShorthandAccountI); ok {
-					addr, err := shorthandCallerAccount.GetOriginalAddress(e.ac)
-					if err != nil {
-						return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
-					}
-
-					if bytes.Equal(addr.Bytes(), signer) {
-						continue
-					}
-				}
-			}
-
-			return nil, ctx.GasMeter().GasConsumedToLimit(), sdkerrors.ErrUnauthorized.Wrapf(
-				"required signer: `%s`, given signer: `%s`",
-				hexutil.Encode(signer), caller.Address(),
-			)
 		}
 
 		messages := ctx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
