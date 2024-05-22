@@ -10,11 +10,10 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.6
 	github.com/cosmos/ibc-go/v8 v8.2.0
 	github.com/ethereum/go-ethereum v1.14.2
-	github.com/initia-labs/initia v0.2.9
+	github.com/initia-labs/initia v0.2.10
 	github.com/initia-labs/minievm v0.2.1
 	github.com/stretchr/testify v1.9.0
 )
-
 
 require (
 	cloud.google.com/go v0.112.0 // indirect
@@ -145,6 +144,10 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v0.2.9 // indirect
 	github.com/initia-labs/OPinit/api v0.2.6 // indirect
+	github.com/initia-labs/kvindexer v0.1.3 // indirect
+	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
+	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
 	github.com/initia-labs/movevm v0.2.8 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -188,7 +191,7 @@ require (
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/skip-mev/block-sdk/v2 v2.1.1 // indirect
-	github.com/skip-mev/slinky v0.4.2 // indirect
+	github.com/skip-mev/slinky v0.4.3 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
