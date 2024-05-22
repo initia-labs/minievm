@@ -130,6 +130,9 @@ import (
 	auctionante "github.com/skip-mev/block-sdk/v2/x/auction/ante"
 	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
 	auctiontypes "github.com/skip-mev/block-sdk/v2/x/auction/types"
+	marketmap "github.com/skip-mev/slinky/x/marketmap"
+	marketmapkeeper "github.com/skip-mev/slinky/x/marketmap/keeper"
+	marketmaptypes "github.com/skip-mev/slinky/x/marketmap/types"
 	"github.com/skip-mev/slinky/x/oracle"
 	oraclekeeper "github.com/skip-mev/slinky/x/oracle/keeper"
 	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
@@ -238,6 +241,7 @@ type MinitiaApp struct {
 	AuctionKeeper         *auctionkeeper.Keeper // x/auction keeper used to process bids for POB auctions
 	PacketForwardKeeper   *packetforwardkeeper.Keeper
 	OracleKeeper          *oraclekeeper.Keeper // x/oracle keeper used for the slinky oracle
+	MarketMapKeeper       *marketmapkeeper.Keeper
 	IBCHooksKeeper        *ibchookskeeper.Keeper
 	ForwardingKeeper      *forwardingkeeper.Keeper
 
@@ -297,7 +301,7 @@ func NewMinitiaApp(
 		icahosttypes.StoreKey, icacontrollertypes.StoreKey, icaauthtypes.StoreKey,
 		ibcfeetypes.StoreKey, evmtypes.StoreKey, opchildtypes.StoreKey,
 		auctiontypes.StoreKey, packetforwardtypes.StoreKey, oracletypes.StoreKey,
-		ibchookstypes.StoreKey, forwardingtypes.StoreKey,
+		marketmaptypes.StoreKey, ibchookstypes.StoreKey, forwardingtypes.StoreKey,
 	)
 	tkeys := storetypes.NewTransientStoreKeys(forwardingtypes.TransientStoreKey)
 	memKeys := storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -379,13 +383,24 @@ func NewMinitiaApp(
 	////////////////////////////////
 
 	// initialize oracle keeper
+	marketMapKeeper := marketmapkeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[marketmaptypes.StoreKey]),
+		appCodec,
+		authorityAccAddr,
+	)
+	app.MarketMapKeeper = marketMapKeeper
+
 	oracleKeeper := oraclekeeper.NewKeeper(
 		runtime.NewKVStoreService(keys[oracletypes.StoreKey]),
 		appCodec,
-		nil,
+		marketMapKeeper,
 		authorityAccAddr,
 	)
 	app.OracleKeeper = &oracleKeeper
+
+	// Add the oracle keeper as a hook to market map keeper so new market map entries can be created
+	// and propogated to the oracle keeper.
+	app.MarketMapKeeper.SetHooks(app.OracleKeeper.Hooks())
 
 	app.OPChildKeeper = opchildkeeper.NewKeeper(
 		appCodec,
@@ -732,6 +747,7 @@ func NewMinitiaApp(
 		forwarding.NewAppModule(app.ForwardingKeeper),
 		// slinky modules
 		oracle.NewAppModule(appCodec, *app.OracleKeeper),
+		marketmap.NewAppModule(appCodec, app.MarketMapKeeper),
 	)
 
 	if err := app.setupIndexer(appOpts, homePath, ac, vc, appCodec); err != nil {
@@ -765,6 +781,7 @@ func NewMinitiaApp(
 		authz.ModuleName,
 		ibcexported.ModuleName,
 		oracletypes.ModuleName,
+		marketmaptypes.ModuleName,
 	)
 
 	app.ModuleManager.SetOrderEndBlockers(
@@ -773,6 +790,7 @@ func NewMinitiaApp(
 		feegrant.ModuleName,
 		group.ModuleName,
 		oracletypes.ModuleName,
+		marketmaptypes.ModuleName,
 		forwardingtypes.ModuleName,
 	)
 
@@ -786,9 +804,8 @@ func NewMinitiaApp(
 		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName,
 		upgradetypes.ModuleName, feegrant.ModuleName, consensusparamtypes.ModuleName, ibcexported.ModuleName,
 		ibctransfertypes.ModuleName, ibcnfttransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
-		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName,
-		packetforwardtypes.ModuleName, forwardingtypes.ModuleName,
-		ibchookstypes.ModuleName,
+		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName, marketmaptypes.ModuleName,
+		packetforwardtypes.ModuleName, forwardingtypes.ModuleName, ibchookstypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
