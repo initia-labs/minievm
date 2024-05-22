@@ -1,8 +1,10 @@
 package app
 
 import (
+	"encoding/hex"
 	"encoding/json"
 
+	"cosmossdk.io/core/address"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
@@ -14,9 +16,11 @@ import (
 
 	l2slinky "github.com/initia-labs/OPinit/x/opchild/l2slinky"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
+	"github.com/initia-labs/initia/app/genesis_markets"
 
 	auctiontypes "github.com/skip-mev/block-sdk/v2/x/auction/types"
 	slinkytypes "github.com/skip-mev/slinky/pkg/types"
+	marketmaptypes "github.com/skip-mev/slinky/x/marketmap/types"
 	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
 )
 
@@ -30,29 +34,73 @@ import (
 type GenesisState map[string]json.RawMessage
 
 // NewDefaultGenesisState generates the default state for the application.
-func NewDefaultGenesisState(cdc codec.JSONCodec, mbm module.BasicManager, denom string) GenesisState {
+func NewDefaultGenesisState(cdc codec.Codec, mbm module.BasicManager, denom string) GenesisState {
 	return GenesisState(mbm.DefaultGenesis(cdc)).
 		ConfigureMinGasPrices(cdc).
 		ConfigureICA(cdc).
 		ConfigureIBCAllowedClients(cdc).
 		ConfigureAuctionFee(cdc, denom).
-		AddTimestampCurrencyPair(cdc)
+		AddMarketData(cdc, cdc.InterfaceRegistry().SigningContext().AddressCodec())
 }
 
-func (genState GenesisState) AddTimestampCurrencyPair(cdc codec.JSONCodec) GenesisState {
+func (genState GenesisState) AddMarketData(cdc codec.JSONCodec, ac address.Codec) GenesisState {
 	var oracleGenState oracletypes.GenesisState
 	cdc.MustUnmarshalJSON(genState[oracletypes.ModuleName], &oracleGenState)
 
-	cp, err := slinkytypes.CurrencyPairFromString(l2slinky.ReservedCPTimestamp)
+	var marketGenState marketmaptypes.GenesisState
+	cdc.MustUnmarshalJSON(genState[marketmaptypes.ModuleName], &marketGenState)
+
+	// Load initial markets
+	markets, err := genesis_markets.ReadMarketsFromFile(genesis_markets.GenesisMarkets)
+	if err != nil {
+		panic(err)
+	}
+	marketGenState.MarketMap = genesis_markets.ToMarketMap(markets)
+
+	// Skip Admin account.
+	adminAddrBz, err := hex.DecodeString("51B89E89D58FFB3F9DB66263FF10A216CF388A0E")
 	if err != nil {
 		panic(err)
 	}
 
-	oracleGenState.CurrencyPairGenesis = append(oracleGenState.CurrencyPairGenesis, oracletypes.CurrencyPairGenesis{
+	adminAddr, err := ac.BytesToString(adminAddrBz)
+	if err != nil {
+		panic(err)
+	}
+
+	marketGenState.Params.MarketAuthorities = []string{adminAddr}
+	marketGenState.Params.Admin = adminAddr
+
+	var id uint64
+
+	// Initialize all markets plus ReservedCPTimestamp
+	currencyPairGenesis := make([]oracletypes.CurrencyPairGenesis, len(markets)+1)
+	cp, err := slinkytypes.CurrencyPairFromString(l2slinky.ReservedCPTimestamp)
+	if err != nil {
+		panic(err)
+	}
+	currencyPairGenesis[id] = oracletypes.CurrencyPairGenesis{
 		CurrencyPair:      cp,
 		CurrencyPairPrice: nil,
 		Nonce:             0,
-	})
+		Id:                id,
+	}
+	id++
+	for i, market := range markets {
+		currencyPairGenesis[i+1] = oracletypes.CurrencyPairGenesis{
+			CurrencyPair:      market.Ticker.CurrencyPair,
+			CurrencyPairPrice: nil,
+			Nonce:             0,
+			Id:                id,
+		}
+		id++
+	}
+
+	oracleGenState.CurrencyPairGenesis = currencyPairGenesis
+	oracleGenState.NextId = id
+
+	// write the updates to genState
+	genState[marketmaptypes.ModuleName] = cdc.MustMarshalJSON(&marketGenState)
 	genState[oracletypes.ModuleName] = cdc.MustMarshalJSON(&oracleGenState)
 	return genState
 }
