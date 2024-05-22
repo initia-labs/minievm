@@ -7,6 +7,7 @@ import (
 	tmcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 
+	indexerconfig "github.com/initia-labs/kvindexer/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
 	"github.com/initia-labs/minievm/types"
@@ -15,7 +16,8 @@ import (
 // minitiaAppConfig initia specify app config
 type minitiaAppConfig struct {
 	serverconfig.Config
-	EVMConfig evmconfig.EVMConfig `mapstructure:"evm"`
+	EVMConfig     evmconfig.EVMConfig         `mapstructure:"evm"`
+	IndexerConfig indexerconfig.IndexerConfig `mapstructure:"indexer"`
 }
 
 // initAppConfig helps to override default appConfig template and configs.
@@ -49,12 +51,13 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.GRPC.Address = "0.0.0.0:9090"
 
 	minitiaAppConfig := minitiaAppConfig{
-		Config:    *srvCfg,
-		EVMConfig: evmconfig.DefaultEVMConfig(),
+		Config:        *srvCfg,
+		EVMConfig:     evmconfig.DefaultEVMConfig(),
+		IndexerConfig: indexerconfig.DefaultConfig(),
 	}
 
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
-		evmconfig.DefaultConfigTemplate
+		evmconfig.DefaultConfigTemplate + indexerconfig.DefaultConfigTemplate
 
 	return minitiaAppTemplate, minitiaAppConfig
 }
