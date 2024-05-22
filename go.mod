@@ -34,12 +34,12 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.2.4
 	github.com/initia-labs/OPinit v0.2.9
-	github.com/initia-labs/initia v0.2.9
+	github.com/initia-labs/initia v0.2.10
 	github.com/noble-assets/forwarding v0.0.0-20240416085758-ed8e9efaf69a
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/skip-mev/block-sdk/v2 v2.1.1
-	github.com/skip-mev/slinky v0.4.2
+	github.com/skip-mev/slinky v0.4.3
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
