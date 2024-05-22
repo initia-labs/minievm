@@ -41,11 +41,12 @@ func initAppConfig() (string, interface{}) {
 
 	// Enable API and unsafe CORS (CORS allowed from any host)
 	srvCfg.API.Enable = true
+	srvCfg.API.Swagger = true
 	srvCfg.API.EnableUnsafeCORS = true
 	srvCfg.API.Address = "tcp://0.0.0.0:1317"
 
 	srvCfg.GRPC.Enable = true
-	srvCfg.GRPC.Address = "tcp://0.0.0.0:9090"
+	srvCfg.GRPC.Address = "0.0.0.0:9090"
 
 	minitiaAppConfig := minitiaAppConfig{
 		Config:    *srvCfg,

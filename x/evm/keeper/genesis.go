@@ -5,16 +5,40 @@ import (
 	"context"
 
 	"cosmossdk.io/collections"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
+
+func (k Keeper) Initialize(ctx context.Context) error {
+	code, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = k.EVMCreate2(ctx, types.StdAddress, code, types.ERC20FactorySalt)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) error {
 	if err := k.Params.Set(ctx, genState.Params); err != nil {
 		return err
 	}
 
-	// else set the state from the genesis
-	if err := k.VMRoot.Set(ctx, genState.StateRoot); err != nil {
+	// if the state root is empty, initialize the state
+	if common.BytesToHash(genState.StateRoot) == coretypes.EmptyRootHash {
+		if err := k.Initialize(ctx); err != nil {
+			return err
+		}
+	} else if err := k.VMRoot.Set(ctx, genState.StateRoot); err != nil {
 		return err
 	}
 

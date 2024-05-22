@@ -12,9 +12,12 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	ibctypes "github.com/cosmos/ibc-go/v8/modules/core/types"
 
+	l2slinky "github.com/initia-labs/OPinit/x/opchild/l2slinky"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	auctiontypes "github.com/skip-mev/block-sdk/v2/x/auction/types"
+	slinkytypes "github.com/skip-mev/slinky/pkg/types"
+	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
 )
 
 // GenesisState - The genesis state of the blockchain is represented here as a map of raw json
@@ -32,7 +35,26 @@ func NewDefaultGenesisState(cdc codec.JSONCodec, mbm module.BasicManager, denom 
 		ConfigureMinGasPrices(cdc).
 		ConfigureICA(cdc).
 		ConfigureIBCAllowedClients(cdc).
-		ConfigureAuctionFee(cdc, denom)
+		ConfigureAuctionFee(cdc, denom).
+		AddTimestampCurrencyPair(cdc)
+}
+
+func (genState GenesisState) AddTimestampCurrencyPair(cdc codec.JSONCodec) GenesisState {
+	var oracleGenState oracletypes.GenesisState
+	cdc.MustUnmarshalJSON(genState[oracletypes.ModuleName], &oracleGenState)
+
+	cp, err := slinkytypes.CurrencyPairFromString(l2slinky.ReservedCPTimestamp)
+	if err != nil {
+		panic(err)
+	}
+
+	oracleGenState.CurrencyPairGenesis = append(oracleGenState.CurrencyPairGenesis, oracletypes.CurrencyPairGenesis{
+		CurrencyPair:      cp,
+		CurrencyPairPrice: nil,
+		Nonce:             0,
+	})
+	genState[oracletypes.ModuleName] = cdc.MustMarshalJSON(&oracleGenState)
+	return genState
 }
 
 func (genState GenesisState) ConfigureAuctionFee(cdc codec.JSONCodec, denom string) GenesisState {

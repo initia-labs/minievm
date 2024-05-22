@@ -17,17 +17,24 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
 type ERC20Keeper struct {
 	*Keeper
-	*abi.ABI
-	ERC20Bin []byte
+	ERC20Bin        []byte
+	ERC20ABI        *abi.ABI
+	ERC20FactoryABI *abi.ABI
 }
 
 func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
-	abi, err := erc20.Erc20MetaData.GetAbi()
+	erc20ABI, err := erc20.Erc20MetaData.GetAbi()
+	if err != nil {
+		return ERC20Keeper{}, err
+	}
+
+	factoryABI, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
 	if err != nil {
 		return ERC20Keeper{}, err
 	}
@@ -37,7 +44,7 @@ func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 		return ERC20Keeper{}, err
 	}
 
-	return &ERC20Keeper{k, abi, erc20Bin}, nil
+	return &ERC20Keeper{k, erc20Bin, erc20ABI, factoryABI}, nil
 }
 
 // BurnCoins implements IERC20Keeper.
@@ -64,7 +71,7 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 			return err
 		}
 
-		inputBz, err := k.ABI.Pack("burn", evmAddr, coin.Amount.BigInt())
+		inputBz, err := k.ERC20ABI.Pack("burn", evmAddr, coin.Amount.BigInt())
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -282,7 +289,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		if found, err := k.ERC20ContractAddrsByDenom.Has(ctx, denom); err != nil {
 			return err
 		} else if !found {
-			contractAddr, err := k.nextContractAddress(ctx, types.StdAddress)
+			contractAddr, err := k.nextContractAddress(ctx, types.ERC20FactoryAddress())
 			if err != nil {
 				return err
 			}
@@ -295,12 +302,12 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 				return err
 			}
 
-			inputBz, err := k.ABI.Pack("", denom, denom, uint8(0))
+			inputBz, err := k.ERC20FactoryABI.Pack("createERC20", denom, denom, uint8(0))
 			if err != nil {
 				return types.ErrFailedToPackABI.Wrap(err.Error())
 			}
 
-			ret, _, err := k.EVMCreate(ctx, types.StdAddress, append(k.ERC20Bin, inputBz...))
+			ret, _, err := k.EVMCall(ctx, types.StdAddress, types.ERC20FactoryAddress(), inputBz)
 			if err != nil {
 				return err
 			}
@@ -310,7 +317,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 				sdk.NewEvent(
 					types.EventTypeERC20Created,
 					sdk.NewAttribute(types.AttributeKeyDenom, denom),
-					sdk.NewAttribute(types.AttributeKeyContract, hexutil.Encode(ret)),
+					sdk.NewAttribute(types.AttributeKeyContract, hexutil.Encode(ret[12:])),
 				),
 			)
 		}
@@ -320,8 +327,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		if err != nil {
 			return err
 		}
-
-		inputBz, err := k.ABI.Pack("mint", evmAddr, coin.Amount.BigInt())
+		inputBz, err := k.ERC20ABI.Pack("mint", evmAddr, coin.Amount.BigInt())
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -353,7 +359,7 @@ func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toA
 			return err
 		}
 
-		inputBz, err := k.ABI.Pack("transfer", evmToAddr, coin.Amount.BigInt())
+		inputBz, err := k.ERC20ABI.Pack("transfer", evmToAddr, coin.Amount.BigInt())
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -369,7 +375,7 @@ func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toA
 }
 
 func (k ERC20Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Address) (math.Int, error) {
-	inputBz, err := k.ABI.Pack("balanceOf", addr)
+	inputBz, err := k.ERC20ABI.Pack("balanceOf", addr)
 	if err != nil {
 		return math.ZeroInt(), types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -379,7 +385,7 @@ func (k ERC20Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Ad
 		return math.ZeroInt(), err
 	}
 
-	res, err := k.ABI.Unpack("balanceOf", retBz)
+	res, err := k.ERC20ABI.Unpack("balanceOf", retBz)
 	if err != nil {
 		return math.ZeroInt(), types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -393,7 +399,7 @@ func (k ERC20Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Ad
 }
 
 func (k ERC20Keeper) totalSupply(ctx context.Context, contractAddr common.Address) (math.Int, error) {
-	inputBz, err := k.ABI.Pack("totalSupply")
+	inputBz, err := k.ERC20ABI.Pack("totalSupply")
 	if err != nil {
 		return math.ZeroInt(), types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -403,7 +409,7 @@ func (k ERC20Keeper) totalSupply(ctx context.Context, contractAddr common.Addres
 		return math.ZeroInt(), err
 	}
 
-	res, err := k.ABI.Unpack("totalSupply", retBz)
+	res, err := k.ERC20ABI.Unpack("totalSupply", retBz)
 	if err != nil {
 		return math.ZeroInt(), types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -417,7 +423,7 @@ func (k ERC20Keeper) totalSupply(ctx context.Context, contractAddr common.Addres
 }
 
 func (k ERC20Keeper) name(ctx context.Context, contractAddr common.Address) (string, error) {
-	inputBz, err := k.ABI.Pack("name")
+	inputBz, err := k.ERC20ABI.Pack("name")
 	if err != nil {
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -427,7 +433,7 @@ func (k ERC20Keeper) name(ctx context.Context, contractAddr common.Address) (str
 		return "", err
 	}
 
-	res, err := k.ABI.Unpack("name", retBz)
+	res, err := k.ERC20ABI.Unpack("name", retBz)
 	if err != nil {
 		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -441,7 +447,7 @@ func (k ERC20Keeper) name(ctx context.Context, contractAddr common.Address) (str
 }
 
 func (k ERC20Keeper) symbol(ctx context.Context, contractAddr common.Address) (string, error) {
-	inputBz, err := k.ABI.Pack("symbol")
+	inputBz, err := k.ERC20ABI.Pack("symbol")
 	if err != nil {
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -451,7 +457,7 @@ func (k ERC20Keeper) symbol(ctx context.Context, contractAddr common.Address) (s
 		return "", err
 	}
 
-	res, err := k.ABI.Unpack("symbol", retBz)
+	res, err := k.ERC20ABI.Unpack("symbol", retBz)
 	if err != nil {
 		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -465,7 +471,7 @@ func (k ERC20Keeper) symbol(ctx context.Context, contractAddr common.Address) (s
 }
 
 func (k ERC20Keeper) decimals(ctx context.Context, contractAddr common.Address) (uint8, error) {
-	inputBz, err := k.ABI.Pack("decimals")
+	inputBz, err := k.ERC20ABI.Pack("decimals")
 	if err != nil {
 		return 0, types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -475,7 +481,7 @@ func (k ERC20Keeper) decimals(ctx context.Context, contractAddr common.Address) 
 		return 0, err
 	}
 
-	res, err := k.ABI.Unpack("decimals", retBz)
+	res, err := k.ERC20ABI.Unpack("decimals", retBz)
 	if err != nil {
 		return 0, types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}

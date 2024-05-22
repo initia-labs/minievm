@@ -152,13 +152,13 @@ type TestKeepers struct {
 
 // createDefaultTestInput common settings for createTestInput
 func createDefaultTestInput(t testing.TB) (sdk.Context, TestKeepers) {
-	return createTestInput(t, false)
+	return createTestInput(t, false, true)
 }
 
 // createTestInput encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
-func createTestInput(t testing.TB, isCheckTx bool) (sdk.Context, TestKeepers) {
+func createTestInput(t testing.TB, isCheckTx, withInitialize bool) (sdk.Context, TestKeepers) {
 	// Load default move config
-	return _createTestInput(t, isCheckTx, dbm.NewMemDB())
+	return _createTestInput(t, isCheckTx, withInitialize, dbm.NewMemDB())
 }
 
 var keyCounter uint64
@@ -180,6 +180,7 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
 func _createTestInput(
 	t testing.TB,
 	isCheckTx bool,
+	withInitialize bool,
 	db dbm.DB,
 ) (sdk.Context, TestKeepers) {
 	keys := storetypes.NewKVStoreKeys(
@@ -269,8 +270,13 @@ func _createTestInput(
 			},
 		},
 	)
-	evmParams := evmtypes.DefaultParams()
-	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
+
+	if withInitialize {
+		evmParams := evmtypes.DefaultParams()
+		evmParams.AllowCustomERC20 = false
+		require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
+		require.NoError(t, evmKeeper.Initialize(ctx))
+	}
 
 	// set erc20 keeper
 	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)

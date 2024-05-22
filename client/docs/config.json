@@ -130,6 +130,15 @@
         }
       },
       {
+        "url": "./tmp-swagger-gen/ibc/applications/nft_transfer/v1/query.swagger.json",
+        "operationIds": {
+          "rename": {
+            "Params": "IBCNftParams",
+            "EscrowAddress": "IBCNftEscrowAddress"
+          }
+        }
+      },
+      {
         "url": "./tmp-swagger-gen/ibc/applications/fee/v1/query.swagger.json",
         "operationIds": {
           "rename": {

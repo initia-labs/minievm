@@ -20,7 +20,8 @@ contract ERC20 is IERC20, Ownable, ERC20Registry {
     uint8 public decimals;
     uint256 public totalSupply;
 
-    constructor(string memory _name, string memory _symbol, uint8 _decimals) register_erc20 {
+    // for custom erc20s, you should add `register_erc20` modifier to the constructor
+    constructor(string memory _name, string memory _symbol, uint8 _decimals) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;

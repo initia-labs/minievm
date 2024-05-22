@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -935,7 +936,22 @@ func NewMinitiaApp(
 	if err != nil {
 		// Once we switch to using protoreflect-based antehandlers, we might
 		// want to panic here instead of logging a warning.
-		fmt.Fprintln(os.Stderr, err.Error())
+		errMsg := ""
+
+		// ignore injective proto annotations comes from github.com/cosoms/relayer
+		for _, s := range strings.Split(err.Error(), "\n") {
+			if strings.Contains(s, "injective") {
+				continue
+			}
+
+			errMsg += s + "\n"
+		}
+
+		if errMsg != "" {
+			// Once we switch to using protoreflect-based antehandlers, we might
+			// want to panic here instead of logging a warning.
+			fmt.Fprintln(os.Stderr, errMsg)
+		}
 	}
 
 	// Load the latest state from disk if necessary, and initialize the base-app. From this point on
