@@ -75,10 +75,6 @@ func NewKeeper(
 		evmConfig.ContractSimulationGasLimit = evmconfig.DefaultContractSimulationGasLimit
 	}
 
-	if evmConfig.ContractQueryGasLimit == 0 {
-		evmConfig.ContractQueryGasLimit = evmconfig.DefaultContractQueryGasLimit
-	}
-
 	k := &Keeper{
 		ac:           ac,
 		cdc:          cdc,

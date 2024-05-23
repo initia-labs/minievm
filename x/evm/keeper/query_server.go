@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	errorsmod "cosmossdk.io/errors"
-	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -34,7 +33,6 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	}()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx = sdkCtx.WithGasMeter(storetypes.NewGasMeter(qs.config.ContractQueryGasLimit))
 
 	sender, err := qs.ac.StringToBytes(req.Sender)
 	if err != nil {
