@@ -100,6 +100,7 @@ import (
 
 	// initia imports
 
+	appheaderinfo "github.com/initia-labs/initia/app/header_info"
 	initialanes "github.com/initia-labs/initia/app/lanes"
 	"github.com/initia-labs/initia/app/params"
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
@@ -151,9 +152,9 @@ import (
 
 	// noble forwarding keeper
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
-	forwarding "github.com/noble-assets/forwarding/x/forwarding"
-	forwardingkeeper "github.com/noble-assets/forwarding/x/forwarding/keeper"
-	forwardingtypes "github.com/noble-assets/forwarding/x/forwarding/types"
+	forwarding "github.com/noble-assets/forwarding/v2/x/forwarding"
+	forwardingkeeper "github.com/noble-assets/forwarding/v2/x/forwarding/keeper"
+	forwardingtypes "github.com/noble-assets/forwarding/v2/x/forwarding/types"
 
 	// kvindexer
 	indexer "github.com/initia-labs/kvindexer"
@@ -278,6 +279,13 @@ func NewMinitiaApp(
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *MinitiaApp {
+	// load the configs
+	mempoolTxs := cast.ToInt(appOpts.Get(server.FlagMempoolMaxTxs))
+	queryGasLimit := cast.ToInt(appOpts.Get(server.FlagQueryGasLimit))
+
+	logger.Info("mempool max txs", "max_txs", mempoolTxs)
+	logger.Info("query gas limit", "gas_limit", queryGasLimit)
+
 	encodingConfig := params.MakeEncodingConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
@@ -494,6 +502,8 @@ func NewMinitiaApp(
 		app.Logger(),
 		runtime.NewKVStoreService(keys[forwardingtypes.StoreKey]),
 		runtime.NewTransientStoreService(tkeys[forwardingtypes.TransientStoreKey]),
+		appheaderinfo.NewHeaderInfoService(),
+		authorityAddr,
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.IBCKeeper.ChannelKeeper,
@@ -853,7 +863,7 @@ func NewMinitiaApp(
 		Logger:          app.Logger(),
 		TxEncoder:       app.txConfig.TxEncoder(),
 		TxDecoder:       app.txConfig.TxDecoder(),
-		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.05"),
+		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.01"),
 		MaxTxs:          1,
 		SignerExtractor: signerExtractor,
 	}, opchildlanes.SystemLaneMatchHandler())
@@ -863,7 +873,7 @@ func NewMinitiaApp(
 		Logger:          app.Logger(),
 		TxEncoder:       app.txConfig.TxEncoder(),
 		TxDecoder:       app.txConfig.TxDecoder(),
-		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.15"),
+		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.09"),
 		MaxTxs:          100,
 		SignerExtractor: signerExtractor,
 	}, factory, factory.MatchHandler())
@@ -872,7 +882,7 @@ func NewMinitiaApp(
 		Logger:          app.Logger(),
 		TxEncoder:       app.txConfig.TxEncoder(),
 		TxDecoder:       app.txConfig.TxDecoder(),
-		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.2"),
+		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.1"),
 		MaxTxs:          100,
 		SignerExtractor: signerExtractor,
 	}, opchildlanes.NewFreeLaneMatchHandler(ac, app.OPChildKeeper).MatchHandler())
@@ -881,8 +891,8 @@ func NewMinitiaApp(
 		Logger:          app.Logger(),
 		TxEncoder:       app.txConfig.TxEncoder(),
 		TxDecoder:       app.txConfig.TxDecoder(),
-		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.6"),
-		MaxTxs:          1000,
+		MaxBlockSpace:   math.LegacyMustNewDecFromStr("0.8"),
+		MaxTxs:          mempoolTxs,
 		SignerExtractor: signerExtractor,
 	})
 
