@@ -1,19 +1,38 @@
 package types
 
 import (
+	"context"
+	"encoding/binary"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/params"
+	"golang.org/x/crypto/sha3"
 )
 
-func DefaultChainConfig() *params.ChainConfig {
+func ConvertCosmosChainIDToEthereumChainID(chainID string) *big.Int {
+	hasher := sha3.NewLegacyKeccak256()
+	hasher.Write([]byte(chainID))
+	hash := hasher.Sum(nil)
+
+	return new(big.Int).SetUint64(binary.BigEndian.Uint64(hash[:8]))
+}
+
+func chainID(ctx context.Context) *big.Int {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	chainID := sdkCtx.ChainID()
+
+	return ConvertCosmosChainIDToEthereumChainID(chainID)
+}
+
+func DefaultChainConfig(ctx context.Context) *params.ChainConfig {
 	shanghaiTime := uint64(0)
 	cancunTime := uint64(0)
 	pragueTime := uint64(0)
 	verkleTime := uint64(0)
 
 	return &params.ChainConfig{
-		ChainID:             nil,
+		ChainID:             chainID(ctx),
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        big.NewInt(0),
 		DAOForkSupport:      true,

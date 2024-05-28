@@ -94,7 +94,7 @@ func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tr
 		blockContext,
 		txContext,
 		stateDB,
-		types.DefaultChainConfig(),
+		types.DefaultChainConfig(ctx),
 		vmConfig,
 		k.precompiles.toMap(ctx),
 	)
