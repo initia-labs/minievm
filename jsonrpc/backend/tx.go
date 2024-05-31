@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -69,7 +68,6 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 			Value:      big.NewInt(0),
 			AccessList: coretypes.AccessList{},
 		})
-		break
 	case "/minievm.evm.v1.Create":
 		createMsg := msg.(*types.MsgCreate)
 		data, err := hexutil.Decode(createMsg.Code)
@@ -88,7 +86,6 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 			Value:      big.NewInt(0),
 			AccessList: coretypes.AccessList{},
 		})
-		break
 	case "/minievm.evm.v1.Create2":
 		// create2 is not supported
 		return nil, nil
@@ -99,39 +96,39 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func newRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNumber uint64, blockTime uint64, index uint64, config *params.ChainConfig) *rpctypes.RPCTransaction {
-	signer := coretypes.MakeSigner(config, new(big.Int).SetUint64(blockNumber), blockTime)
+//
+// NOTE: only support dynamic fee tx
+func newRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, chainID *big.Int) *rpctypes.RPCTransaction {
+	signer := coretypes.LatestSignerForChainID(chainID)
 	from, _ := coretypes.Sender(signer, tx)
 	v, r, s := tx.RawSignatureValues()
+	al := tx.AccessList()
+	yparity := hexutil.Uint64(v.Sign())
+
 	result := &rpctypes.RPCTransaction{
-		Type:     hexutil.Uint64(tx.Type()),
-		From:     from,
-		Gas:      hexutil.Uint64(tx.Gas()),
-		GasPrice: (*hexutil.Big)(tx.GasPrice()),
-		Hash:     tx.Hash(),
-		Input:    hexutil.Bytes(tx.Data()),
-		Nonce:    hexutil.Uint64(tx.Nonce()),
-		To:       tx.To(),
-		Value:    (*hexutil.Big)(tx.Value()),
-		V:        (*hexutil.Big)(v),
-		R:        (*hexutil.Big)(r),
-		S:        (*hexutil.Big)(s),
+		Type:      hexutil.Uint64(tx.Type()),
+		From:      from,
+		Gas:       hexutil.Uint64(tx.Gas()),
+		GasPrice:  (*hexutil.Big)(tx.GasPrice()),
+		GasFeeCap: (*hexutil.Big)(tx.GasFeeCap()),
+		GasTipCap: (*hexutil.Big)(tx.GasTipCap()),
+		Hash:      tx.Hash(),
+		Input:     hexutil.Bytes(tx.Data()),
+		Nonce:     hexutil.Uint64(tx.Nonce()),
+		To:        tx.To(),
+		Value:     (*hexutil.Big)(tx.Value()),
+		V:         (*hexutil.Big)(v),
+		R:         (*hexutil.Big)(r),
+		S:         (*hexutil.Big)(s),
+		ChainID:   (*hexutil.Big)(chainID),
+		Accesses:  &al,
+		YParity:   &yparity,
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
 		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
 		result.TransactionIndex = (*hexutil.Uint64)(&index)
 	}
-
-	// only support dynamic fee tx
-	al := tx.AccessList()
-	yparity := hexutil.Uint64(v.Sign())
-	result.Accesses = &al
-	result.ChainID = (*hexutil.Big)(tx.ChainId())
-	result.YParity = &yparity
-	result.GasFeeCap = (*hexutil.Big)(tx.GasFeeCap())
-	result.GasTipCap = (*hexutil.Big)(tx.GasTipCap())
-	result.GasPrice = (*hexutil.Big)(tx.GasFeeCap())
 
 	return result
 }
