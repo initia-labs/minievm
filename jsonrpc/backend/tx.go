@@ -3,8 +3,11 @@ package backend
 import (
 	"math/big"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authTx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -56,9 +59,9 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 		if err != nil {
 			return nil, err
 		}
-
+		chainId := types.ConvertCosmosChainIDToEthereumChainID(chainID)
 		tx = coretypes.NewTx(&coretypes.DynamicFeeTx{
-			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(chainID),
+			ChainID:    chainId,
 			Nonce:      sig.Sequence,
 			Gas:        gas,
 			To:         &contractAddr,
@@ -74,9 +77,9 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 		if err != nil {
 			return nil, err
 		}
-
+		chainId := types.ConvertCosmosChainIDToEthereumChainID(chainID)
 		tx = coretypes.NewTx(&coretypes.DynamicFeeTx{
-			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(chainID),
+			ChainID:    chainId,
 			Nonce:      sig.Sequence,
 			Gas:        gas,
 			To:         nil,
@@ -92,6 +95,61 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 	}
 
 	return tx, nil
+}
+func (b *JSONRPCBackend) ConvertEtherumnTxToCosmosTx(tx *coretypes.Transaction, memo string) (sdk.Tx, error) {
+	data := hexutil.Encode(tx.Data())
+	chainID := tx.ChainId()
+	// TODO: set signer(eip1559?)
+	signer := coretypes.NewLondonSigner(chainID)
+	from, err := coretypes.Sender(signer, tx)
+	if err != nil {
+		return nil, err
+	}
+	to := tx.To()
+	// TODO: set signing modes
+	signingModes := []signingtypes.SignMode{
+		signingtypes.SignMode_SIGN_MODE_DIRECT,
+		signingtypes.SignMode_SIGN_MODE_DIRECT_AUX,
+		signingtypes.SignMode_SIGN_MODE_EIP_191,
+		signingtypes.SignMode_SIGN_MODE_TEXTUAL,
+		signingtypes.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+	}
+	signModeHandlers := []authsigning.SignModeHandler{}
+
+	config := authTx.NewTxConfig(
+		b.clientCtx.Codec,
+		signingModes, signModeHandlers,
+	)
+	txBuilder := config.NewTxBuilder()
+	// TODO: how to set fee amount and gas limit
+	switch to {
+	case nil: // Create
+		msgCreate := types.MsgCreate{
+			Sender: from.String(),
+			Code:   data,
+		}
+		limit := tx.Gas()
+
+		txBuilder.SetMsgs(&msgCreate)
+		txBuilder.SetSignatures()
+		txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("uinit", math.NewInt(int64(limit)))))
+		txBuilder.SetGasLimit(limit)
+		txBuilder.SetMemo(memo)
+	default: // MsgCall
+		msgCall := types.MsgCall{
+			Sender:       from.String(),
+			ContractAddr: to.String(),
+			Input:        data,
+		}
+		limit := tx.Gas()
+		txBuilder.SetMsgs(&msgCall)
+		txBuilder.SetSignatures()
+		txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("uinit", math.NewInt(int64(limit)))))
+		txBuilder.SetGasLimit(limit)
+		txBuilder.SetMemo(memo)
+
+	}
+	return txBuilder.GetTx(), nil
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC

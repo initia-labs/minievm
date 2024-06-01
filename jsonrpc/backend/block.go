@@ -133,7 +133,7 @@ func (s *JSONRPCBackend) blockMaxGasFromConsensusParams(goCtx context.Context, b
 }
 
 func (b *JSONRPCBackend) convertTmBlockToEthBlock(ctx context.Context, block *tmtypes.Block) (map[string]interface{}, error) {
-	chainID := types.ConvertCosmosChainIDToEthereumChainID(b.clientCtx.ChainID)
+	chainID, _ := types.ConvertCosmosChainIDToEthereumChainID(b.clientCtx.ChainID)
 	gasLimit, err := b.blockMaxGasFromConsensusParams(ctx, block.Height)
 	if err != nil {
 		b.svrCtx.Logger.Error("failed to query consensus params", "error", err.Error())
