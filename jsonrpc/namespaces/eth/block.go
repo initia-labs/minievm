@@ -1,3 +1,1 @@
 package ethapi
-
-func 

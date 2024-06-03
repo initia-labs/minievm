@@ -15,8 +15,6 @@ import (
 
 	ethlog "github.com/ethereum/go-ethereum/log"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
-
-	"github.com/initia-labs/minievm/ethereum/jsonrpc"
 )
 
 func StartJSONRPC(

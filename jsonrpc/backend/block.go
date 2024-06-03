@@ -35,7 +35,7 @@ func (b *JSONRPCBackend) GetBlockByNumber(ctx context.Context, ethBlockNum rpc.B
 		return nil, err
 	}
 
-	return b.convertTmBlockToEthBlock(ctx, tmBlock.Block)
+	return b.convertTmBlockToEthBlock(ctx, tmBlock.Block, fullTx)
 }
 
 func (b *JSONRPCBackend) GetBlockByHash(ctx context.Context, hash common.Hash, fullTx bool) (map[string]interface{}, error) {
@@ -50,16 +50,17 @@ func (b *JSONRPCBackend) GetBlockByHash(ctx context.Context, hash common.Hash, f
 		return nil, err
 	}
 
-	return b.convertTmBlockToEthBlock(ctx, tmBlock.Block)
+	return b.convertTmBlockToEthBlock(ctx, tmBlock.Block, fullTx)
 }
 
 func (b *JSONRPCBackend) GetBlockTransactionCountByHash(ctx context.Context, hash common.Hash) (*hexutil.Uint, error) {
-	b.GetBlockByHash(ctx, hash, false)
-	sc, ok := b.clientCtx.Client.(tmrpcclient.SignClient)
-	if !ok {
-		return nil, errors.New("invalid rpc client")
+	block, err := b.GetBlockByHash(ctx, hash, true)
+	if err != nil {
+		return nil, err
 	}
 
+	numTxs := hexutil.Uint(len(block["transactions"].([]*rpctypes.RPCTransaction)))
+	return &numTxs, nil
 }
 
 // formatBlock creates an ethereum block from a tendermint header and ethereum-formatted
@@ -132,8 +133,8 @@ func (s *JSONRPCBackend) blockMaxGasFromConsensusParams(goCtx context.Context, b
 	return gasLimit, nil
 }
 
-func (b *JSONRPCBackend) convertTmBlockToEthBlock(ctx context.Context, block *tmtypes.Block) (map[string]interface{}, error) {
-	chainID, _ := types.ConvertCosmosChainIDToEthereumChainID(b.clientCtx.ChainID)
+func (b *JSONRPCBackend) convertTmBlockToEthBlock(ctx context.Context, block *tmtypes.Block, fullTx bool) (map[string]interface{}, error) {
+	chainID := types.ConvertCosmosChainIDToEthereumChainID(b.clientCtx.ChainID)
 	gasLimit, err := b.blockMaxGasFromConsensusParams(ctx, block.Height)
 	if err != nil {
 		b.svrCtx.Logger.Error("failed to query consensus params", "error", err.Error())
@@ -142,29 +143,31 @@ func (b *JSONRPCBackend) convertTmBlockToEthBlock(ctx context.Context, block *tm
 	gasUsed := uint64(0)
 
 	rpcTxs := []*rpctypes.RPCTransaction{}
-	decoder := b.clientCtx.TxConfig.TxDecoder()
-	for index, txBz := range block.Txs {
-		tx, err := decoder(txBz)
-		if err != nil {
-			continue
+	if fullTx {
+		decoder := b.clientCtx.TxConfig.TxDecoder()
+		for index, txBz := range block.Txs {
+			tx, err := decoder(txBz)
+			if err != nil {
+				continue
+			}
+
+			// update gas used
+			gasTx := tx.(sdk.FeeTx)
+			gasUsed += gasTx.GetGas()
+
+			ethTx, err := b.ConvertCosmosTxToEthereumTx(tx)
+			if ethTx == nil || err != nil {
+				continue
+			}
+
+			rpcTxs = append(rpcTxs, newRPCTransaction(
+				ethTx,
+				common.BytesToHash(block.Hash()),
+				uint64(block.Height),
+				uint64(index),
+				chainID,
+			))
 		}
-
-		// update gas used
-		gasTx := tx.(sdk.FeeTx)
-		gasUsed += gasTx.GetGas()
-
-		ethTx, err := b.ConvertCosmosTxToEthereumTx(tx)
-		if ethTx == nil || err != nil {
-			continue
-		}
-
-		rpcTxs = append(rpcTxs, newRPCTransaction(
-			ethTx,
-			common.BytesToHash(block.Hash()),
-			uint64(block.Height),
-			uint64(index),
-			chainID,
-		))
 	}
 
 	return formatBlock(
