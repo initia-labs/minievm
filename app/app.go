@@ -144,6 +144,7 @@ import (
 	ibcevmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	appkeepers "github.com/initia-labs/minievm/app/keepers"
 
+	evmindexer "github.com/initia-labs/minievm/indexer"
 	"github.com/initia-labs/minievm/x/bank"
 	bankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
@@ -1321,8 +1322,14 @@ func (app *MinitiaApp) setupIndexer(appOpts servertypes.AppOptions, homePath str
 		return err
 	}
 
+	// add evm indexer
+	evmIndexer, err := evmindexer.NewEVMIndexer(appOpts, appCodec, app.Logger(), app.txConfig, app.EVMKeeper)
+	if err != nil {
+		return err
+	}
+
 	streamingManager := storetypes.StreamingManager{
-		ABCIListeners: []storetypes.ABCIListener{indexer},
+		ABCIListeners: []storetypes.ABCIListener{indexer, evmIndexer},
 		StopNodeOnErr: true,
 	}
 	app.SetStreamingManager(streamingManager)

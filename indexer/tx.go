@@ -1,14 +1,10 @@
-package backend
+package indexer
 
 import (
-	"context"
 	"math/big"
 
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,13 +12,11 @@ import (
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/types"
-
-	customtx "github.com/initia-labs/minievm/tx"
 )
 
-func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.Transaction, error) {
-	chainID := b.clientCtx.ChainID
-	ac := b.clientCtx.Codec.InterfaceRegistry().SigningContext().AddressCodec()
+func (e *EVMIndexerImpl) ConvertCosmosTxToEthereumTx(ctx sdk.Context, sdkTx sdk.Tx) (*coretypes.Transaction, error) {
+	chainID := ctx.ChainID()
+	ac := e.appCodec.InterfaceRegistry().SigningContext().AddressCodec()
 	msgs := sdkTx.GetMsgs()
 	if len(msgs) != 1 {
 		return nil, nil
@@ -38,7 +32,12 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 	}
 
 	fees := authTx.GetFee()
-	if len(fees) != 1 {
+	params, err := e.evmKeeper.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(fees) != 1 && fees[0].Denom != params.FeeDenom {
 		return nil, nil
 	}
 
@@ -100,68 +99,6 @@ func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.T
 	return tx, nil
 }
 
-func (b *JSONRPCBackend) ConvertEthereumTxToCosmosTx(tx *coretypes.Transaction, memo string) (sdk.Tx, error) {
-	queryClient := types.NewQueryClient(b.clientCtx)
-	params, err := queryClient.Params(context.Background(), &types.QueryParamsRequest{})
-	if err != nil {
-		b.svrCtx.Logger.Error("failed to query params", "error", err.Error())
-		return nil, err
-	}
-
-	data := hexutil.Encode(tx.Data())
-	chainID := tx.ChainId()
-	// TODO: set signer(eip1559?)
-	signer := coretypes.NewLondonSigner(chainID)
-	from, err := coretypes.Sender(signer, tx)
-	if err != nil {
-		return nil, err
-	}
-	to := tx.To()
-
-	txConfig := authtx.NewTxConfig(
-		b.clientCtx.Codec,
-		authtx.DefaultSignModes,
-		customtx.NewSignModeEthereumHandler(b.ConvertCosmosTxToEthereumTx),
-	)
-	txBuilder := txConfig.NewTxBuilder()
-
-	// TODO: how to set fee amount and gas limit
-	feeDenom := params.Params.FeeDenom
-	switch to {
-	case nil: // Create
-		msgCreate := types.MsgCreate{
-			Sender: from.String(),
-			Code:   data,
-		}
-
-		if err := txBuilder.SetMsgs(&msgCreate); err != nil {
-			return nil, err
-		}
-	default: // MsgCall
-		msgCall := types.MsgCall{
-			Sender:       from.String(),
-			ContractAddr: to.String(),
-			Input:        data,
-		}
-
-		if err := txBuilder.SetMsgs(&msgCall); err != nil {
-			return nil, err
-		}
-	}
-
-	tx.RawSignatureValues()
-	err = txBuilder.SetSignatures(signing.SignatureV2{})
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(feeDenom, math.NewIntFromBigInt(tx.GasFeeCap()))))
-	txBuilder.SetGasLimit(tx.Gas())
-	txBuilder.SetMemo(memo)
-
-	return txBuilder.GetTx(), nil
-}
-
-// newRPCTransaction returns a transaction that will serialize to the RPC
-// representation, with the given location metadata set (if available).
-//
-// NOTE: only support dynamic fee tx
 func newRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, chainID *big.Int) *rpctypes.RPCTransaction {
 	signer := coretypes.LatestSignerForChainID(chainID)
 	from, _ := coretypes.Sender(signer, tx)
