@@ -158,7 +158,6 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 		Type:      ethTx.Type(),
 		GasFeeCap: gasFeeCap.String(),
 		GasTipCap: gasTipCap.String(),
-		Value:     ethTx.Value().String(),
 	})
 	if err != nil {
 		return nil, err
@@ -172,7 +171,6 @@ type metadata struct {
 	Type      uint8  `json:"type"`
 	GasFeeCap string `json:"gas_fee_cap"`
 	GasTipCap string `json:"gas_tip_cap"`
-	Value     string `json:"value"`
 }
 
 // ConvertCosmosTxToEthereumTx converts a Cosmos SDK transaction to an Ethereum transaction.
@@ -203,6 +201,10 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 
 	fees := authTx.GetFee()
 	params, err := u.Params.Get(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	decimals, err := u.ERC20Keeper().GetDecimals(ctx, params.FeeDenom)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -253,13 +255,9 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		return nil, nil, err
 	}
 
-	value, ok := new(big.Int).SetString(md.Value, 10)
-	if !ok {
-		return nil, nil, err
-	}
-
 	var to *common.Address
 	var input []byte
+	var value *big.Int
 	switch typeUrl {
 	case "/minievm.evm.v1.MsgCall":
 		callMsg := msg.(*types.MsgCall)
@@ -275,6 +273,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 
 		to = &contractAddr
 		input = data
+		value = types.FromEthersUnit(decimals, callMsg.Value.BigInt())
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
 		data, err := hexutil.Decode(createMsg.Code)
@@ -284,7 +283,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 
 		to = nil
 		input = data
-
+		value = types.FromEthersUnit(decimals, createMsg.Value.BigInt())
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
