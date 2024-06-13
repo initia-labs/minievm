@@ -10,7 +10,7 @@ import (
 
 func Test_ConvertChainIdBiDirectional(t *testing.T) {
 	chainID := "minievm"
-	expectedEthChainID := new(big.Int).SetUint64(13568054635622948241)
+	expectedEthChainID := new(big.Int).SetUint64(3212557983074529)
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(chainID)
 	require.Equal(t, ethChainID, (expectedEthChainID))
 }
