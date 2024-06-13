@@ -75,6 +75,11 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	// convert value unit from wei to cosmos fee unit
 	value := types.FromEthersUnit(decimals, ethTx.Value())
 
+	// check if the value is correctly converted without dropping any precision
+	if types.ToEthersUint(decimals, value).Cmp(ethTx.Value()) != 0 {
+		return nil, types.ErrInvalidValue.Wrap("failed to convert value to token unit without dropping precision")
+	}
+
 	// signer
 	chainID := sdk.UnwrapSDKContext(ctx).ChainID()
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(chainID)

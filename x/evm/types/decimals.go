@@ -70,7 +70,6 @@ func FromEthersUnit(decimals uint8, val *big.Int) *big.Int {
 	}
 
 	decimalDiff := EtherDecimals - decimals
-
 	exp := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimalDiff)), nil)
 	return new(big.Int).Div(val, exp)
 }
