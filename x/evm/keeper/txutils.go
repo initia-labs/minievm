@@ -1,0 +1,326 @@
+package keeper
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math/big"
+
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/initia-labs/initia/crypto/ethsecp256k1"
+	"github.com/initia-labs/minievm/x/evm/types"
+)
+
+const SignMode_SIGN_MODE_ETHEREUM = signing.SignMode(9999)
+
+type TxUtils struct {
+	*Keeper
+}
+
+func NewTxUtils(k *Keeper) *TxUtils {
+	return &TxUtils{
+		Keeper: k,
+	}
+}
+
+func computeGasFeeAmount(gasFeeCap *big.Int, gas uint64, decimals uint8) *big.Int {
+	if gasFeeCap.Cmp(big.NewInt(0)) == 0 {
+		return big.NewInt(0)
+	}
+
+	gasFeeCap = new(big.Int).Mul(gasFeeCap, new(big.Int).SetUint64(gas))
+	gasFeeAmount := types.FromEthersUnit(decimals, gasFeeCap)
+
+	// add 1 to the gas fee amount to avoid rounding errors
+	return new(big.Int).Add(gasFeeAmount, big.NewInt(1))
+}
+
+func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *coretypes.Transaction) (sdk.Tx, error) {
+	params, err := u.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	feeDenom := params.FeeDenom
+	decimals, err := u.ERC20Keeper().GetDecimals(ctx, feeDenom)
+	if err != nil {
+		return nil, err
+	}
+
+	gasFeeCap := ethTx.GasFeeCap()
+	if gasFeeCap == nil {
+		gasFeeCap = big.NewInt(0)
+	}
+	gasTipCap := ethTx.GasTipCap()
+	if gasTipCap == nil {
+		gasTipCap = big.NewInt(0)
+	}
+
+	// convert gas fee unit from wei to cosmos fee unit
+	gasLimit := ethTx.Gas()
+	gasFeeAmount := computeGasFeeAmount(gasFeeCap, gasLimit, decimals)
+	feeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromUint64(gasFeeAmount.Uint64())))
+
+	// convert value unit from wei to cosmos fee unit
+	value := types.FromEthersUnit(decimals, ethTx.Value())
+
+	// signer
+	chainID := sdk.UnwrapSDKContext(ctx).ChainID()
+	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(chainID)
+	signer := coretypes.LatestSignerForChainID(ethChainID)
+
+	// sig bytes
+	v, r, s := ethTx.RawSignatureValues()
+
+	sigBytes := make([]byte, 65)
+	switch ethTx.Type() {
+	case coretypes.LegacyTxType:
+		sigBytes[64] = byte(v.Uint64() - (35 + ethChainID.Uint64()*2))
+	case coretypes.DynamicFeeTxType:
+		sigBytes[64] = byte(v.Uint64())
+	default:
+		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("unsupported tx type: %d", ethTx.Type())
+	}
+
+	copy(sigBytes[:32], r.Bytes())
+	copy(sigBytes[32:64], s.Bytes())
+
+	sigData := &signing.SingleSignatureData{
+		SignMode:  SignMode_SIGN_MODE_ETHEREUM,
+		Signature: sigBytes,
+	}
+
+	// recover pubkey
+	pubKeyBz, err := crypto.Ecrecover(signer.Hash(ethTx).Bytes(), sigBytes)
+	if err != nil {
+		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("failed to recover pubkey: %v", err.Error())
+	}
+
+	// compress pubkey
+	compressedPubKey, err := ethsecp256k1.NewPubKeyFromBytes(pubKeyBz)
+	if err != nil {
+		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("failed to create pubkey: %v", err.Error())
+	}
+
+	// construct signature
+	sig := signing.SignatureV2{
+		PubKey:   compressedPubKey,
+		Data:     sigData,
+		Sequence: ethTx.Nonce(),
+	}
+
+	// convert sender to string
+	sender, err := u.ac.BytesToString(compressedPubKey.Address().Bytes())
+	if err != nil {
+		return nil, err
+	}
+
+	sdkMsgs := []sdk.Msg{}
+	if ethTx.To() == nil {
+		sdkMsgs = append(sdkMsgs, &types.MsgCreate{
+			Sender: sender,
+			Code:   hexutil.Encode(ethTx.Data()),
+			Value:  math.NewIntFromBigInt(value),
+		})
+	} else {
+		sdkMsgs = append(sdkMsgs, &types.MsgCall{
+			Sender:       sender,
+			ContractAddr: ethTx.To().String(),
+			Input:        hexutil.Encode(ethTx.Data()),
+			Value:        math.NewIntFromBigInt(value),
+		})
+	}
+
+	txBuilder := authtx.NewTxConfig(u.cdc, authtx.DefaultSignModes).NewTxBuilder()
+	txBuilder.SetMsgs(sdkMsgs...)
+	txBuilder.SetFeeAmount(feeAmount)
+	txBuilder.SetGasLimit(gasLimit)
+	txBuilder.SetSignatures(sig)
+
+	// set memo
+	memo, err := json.Marshal(metadata{
+		Type:      ethTx.Type(),
+		GasFeeCap: gasFeeCap.String(),
+		GasTipCap: gasTipCap.String(),
+		Value:     ethTx.Value().String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	txBuilder.SetMemo(string(memo))
+
+	return txBuilder.GetTx(), nil
+}
+
+type metadata struct {
+	Type      uint8  `json:"type"`
+	GasFeeCap string `json:"gas_fee_cap"`
+	GasTipCap string `json:"gas_tip_cap"`
+	Value     string `json:"value"`
+}
+
+// ConvertCosmosTxToEthereumTx converts a Cosmos SDK transaction to an Ethereum transaction.
+// It returns nil if the transaction is not an EVM transaction.
+func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx) (*coretypes.Transaction, *common.Address, error) {
+	msgs := sdkTx.GetMsgs()
+	if len(msgs) != 1 {
+		return nil, nil, nil
+	}
+
+	authTx := sdkTx.(authsigning.Tx)
+	memo := authTx.GetMemo()
+	if len(memo) == 0 {
+		return nil, nil, nil
+	}
+	md := metadata{}
+	if err := json.Unmarshal([]byte(memo), &md); err != nil {
+		return nil, nil, nil
+	}
+
+	sigs, err := authTx.GetSignaturesV2()
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(sigs) != 1 {
+		return nil, nil, nil
+	}
+
+	fees := authTx.GetFee()
+	params, err := u.Params.Get(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(fees) > 0 && fees[0].Denom != params.FeeDenom {
+		return nil, nil, nil
+	}
+
+	var tx *coretypes.Transaction
+
+	msg := msgs[0]
+	gas := authTx.GetGas()
+	typeUrl := sdk.MsgTypeURL(msg)
+
+	sig := sigs[0]
+	cosmosSender := sig.PubKey.Address()
+	if len(cosmosSender.Bytes()) != common.AddressLength {
+		return nil, nil, nil
+	}
+
+	sender := common.BytesToAddress(sig.PubKey.Address())
+	sigData, ok := sig.Data.(*signing.SingleSignatureData)
+	if !ok {
+		return nil, nil, nil
+	}
+
+	// filter out non-EVM transactions
+	if sigData.SignMode != SignMode_SIGN_MODE_ETHEREUM {
+		return nil, nil, nil
+	}
+
+	var v, r, s []byte
+	if len(sigData.Signature) == 65 {
+		v, r, s = sigData.Signature[64:], sigData.Signature[:32], sigData.Signature[32:64]
+	} else if len(sigData.Signature) == 64 {
+		v, r, s = []byte{}, sigData.Signature[:32], sigData.Signature[32:64]
+	} else {
+		return nil, nil, nil
+	}
+
+	gasFeeCap, ok := new(big.Int).SetString(md.GasFeeCap, 10)
+	if !ok {
+		return nil, nil, err
+	}
+
+	gasTipCap, ok := new(big.Int).SetString(md.GasTipCap, 10)
+	if !ok {
+		return nil, nil, err
+	}
+
+	value, ok := new(big.Int).SetString(md.Value, 10)
+	if !ok {
+		return nil, nil, err
+	}
+
+	var to *common.Address
+	var input []byte
+	switch typeUrl {
+	case "/minievm.evm.v1.MsgCall":
+		callMsg := msg.(*types.MsgCall)
+		contractAddr, err := types.ContractAddressFromString(u.ac, callMsg.ContractAddr)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		data, err := hexutil.Decode(callMsg.Input)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		to = &contractAddr
+		input = data
+	case "/minievm.evm.v1.MsgCreate":
+		createMsg := msg.(*types.MsgCreate)
+		data, err := hexutil.Decode(createMsg.Code)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		to = nil
+		input = data
+
+	case "/minievm.evm.v1.MsgCreate2":
+		// create2 is not supported
+		return nil, nil, nil
+	}
+
+	chainID := sdk.UnwrapSDKContext(ctx).ChainID()
+	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(chainID)
+
+	var txData coretypes.TxData
+	switch md.Type {
+	case coretypes.LegacyTxType:
+		txData = &coretypes.LegacyTx{
+			Nonce:    sig.Sequence,
+			Gas:      gas,
+			To:       to,
+			Data:     input,
+			GasPrice: gasFeeCap,
+			Value:    value,
+			R:        new(big.Int).SetBytes(r),
+			S:        new(big.Int).SetBytes(s),
+			V:        new(big.Int).Add(new(big.Int).SetBytes(v), new(big.Int).SetUint64(35+ethChainID.Uint64()*2)),
+		}
+	case coretypes.DynamicFeeTxType:
+		txData = &coretypes.DynamicFeeTx{
+			ChainID:   types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
+			Nonce:     sig.Sequence,
+			GasTipCap: gasTipCap,
+			GasFeeCap: gasFeeCap,
+			Gas:       gas,
+			To:        to,
+			Data:      input,
+			Value:     value,
+			R:         new(big.Int).SetBytes(r),
+			S:         new(big.Int).SetBytes(s),
+			V:         new(big.Int).SetBytes(v),
+		}
+	default:
+		return nil, nil, fmt.Errorf("unsupported tx type: %d", md.Type)
+	}
+
+	tx = coretypes.NewTx(txData)
+
+	return tx, &sender, nil
+}

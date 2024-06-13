@@ -2,197 +2,250 @@ package backend
 
 import (
 	"context"
-	"math/big"
-
-	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 
-	customtx "github.com/initia-labs/minievm/tx"
+	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (b *JSONRPCBackend) ConvertCosmosTxToEthereumTx(sdkTx sdk.Tx) (*coretypes.Transaction, error) {
-	chainID := b.clientCtx.ChainID
-	ac := b.clientCtx.Codec.InterfaceRegistry().SigningContext().AddressCodec()
-	msgs := sdkTx.GetMsgs()
-	if len(msgs) != 1 {
-		return nil, nil
-	}
-
-	authTx := sdkTx.(authsigning.Tx)
-	sigs, err := authTx.GetSignaturesV2()
-	if err != nil {
-		return nil, err
-	}
-	if len(sigs) != 1 {
-		return nil, nil
-	}
-
-	fees := authTx.GetFee()
-	if len(fees) != 1 {
-		return nil, nil
-	}
-
-	var tx *coretypes.Transaction
-
-	sig := sigs[0]
-	msg := msgs[0]
-	fee := fees[0]
-	gas := authTx.GetGas()
-	typeUrl := sdk.MsgTypeURL(msg)
-
-	switch typeUrl {
-	case "/minievm.evm.v1.Call":
-		callMsg := msg.(*types.MsgCall)
-		contractAddr, err := types.ContractAddressFromString(ac, callMsg.ContractAddr)
-		if err != nil {
-			return nil, err
-		}
-
-		data, err := hexutil.Decode(callMsg.Input)
-		if err != nil {
-			return nil, err
-		}
-		chainId := types.ConvertCosmosChainIDToEthereumChainID(chainID)
-		tx = coretypes.NewTx(&coretypes.DynamicFeeTx{
-			ChainID:    chainId,
-			Nonce:      sig.Sequence,
-			Gas:        gas,
-			To:         &contractAddr,
-			Data:       data,
-			GasTipCap:  big.NewInt(0),
-			GasFeeCap:  big.NewInt(fee.Amount.Int64()),
-			Value:      big.NewInt(0),
-			AccessList: coretypes.AccessList{},
-		})
-	case "/minievm.evm.v1.Create":
-		createMsg := msg.(*types.MsgCreate)
-		data, err := hexutil.Decode(createMsg.Code)
-		if err != nil {
-			return nil, err
-		}
-		chainId := types.ConvertCosmosChainIDToEthereumChainID(chainID)
-		tx = coretypes.NewTx(&coretypes.DynamicFeeTx{
-			ChainID:    chainId,
-			Nonce:      sig.Sequence,
-			Gas:        gas,
-			To:         nil,
-			Data:       data,
-			GasTipCap:  big.NewInt(0),
-			GasFeeCap:  big.NewInt(fee.Amount.Int64()),
-			Value:      big.NewInt(0),
-			AccessList: coretypes.AccessList{},
-		})
-	case "/minievm.evm.v1.Create2":
-		// create2 is not supported
-		return nil, nil
-	}
-
-	return tx, nil
+func (b *JSONRPCBackend) getQueryCtx() (context.Context, error) {
+	return b.app.CreateQueryContext(0, false)
 }
 
-func (b *JSONRPCBackend) ConvertEthereumTxToCosmosTx(tx *coretypes.Transaction, memo string) (sdk.Tx, error) {
-	queryClient := types.NewQueryClient(b.clientCtx)
-	params, err := queryClient.Params(context.Background(), &types.QueryParamsRequest{})
-	if err != nil {
-		b.svrCtx.Logger.Error("failed to query params", "error", err.Error())
-		return nil, err
-	}
-
-	data := hexutil.Encode(tx.Data())
-	chainID := tx.ChainId()
-	// TODO: set signer(eip1559?)
-	signer := coretypes.NewLondonSigner(chainID)
-	from, err := coretypes.Sender(signer, tx)
-	if err != nil {
-		return nil, err
-	}
-	to := tx.To()
-
-	txConfig := authtx.NewTxConfig(
-		b.clientCtx.Codec,
-		authtx.DefaultSignModes,
-		customtx.NewSignModeEthereumHandler(b.ConvertCosmosTxToEthereumTx),
-	)
-	txBuilder := txConfig.NewTxBuilder()
-
-	// TODO: how to set fee amount and gas limit
-	feeDenom := params.Params.FeeDenom
-	switch to {
-	case nil: // Create
-		msgCreate := types.MsgCreate{
-			Sender: from.String(),
-			Code:   data,
-		}
-
-		if err := txBuilder.SetMsgs(&msgCreate); err != nil {
-			return nil, err
-		}
-	default: // MsgCall
-		msgCall := types.MsgCall{
-			Sender:       from.String(),
-			ContractAddr: to.String(),
-			Input:        data,
-		}
-
-		if err := txBuilder.SetMsgs(&msgCall); err != nil {
-			return nil, err
-		}
-	}
-
-	tx.RawSignatureValues()
-	err = txBuilder.SetSignatures(signing.SignatureV2{})
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(feeDenom, math.NewIntFromBigInt(tx.GasFeeCap()))))
-	txBuilder.SetGasLimit(tx.Gas())
-	txBuilder.SetMemo(memo)
-
-	return txBuilder.GetTx(), nil
+func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, error) {
+	return b.app.CreateQueryContext(int64(height), false)
 }
 
-// newRPCTransaction returns a transaction that will serialize to the RPC
-// representation, with the given location metadata set (if available).
-//
-// NOTE: only support dynamic fee tx
-func newRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, chainID *big.Int) *rpctypes.RPCTransaction {
-	signer := coretypes.LatestSignerForChainID(chainID)
-	from, _ := coretypes.Sender(signer, tx)
-	v, r, s := tx.RawSignatureValues()
-	al := tx.AccessList()
-	yparity := hexutil.Uint64(v.Sign())
-
-	result := &rpctypes.RPCTransaction{
-		Type:      hexutil.Uint64(tx.Type()),
-		From:      from,
-		Gas:       hexutil.Uint64(tx.Gas()),
-		GasPrice:  (*hexutil.Big)(tx.GasPrice()),
-		GasFeeCap: (*hexutil.Big)(tx.GasFeeCap()),
-		GasTipCap: (*hexutil.Big)(tx.GasTipCap()),
-		Hash:      tx.Hash(),
-		Input:     hexutil.Bytes(tx.Data()),
-		Nonce:     hexutil.Uint64(tx.Nonce()),
-		To:        tx.To(),
-		Value:     (*hexutil.Big)(tx.Value()),
-		V:         (*hexutil.Big)(v),
-		R:         (*hexutil.Big)(r),
-		S:         (*hexutil.Big)(s),
-		ChainID:   (*hexutil.Big)(chainID),
-		Accesses:  &al,
-		YParity:   &yparity,
-	}
-	if blockHash != (common.Hash{}) {
-		result.BlockHash = &blockHash
-		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
-		result.TransactionIndex = (*hexutil.Uint64)(&index)
+// GetTransactionByHash returns the transaction with the given hash.
+func (b *JSONRPCBackend) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
 	}
 
-	return result
+	return b.app.EVMIndexer().TxByHash(queryCtx, hash)
+}
+
+// GetTransactionCount returns the number of transactions at the given block number.
+func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Uint64, error) {
+	sdkAddr := sdk.AccAddress(address[:])
+
+	var blockNumber rpc.BlockNumber
+	if blockHash, ok := blockNrOrHash.Hash(); ok {
+		queryCtx, err := b.getQueryCtx()
+		if err != nil {
+			return nil, err
+		}
+
+		blockNumberU64, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		blockNumber = rpc.BlockNumber(blockNumberU64)
+	} else {
+		blockNumber, _ = blockNrOrHash.Number()
+	}
+
+	seq := uint64(0)
+	var queryCtx context.Context
+	if blockNumber == rpc.PendingBlockNumber {
+		queryCtx = b.app.GetContextForCheckTx(nil)
+	} else {
+		var err error
+		queryCtx, err = b.app.CreateQueryContext(0, false)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	acc := b.app.AccountKeeper.GetAccount(queryCtx, sdkAddr)
+	if acc != nil {
+		seq = acc.GetSequence()
+	}
+
+	return (*hexutil.Uint64)(&seq), nil
+}
+
+// GetTransactionReceipt returns the transaction receipt for the given transaction hash.
+func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	receipt, err := b.app.EVMIndexer().TxReceiptByHash(queryCtx, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return marshalReceipt(receipt, tx), nil
+}
+
+// GetTransactionByBlockHashAndIndex returns the transaction at the given block hash and index.
+func (b *JSONRPCBackend) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	number, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
+}
+
+// GetTransactionByBlockNumberAndIndex returns the transaction at the given block number and index.
+func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	number := uint64(blockNum.Int64())
+	return b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
+}
+
+// GetBlockTransactionCountByHash returns the number of transactions in a block from a block matching the given block hash.
+func (b *JSONRPCBackend) GetBlockTransactionCountByHash(hash common.Hash) (*hexutil.Uint, error) {
+	block, err := b.GetBlockByHash(hash, true)
+	if err != nil {
+		return nil, err
+	}
+
+	numTxs := hexutil.Uint(len(block["transactions"].([]*rpctypes.RPCTransaction)))
+	return &numTxs, nil
+}
+
+// GetBlockTransactionCountByNumber returns the number of transactions in a block from a block matching the given block number.
+func (b *JSONRPCBackend) GetBlockTransactionCountByNumber(blockNum rpc.BlockNumber) (*hexutil.Uint, error) {
+	block, err := b.GetBlockByNumber(blockNum, true)
+	if err != nil {
+		return nil, err
+	}
+
+	numTxs := hexutil.Uint(len(block["transactions"].([]*rpctypes.RPCTransaction)))
+	return &numTxs, nil
+}
+
+// GetRawTransactionByHash returns the bytes of the transaction for the given hash.
+func (b *JSONRPCBackend) GetRawTransactionByHash(hash common.Hash) (hexutil.Bytes, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	rpcTx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return rpcTx.ToTransaction().MarshalBinary()
+}
+
+// GetRawTransactionByBlockHashAndIndex returns the bytes of the transaction for the given block hash and index.
+func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) (hexutil.Bytes, error) {
+	rpcTx, err := b.GetTransactionByBlockHashAndIndex(blockHash, index)
+	if err != nil {
+		return nil, err
+	}
+
+	return rpcTx.ToTransaction().MarshalBinary()
+}
+
+func (b *JSONRPCBackend) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error) {
+	chainID, err := b.ChainID()
+	if err != nil {
+		return nil, err
+	}
+
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	mc, ok := b.clientCtx.Client.(cmtrpcclient.MempoolClient)
+	if !ok {
+		return nil, errors.New("mempool client not available")
+	}
+
+	res, err := mc.UnconfirmedTxs(b.ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*rpctypes.RPCTransaction, 0, len(res.Txs))
+	for _, txBz := range res.Txs {
+		tx, err := b.clientCtx.TxConfig.TxDecoder()(txBz)
+		if err != nil {
+			return nil, err
+		}
+
+		sdkCtx := sdk.UnwrapSDKContext(queryCtx)
+		ethTx, _, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertCosmosTxToEthereumTx(sdkCtx, tx)
+		if err != nil {
+			return nil, err
+		}
+		if ethTx != nil {
+			result = append(
+				result,
+				rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainID),
+			)
+		}
+	}
+
+	return result, nil
+}
+
+// marshalReceipt marshals a transaction receipt into a JSON object.
+func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map[string]interface{} {
+	fields := map[string]interface{}{
+		"blockHash":         tx.BlockHash,
+		"blockNumber":       hexutil.Big(*tx.BlockNumber),
+		"transactionHash":   tx.Hash,
+		"transactionIndex":  hexutil.Uint64(*tx.TransactionIndex),
+		"from":              tx.From,
+		"to":                tx.To,
+		"gasUsed":           hexutil.Uint64(receipt.GasUsed),
+		"cumulativeGasUsed": hexutil.Uint64(receipt.CumulativeGasUsed),
+		"contractAddress":   nil,
+		"logs":              receipt.Logs,
+		"logsBloom":         receipt.Bloom,
+		"type":              hexutil.Uint(coretypes.LegacyTxType),
+		"effectiveGasPrice": (*hexutil.Big)(receipt.EffectiveGasPrice),
+	}
+
+	// Assign receipt status or post state.
+	if len(receipt.PostState) > 0 {
+		fields["root"] = hexutil.Bytes(receipt.PostState)
+	} else {
+		fields["status"] = hexutil.Uint(receipt.Status)
+	}
+	if receipt.Logs == nil {
+		fields["logs"] = []*types.Log{}
+	}
+
+	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
+	if receipt.ContractAddress != (common.Address{}) {
+		fields["contractAddress"] = receipt.ContractAddress
+	}
+
+	return fields
 }

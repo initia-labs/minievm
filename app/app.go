@@ -103,6 +103,7 @@ import (
 	appheaderinfo "github.com/initia-labs/initia/app/header_info"
 	initialanes "github.com/initia-labs/initia/app/lanes"
 	"github.com/initia-labs/initia/app/params"
+	cryptocodec "github.com/initia-labs/initia/crypto/codec"
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookskeeper "github.com/initia-labs/initia/x/ibc-hooks/keeper"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
@@ -268,6 +269,9 @@ type MinitiaApp struct {
 	// fake keeper to indexer
 	indexerKeeper *indexerkeeper.Keeper
 	indexerModule indexermodule.AppModuleBasic
+
+	// evm indexer
+	evmIndexer evmindexer.EVMIndexer
 }
 
 // NewMinitiaApp returns a reference to an initialized Initia.
@@ -290,6 +294,8 @@ func NewMinitiaApp(
 	encodingConfig := params.MakeEncodingConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	cryptocodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	cryptocodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	appCodec := encodingConfig.Codec
 	legacyAmino := encodingConfig.Amino
@@ -1025,6 +1031,7 @@ func (app *MinitiaApp) setAnteHandler(
 			AuctionKeeper: *app.AuctionKeeper,
 			MevLane:       mevLane,
 			FreeLane:      freeLane,
+			EVMKeeper:     app.EVMKeeper,
 		},
 	)
 	if err != nil {
@@ -1328,6 +1335,9 @@ func (app *MinitiaApp) setupIndexer(appOpts servertypes.AppOptions, homePath str
 		return err
 	}
 
+	// register evm indexer to app
+	app.evmIndexer = evmIndexer
+
 	streamingManager := storetypes.StreamingManager{
 		ABCIListeners: []storetypes.ABCIListener{indexer, evmIndexer},
 		StopNodeOnErr: true,
@@ -1351,4 +1361,16 @@ func (app *MinitiaApp) Close() error {
 	}
 
 	return nil
+}
+
+// IndexerKeeper returns the evm indexer
+func (app *MinitiaApp) EVMIndexer() evmindexer.EVMIndexer {
+	return app.evmIndexer
+}
+
+// CheckStateContextGetter returns a function that returns a new Context for state checking.
+func (app *MinitiaApp) CheckStateContextGetter() func() sdk.Context {
+	return func() sdk.Context {
+		return app.GetContextForCheckTx(nil)
+	}
 }

@@ -47,6 +47,11 @@ func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 	return &ERC20Keeper{k, erc20Bin, erc20ABI, factoryABI}, nil
 }
 
+// GetERC20ABI implements IERC20Keeper.
+func (k ERC20Keeper) GetERC20ABI() *abi.ABI {
+	return k.ERC20ABI
+}
+
 // BurnCoins implements IERC20Keeper.
 func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error {
 	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
@@ -77,7 +82,7 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz)
+		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil)
 		if err != nil {
 			return err
 		}
@@ -307,7 +312,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 				return types.ErrFailedToPackABI.Wrap(err.Error())
 			}
 
-			ret, _, err := k.EVMCall(ctx, types.StdAddress, types.ERC20FactoryAddress(), inputBz)
+			ret, _, err := k.EVMCall(ctx, types.StdAddress, types.ERC20FactoryAddress(), inputBz, nil)
 			if err != nil {
 				return err
 			}
@@ -333,7 +338,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz)
+		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil)
 		if err != nil {
 			return err
 		}
@@ -365,7 +370,7 @@ func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toA
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, evmFromAddr, contractAddr, inputBz)
+		_, _, err = k.EVMCall(ctx, evmFromAddr, contractAddr, inputBz, nil)
 		if err != nil {
 			return err
 		}
@@ -468,6 +473,15 @@ func (k ERC20Keeper) symbol(ctx context.Context, contractAddr common.Address) (s
 	}
 
 	return symbol, nil
+}
+
+func (k ERC20Keeper) GetDecimals(ctx context.Context, denom string) (uint8, error) {
+	contractAddr, err := types.DenomToContractAddr(ctx, k, denom)
+	if err != nil {
+		return 0, err
+	}
+
+	return k.decimals(ctx, contractAddr)
 }
 
 func (k ERC20Keeper) decimals(ctx context.Context, contractAddr common.Address) (uint8, error) {

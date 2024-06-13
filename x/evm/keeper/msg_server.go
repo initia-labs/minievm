@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/holiman/uint256"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -38,6 +39,10 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
+	value, overflow := uint256.FromBig(msg.Value.BigInt())
+	if overflow {
+		return nil, types.ErrInvalidValue.Wrap("value is out of range")
+	}
 
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
@@ -62,7 +67,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// deploy a contract
-	retBz, contractAddr, err := ms.EVMCreate(ctx, caller, codeBz)
+	retBz, contractAddr, _, err := ms.EVMCreate(ctx, caller, codeBz, value)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -92,6 +97,10 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
+	value, overflow := uint256.FromBig(msg.Value.BigInt())
+	if overflow {
+		return nil, types.ErrInvalidValue.Wrap("value is out of range")
+	}
 
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
@@ -116,7 +125,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// deploy a contract
-	retBz, contractAddr, err := ms.EVMCreate2(ctx, caller, codeBz, msg.Salt)
+	retBz, contractAddr, _, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -148,10 +157,14 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	if err != nil {
 		return nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
+	value, overflow := uint256.FromBig(msg.Value.BigInt())
+	if overflow {
+		return nil, types.ErrInvalidValue.Wrap("value is out of range")
+	}
 
-	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value)
 	if err != nil {
-		return nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
 
 	return &types.MsgCallResponse{Result: hexutil.Encode(retBz), Logs: logs}, nil

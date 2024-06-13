@@ -14,21 +14,40 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 
 	ethlog "github.com/ethereum/go-ethereum/log"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/initia-labs/minievm/app"
+	"github.com/initia-labs/minievm/jsonrpc/backend"
+	"github.com/initia-labs/minievm/jsonrpc/config"
 )
 
 func StartJSONRPC(
 	ctx context.Context,
 	g *errgroup.Group,
+	app *app.MinitiaApp,
 	svrCtx *server.Context,
 	clientCtx client.Context,
-	jsonRPCConfig *JSONRPCConfig,
+	jsonRPCConfig config.JSONRPCConfig,
 ) error {
 	logger := svrCtx.Logger.With("module", "geth")
 	ethlog.SetDefault(ethlog.NewLogger(newLogger(logger)))
 
-	rpcServer := ethrpc.NewServer()
-	apis := jsonrpc.GetRPCAPIs(svrCtx, clientCtx, jsonRPCConfig.APIs)
+	rpcServer := rpc.NewServer()
+	backend := backend.NewJSONRPCBackend(app, svrCtx, clientCtx)
+	apis := []rpc.API{
+		{
+			Namespace: "eth",
+			Service:   backend,
+		},
+		{
+			Namespace: "txpool",
+			Service:   backend,
+		},
+		{
+			Namespace: "net",
+			Service:   backend,
+		},
+	}
 
 	for _, api := range apis {
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
@@ -92,7 +111,7 @@ func StartJSONRPC(
 
 // Listen starts a net.Listener on the tcp network on the given address.
 // If there is a specified MaxOpenConnections in the config, it will also set the limitListener.
-func listen(addr string, jsonRPCConfig *JSONRPCConfig) (net.Listener, error) {
+func listen(addr string, jsonRPCConfig config.JSONRPCConfig) (net.Listener, error) {
 	if addr == "" {
 		addr = ":http"
 	}

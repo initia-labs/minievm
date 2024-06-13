@@ -136,7 +136,7 @@ func (suite *KeeperTestSuite) CreateNftClass(
 	inputBz, err := nftKeeper.ABI.Pack("", name, name)
 	suite.Require().NoError(err)
 
-	_, contractAddr, err := evmKeeper.EVMCreate(ctx, createAccountAddr, append(nftKeeper.ERC721Bin, inputBz...))
+	_, contractAddr, _, err := evmKeeper.EVMCreate(ctx, createAccountAddr, append(nftKeeper.ERC721Bin, inputBz...), nil)
 	suite.Require().NoError(err)
 
 	classId, err := evmtypes.ClassIdFromCollectionAddress(endpoint.Chain.GetContext(), nftKeeper, contractAddr)
@@ -167,7 +167,7 @@ func (suite *KeeperTestSuite) MintNft(
 	contractAddr, err := types.ContractAddressFromClassId(ctx, nftKeeper, classId)
 	suite.Require().NoError(err)
 
-	_, _, err = nftKeeper.EVMCall(ctx, createAccountAddr, contractAddr, inputBz)
+	_, _, err = nftKeeper.EVMCall(ctx, createAccountAddr, contractAddr, inputBz, nil)
 	suite.Require().NoError(err)
 }
 

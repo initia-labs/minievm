@@ -2,20 +2,25 @@ package indexer
 
 import (
 	"context"
-	"encoding/binary"
-	"encoding/json"
 	"math/big"
 
-	storetypes "cosmossdk.io/store/types"
 	abci "github.com/cometbft/cometbft/abci/types"
+
+	"cosmossdk.io/collections"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/trie"
+
+	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
 func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseCommit, changeSet []*storetypes.StoreKVPair) error {
+	e.store.Write()
 	return nil
 }
 
@@ -37,7 +42,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			continue
 		}
 
-		ethTx, err := e.ConvertCosmosTxToEthereumTx(sdkCtx, tx)
+		ethTx, _, err := keeper.NewTxUtils(e.evmKeeper).ConvertCosmosTxToEthereumTx(sdkCtx, tx)
 		if err != nil {
 			e.logger.Error("failed to convert CosmosTx to EthTx", "err", err)
 			return err
@@ -99,52 +104,29 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		receipt := receipts[txIndex]
 
 		// store tx
-		rpcTx := newRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), chainId)
-		bz, err := json.Marshal(rpcTx)
-		if err != nil {
-			e.logger.Error("failed to marshal rpcTx", "err", err)
-			return err
-		}
-		if err := e.db.Set(keyTx(txHash.Bytes()), bz); err != nil {
+		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), chainId)
+		if err := e.TxMap.Set(ctx, txHash.Bytes(), *rpcTx); err != nil {
 			e.logger.Error("failed to store rpcTx", "err", err)
 			return err
 		}
-
-		// store receipt
-		bz, err = json.Marshal(receipt)
-		if err != nil {
-			e.logger.Error("failed to marshal tx receipt", "err", err)
-			return err
-		}
-		if err := e.db.Set(keyTxReceipt(txHash.Bytes()), bz); err != nil {
+		if err := e.TxReceiptMap.Set(ctx, txHash.Bytes(), *receipt); err != nil {
 			e.logger.Error("failed to store tx receipt", "err", err)
 			return err
 		}
 
 		// store index
-		if err := e.db.Set(
-			keyBlockAndIndexToTxHash(uint64(blockHeight), uint64(receipt.TransactionIndex)),
-			txHash.Bytes(),
-		); err != nil {
+		if err := e.BlockAndIndexToTxHashMap.Set(ctx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err != nil {
 			e.logger.Error("failed to store blockAndIndexToTxHash", "err", err)
 			return err
 		}
 	}
 
-	// index block
-	bz, err := json.Marshal(blockHeader)
-	if err != nil {
+	// index block header
+	if err := e.BlockHeaderMap.Set(ctx, uint64(blockHeight), blockHeader); err != nil {
 		e.logger.Error("failed to marshal blockHeader", "err", err)
 		return err
 	}
-	if err := e.db.Set(keyBlock(uint64(blockHeight)), bz); err != nil {
-		e.logger.Error("failed to store blockHeader", "err", err)
-		return err
-	}
-
-	blockNumberBz := [8]byte{}
-	binary.BigEndian.PutUint64(blockNumberBz[:], uint64(blockHeight))
-	if err := e.db.Set(keyBlockHashToNumber(blockHash.Bytes()), blockNumberBz[:]); err != nil {
+	if err := e.BlockHashToNumberMap.Set(ctx, blockHash.Bytes(), uint64(blockHeight)); err != nil {
 		e.logger.Error("failed to store blockHashToNumber", "err", err)
 		return err
 	}

@@ -115,6 +115,7 @@ func (genState GenesisState) ConfigureDefaultDenom(cdc codec.JSONCodec, denom st
 	genState[auctiontypes.ModuleName] = cdc.MustMarshalJSON(&auctionGenState)
 
 	var evmGenState evmtypes.GenesisState
+	cdc.MustUnmarshalJSON(genState[evmtypes.ModuleName], &evmGenState)
 	evmGenState.Params.FeeDenom = denom
 	genState[evmtypes.ModuleName] = cdc.MustMarshalJSON(&evmGenState)
 

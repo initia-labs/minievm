@@ -15,7 +15,10 @@ func ConvertCosmosChainIDToEthereumChainID(chainID string) *big.Int {
 	hasher.Write([]byte(chainID))
 	hash := hasher.Sum(nil)
 
-	return new(big.Int).SetUint64(binary.BigEndian.Uint64(hash[:8]))
+	// metamask max
+	metamaskMax := uint64(4503599627370476)
+	ethChainID := binary.BigEndian.Uint64(hash[:8]) % metamaskMax
+	return new(big.Int).SetUint64(ethChainID)
 }
 
 func chainID(ctx context.Context) *big.Int {

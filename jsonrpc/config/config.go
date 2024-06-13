@@ -1,9 +1,12 @@
-package jsonrpc
+package config
 
 import (
 	"time"
 
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
+
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 )
 
 const (
@@ -101,6 +104,22 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().String(flagJSONRPCMetricsAddress, DefaultMetricsAddress, "Address to listen on for the EVM Metrics server")
 }
 
+// GetConfig load config values from the app options
+func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
+	return JSONRPCConfig{
+		Enable:             cast.ToBool(appOpts.Get(flagJSONRPCEnable)),
+		EnableUnsafeCORS:   cast.ToBool(appOpts.Get(flagJSONRPCEnableUnsafeCORS)),
+		Address:            cast.ToString(appOpts.Get(flagJSONRPCAddress)),
+		APIs:               cast.ToStringSlice(appOpts.Get(flagJSONRPCAPIs)),
+		LogsCap:            cast.ToInt32(appOpts.Get(flagJSONRPCLogsCap)),
+		BlockRangeCap:      cast.ToInt32(appOpts.Get(flagJSONRPCBlockRangeCap)),
+		HTTPTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCHTTPTimeout)),
+		HTTPIdleTimeout:    cast.ToDuration(appOpts.Get(flagJSONRPCHTTPIdleTimeout)),
+		MaxOpenConnections: cast.ToInt(appOpts.Get(flagJSONRPCMaxOpenConnections)),
+		MetricsAddress:     cast.ToString(appOpts.Get(flagJSONRPCMetricsAddress)),
+	}
+}
+
 // DefaultConfigTemplate defines the configuration template for the EVM RPC configuration
 const DefaultConfigTemplate = `
 ###############################################################################
@@ -110,35 +129,35 @@ const DefaultConfigTemplate = `
 [json-rpc]
 
 # Enable defines if the gRPC server should be enabled.
-enable = {{ .JSONRPC.Enable }}
+enable = {{ .JSONRPCConfig.Enable }}
 
 # Address defines the EVM RPC HTTP server address to bind to.
-address = "{{ .JSONRPC.Address }}"
+address = "{{ .JSONRPCConfig.Address }}"
 
 # EnableUnsafeCORS defines if the EVM RPC server should enable unsafe CORS.
-enable-unsafe-cors = {{ .JSONRPC.EnableUnsafeCORS }}
+enable-unsafe-cors = {{ .JSONRPCConfig.EnableUnsafeCORS }}
 
 # API defines a list of JSON-RPC namespaces that should be enabled
 # Example: "eth,txpool,personal,net,debug,web3"
-apis = "{{range $index, $elmt := .JSONRPC.API}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
+apis = "{{range $index, $elmt := .JSONRPCConfig.APIs}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
 
 # LogsCap defines the max number of results can be returned from single 'eth_getLogs' query.
-logs-cap = {{ .JSONRPC.LogsCap }}
+logs-cap = {{ .JSONRPCConfig.LogsCap }}
 
 # BlockRangeCap defines the max block range allowed for 'eth_getLogs' query.
-block-range-cap = {{ .JSONRPC.BlockRangeCap }}
+block-range-cap = {{ .JSONRPCConfig.BlockRangeCap }}
 
 # HTTPTimeout is the read/write timeout of http json-rpc server.
-http-timeout = "{{ .JSONRPC.HTTPTimeout }}"
+http-timeout = "{{ .JSONRPCConfig.HTTPTimeout }}"
 
 # HTTPIdleTimeout is the idle timeout of http json-rpc server.
-http-idle-timeout = "{{ .JSONRPC.HTTPIdleTimeout }}"
+http-idle-timeout = "{{ .JSONRPCConfig.HTTPIdleTimeout }}"
 
 # MaxOpenConnections sets the maximum number of simultaneous connections
 # for the server listener.
-max-open-connections = {{ .JSONRPC.MaxOpenConnections }}
+max-open-connections = {{ .JSONRPCConfig.MaxOpenConnections }}
 
 # MetricsAddress defines the EVM Metrics server address to bind to. Pass --metrics in CLI to enable
 # Prometheus metrics path: /debug/metrics/prometheus
-metrics-address = "{{ .JSONRPC.MetricsAddress }}"
+metrics-address = "{{ .JSONRPCConfig.MetricsAddress }}"
 `

@@ -12,6 +12,7 @@ import (
 	opchildante "github.com/initia-labs/OPinit/x/opchild/ante"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 	initiaante "github.com/initia-labs/initia/app/ante"
+	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
 	"github.com/skip-mev/block-sdk/v2/block"
 	auctionante "github.com/skip-mev/block-sdk/v2/x/auction/ante"
@@ -26,9 +27,11 @@ type HandlerOptions struct {
 	IBCkeeper     *ibckeeper.Keeper
 	OPChildKeeper opchildtypes.AnteKeeper
 	AuctionKeeper auctionkeeper.Keeper
-	TxEncoder     sdk.TxEncoder
-	MevLane       auctionante.MEVLane
-	FreeLane      block.Lane
+	EVMKeeper     *evmkeeper.Keeper
+
+	TxEncoder sdk.TxEncoder
+	MevLane   auctionante.MEVLane
+	FreeLane  block.Lane
 }
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
@@ -45,6 +48,10 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 
 	if options.SignModeHandler == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "sign mode handler is required for ante builder")
+	}
+
+	if options.EVMKeeper == nil {
+		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "EVM keeper is required for ante builder")
 	}
 
 	sigGasConsumer := options.SigGasConsumer
@@ -84,7 +91,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewSetPubKeyDecorator(options.AccountKeeper),
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
 		ante.NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
-		initiaante.NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
+		NewSigVerificationDecorator(options.AccountKeeper, options.EVMKeeper, options.SignModeHandler),
 		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCkeeper),
 		auctionante.NewAuctionDecorator(options.AuctionKeeper, options.TxEncoder, options.MevLane),

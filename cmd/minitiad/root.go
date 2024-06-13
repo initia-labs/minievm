@@ -36,6 +36,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
+	"github.com/initia-labs/minievm/jsonrpc"
+	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
 	"github.com/initia-labs/initia/app/params"
@@ -159,7 +161,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 		AddFlags: addModuleInitFlags,
 		PostSetup: func(svrCtx *server.Context, clientCtx client.Context, ctx context.Context, g *errgroup.Group) error {
 			sdk.GetConfig().Seal()
-			return nil
+
+			// start jsonrpc server
+			return jsonrpc.StartJSONRPC(
+				ctx, g, a.App().(*minitiaapp.MinitiaApp),
+				svrCtx,
+				clientCtx,
+				jsonrpcconfig.GetConfig(a.appOpts),
+			)
 		},
 	})
 
@@ -249,7 +258,8 @@ func txCommand() *cobra.Command {
 }
 
 type appCreator struct {
-	app servertypes.Application
+	app     servertypes.Application
+	appOpts servertypes.AppOptions
 }
 
 func (a *appCreator) AppCreator() servertypes.AppCreator {
@@ -265,6 +275,7 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 
 		// store app in creator
 		a.app = app
+		a.appOpts = appOpts
 
 		return app
 	}

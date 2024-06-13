@@ -2,15 +2,21 @@ package indexer
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 
+	"github.com/spf13/cast"
+
 	abci "github.com/cometbft/cometbft/abci/types"
+
+	collcodec "cosmossdk.io/collections/codec"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+
 	coretypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/initia-labs/minievm/x/evm/types"
-	"github.com/spf13/cast"
 )
 
 // helper function to make config creation independent of root dir
@@ -56,4 +62,41 @@ func (e *EVMIndexerImpl) extractLogsFromEvents(events []abci.Event) []*coretypes
 	}
 
 	return ethLogs
+}
+
+// CollJsonVal is used for protobuf values of the newest google.golang.org/protobuf API.
+func CollJsonVal[T any]() collcodec.ValueCodec[T] {
+	return &collJsonVal[T]{}
+}
+
+type collJsonVal[T any] struct{}
+
+func (c collJsonVal[T]) Encode(value T) ([]byte, error) {
+	return json.Marshal(value)
+}
+
+func (c collJsonVal[T]) Decode(b []byte) (T, error) {
+	var value T
+
+	err := json.Unmarshal(b, &value)
+	return value, err
+}
+
+func (c collJsonVal[T]) EncodeJSON(value T) ([]byte, error) {
+	return json.Marshal(value)
+}
+
+func (c collJsonVal[T]) DecodeJSON(b []byte) (T, error) {
+	var value T
+
+	err := json.Unmarshal(b, &value)
+	return value, err
+}
+
+func (c collJsonVal[T]) Stringify(value T) string {
+	return fmt.Sprintf("%v", value)
+}
+
+func (c collJsonVal[T]) ValueType() string {
+	return "jsonvalue"
 }
