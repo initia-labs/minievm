@@ -360,11 +360,6 @@ func (k MockAccountKeeper) HasAccount(ctx context.Context, addr sdk.AccAddress) 
 	return ok
 }
 
-// RemoveAccount implements types.AccountKeeper.
-func (k MockAccountKeeper) RemoveAccount(ctx context.Context, acc sdk.AccountI) {
-	delete(k.accounts, acc.GetAddress().String())
-}
-
 // NewAccount implements types.AccountKeeper.
 func (k *MockAccountKeeper) NewAccount(ctx context.Context, acc sdk.AccountI) sdk.AccountI {
 	acc.SetAccountNumber(uint64(len(k.accounts)))
