@@ -124,6 +124,7 @@ func (k Keeper) contractCreatedHook(ctx context.Context) vm.ContractCreatedHook 
 			// convert base account to contract account only if this account is empty
 			contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
 			contractAccount.AccountNumber = account.GetAccountNumber()
+			k.accountKeeper.RemoveAccount(ctx, account)
 			k.accountKeeper.SetAccount(ctx, contractAccount)
 		} else {
 			// create contract account
