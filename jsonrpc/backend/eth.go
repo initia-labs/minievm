@@ -2,6 +2,7 @@ package backend
 
 import (
 	"errors"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -95,4 +96,64 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 	}
 
 	return hexutil.MustDecode(res.Response), nil
+}
+
+func (b *JSONRPCBackend) GetStorageAt(address common.Address, key common.Hash, blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+
+	queryCtx, err := b.getQueryCtxWithHeight(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := keeper.NewQueryServer(b.app.EVMKeeper).State(queryCtx, &types.QueryStateRequest{
+		ContractAddr: address.Hex(),
+		Key:          key.Hex(),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return hexutil.MustDecode(res.Value), nil
+}
+
+func (b *JSONRPCBackend) GetCode(address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+
+	queryCtx, err := b.getQueryCtxWithHeight(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := keeper.NewQueryServer(b.app.EVMKeeper).Code(queryCtx, &types.QueryCodeRequest{
+		ContractAddr: address.Hex(),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return hexutil.MustDecode(res.Code), nil
+}
+
+func (b *JSONRPCBackend) ChainId() (*hexutil.Big, error) {
+	chainID, err := b.ChainID()
+	return (*hexutil.Big)(chainID), err
+}
+
+func (b *JSONRPCBackend) ChainID() (*big.Int, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(queryCtx)
+	return types.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID()), nil
 }

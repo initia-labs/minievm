@@ -6,6 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	ethns "github.com/initia-labs/minievm/jsonrpc/namespaces/eth"
+	netns "github.com/initia-labs/minievm/jsonrpc/namespaces/net"
+	"github.com/initia-labs/minievm/jsonrpc/namespaces/txpool"
 	"github.com/rs/cors"
 	"golang.org/x/net/netutil"
 	"golang.org/x/sync/errgroup"
@@ -21,6 +24,21 @@ import (
 	"github.com/initia-labs/minievm/jsonrpc/config"
 )
 
+// RPC namespaces and API version
+const (
+	// TODO: implement commented apis in the namespaces for full Ethereum compatibility
+	EthNamespace    = "eth"
+	NetNamespace    = "net"
+	TxPoolNamespace = "txpool"
+	// TODO: support more namespaces
+	Web3Namespace     = "web3"
+	PersonalNamespace = "personal"
+	DebugNamespace    = "debug"
+	MinerNamespace    = "miner"
+
+	apiVersion = "1.0"
+)
+
 func StartJSONRPC(
 	ctx context.Context,
 	g *errgroup.Group,
@@ -33,19 +51,25 @@ func StartJSONRPC(
 	ethlog.SetDefault(ethlog.NewLogger(newLogger(logger)))
 
 	rpcServer := rpc.NewServer()
-	backend := backend.NewJSONRPCBackend(app, svrCtx, clientCtx)
+	bkd := backend.NewJSONRPCBackend(app, svrCtx, clientCtx)
 	apis := []rpc.API{
 		{
-			Namespace: "eth",
-			Service:   backend,
+			Namespace: EthNamespace,
+			Version:   apiVersion,
+			Service:   ethns.NewEthAPI(svrCtx.Logger, bkd),
+			Public:    true,
 		},
 		{
-			Namespace: "txpool",
-			Service:   backend,
+			Namespace: TxPoolNamespace,
+			Version:   apiVersion,
+			Service:   txpool.NewTxPoolAPI(svrCtx.Logger, bkd),
+			Public:    true,
 		},
 		{
-			Namespace: "net",
-			Service:   backend,
+			Namespace: NetNamespace,
+			Version:   apiVersion,
+			Service:   netns.NewNetAPI(svrCtx.Logger, bkd),
+			Public:    true,
 		},
 	}
 
