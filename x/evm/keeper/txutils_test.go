@@ -106,7 +106,7 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	// Convert back to ethereum tx
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
-	require.Equal(t, signedTx.Data(), ethTx2.Data())
+	EqualEthTransaction(t, signedTx, ethTx2)
 }
 
 func Test_LegacyTxConversion(t *testing.T) {
@@ -190,5 +190,17 @@ func Test_LegacyTxConversion(t *testing.T) {
 	// Convert back to ethereum tx
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
-	require.Equal(t, signedTx.Data(), ethTx2.Data())
+	EqualEthTransaction(t, signedTx, ethTx2)
+}
+
+func EqualEthTransaction(t *testing.T, expected, actual *coretypes.Transaction) {
+	require.Equal(t, expected.ChainId(), actual.ChainId())
+	require.Equal(t, expected.Nonce(), actual.Nonce())
+	require.Equal(t, expected.GasTipCap(), actual.GasTipCap())
+	require.Equal(t, expected.GasFeeCap(), actual.GasFeeCap())
+	require.Equal(t, expected.Gas(), actual.Gas())
+	require.Equal(t, expected.To(), actual.To())
+	require.Equal(t, expected.Data(), actual.Data())
+	require.Equal(t, expected.Value(), actual.Value())
+	require.Equal(t, expected.Type(), actual.Type())
 }

@@ -273,7 +273,10 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 
 		to = &contractAddr
 		input = data
-		value = types.FromEthersUnit(decimals, callMsg.Value.BigInt())
+		// When ethereum tx is converted into cosmos tx by ConvertEthereumTxToCosmosTx,
+		// the value is converted to cosmos fee unit from wei.
+		// So we need to convert it back to wei to get original ethereum tx and verify signature.
+		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
 		data, err := hexutil.Decode(createMsg.Code)
@@ -283,7 +286,8 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 
 		to = nil
 		input = data
-		value = types.FromEthersUnit(decimals, createMsg.Value.BigInt())
+		// Same as above (MsgCall)
+		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
