@@ -10,7 +10,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.6
 	github.com/cosmos/ibc-go/v8 v8.2.1
 	github.com/ethereum/go-ethereum v1.14.2
-	github.com/initia-labs/initia v0.3.0
+	github.com/initia-labs/initia v0.3.2
 	github.com/initia-labs/minievm v0.3.0
 	github.com/stretchr/testify v1.9.0
 )
@@ -142,13 +142,13 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.3.0 // indirect
+	github.com/initia-labs/OPinit v0.3.1 // indirect
 	github.com/initia-labs/OPinit/api v0.3.0 // indirect
 	github.com/initia-labs/kvindexer v0.1.3 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
-	github.com/initia-labs/movevm v0.3.0 // indirect
+	github.com/initia-labs/movevm v0.3.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
@@ -268,7 +268,7 @@ replace (
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20240502043911-a4bdb8e06769
 	github.com/cosmos/iavl => github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240327052100-aa794f2fc009
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7
 )
 
 // local import

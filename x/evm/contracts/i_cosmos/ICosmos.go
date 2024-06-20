@@ -31,7 +31,7 @@ var (
 
 // ICosmosMetaData contains all meta data concerning the ICosmos contract.
 var ICosmosMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"}],\"name\":\"execute_cosmos\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"name\":\"to_denom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"to_erc20\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"}],\"name\":\"execute_cosmos\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"name\":\"to_denom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"to_erc20\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // ICosmosABI is the input ABI used to generate the binding from.
@@ -182,21 +182,21 @@ func (_ICosmos *ICosmosTransactorRaw) Transact(opts *bind.TransactOpts, method s
 
 // ExecuteCosmos is a paid mutator transaction binding the contract method 0xd46f64e6.
 //
-// Solidity: function execute_cosmos(string msg) returns()
+// Solidity: function execute_cosmos(string msg) returns(bool dummy)
 func (_ICosmos *ICosmosTransactor) ExecuteCosmos(opts *bind.TransactOpts, msg string) (*types.Transaction, error) {
 	return _ICosmos.contract.Transact(opts, "execute_cosmos", msg)
 }
 
 // ExecuteCosmos is a paid mutator transaction binding the contract method 0xd46f64e6.
 //
-// Solidity: function execute_cosmos(string msg) returns()
+// Solidity: function execute_cosmos(string msg) returns(bool dummy)
 func (_ICosmos *ICosmosSession) ExecuteCosmos(msg string) (*types.Transaction, error) {
 	return _ICosmos.Contract.ExecuteCosmos(&_ICosmos.TransactOpts, msg)
 }
 
 // ExecuteCosmos is a paid mutator transaction binding the contract method 0xd46f64e6.
 //
-// Solidity: function execute_cosmos(string msg) returns()
+// Solidity: function execute_cosmos(string msg) returns(bool dummy)
 func (_ICosmos *ICosmosTransactorSession) ExecuteCosmos(msg string) (*types.Transaction, error) {
 	return _ICosmos.Contract.ExecuteCosmos(&_ICosmos.TransactOpts, msg)
 }

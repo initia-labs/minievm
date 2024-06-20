@@ -71,6 +71,11 @@ func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte
 		if err := e.k.Register(ctx, caller.Address()); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
+
+		resBz, err = method.Outputs.Pack(true)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
 	case METHOD_REGISTER_FROM_FACTORY:
 		ctx.GasMeter().ConsumeGas(REGISTER_FROM_FACTORY_GAS, "register_erc20_from_factory")
 
@@ -86,6 +91,11 @@ func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte
 		if err := e.k.RegisterFromFactory(ctx, caller.Address(), registerArgs.ERC20); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
+
+		resBz, err = method.Outputs.Pack(true)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
 	case METHOD_REGISTER_STORE:
 		ctx.GasMeter().ConsumeGas(REGISTER_STORE_GAS, "register_erc20_store")
 
@@ -99,6 +109,11 @@ func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte
 		}
 
 		if err := e.k.RegisterStore(ctx, registerArgs.Account.Bytes(), caller.Address()); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		resBz, err = method.Outputs.Pack(true)
+		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_IS_STORE_REGISTERED:
