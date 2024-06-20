@@ -641,13 +641,10 @@ github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c/go.mod
 github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839/go.mod h1:xaLFMmpvUxqXtVkUJfg9QmT88cDaCJ3ZKgdZ78oO8Qo=
 github.com/informalsystems/itf-go v0.0.1/go.mod h1:wgqaQ/yl2kbNlgw6GaleuHEefpZvkZo6Hc0jc8cGG9M=
 github.com/informalsystems/tm-load-test v1.3.0/go.mod h1:OQ5AQ9TbT5hKWBNIwsMjn6Bf4O0U4b1kRc+0qZlQJKw=
-github.com/initia-labs/OPinit v0.3.1 h1:uffngNx8a7hQl3ENhVbdSAJ8j5MYksiaiCLVI6xunjA=
-github.com/initia-labs/OPinit v0.3.1/go.mod h1:pHU2472uQZpiKXBOa/D7/aDYn0gtTiddKvhloyliOQU=
+github.com/initia-labs/OPinit v0.3.0/go.mod h1:pHU2472uQZpiKXBOa/D7/aDYn0gtTiddKvhloyliOQU=
 github.com/initia-labs/OPinit/api v0.2.6/go.mod h1:oo8VsUFo1vVRg1jXhTMzlm5IF1JjU0I0u0OF/jo6iO4=
-github.com/initia-labs/initia v0.3.2 h1:nvVCgUiiDxDcFdC+ordooSlqUHXR8mFGDvCgwptTaAg=
-github.com/initia-labs/initia v0.3.2/go.mod h1:CXKYIajY7mj7EogHO1VcgaXnKZFpeRfSc0KxbqbxWjY=
-github.com/initia-labs/movevm v0.3.1 h1:vydw0mdqsLyPN9W2DVq1/gDXDR3snbr6c4Wy/sTYVxY=
-github.com/initia-labs/movevm v0.3.1/go.mod h1:6MxR4GP5zH3JUc1IMgfqAe1e483mZVS7fshPknZPJ30=
+github.com/initia-labs/initia v0.3.0/go.mod h1:+5YUKMLFmsBmM36wldxgc9DMWZmm0sRB8PPrw8fY9kc=
+github.com/initia-labs/movevm v0.3.0/go.mod h1:6MxR4GP5zH3JUc1IMgfqAe1e483mZVS7fshPknZPJ30=
 github.com/iris-contrib/blackfriday v2.0.0+incompatible/go.mod h1:UzZ2bDEoaSGPbkg6SAB4att1aAwTmVIx/5gCVqeyUdI=
 github.com/iris-contrib/go.uuid v2.0.0+incompatible/go.mod h1:iz2lgM/1UnEf1kP0L/+fafWORmlnuysV2EMP8MW+qe0=
 github.com/iris-contrib/httpexpect/v2 v2.12.1/go.mod h1:7+RB6W5oNClX7PTwJgJnsQP3ZuUUYB3u61KCqeSgZ88=

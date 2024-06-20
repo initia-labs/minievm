@@ -31,7 +31,7 @@ var (
 
 // IErc20RegistryMetaData contains all meta data concerning the IErc20Registry contract.
 var IErc20RegistryMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_erc20_store_registered\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"registered\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"register_erc20\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20\",\"type\":\"address\"}],\"name\":\"register_erc20_from_factory\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"register_erc20_store\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_erc20_store_registered\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"registered\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"register_erc20\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20\",\"type\":\"address\"}],\"name\":\"register_erc20_from_factory\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"register_erc20_store\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // IErc20RegistryABI is the input ABI used to generate the binding from.
@@ -213,63 +213,63 @@ func (_IErc20Registry *IErc20RegistryCallerSession) IsErc20StoreRegistered(accou
 
 // RegisterErc20 is a paid mutator transaction binding the contract method 0x5e6c5759.
 //
-// Solidity: function register_erc20() returns()
+// Solidity: function register_erc20() returns(bool dummy)
 func (_IErc20Registry *IErc20RegistryTransactor) RegisterErc20(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _IErc20Registry.contract.Transact(opts, "register_erc20")
 }
 
 // RegisterErc20 is a paid mutator transaction binding the contract method 0x5e6c5759.
 //
-// Solidity: function register_erc20() returns()
+// Solidity: function register_erc20() returns(bool dummy)
 func (_IErc20Registry *IErc20RegistrySession) RegisterErc20() (*types.Transaction, error) {
 	return _IErc20Registry.Contract.RegisterErc20(&_IErc20Registry.TransactOpts)
 }
 
 // RegisterErc20 is a paid mutator transaction binding the contract method 0x5e6c5759.
 //
-// Solidity: function register_erc20() returns()
+// Solidity: function register_erc20() returns(bool dummy)
 func (_IErc20Registry *IErc20RegistryTransactorSession) RegisterErc20() (*types.Transaction, error) {
 	return _IErc20Registry.Contract.RegisterErc20(&_IErc20Registry.TransactOpts)
 }
 
 // RegisterErc20FromFactory is a paid mutator transaction binding the contract method 0xd126274a.
 //
-// Solidity: function register_erc20_from_factory(address erc20) returns()
+// Solidity: function register_erc20_from_factory(address erc20) returns(bool dummy)
 func (_IErc20Registry *IErc20RegistryTransactor) RegisterErc20FromFactory(opts *bind.TransactOpts, erc20 common.Address) (*types.Transaction, error) {
 	return _IErc20Registry.contract.Transact(opts, "register_erc20_from_factory", erc20)
 }
 
 // RegisterErc20FromFactory is a paid mutator transaction binding the contract method 0xd126274a.
 //
-// Solidity: function register_erc20_from_factory(address erc20) returns()
+// Solidity: function register_erc20_from_factory(address erc20) returns(bool dummy)
 func (_IErc20Registry *IErc20RegistrySession) RegisterErc20FromFactory(erc20 common.Address) (*types.Transaction, error) {
 	return _IErc20Registry.Contract.RegisterErc20FromFactory(&_IErc20Registry.TransactOpts, erc20)
 }
 
 // RegisterErc20FromFactory is a paid mutator transaction binding the contract method 0xd126274a.
 //
-// Solidity: function register_erc20_from_factory(address erc20) returns()
+// Solidity: function register_erc20_from_factory(address erc20) returns(bool dummy)
 func (_IErc20Registry *IErc20RegistryTransactorSession) RegisterErc20FromFactory(erc20 common.Address) (*types.Transaction, error) {
 	return _IErc20Registry.Contract.RegisterErc20FromFactory(&_IErc20Registry.TransactOpts, erc20)
 }
 
 // RegisterErc20Store is a paid mutator transaction binding the contract method 0xceeae52a.
 //
-// Solidity: function register_erc20_store(address account) returns()
+// Solidity: function register_erc20_store(address account) returns(bool dummy)
 func (_IErc20Registry *IErc20RegistryTransactor) RegisterErc20Store(opts *bind.TransactOpts, account common.Address) (*types.Transaction, error) {
 	return _IErc20Registry.contract.Transact(opts, "register_erc20_store", account)
 }
 
 // RegisterErc20Store is a paid mutator transaction binding the contract method 0xceeae52a.
 //
-// Solidity: function register_erc20_store(address account) returns()
+// Solidity: function register_erc20_store(address account) returns(bool dummy)
 func (_IErc20Registry *IErc20RegistrySession) RegisterErc20Store(account common.Address) (*types.Transaction, error) {
 	return _IErc20Registry.Contract.RegisterErc20Store(&_IErc20Registry.TransactOpts, account)
 }
 
 // RegisterErc20Store is a paid mutator transaction binding the contract method 0xceeae52a.
 //
-// Solidity: function register_erc20_store(address account) returns()
+// Solidity: function register_erc20_store(address account) returns(bool dummy)
 func (_IErc20Registry *IErc20RegistryTransactorSession) RegisterErc20Store(account common.Address) (*types.Transaction, error) {
 	return _IErc20Registry.Contract.RegisterErc20Store(&_IErc20Registry.TransactOpts, account)
 }
