@@ -730,6 +730,8 @@ github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/golang-lru v1.0.2 h1:dV3g9Z/unq5DpblPpw+Oqcv4dU/1omnb4Ok8iPY6p1c=
 github.com/hashicorp/golang-lru v1.0.2/go.mod h1:iADmTwqILo4mZ8BN3D2Q6+9jd8WM5uGBxy+E8yxSoD4=
+github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
+github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/hashicorp/logutils v1.0.0/go.mod h1:QIAnNjmIWmVIIkWDTG1z5v++HQmx9WQRO+LraFDTW64=
@@ -770,8 +772,8 @@ github.com/initia-labs/OPinit v0.3.1 h1:uffngNx8a7hQl3ENhVbdSAJ8j5MYksiaiCLVI6xu
 github.com/initia-labs/OPinit v0.3.1/go.mod h1:pHU2472uQZpiKXBOa/D7/aDYn0gtTiddKvhloyliOQU=
 github.com/initia-labs/OPinit/api v0.3.0 h1:OY8ijwmgZLoYwtw9LI1mSY3VC8PY+gtxJFitB6ZNFl4=
 github.com/initia-labs/OPinit/api v0.3.0/go.mod h1:Xy/Nt3ubXLQ4zKn0m7RuQOM1sj8TVdlNNyek21TGYR0=
-github.com/initia-labs/cometbft v0.0.0-20240503082631-d98d5e638a38 h1:yNlY5QpMazwZ7C7S4vKWrNYvWoSWf2bdEuG7jOAPU/0=
-github.com/initia-labs/cometbft v0.0.0-20240503082631-d98d5e638a38/go.mod h1:+W1nh53IVhT5VG86zofNq2I2Tw0RQIoYSmpTHJ9Lex8=
+github.com/initia-labs/cometbft v0.0.0-20240621094738-408dc5262680 h1:4tcP5F26DdqiV1Y/XOllL4LUhyUV6HITfjVJnzR/Krs=
+github.com/initia-labs/cometbft v0.0.0-20240621094738-408dc5262680/go.mod h1:qGaJePRWAc2OL3OGNd//8fqgypCaFjmwZcy/cNner84=
 github.com/initia-labs/cosmos-sdk v0.0.0-20240502043911-a4bdb8e06769 h1:R+cOwxp14K9+UAJ7MI4YyqXSL+Fm8W+wTBbXL315EMA=
 github.com/initia-labs/cosmos-sdk v0.0.0-20240502043911-a4bdb8e06769/go.mod h1:lVkRY6cdMJ0fG3gp8y4hFrsKZqF4z7y0M2UXFb9Yt40=
 github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7 h1:V7K8wvE5FVVv6WTeITI+nqWfo4b9WlZyXQH0Olz5UVI=

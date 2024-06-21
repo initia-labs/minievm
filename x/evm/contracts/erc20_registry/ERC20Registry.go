@@ -32,7 +32,7 @@ var (
 // Erc20RegistryMetaData contains all meta data concerning the Erc20Registry contract.
 var Erc20RegistryMetaData = &bind.MetaData{
 	ABI: "[]",
-	Bin: "0x6080604052348015600e575f80fd5b50603e80601a5f395ff3fe60806040525f80fdfea2646970667358221220c464967ba038c1078a0bcb1a3b656e55b366cec6699d47c1cad35f85237b68cf64736f6c63430008180033",
+	Bin: "0x6080604052348015600e575f80fd5b50603e80601a5f395ff3fe60806040525f80fdfea2646970667358221220c802e40a4afa60da789a5d872a091e646d00a323e178e0e14735ead4c5341a3764736f6c63430008180033",
 }
 
 // Erc20RegistryABI is the input ABI used to generate the binding from.
