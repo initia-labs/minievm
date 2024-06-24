@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	ethns "github.com/initia-labs/minievm/jsonrpc/namespaces/eth"
 	netns "github.com/initia-labs/minievm/jsonrpc/namespaces/net"
-	"github.com/initia-labs/minievm/jsonrpc/namespaces/txpool"
 	"github.com/rs/cors"
 	"golang.org/x/net/netutil"
 	"golang.org/x/sync/errgroup"
@@ -60,17 +59,18 @@ func StartJSONRPC(
 			Public:    true,
 		},
 		{
-			Namespace: TxPoolNamespace,
-			Version:   apiVersion,
-			Service:   txpool.NewTxPoolAPI(svrCtx.Logger, bkd),
-			Public:    true,
-		},
-		{
 			Namespace: NetNamespace,
 			Version:   apiVersion,
 			Service:   netns.NewNetAPI(svrCtx.Logger, bkd),
 			Public:    true,
 		},
+		// TODO: implement more namespaces
+		//{
+		//	Namespace: TxPoolNamespace,
+		//	Version:   apiVersion,
+		//	Service:   txpool.NewTxPoolAPI(svrCtx.Logger, bkd),
+		//	Public:    true,
+		//},
 	}
 
 	for _, api := range apis {
