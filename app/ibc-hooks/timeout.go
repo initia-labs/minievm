@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
+	"github.com/initia-labs/initia/x/ibc-hooks/types"
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -28,6 +29,12 @@ func (h EVMHooks) onTimeoutIcs20Packet(
 		return nil
 	} else if err != nil {
 		h.evmKeeper.Logger(ctx).Error("failed to parse memo", "error", err)
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to parse memo"),
+			sdk.NewAttribute(types.AttributeKeyError, err.Error()),
+		))
+
 		return nil
 	}
 
@@ -38,9 +45,21 @@ func (h EVMHooks) onTimeoutIcs20Packet(
 	callback := hookData.AsyncCallback
 	if allowed, err := h.checkACL(im, cacheCtx, callback.ContractAddress); err != nil {
 		h.evmKeeper.Logger(cacheCtx).Error("failed to check ACL", "error", err)
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to check ACL"),
+			sdk.NewAttribute(types.AttributeKeyError, err.Error()),
+		))
+
 		return nil
 	} else if !allowed {
 		h.evmKeeper.Logger(cacheCtx).Error("failed to check ACL", "not allowed")
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to check ACL"),
+			sdk.NewAttribute(types.AttributeKeyError, "not allowed"),
+		))
+
 		return nil
 	}
 
@@ -57,6 +76,12 @@ func (h EVMHooks) onTimeoutIcs20Packet(
 	})
 	if err != nil {
 		h.evmKeeper.Logger(cacheCtx).Error("failed to execute callback", "error", err)
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to execute callback"),
+			sdk.NewAttribute(types.AttributeKeyError, err.Error()),
+		))
+
 		return nil
 	}
 
@@ -82,6 +107,12 @@ func (h EVMHooks) onTimeoutIcs721Packet(
 		return nil
 	} else if err != nil {
 		h.evmKeeper.Logger(ctx).Error("failed to parse memo", "error", err)
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to parse memo"),
+			sdk.NewAttribute(types.AttributeKeyError, err.Error()),
+		))
+
 		return nil
 	}
 
@@ -92,9 +123,21 @@ func (h EVMHooks) onTimeoutIcs721Packet(
 	callback := hookData.AsyncCallback
 	if allowed, err := h.checkACL(im, cacheCtx, callback.ContractAddress); err != nil {
 		h.evmKeeper.Logger(cacheCtx).Error("failed to check ACL", "error", err)
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to check ACL"),
+			sdk.NewAttribute(types.AttributeKeyError, err.Error()),
+		))
+
 		return nil
 	} else if !allowed {
 		h.evmKeeper.Logger(cacheCtx).Error("failed to check ACL", "not allowed")
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to check ACL"),
+			sdk.NewAttribute(types.AttributeKeyError, "not allowed"),
+		))
+
 		return nil
 	}
 
@@ -111,6 +154,12 @@ func (h EVMHooks) onTimeoutIcs721Packet(
 	})
 	if err != nil {
 		h.evmKeeper.Logger(cacheCtx).Error("failed to execute callback", "error", err)
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			types.EventTypeHookFailed,
+			sdk.NewAttribute(types.AttributeKeyReason, "failed to execute callback"),
+			sdk.NewAttribute(types.AttributeKeyError, err.Error()),
+		))
+
 		return nil
 	}
 
