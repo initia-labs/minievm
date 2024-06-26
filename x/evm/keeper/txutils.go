@@ -91,15 +91,15 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	sigBytes := make([]byte, 65)
 	switch ethTx.Type() {
 	case coretypes.LegacyTxType:
-		sigBytes[64] = byte(v.Uint64() - (35 + ethChainID.Uint64()*2))
+		sigBytes[64] = byte(new(big.Int).Sub(v, new(big.Int).Add(new(big.Int).Add(ethChainID, ethChainID), big.NewInt(35))).Uint64())
 	case coretypes.DynamicFeeTxType:
 		sigBytes[64] = byte(v.Uint64())
 	default:
 		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("unsupported tx type: %d", ethTx.Type())
 	}
 
-	copy(sigBytes[:32], r.Bytes())
-	copy(sigBytes[32:64], s.Bytes())
+	copy(sigBytes[32-len(r.Bytes()):32], r.Bytes())
+	copy(sigBytes[64-len(s.Bytes()):64], s.Bytes())
 
 	sigData := &signing.SingleSignatureData{
 		SignMode:  SignMode_SIGN_MODE_ETHEREUM,

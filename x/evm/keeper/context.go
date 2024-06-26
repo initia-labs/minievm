@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"math/big"
 
@@ -375,12 +374,10 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	sdkCtx.GasMeter().ConsumeGas(gasUsed, "EVM gas consumption")
 	if err != nil {
-		fmt.Println(err)
 		if err == vm.ErrExecutionReverted {
 			err = types.NewRevertError(common.CopyBytes(retBz))
 		}
 
-		fmt.Println(err)
 		return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
 	}
 
@@ -470,7 +467,6 @@ func (k Keeper) dispatchMessages(ctx context.Context, msgs []sdk.Msg) error {
 		//  and execute it
 		res, err := handler(sdkCtx, msg)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 

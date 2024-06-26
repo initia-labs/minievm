@@ -185,12 +185,19 @@ func Test_LegacyTxConversion(t *testing.T) {
 	v, r, s := signedTx.RawSignatureValues()
 	sigData := sig.Data.(*signing.SingleSignatureData)
 	require.Equal(t, sigData.SignMode, keeper.SignMode_SIGN_MODE_ETHEREUM)
-	require.Equal(t, sigData.Signature, append(append(r.Bytes(), s.Bytes()...), byte(v.Uint64()-(35+ethChainID.Uint64()*2))))
+
+	sigBytes := make([]byte, 65)
+	copy(sigBytes[32-len(r.Bytes()):32], r.Bytes())
+	copy(sigBytes[64-len(s.Bytes()):64], s.Bytes())
+	sigBytes[64] = byte(v.Uint64() - (35 + ethChainID.Uint64()*2))
+
+	require.Equal(t, sigData.Signature, sigBytes)
 
 	// Convert back to ethereum tx
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
 	EqualEthTransaction(t, signedTx, ethTx2)
+
 }
 
 func EqualEthTransaction(t *testing.T, expected, actual *coretypes.Transaction) {

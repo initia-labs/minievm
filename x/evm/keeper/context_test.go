@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -54,7 +53,6 @@ func Test_CreateWithValue(t *testing.T) {
 	}, tracerOutput)
 
 	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreateWithTracer(ctx, caller, counterBz, uint256.NewInt(100), nil, tracer)
-	fmt.Println(tracerOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
