@@ -33,8 +33,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.2.4
-	github.com/initia-labs/OPinit v0.3.0
-	github.com/initia-labs/initia v0.3.0
+	github.com/initia-labs/OPinit v0.3.1
+	github.com/initia-labs/initia v0.3.2
 	github.com/initia-labs/kvindexer v0.1.3
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1
@@ -278,6 +278,6 @@ replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240503082631-d98d5e638a38
 	github.com/cosmos/iavl => github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240327052100-aa794f2fc009
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7
 	github.com/initia-labs/initia => github.com/initia-labs/initia v0.3.1-0.20240613064038-a76fc6dc911a
 )

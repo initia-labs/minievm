@@ -19,10 +19,14 @@ interface ICosmos {
     ) external returns (address evm_address);
 
     // convert an ERC20 address to a Cosmos denom
-    function to_denom(address erc20_address) external returns (string memory denom);
+    function to_denom(
+        address erc20_address
+    ) external returns (string memory denom);
 
     // convert a Cosmos denom to an ERC20 address
-    function to_erc20(string memory denom) external returns (address erc20_address);
+    function to_erc20(
+        string memory denom
+    ) external returns (address erc20_address);
 
     // record a cosmos message to be executed
     // after the current message execution.
@@ -40,7 +44,7 @@ interface ICosmos {
     //    ]
     // }
     //
-    function execute_cosmos(string memory msg) external;
+    function execute_cosmos(string memory msg) external returns (bool dummy);
 
     // query a whitelisted cosmos querys.
     //

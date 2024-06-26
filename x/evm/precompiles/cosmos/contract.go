@@ -176,6 +176,12 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 
 		messages := ctx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
 		*messages = append(*messages, sdkMsg)
+
+		// abi encode the response
+		resBz, err = method.Outputs.Pack(true)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
 	case METHOD_QUERY_COSMOS:
 		ctx.GasMeter().ConsumeGas(QUERY_COSMOS_GAS, "query_cosmos")
 

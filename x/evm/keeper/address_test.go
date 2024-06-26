@@ -45,7 +45,7 @@ func Test_AllowLongCosmosAddress(t *testing.T) {
 	))
 	require.NoError(t, err)
 
-	// should be be allowed because the address is not taken yet
+	// should be allowed because the address is not taken yet
 	err = erc20Keeper.SendCoins(ctx, addr, addr4, sdk.NewCoins(
 		sdk.NewCoin("bar", math.NewInt(100)),
 		sdk.NewCoin(fooDenom, math.NewInt(50)),
