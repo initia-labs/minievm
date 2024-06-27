@@ -4,8 +4,9 @@ pragma solidity ^0.8.24;
 import "../i_erc20/IERC20.sol";
 import "../ownable/Ownable.sol";
 import "../erc20_registry/ERC20Registry.sol";
+import {ERC165, IERC165} from "../erc165/ERC165.sol";
 
-contract CustomERC20 is IERC20, Ownable, ERC20Registry {
+contract CustomERC20 is IERC20, Ownable, ERC20Registry, ERC165 {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
         address indexed owner,
@@ -20,7 +21,22 @@ contract CustomERC20 is IERC20, Ownable, ERC20Registry {
     uint8 public decimals;
     uint256 public totalSupply;
 
-    constructor(string memory _name, string memory _symbol, uint8 _decimals) register_erc20 {
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(IERC165, ERC165) returns (bool) {
+        return
+            interfaceId == type(IERC20).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
+
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals
+    ) register_erc20 {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
@@ -54,7 +70,10 @@ contract CustomERC20 is IERC20, Ownable, ERC20Registry {
         return true;
     }
 
-    function _mint(address to, uint256 amount) internal register_erc20_store(to) {
+    function _mint(
+        address to,
+        uint256 amount
+    ) internal register_erc20_store(to) {
         balanceOf[to] += amount;
         totalSupply += amount;
         emit Transfer(address(0), to, amount);
@@ -66,7 +85,7 @@ contract CustomERC20 is IERC20, Ownable, ERC20Registry {
         emit Transfer(from, address(0), amount);
     }
 
-    function mint(address to, uint256 amount) external onlyOwner{
+    function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }
 

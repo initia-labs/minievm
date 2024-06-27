@@ -2,12 +2,15 @@ package types
 
 import (
 	"cosmossdk.io/core/address"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gopkg.in/yaml.v3"
 )
 
 func DefaultParams() Params {
 	return Params{
 		AllowCustomERC20: true,
+		FeeDenom:         sdk.DefaultBondDenom,
 	}
 }
 

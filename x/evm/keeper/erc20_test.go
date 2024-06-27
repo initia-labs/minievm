@@ -23,7 +23,7 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 	inputBz, err := abi.Pack("createERC20", denom, denom, uint8(6))
 	require.NoError(t, err)
 
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, types.ERC20FactoryAddress(), inputBz)
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, types.ERC20FactoryAddress(), inputBz, nil)
 	require.NoError(t, err)
 
 	return common.BytesToAddress(ret[12:])
@@ -39,7 +39,7 @@ func mintERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipie
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
 	require.NoError(t, err)
 }
 
@@ -182,12 +182,14 @@ func Test_GetSupply(t *testing.T) {
 	require.True(t, has)
 
 	erc20Keeper.IterateSupply(ctx, func(supply sdk.Coin) (bool, error) {
-		require.True(t, supply.Denom == "bar" || supply.Denom == fooDenom)
+		require.True(t, supply.Denom == "bar" || supply.Denom == fooDenom || supply.Denom == sdk.DefaultBondDenom)
 		switch supply.Denom {
 		case "bar":
 			require.Equal(t, math.NewInt(200), supply.Amount)
 		case fooDenom:
 			require.Equal(t, math.NewInt(100), supply.Amount)
+		case sdk.DefaultBondDenom:
+			require.Equal(t, math.NewInt(1_000_000), supply.Amount)
 		}
 		return false, nil
 	})
@@ -197,6 +199,7 @@ func Test_GetSupply(t *testing.T) {
 	require.Equal(t, sdk.NewCoins(
 		sdk.NewCoin("bar", math.NewInt(200)),
 		sdk.NewCoin(fooDenom, math.NewInt(100)),
+		sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1_000_000)),
 	), supply)
 }
 

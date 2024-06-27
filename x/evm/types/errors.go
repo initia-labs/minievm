@@ -2,6 +2,8 @@ package types
 
 import (
 	errorsmod "cosmossdk.io/errors"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // EVM Errors
@@ -20,7 +22,6 @@ var (
 	ErrNonReadOnlyMethod         = errorsmod.Register(ModuleName, 12, "Failed to call precompile in readonly mode")
 	ErrAddressAlreadyExists      = errorsmod.Register(ModuleName, 13, "Address already exists")
 	ErrFailedToEncodeLogs        = errorsmod.Register(ModuleName, 14, "Failed to encode logs")
-	ErrEmptyContractAddress      = errorsmod.Register(ModuleName, 15, "Empty contract address")
 	ErrPrecompileFailed          = errorsmod.Register(ModuleName, 16, "Precompile failed")
 	ErrNotSupportedCosmosMessage = errorsmod.Register(ModuleName, 17, "Not supported cosmos message")
 	ErrNotSupportedCosmosQuery   = errorsmod.Register(ModuleName, 18, "Not supported cosmos query")
@@ -28,4 +29,17 @@ var (
 	ErrInvalidClassId            = errorsmod.Register(ModuleName, 20, "Invalid class id")
 	ErrCustomERC20NotAllowed     = errorsmod.Register(ModuleName, 21, "Custom ERC20 is not allowed")
 	ErrInvalidERC20FactoryAddr   = errorsmod.Register(ModuleName, 22, "Invalid ERC20 factory address")
+	ErrReverted                  = errorsmod.Register(ModuleName, 23, "Reverted")
+	ErrInvalidValue              = errorsmod.Register(ModuleName, 24, "Invalid value")
 )
+
+func NewRevertError(revert []byte) error {
+	err := ErrReverted
+
+	reason, errUnpack := abi.UnpackRevert(revert)
+	if errUnpack == nil {
+		return err.Wrapf("reason: %v, revert: %v", reason, hexutil.Encode(revert))
+	}
+
+	return err.Wrapf("revert: %v", hexutil.Encode(revert))
+}

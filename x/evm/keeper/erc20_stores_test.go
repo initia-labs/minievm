@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,7 +25,7 @@ func deployCustomERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller 
 	inputBz, err := abi.Pack("", denom, denom, uint8(6))
 	require.NoError(t, err)
 
-	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, caller, append(bin, inputBz...))
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, append(bin, inputBz...), uint256.NewInt(0))
 	if success {
 		require.NoError(t, err)
 	} else {

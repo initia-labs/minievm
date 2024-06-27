@@ -34,6 +34,14 @@ message MsgCreate {
 
   // Code is hex encoded raw contract bytes code.
   string code = 2;
+
+  // Value is the amount of fee denom token to transfer to the contract.
+  string value = 3 [
+    (cosmos_proto.scalar)  = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCreateResponse defines the Msg/Create response type.
@@ -57,6 +65,14 @@ message MsgCreate2 {
   
   // Salt is a random value to distinguish contract creation.
   uint64 salt = 3;
+
+  // Value is the amount of fee denom token to transfer to the contract.
+  string value = 4 [
+    (cosmos_proto.scalar)  = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCreate2Response defines the Msg/Create2 response type.
@@ -81,6 +97,14 @@ message MsgCall {
 
   // Hex encoded execution input bytes.
   string input = 3;
+
+  // Value is the amount of fee denom token to transfer to the contract.
+  string value = 4 [
+    (cosmos_proto.scalar)  = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgCallResponse defines the Msg/Call response type.

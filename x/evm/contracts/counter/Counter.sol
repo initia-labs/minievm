@@ -9,7 +9,9 @@ contract Counter is IIBCAsyncCallback {
 
     event increased(uint256 oldCount, uint256 newCount);
 
-    function increase() external {
+    constructor() payable {}
+
+    function increase() external payable {
         count++;
 
         emit increased(count - 1, count);
@@ -27,7 +29,10 @@ contract Counter is IIBCAsyncCallback {
         count += callback_id;
     }
 
-    function query_cosmos(string memory path, string memory req) external returns (string memory result) {
+    function query_cosmos(
+        string memory path,
+        string memory req
+    ) external returns (string memory result) {
         return COSMOS_CONTRACT.query_cosmos(path, req);
     }
 }

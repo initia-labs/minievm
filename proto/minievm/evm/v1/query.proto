@@ -22,10 +22,12 @@ service Query {
     option (google.api.http).get = "/minievm/evm/v1/states/{contract_addr}/{key}";
   }
 
+  // ContractAddrByDenom gets the contract address by denom.
   rpc ContractAddrByDenom(QueryContractAddrByDenomRequest) returns (QueryContractAddrByDenomResponse) {
     option (google.api.http).get = "/minievm/evm/v1/contracts/by_denom";
   }
 
+  // Denom gets the denom of the given contract address.
   rpc Denom(QueryDenomRequest) returns (QueryDenomResponse) {
     option (google.api.http).get = "/minievm/evm/v1/denoms/{contract_addr}";
   }
@@ -84,9 +86,15 @@ message QueryCallRequest {
   string contract_addr = 2;
   // hex encoded call input
   string input = 3;
+  // Value is the amount of fee denom token to transfer to the contract.
+  string value = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false,
+    (amino.dont_omitempty) = true
+  ];
   // whether to trace the call
   // `nil` means no trace
-  TraceOptions trace_options = 4;
+  TraceOptions trace_options = 5;
 }
 
 // TraceOption is the option for tracing

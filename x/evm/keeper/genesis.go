@@ -20,7 +20,8 @@ func (k Keeper) Initialize(ctx context.Context) error {
 		return err
 	}
 
-	_, _, err = k.EVMCreate2(ctx, types.StdAddress, code, types.ERC20FactorySalt)
+	k.initializing = true
+	_, _, _, err = k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20FactorySalt)
 	if err != nil {
 		return err
 	}
