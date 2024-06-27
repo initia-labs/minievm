@@ -7,10 +7,10 @@ toolchain go1.22.2
 require (
 	cosmossdk.io/math v1.3.0
 	github.com/cometbft/cometbft v0.38.7
-	github.com/cosmos/cosmos-sdk v0.50.7-0.20240517114248-b99ca2c1fded
+	github.com/cosmos/cosmos-sdk v0.50.7
 	github.com/cosmos/ibc-go/v8 v8.2.1
 	github.com/ethereum/go-ethereum v1.14.2
-	github.com/initia-labs/initia v0.3.2
+	github.com/initia-labs/initia v0.3.3
 	github.com/initia-labs/minievm v0.3.0
 	github.com/stretchr/testify v1.9.0
 )
@@ -132,6 +132,7 @@ require (
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/hdevalence/ed25519consensus v0.1.0 // indirect
@@ -142,7 +143,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.3.1 // indirect
+	github.com/initia-labs/OPinit v0.3.2 // indirect
 	github.com/initia-labs/OPinit/api v0.3.0 // indirect
 	github.com/initia-labs/kvindexer v0.1.3 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
@@ -248,6 +249,10 @@ replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 
+	// Use latest iavl version to fix following issue:
+	// https://github.com/cosmos/iavl/pull/943
+	github.com/cosmos/iavl => github.com/cosmos/iavl v1.1.4
+
 	// dgrijalva/jwt-go is deprecated and doesn't receive security updates.
 	// TODO: remove it: https://github.com/cosmos/cosmos-sdk/issues/13134
 	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.2
@@ -264,12 +269,10 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240503082631-d98d5e638a38
-	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20240617110109-8f40e8e336e1
-	github.com/cosmos/iavl => github.com/initia-labs/iavl v0.0.0-20240415085037-7e81233cdd9e
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240621094738-408dc5262680
+	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20240627065534-d2180fcfd501
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7
-	github.com/initia-labs/initia => github.com/initia-labs/initia v0.3.3-0.20240626040639-e2a089177806
 )
 
 // local import
