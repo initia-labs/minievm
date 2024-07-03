@@ -40,7 +40,7 @@ func getDBConfig(appOpts servertypes.AppOptions) (string, dbm.BackendType) {
 func (e *EVMIndexerImpl) extractLogsFromEvents(events []abci.Event) []*coretypes.Log {
 	var ethLogs []*coretypes.Log
 	for _, event := range events {
-		if event.Type == types.EventTypeCall || event.Type == types.EventTypeCreate {
+		if event.Type == types.EventTypeEVM {
 			logs := make(types.Logs, 0, len(event.Attributes))
 
 			for _, attr := range event.Attributes {
