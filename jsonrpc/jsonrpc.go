@@ -167,7 +167,7 @@ func listen(addr string, jsonRPCConfig config.JSONRPCConfig) (net.Listener, erro
 	return ln, err
 }
 
-// https://github.com/evmos/ethermint/blob/fd8c2d25cf80e7d2d2a142e7b374f979f8f51981/server/util.go#L74
+// reference: https://github.com/evmos/ethermint/blob/fd8c2d25cf80e7d2d2a142e7b374f979f8f51981/server/util.go#L74
 func ConnectTmWS(tmRPCAddr, tmEndpoint string, logger log.Logger) *rpcclient.WSClient {
 	tmWsClient, err := rpcclient.NewWS(tmRPCAddr, tmEndpoint,
 		rpcclient.MaxReconnectAttempts(256),
