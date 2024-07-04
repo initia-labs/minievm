@@ -171,6 +171,7 @@ func listen(addr string, jsonRPCConfig config.JSONRPCConfig) (net.Listener, erro
 // reference: https://github.com/evmos/ethermint/blob/fd8c2d25cf80e7d2d2a142e7b374f979f8f51981/server/util.go#L74
 func ConnectCometWS(cometRPCAddr, cometWSEndpoint string, logger log.Logger) *rpcclient.WSClient {
 	cometWSClient, err := rpcclient.NewWS(cometRPCAddr, cometWSEndpoint,
+		//TODO: make the following values configurable
 		rpcclient.MaxReconnectAttempts(256),
 		rpcclient.ReadWait(120*time.Second),
 		rpcclient.WriteWait(120*time.Second),

@@ -102,6 +102,9 @@ func (api *PublicFilterAPI) timeoutLoop() {
 	}
 }
 
+// TODO:  Implement eth_newPendingTransactionFilter
+// func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {}
+
 // NewBlockFilter creates a filter that fetches blocks that are imported into the chain.
 // It is part of the filter package since polling goes with eth_getFilterChanges.
 //
