@@ -1,28 +1,10 @@
 package backend
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 )
-
-// GetLogs returns all the logs from all the ethereum transactions in a block.
-func (b *JSONRPCBackend) GetLogs(hash common.Hash) ([][]*coretypes.Log, error) {
-
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	height, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
-	if err != nil {
-		return nil, err
-	}
-
-	h := int64(height)
-	return b.GetLogsByHeight(&h)
-}
 
 // GetLogsByHeight returns all the logs from all the ethereum transactions in a block.
 func (b *JSONRPCBackend) GetLogsByHeight(height *int64) ([][]*coretypes.Log, error) {
@@ -65,13 +47,6 @@ func (b *JSONRPCBackend) GetLogsByHeight(height *int64) ([][]*coretypes.Log, err
 	return blockLogs, nil
 }
 
-/*
-func (b *JSONRPCBackend) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretypes.Log, error) {
-	blockLogs := []*coretypes.Log{}
-	return blockLogs, nil
-
-}
-*/
 // RPCFilterCap is the limit for total number of filters that can be created
 func (b *JSONRPCBackend) RPCFilterCap() int32 {
 	return b.cfg.FilterCap
