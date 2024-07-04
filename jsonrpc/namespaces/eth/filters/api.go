@@ -234,6 +234,10 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 				}
 
 				err = ethResp.Unmarshal(txResp.MsgResponses[0].Value)
+				if err != nil {
+					api.logger.Error("failed to decode MsgCallResponse", "error", err.Error())
+					return
+				}
 				if len(ethResp.Logs) == 0 {
 					continue
 				}
