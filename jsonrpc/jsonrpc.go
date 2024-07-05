@@ -173,8 +173,8 @@ func ConnectCometWS(cometRPCAddr, cometWSEndpoint string, logger log.Logger) *rp
 	cometWSClient, err := rpcclient.NewWS(cometRPCAddr, cometWSEndpoint,
 		//TODO: make the following values configurable
 		rpcclient.MaxReconnectAttempts(256),
-		rpcclient.ReadWait(120*time.Second),
-		rpcclient.WriteWait(120*time.Second),
+		rpcclient.ReadWait(0),
+		rpcclient.WriteWait(0),
 		rpcclient.PingPeriod(50*time.Second),
 		rpcclient.OnReconnect(func() {
 			logger.Debug("EVM RPC reconnects to Comet WS", "address", cometRPCAddr+cometWSEndpoint)
