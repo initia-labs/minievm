@@ -195,7 +195,7 @@ func (f *Filter) blockLogs(blockHeight int64, bloom ethtypes.Bloom) ([]*ethtypes
 		return []*ethtypes.Log{}, nil
 	}
 
-	logsList, err := f.backend.GetLogsByHeight(&blockHeight)
+	logsList, err := f.backend.GetLogsByHeight(uint64(blockHeight))
 	if err != nil {
 		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", blockHeight)
 	}

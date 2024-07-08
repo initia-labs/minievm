@@ -7,23 +7,22 @@ import (
 )
 
 // GetLogsByHeight returns all the logs from all the ethereum transactions in a block.
-func (b *JSONRPCBackend) GetLogsByHeight(height *int64) ([][]*coretypes.Log, error) {
+func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([][]*coretypes.Log, error) {
 
 	blockLogs := [][]*coretypes.Log{}
-	blockNumber := uint64(*height)
 
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err
 	}
 
-	blockHeader, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, blockNumber)
+	blockHeader, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, height)
 	if err != nil {
 		return nil, err
 	}
 
 	txs := []*rpctypes.RPCTransaction{}
-	b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+	b.app.EVMIndexer().IterateBlockTxs(queryCtx, height, func(tx *rpctypes.RPCTransaction) (bool, error) {
 		txs = append(txs, tx)
 		return false, nil
 	})
@@ -36,7 +35,7 @@ func (b *JSONRPCBackend) GetLogsByHeight(height *int64) ([][]*coretypes.Log, err
 		logs := receipt.Logs
 		for idx, log := range logs {
 			log.BlockHash = blockHeader.Hash()
-			log.BlockNumber = blockNumber
+			log.BlockNumber = height
 			log.TxHash = tx.Hash
 			log.Index = uint(idx)
 			log.TxIndex = receipt.TransactionIndex
