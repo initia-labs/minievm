@@ -174,6 +174,9 @@ func ConnectCometWS(cometRPCAddr, cometWSEndpoint string, logger log.Logger) *rp
 		//TODO: make the following values configurable
 		rpcclient.MaxReconnectAttempts(256),
 		rpcclient.ReadWait(0),
+		// If readWait is not zero, pingPeriod must be less than readWait to avoid abnormal closure.
+		// https://github.com/initia-labs/cometbft/blob/6c77a401128cb7dd8368ba8fbe7f30caf4fffa96/rpc/jsonrpc/client/ws_client.go#L77
+		// Once the connection is lost, subscribed events can be deferred while reconnecting.
 		rpcclient.WriteWait(0),
 		rpcclient.PingPeriod(50*time.Second),
 		rpcclient.OnReconnect(func() {
