@@ -56,7 +56,7 @@ func StartJSONRPC(
 	//TODO: use the rpcAddr parameter with reference to config.RPC.ListenAddress
 	cometWsClient := ConnectCometWS("http://127.0.0.1:26657", "/websocket", svrCtx.Logger)
 	if cometWsClient == nil {
-		return errors.New("failed to connect tmWs Server")
+		return errors.New("failed to connect comet Websocket Server")
 	}
 
 	logger := svrCtx.Logger.With("module", "geth")

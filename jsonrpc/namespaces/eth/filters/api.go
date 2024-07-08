@@ -65,14 +65,14 @@ type PublicFilterAPI struct {
 }
 
 // NewFiltersAPI returns a new instance
-func NewFilterAPI(logger log.Logger, backend *backend.JSONRPCBackend, clientCtx client.Context, tmWSClient *rpcclient.WSClient) *PublicFilterAPI {
+func NewFilterAPI(logger log.Logger, backend *backend.JSONRPCBackend, clientCtx client.Context, cometWSClient *rpcclient.WSClient) *PublicFilterAPI {
 	logger = logger.With("api", "filter")
 	api := &PublicFilterAPI{
 		logger:    logger,
 		clientCtx: clientCtx,
 		backend:   backend,
 		filters:   make(map[rpc.ID]*filter),
-		events:    NewEventSystem(logger, tmWSClient),
+		events:    NewEventSystem(logger, cometWSClient),
 	}
 
 	go api.timeoutLoop()
