@@ -1,13 +1,13 @@
 package ante
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	ibcante "github.com/cosmos/ibc-go/v8/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	cosmoserrors "cosmossdk.io/errors" // Updated import alias for Cosmos SDK errors
 
 	opchildante "github.com/initia-labs/OPinit/x/opchild/ante"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
@@ -35,15 +35,15 @@ type HandlerOptions struct {
 // signer.
 func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	if options.AccountKeeper == nil {
-		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "account keeper is required for ante builder")
+		return nil, cosmoserrors.Wrap(sdkerrors.ErrLogic, "account keeper is required for ante builder")
 	}
 
 	if options.BankKeeper == nil {
-		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "bank keeper is required for ante builder")
+		return nil, cosmoserrors.Wrap(sdkerrors.ErrLogic, "bank keeper is required for ante builder")
 	}
 
 	if options.SignModeHandler == nil {
-		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "sign mode handler is required for ante builder")
+		return nil, cosmoserrors.Wrap(sdkerrors.ErrLogic, "sign mode handler is required for ante builder")
 	}
 
 	sigGasConsumer := options.SigGasConsumer
@@ -65,7 +65,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		// return fee without fee check
 		feeTx, ok := tx.(sdk.FeeTx)
 		if !ok {
-			return nil, 0, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+			return nil, 0, cosmoserrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
 		}
 
 		return feeTx.GetFee(), 1 /* FIFO */, nil
