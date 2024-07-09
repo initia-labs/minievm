@@ -320,8 +320,6 @@ github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1
 github.com/bytedance/sonic v1.9.1 h1:6iJ6NqdoxCDr6mbY8h18oSO+cShGSMRGCEo7F2h0x8s=
 github.com/bytedance/sonic v1.9.1/go.mod h1:i736AoUSYt75HyZLoJW9ERYxcy6eaN6h4BZXU064P/U=
 github.com/casbin/casbin/v2 v2.1.2/go.mod h1:YcPU1XXisHhLzuxH9coDNf2FbKpjGlbCg3n9yuLkIJQ=
-github.com/celestiaorg/go-square v1.0.1 h1:LEG1zrw4i03VBMElQF8GAbKYgh1bT1uGzWxasU2ePuo=
-github.com/celestiaorg/go-square v1.0.1/go.mod h1:XMv5SGCeGSkynW2OOsedugaW/rQlvzxGzWGxTKsyYOU=
 github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/cenkalti/backoff/v4 v4.1.1/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
@@ -812,8 +810,8 @@ github.com/initia-labs/OPinit v0.3.2 h1:TeELD5GeSJJ9meY5b5YIXDdmCZt9kZOA2Chz+Iwx
 github.com/initia-labs/OPinit v0.3.2/go.mod h1:XlYsBFAKOFS6/wRIHB1vVbfonqX8QrC8cWK2GJvmX20=
 github.com/initia-labs/OPinit/api v0.3.0 h1:OY8ijwmgZLoYwtw9LI1mSY3VC8PY+gtxJFitB6ZNFl4=
 github.com/initia-labs/OPinit/api v0.3.0/go.mod h1:Xy/Nt3ubXLQ4zKn0m7RuQOM1sj8TVdlNNyek21TGYR0=
-github.com/initia-labs/cometbft v0.0.0-20240621094738-408dc5262680 h1:4tcP5F26DdqiV1Y/XOllL4LUhyUV6HITfjVJnzR/Krs=
-github.com/initia-labs/cometbft v0.0.0-20240621094738-408dc5262680/go.mod h1:qGaJePRWAc2OL3OGNd//8fqgypCaFjmwZcy/cNner84=
+github.com/initia-labs/cometbft v0.0.0-20240704071957-c46468756c01 h1:EGcO68mXypbiO3rmoFsskxLEAeZFcOkJII1PsSK0rRI=
+github.com/initia-labs/cometbft v0.0.0-20240704071957-c46468756c01/go.mod h1:xOoGZrtUT+A5izWfHSJgl0gYZUE7lu7Z2XIS1vWG/QQ=
 github.com/initia-labs/cosmos-sdk v0.0.0-20240627065534-d2180fcfd501 h1:OcLFeu3V9T156H4n6WzPNfKWjIUKdkC0P0EBA8zEWFE=
 github.com/initia-labs/cosmos-sdk v0.0.0-20240627065534-d2180fcfd501/go.mod h1:84xDDJEHttRT7NDGwBaUOLVOMN0JNE9x7NbsYIxXs1s=
 github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7 h1:V7K8wvE5FVVv6WTeITI+nqWfo4b9WlZyXQH0Olz5UVI=
