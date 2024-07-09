@@ -73,13 +73,33 @@ func initTendermintConfig() *tmcfg.Config {
 	cfg.Consensus.CreateEmptyBlocks = false
 	cfg.Consensus.CreateEmptyBlocksInterval = time.Minute
 
-	// block time to 0.5s
-	cfg.Consensus.TimeoutPropose = 300 * time.Millisecond
+	// rpc configure
+	cfg.RPC.ListenAddress = "tcp://0.0.0.0:26657"
+	cfg.RPC.CORSAllowedOrigins = []string{"*"}
+
+	// performance turning configs
+	cfg.P2P.SendRate = 20480000
+	cfg.P2P.RecvRate = 20480000
+	cfg.P2P.MaxPacketMsgPayloadSize = 1000000 // 1MB
+	cfg.P2P.FlushThrottleTimeout = 10 * time.Millisecond
+	cfg.Consensus.PeerGossipSleepDuration = 30 * time.Millisecond
+
+	// mempool configs
+	cfg.Mempool.Size = 1000
+	cfg.Mempool.MaxTxsBytes = 10737418240
+	cfg.Mempool.MaxTxBytes = 2048576
+
+	// propose timeout to 1s
+	cfg.Consensus.TimeoutPropose = 1 * time.Second
 	cfg.Consensus.TimeoutProposeDelta = 500 * time.Millisecond
-	cfg.Consensus.TimeoutPrevote = 1000 * time.Millisecond
-	cfg.Consensus.TimeoutPrevoteDelta = 500 * time.Millisecond
-	cfg.Consensus.TimeoutPrecommit = 1000 * time.Millisecond
-	cfg.Consensus.TimeoutPrecommitDelta = 500 * time.Millisecond
+
+	// do not wait straggler for prevote and precommit on l2
+	cfg.Consensus.TimeoutPrevote = 0 * time.Millisecond
+	cfg.Consensus.TimeoutPrevoteDelta = 0 * time.Millisecond
+	cfg.Consensus.TimeoutPrecommit = 0 * time.Millisecond
+	cfg.Consensus.TimeoutPrecommitDelta = 0 * time.Millisecond
+
+	// commit time to 0.5s
 	cfg.Consensus.TimeoutCommit = 500 * time.Millisecond
 
 	return cfg
