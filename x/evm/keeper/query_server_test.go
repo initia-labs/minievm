@@ -29,7 +29,7 @@ func Test_Query_Call(t *testing.T) {
 	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
 
 	// mint erc20
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)))
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
 
 	abi, err := erc20.Erc20MetaData.GetAbi()
 	require.NoError(t, err)

@@ -22,4 +22,11 @@ interface IERC20 {
         address recipient,
         uint256 amount
     ) external returns (bool);
+
+    // Custom ERC20 contracts also should have sudo transfer method
+    function sudoTransfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external;
 }

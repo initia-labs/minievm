@@ -28,6 +28,7 @@ func (k *Keeper) loadPrecompiles() error {
 		k.cdc,
 		k.ac,
 		k.accountKeeper,
+		k.bankKeeper,
 		k,
 		k.grpcRouter,
 		k.queryCosmosWhitelist,

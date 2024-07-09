@@ -34,6 +34,7 @@ type CosmosPrecompile struct {
 	ac  address.Codec
 
 	ak         types.AccountKeeper
+	bk         types.BankKeeper
 	edk        types.ERC20DenomKeeper
 	grpcRouter types.GRPCRouter
 
@@ -44,6 +45,7 @@ func NewCosmosPrecompile(
 	cdc codec.Codec,
 	ac address.Codec,
 	ak types.AccountKeeper,
+	bk types.BankKeeper,
 	edk types.ERC20DenomKeeper,
 	grpcRouter types.GRPCRouter,
 	queryWhitelist types.QueryCosmosWhitelist,
@@ -58,6 +60,7 @@ func NewCosmosPrecompile(
 		cdc:            cdc,
 		ac:             ac,
 		ak:             ak,
+		bk:             bk,
 		edk:            edk,
 		grpcRouter:     grpcRouter,
 		queryWhitelist: queryWhitelist,
@@ -67,6 +70,20 @@ func NewCosmosPrecompile(
 func (e CosmosPrecompile) WithContext(ctx context.Context) vm.PrecompiledContract {
 	e.ctx = ctx
 	return e
+}
+
+func (e CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sdk.AccAddress, error) {
+	account := e.ak.GetAccount(ctx, addrBz)
+	if shorthandCallerAccount, ok := account.(types.ShorthandAccountI); ok {
+		addr, err := shorthandCallerAccount.GetOriginalAddress(e.ac)
+		if err != nil {
+			return nil, types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		addrBz = addr.Bytes()
+	}
+
+	return addrBz, nil
 }
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
@@ -87,6 +104,50 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")
 
 	switch method.Name {
+	case METHOD_IS_BLOCKED_ADDRESS:
+		ctx.GasMeter().ConsumeGas(IS_BLOCKED_ADDRESS_GAS, "is_blocked_address")
+
+		var isBlockedAddressArguments IsBlockedAddressArguments
+		if err := method.Inputs.Copy(&isBlockedAddressArguments, args); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		// convert shorthand account to original address
+		addr, err := e.originAddress(ctx, isBlockedAddressArguments.Address.Bytes())
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		isBlocked := e.bk.BlockedAddr(addr)
+
+		// abi encode the response
+		resBz, err = method.Outputs.Pack(isBlocked)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+	case METHOD_IS_MODULE_ADDRESS:
+		ctx.GasMeter().ConsumeGas(IS_MODULE_ADDRESS_GAS, "is_blocked_address")
+
+		var isModuleAddressArguments IsModuleAddressArguments
+		if err := method.Inputs.Copy(&isModuleAddressArguments, args); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		// convert shorthand account to original address
+		addr, err := e.originAddress(ctx, isModuleAddressArguments.Address.Bytes())
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		// check if the address is a module account
+		account := e.ak.GetAccount(ctx, addr)
+		_, isModuleAccount := account.(sdk.ModuleAccountI)
+
+		// abi encode the response
+		resBz, err = method.Outputs.Pack(isModuleAccount)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
 	case METHOD_TO_COSMOS_ADDRESS:
 		ctx.GasMeter().ConsumeGas(TO_COSMOS_ADDRESS_GAS, "to_cosmos_address")
 
@@ -151,18 +212,10 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		callerAddr := caller.Address().Bytes()
-		callerAccount := e.ak.GetAccount(ctx, callerAddr)
-
-		// if the caller is a shorthand account, then use shorthand account's original address
-		// as the caller address.
-		if shorthandCallerAccount, ok := callerAccount.(types.ShorthandAccountI); ok {
-			addr, err := shorthandCallerAccount.GetOriginalAddress(e.ac)
-			if err != nil {
-				return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
-			}
-
-			callerAddr = addr.Bytes()
+		// convert shorthand account to original address
+		callerAddr, err := e.originAddress(ctx, caller.Address().Bytes())
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
 		for _, signer := range signers {

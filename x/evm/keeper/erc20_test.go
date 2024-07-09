@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
@@ -29,7 +30,25 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 	return common.BytesToAddress(ret[12:])
 }
 
-func mintERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipient common.Address, amount sdk.Coin) {
+func burnERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, from common.Address, amount sdk.Coin, expectErr bool) {
+	abi, err := erc20.Erc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("burn", from, amount.Amount.BigInt())
+	require.NoError(t, err)
+
+	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz)
+	if expectErr {
+		require.Error(t, err)
+	} else {
+		require.NoError(t, err)
+	}
+}
+
+func mintERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipient common.Address, amount sdk.Coin, expectErr bool) {
 	abi, err := erc20.Erc20MetaData.GetAbi()
 	require.NoError(t, err)
 
@@ -40,7 +59,99 @@ func mintERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipie
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz)
+	if expectErr {
+		require.Error(t, err)
+	} else {
+		require.NoError(t, err)
+	}
+}
+
+func transferERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipient common.Address, amount sdk.Coin, expectErr bool) {
+	abi, err := erc20.Erc20MetaData.GetAbi()
 	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("transfer", recipient, amount.Amount.BigInt())
+	require.NoError(t, err)
+
+	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz)
+	if expectErr {
+		require.Error(t, err)
+	} else {
+		require.NoError(t, err)
+	}
+
+}
+
+func Test_TransferToModuleAccount(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	input.Faucet.Fund(ctx, addr, sdk.NewCoin("foo", math.NewInt(100)))
+
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+	transferERC20(t, ctx, input, evmAddr, common.BytesToAddress(feeCollectorAddr.Bytes()), sdk.NewCoin("foo", math.NewInt(50)), true)
+
+	_, _, addr2 := keyPubAddr()
+	evmAddr2 := common.BytesToAddress(addr2.Bytes())
+	transferERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin("foo", math.NewInt(50)), false)
+}
+
+func Test_MintToModuleAccount(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	// deploy erc20 contract
+	fooContractAddr := deployERC20(t, ctx, input, evmAddr, "foo")
+	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
+
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+	mintERC20(t, ctx, input, evmAddr, common.BytesToAddress(feeCollectorAddr.Bytes()), sdk.NewCoin(fooDenom, math.NewInt(50)), true)
+
+	_, _, addr2 := keyPubAddr()
+	evmAddr2 := common.BytesToAddress(addr2.Bytes())
+	mintERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
+}
+
+func Test_BurnFromModuleAccount(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	// register fee collector module account
+	input.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
+
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+	_, _, addr2 := keyPubAddr()
+	evmAddr2 := common.BytesToAddress(addr2.Bytes())
+
+	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
+	require.NoError(t, err)
+
+	// deploy erc20 contract
+	fooContractAddr := deployERC20(t, ctx, input, evmAddr, "foo")
+	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
+
+	// mint coins
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
+	erc20Keeper.SendCoins(ctx, addr, feeCollectorAddr, sdk.NewCoins(sdk.NewCoin(fooDenom, math.NewInt(50))))
+	erc20Keeper.SendCoins(ctx, addr, addr2, sdk.NewCoins(sdk.NewCoin(fooDenom, math.NewInt(50))))
+
+	// should not be able to burn from module account
+	burnERC20(t, ctx, input, evmAddr, common.BytesToAddress(feeCollectorAddr.Bytes()), sdk.NewCoin(fooDenom, math.NewInt(50)), true)
+
+	// should be able to burn from other account
+	burnERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
 }
 
 func Test_MintBurn(t *testing.T) {
@@ -72,7 +183,7 @@ func Test_MintBurn(t *testing.T) {
 	require.NoError(t, err)
 
 	// mint erc20
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)))
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
 
 	amount, err := erc20Keeper.GetBalance(ctx, addr, "bar")
 	require.NoError(t, err)
@@ -151,7 +262,7 @@ func Test_GetSupply(t *testing.T) {
 	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
 
 	// mint erc20
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)))
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
 
 	// mint native coin
 	err = erc20Keeper.MintCoins(ctx, addr, sdk.NewCoins(
@@ -255,8 +366,8 @@ func Test_IterateAccountBalances(t *testing.T) {
 	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
 
 	// mint erc20
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)))
-	mintERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(200)))
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
+	mintERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(200)), false)
 
 	// mint native coin
 	err = erc20Keeper.MintCoins(ctx, addr, sdk.NewCoins(

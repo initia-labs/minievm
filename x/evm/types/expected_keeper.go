@@ -24,6 +24,11 @@ type AccountKeeper interface {
 	NextAccountNumber(ctx context.Context) uint64
 }
 
+// BankKeeper is expected keeper for bank module
+type BankKeeper interface {
+	BlockedAddr(addr sdk.AccAddress) bool
+}
+
 type CommunityPoolKeeper interface {
 	// FundCommunityPool allows an account to directly fund the community fund pool.
 	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error

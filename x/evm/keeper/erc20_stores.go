@@ -56,6 +56,12 @@ func (k ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Add
 		return types.ErrCustomERC20NotAllowed
 	}
 
+	if found, err := k.ERC20s.Has(ctx, contractAddr.Bytes()); err != nil {
+		return err
+	} else if found {
+		return nil
+	}
+
 	// default action is to allow all custom erc20s
 	// but if allowedCustomERC20s is set, only allow those
 	if len(params.AllowedCustomERC20s) > 0 {
@@ -66,12 +72,6 @@ func (k ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Add
 		}); idx == -1 {
 			return types.ErrCustomERC20NotAllowed
 		}
-	}
-
-	if found, err := k.ERC20s.Has(ctx, contractAddr.Bytes()); err != nil {
-		return err
-	} else if found {
-		return nil
 	}
 
 	return k.ERC20s.Set(ctx, contractAddr.Bytes())

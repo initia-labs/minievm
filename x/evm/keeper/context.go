@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"math/big"
 
@@ -390,7 +389,6 @@ func (k Keeper) dispatchMessages(ctx context.Context, msgs []sdk.Msg) error {
 		//  and execute it
 		res, err := handler(sdkCtx, msg)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 

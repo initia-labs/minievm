@@ -71,7 +71,7 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 			return err
 		}
 
-		inputBz, err := k.ERC20ABI.Pack("burn", evmAddr, coin.Amount.BigInt())
+		inputBz, err := k.ERC20ABI.Pack("sudoBurn", evmAddr, coin.Amount.BigInt())
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -327,7 +327,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		if err != nil {
 			return err
 		}
-		inputBz, err := k.ERC20ABI.Pack("mint", evmAddr, coin.Amount.BigInt())
+		inputBz, err := k.ERC20ABI.Pack("sudoMint", evmAddr, coin.Amount.BigInt())
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -359,13 +359,13 @@ func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toA
 			return err
 		}
 
-		inputBz, err := k.ERC20ABI.Pack("transfer", evmToAddr, coin.Amount.BigInt())
+		inputBz, err := k.ERC20ABI.Pack("sudoTransfer", evmFromAddr, evmToAddr, coin.Amount.BigInt())
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, evmFromAddr, contractAddr, inputBz)
+		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz)
 		if err != nil {
 			return err
 		}
