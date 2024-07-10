@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -48,4 +50,17 @@ func (args *TransactionArgs) CallDefaults() {
 	if args.Value == nil {
 		args.Value = new(hexutil.Big)
 	}
+}
+
+// String returns the struct in a string format.
+func (args *TransactionArgs) String() string {
+	return fmt.Sprintf(
+		"TransactionArgs{From:%v, To:%v, Value:%v, Nonce:%v, Data:%v, Input:%v}",
+		args.From,
+		args.To,
+		args.Value,
+		args.Nonce,
+		args.Data,
+		args.Input,
+	)
 }

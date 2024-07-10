@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -17,6 +18,42 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, error) {
+	tx := new(coretypes.Transaction)
+	if err := tx.UnmarshalBinary(input); err != nil {
+		return common.Hash{}, err
+	}
+
+	return tx.Hash(), b.SendTx(tx)
+}
+
+func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return err
+	}
+
+	cosmosTx, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertEthereumTxToCosmosTx(queryCtx, tx)
+	if err != nil {
+		return err
+	}
+
+	txBytes, err := b.app.TxEncode(cosmosTx)
+	if err != nil {
+		return err
+	}
+
+	res, err := b.clientCtx.BroadcastTxSync(txBytes)
+	if err != nil {
+		return err
+	}
+	if res.Code != 0 {
+		return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+	}
+
+	return nil
+}
 
 func (b *JSONRPCBackend) getQueryCtx() (context.Context, error) {
 	return b.app.CreateQueryContext(0, false)
@@ -170,7 +207,7 @@ func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.H
 	return rpcTx.ToTransaction().MarshalBinary()
 }
 
-func (b *JSONRPCBackend) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error) {
+func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	chainID, err := b.ChainID()
 	if err != nil {
 		return nil, err
