@@ -34,7 +34,7 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.2.4
 	github.com/initia-labs/OPinit v0.3.2
-	github.com/initia-labs/initia v0.3.3
+	github.com/initia-labs/initia v0.3.4
 	github.com/initia-labs/kvindexer v0.1.3
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1
@@ -86,6 +86,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.5 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
+	github.com/celestiaorg/go-square v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -173,7 +174,8 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/movevm v0.3.3 // indirect
+	github.com/initia-labs/OPinit/api v0.3.0 // indirect
+	github.com/initia-labs/movevm v0.3.4 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -282,8 +284,7 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240704071957-c46468756c01 //v0.0.0-20240621094738-408dc5262680
-	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20240627065534-d2180fcfd501
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240704071917-6c77a401128c
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7
 )

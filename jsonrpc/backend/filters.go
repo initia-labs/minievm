@@ -7,9 +7,8 @@ import (
 )
 
 // GetLogsByHeight returns all the logs from all the ethereum transactions in a block.
-func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([][]*coretypes.Log, error) {
-
-	blockLogs := [][]*coretypes.Log{}
+func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error) {
+	blockLogs := []*coretypes.Log{}
 
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
@@ -40,7 +39,7 @@ func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([][]*coretypes.Log, err
 			log.Index = uint(idx)
 			log.TxIndex = receipt.TransactionIndex
 		}
-		blockLogs = append(blockLogs, logs)
+		blockLogs = append(blockLogs, logs...)
 	}
 
 	return blockLogs, nil
@@ -52,11 +51,6 @@ func (b *JSONRPCBackend) RPCFilterCap() int32 {
 }
 
 // RPCFilterCap is the limit for total number of filters that can be created
-func (b *JSONRPCBackend) RPCLogsCap() int32 {
-	return b.cfg.FilterCap
-}
-
-// RPCFilterCap is the limit for total number of filters that can be created
 func (b *JSONRPCBackend) RPCBlockRangeCap() int32 {
-	return b.cfg.FilterCap
+	return b.cfg.BlockRangeCap
 }

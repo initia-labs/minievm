@@ -33,19 +33,23 @@ func (b *JSONRPCBackend) resolveBlockNrOrHash(blockNrOrHash rpc.BlockNumberOrHas
 		}
 
 		return uint64(num), nil
+	} else if blockNumber == 0 {
+		return uint64(1), nil
 	} else {
 		return uint64(blockNumber), nil
 	}
 }
 
 func (b *JSONRPCBackend) resolveBlockNr(blockNr rpc.BlockNumber) (uint64, error) {
-	if blockNr < 0 {
+	if blockNr < rpc.BlockNumber(0) {
 		num, err := b.BlockNumber()
 		if err != nil {
 			return 0, err
 		}
 
 		return uint64(num), nil
+	} else if blockNr == rpc.BlockNumber(0) {
+		return uint64(1), nil
 	} else {
 		return uint64(blockNr), nil
 	}
@@ -68,7 +72,20 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 	}
 
 	return header, nil
+}
 
+func (b *JSONRPCBackend) GetHeaderByHash(hash common.Hash) (*coretypes.Header, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	header, err := b.app.EVMIndexer().BlockHeaderByHash(queryCtx, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return header, nil
 }
 
 func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {

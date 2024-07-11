@@ -119,6 +119,21 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			e.logger.Error("failed to store blockAndIndexToTxHash", "err", err)
 			return err
 		}
+
+		// emit log events
+		if e.logChan != nil {
+			for idx, log := range receipt.Logs {
+				// fill in missing fields before emitting
+				log.Index = uint(idx)
+				log.BlockHash = blockHash
+				log.BlockNumber = uint64(blockHeight)
+				log.TxHash = txHash
+				log.TxIndex = uint(txIndex)
+
+				// emit log event
+				e.logChan <- log
+			}
+		}
 	}
 
 	// index block header
@@ -129,6 +144,11 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	if err := e.BlockHashToNumberMap.Set(ctx, blockHash.Bytes(), uint64(blockHeight)); err != nil {
 		e.logger.Error("failed to store blockHashToNumber", "err", err)
 		return err
+	}
+
+	// emit new block events
+	if e.blockChan != nil {
+		e.blockChan <- &blockHeader
 	}
 
 	return nil
