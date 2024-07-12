@@ -31,7 +31,7 @@ var (
 
 // ICosmosMetaData contains all meta data concerning the ICosmos contract.
 var ICosmosMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"}],\"name\":\"execute_cosmos\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"name\":\"to_denom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"to_erc20\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"}],\"name\":\"execute_cosmos\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_blocked_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"blocked\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_module_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"module\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"name\":\"to_denom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"to_erc20\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // ICosmosABI is the input ABI used to generate the binding from.
@@ -178,6 +178,68 @@ func (_ICosmos *ICosmosTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.
 // Transact invokes the (paid) contract method with params as input values.
 func (_ICosmos *ICosmosTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _ICosmos.Contract.contract.Transact(opts, method, params...)
+}
+
+// IsBlockedAddress is a free data retrieval call binding the contract method 0xf2af9ac9.
+//
+// Solidity: function is_blocked_address(address account) view returns(bool blocked)
+func (_ICosmos *ICosmosCaller) IsBlockedAddress(opts *bind.CallOpts, account common.Address) (bool, error) {
+	var out []interface{}
+	err := _ICosmos.contract.Call(opts, &out, "is_blocked_address", account)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsBlockedAddress is a free data retrieval call binding the contract method 0xf2af9ac9.
+//
+// Solidity: function is_blocked_address(address account) view returns(bool blocked)
+func (_ICosmos *ICosmosSession) IsBlockedAddress(account common.Address) (bool, error) {
+	return _ICosmos.Contract.IsBlockedAddress(&_ICosmos.CallOpts, account)
+}
+
+// IsBlockedAddress is a free data retrieval call binding the contract method 0xf2af9ac9.
+//
+// Solidity: function is_blocked_address(address account) view returns(bool blocked)
+func (_ICosmos *ICosmosCallerSession) IsBlockedAddress(account common.Address) (bool, error) {
+	return _ICosmos.Contract.IsBlockedAddress(&_ICosmos.CallOpts, account)
+}
+
+// IsModuleAddress is a free data retrieval call binding the contract method 0x60dc402f.
+//
+// Solidity: function is_module_address(address account) view returns(bool module)
+func (_ICosmos *ICosmosCaller) IsModuleAddress(opts *bind.CallOpts, account common.Address) (bool, error) {
+	var out []interface{}
+	err := _ICosmos.contract.Call(opts, &out, "is_module_address", account)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsModuleAddress is a free data retrieval call binding the contract method 0x60dc402f.
+//
+// Solidity: function is_module_address(address account) view returns(bool module)
+func (_ICosmos *ICosmosSession) IsModuleAddress(account common.Address) (bool, error) {
+	return _ICosmos.Contract.IsModuleAddress(&_ICosmos.CallOpts, account)
+}
+
+// IsModuleAddress is a free data retrieval call binding the contract method 0x60dc402f.
+//
+// Solidity: function is_module_address(address account) view returns(bool module)
+func (_ICosmos *ICosmosCallerSession) IsModuleAddress(account common.Address) (bool, error) {
+	return _ICosmos.Contract.IsModuleAddress(&_ICosmos.CallOpts, account)
 }
 
 // ExecuteCosmos is a paid mutator transaction binding the contract method 0xd46f64e6.

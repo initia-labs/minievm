@@ -22,6 +22,7 @@ type Keeper struct {
 	storeService corestoretypes.KVStoreService
 
 	accountKeeper       types.AccountKeeper
+	bankKeeper          types.BankKeeper
 	communityPoolKeeper types.CommunityPoolKeeper
 	erc20Keeper         types.IERC20Keeper
 	erc20StoresKeeper   types.IERC20StoresKeeper
@@ -65,6 +66,7 @@ func NewKeeper(
 	cdc codec.Codec,
 	storeService corestoretypes.KVStoreService,
 	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
 	communityPoolKeeper types.CommunityPoolKeeper,
 	msgRouter baseapp.MessageRouter,
 	grpcRouter *baseapp.GRPCQueryRouter,
@@ -84,6 +86,7 @@ func NewKeeper(
 		storeService: storeService,
 
 		accountKeeper:       accountKeeper,
+		bankKeeper:          bankKeeper,
 		communityPoolKeeper: communityPoolKeeper,
 
 		msgRouter:  msgRouter,

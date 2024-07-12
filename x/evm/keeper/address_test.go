@@ -30,7 +30,7 @@ func Test_AllowLongCosmosAddress(t *testing.T) {
 	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
 
 	// mint erc20
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)))
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
 
 	// mint native coin
 	err = erc20Keeper.MintCoins(ctx, addr, sdk.NewCoins(

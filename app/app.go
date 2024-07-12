@@ -705,6 +705,7 @@ func NewMinitiaApp(
 		appCodec,
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
 		accountKeeper,
+		bankKeeper,
 		communityPoolKeeper,
 		app.MsgServiceRouter(),
 		app.GRPCQueryRouter(),

@@ -14,14 +14,8 @@ contract ERC20Registry {
     }
 
     modifier register_erc20_store(address account) {
-        if (
-            !ERC20_REGISTRY_CONTRACT.is_erc20_store_registered(
-                account
-            )
-        ) {
-            ERC20_REGISTRY_CONTRACT.register_erc20_store(
-                account
-            );
+        if (!ERC20_REGISTRY_CONTRACT.is_erc20_store_registered(account)) {
+            ERC20_REGISTRY_CONTRACT.register_erc20_store(account);
         }
 
         _;

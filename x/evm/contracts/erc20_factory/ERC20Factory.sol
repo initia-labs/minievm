@@ -13,7 +13,7 @@ contract ERC20Factory is ERC20Registry {
         uint8 decimals
     ) external returns (address) {
         ERC20 erc20 = new ERC20(name, symbol, decimals);
-        
+
         // register the ERC20 contract with the ERC20 registry
         ERC20_REGISTRY_CONTRACT.register_erc20_from_factory(address(erc20));
 

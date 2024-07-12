@@ -38,7 +38,7 @@ import (
 	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
 )
 
-func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper) {
+func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, types.BankKeeper) {
 	kv := db.NewMemDB()
 	cms := store.NewCommitMultiStore(kv, log.NewNopLogger(), storemetrics.NewNoOpMetrics())
 
@@ -56,13 +56,107 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper) {
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	ac := codecaddress.NewBech32Codec("init")
 
-	return ctx, cdc, ac, &MockAccountKeeper{accounts: make(map[string]sdk.AccountI)}
+	return ctx, cdc, ac,
+		&MockAccountKeeper{ac: ac, accounts: make(map[string]sdk.AccountI)},
+		&MockBankKeeper{ac: ac, blockedAddresses: make(map[string]bool)}
+}
+
+func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
+	ctx, cdc, ac, ak, bk := setup()
+
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
+
+	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+
+	evmAddr := common.HexToAddress("0x1")
+	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
+	require.NoError(t, err)
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// is blocked address
+	inputBz, err := abi.Pack(precompiles.METHOD_IS_BLOCKED_ADDRESS, evmAddr)
+	require.NoError(t, err)
+
+	// out of gas panic
+	require.Panics(t, func() {
+		_, _, _ = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS-1, true)
+	})
+
+	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	ret, err := abi.Unpack(precompiles.METHOD_IS_BLOCKED_ADDRESS, retBz)
+	require.NoError(t, err)
+	require.False(t, ret[0].(bool))
+
+	// block address
+	bk.(*MockBankKeeper).blockedAddresses[cosmosAddr] = true
+
+	// is blocked address
+	inputBz, err = abi.Pack(precompiles.METHOD_IS_BLOCKED_ADDRESS, evmAddr)
+	require.NoError(t, err)
+
+	retBz, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	ret, err = abi.Unpack(precompiles.METHOD_IS_BLOCKED_ADDRESS, retBz)
+	require.NoError(t, err)
+	require.True(t, ret[0].(bool))
+}
+
+func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
+	ctx, cdc, ac, ak, bk := setup()
+
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
+
+	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+
+	evmAddr := common.HexToAddress("0x1")
+	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
+	require.NoError(t, err)
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// is module address
+	inputBz, err := abi.Pack(precompiles.METHOD_IS_MODULE_ADDRESS, evmAddr)
+	require.NoError(t, err)
+
+	// out of gas panic
+	require.Panics(t, func() {
+		_, _, _ = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS-1, true)
+	})
+
+	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	ret, err := abi.Unpack(precompiles.METHOD_IS_MODULE_ADDRESS, retBz)
+	require.NoError(t, err)
+	require.False(t, ret[0].(bool))
+
+	// module address
+	ak.(*MockAccountKeeper).accounts[cosmosAddr] = authtypes.NewEmptyModuleAccount("test")
+
+	// is module address
+	inputBz, err = abi.Pack(precompiles.METHOD_IS_MODULE_ADDRESS, evmAddr)
+	require.NoError(t, err)
+
+	retBz, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	ret, err = abi.Unpack(precompiles.METHOD_IS_MODULE_ADDRESS, retBz)
+	require.NoError(t, err)
+	require.True(t, ret[0].(bool))
 }
 
 func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
-	ctx, cdc, ac, ak := setup()
+	ctx, cdc, ac, ak, bk := setup()
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
@@ -92,8 +186,8 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 }
 
 func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
-	ctx, cdc, ac, ak := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil, nil)
+	ctx, cdc, ac, ak, bk := setup()
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
@@ -123,8 +217,8 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 }
 
 func Test_ExecuteCosmos(t *testing.T) {
-	ctx, cdc, ac, ak := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, nil, nil)
+	ctx, cdc, ac, ak, bk := setup()
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
 	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
@@ -191,7 +285,7 @@ func Test_ExecuteCosmos(t *testing.T) {
 }
 
 func Test_QueryCosmos(t *testing.T) {
-	ctx, cdc, ac, ak := setup()
+	ctx, cdc, ac, ak, bk := setup()
 
 	queryPath := "/slinky.oracle.v1.Query/Prices"
 	expectedRet := oracletypes.GetPricesResponse{
@@ -205,7 +299,7 @@ func Test_QueryCosmos(t *testing.T) {
 			},
 		},
 	}
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, nil, MockGRPCRouter{
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, MockGRPCRouter{
 		routes: map[string]baseapp.GRPCQueryHandler{
 			queryPath: func(ctx sdk.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
 				resBz, err := cdc.Marshal(&expectedRet)
@@ -259,12 +353,12 @@ func Test_QueryCosmos(t *testing.T) {
 }
 
 func Test_ToDenom(t *testing.T) {
-	ctx, cdc, ac, ak := setup()
+	ctx, cdc, ac, ak, bk := setup()
 
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, &MockERC20DenomKeeper{
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, &MockERC20DenomKeeper{
 		denomMap: map[string]common.Address{
 			denom: erc20Addr,
 		},
@@ -301,12 +395,12 @@ func Test_ToDenom(t *testing.T) {
 }
 
 func Test_ToErc20(t *testing.T) {
-	ctx, cdc, ac, ak := setup()
+	ctx, cdc, ac, ak, bk := setup()
 
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, &MockERC20DenomKeeper{
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, &MockERC20DenomKeeper{
 		denomMap: map[string]common.Address{
 			denom: erc20Addr,
 		},
@@ -346,17 +440,20 @@ var _ types.AccountKeeper = &MockAccountKeeper{}
 
 // mock account keeper for testing
 type MockAccountKeeper struct {
+	ac       address.Codec
 	accounts map[string]sdk.AccountI
 }
 
 // GetAccount implements types.AccountKeeper.
 func (k MockAccountKeeper) GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI {
-	return k.accounts[addr.String()]
+	str, _ := k.ac.BytesToString(addr.Bytes())
+	return k.accounts[str]
 }
 
 // HasAccount implements types.AccountKeeper.
 func (k MockAccountKeeper) HasAccount(ctx context.Context, addr sdk.AccAddress) bool {
-	_, ok := k.accounts[addr.String()]
+	str, _ := k.ac.BytesToString(addr.Bytes())
+	_, ok := k.accounts[str]
 	return ok
 }
 
@@ -378,7 +475,22 @@ func (k MockAccountKeeper) NextAccountNumber(ctx context.Context) uint64 {
 
 // SetAccount implements types.AccountKeeper.
 func (k MockAccountKeeper) SetAccount(ctx context.Context, acc sdk.AccountI) {
-	k.accounts[acc.GetAddress().String()] = acc
+	str, _ := k.ac.BytesToString(acc.GetAddress().Bytes())
+	k.accounts[str] = acc
+}
+
+var _ types.BankKeeper = &MockBankKeeper{}
+
+// mock bank keeper for testing
+type MockBankKeeper struct {
+	ac               address.Codec
+	blockedAddresses map[string]bool
+}
+
+// BlockedAddr implements types.BankKeeper.
+func (k MockBankKeeper) BlockedAddr(addr sdk.AccAddress) bool {
+	str, _ := k.ac.BytesToString(addr.Bytes())
+	return k.blockedAddresses[str]
 }
 
 var _ types.GRPCRouter = MockGRPCRouter{}

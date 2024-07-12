@@ -252,6 +252,7 @@ func _createTestInput(
 		appCodec,
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
 		accountKeeper,
+		bankKeeper,
 		communityPoolKeeper,
 		msgRouter,
 		queryRouter,
