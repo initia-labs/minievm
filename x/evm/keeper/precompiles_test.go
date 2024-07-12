@@ -49,7 +49,7 @@ func Test_ExecuteCosmosMessage(t *testing.T) {
 	`, addr, addr2))
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil)
 	require.NoError(t, err)
 
 	balance := input.BankKeeper.GetBalance(ctx, addr2, "bar")
@@ -79,7 +79,7 @@ func Test_QueryCosmosMessage(t *testing.T) {
 	}`, addr))
 	require.NoError(t, err)
 
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["query_cosmos"].Outputs.Unpack(retBz)
@@ -109,7 +109,7 @@ func Test_QueryCosmosFromContract(t *testing.T) {
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())
-	retBz, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz)
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
@@ -123,7 +123,7 @@ func Test_QueryCosmosFromContract(t *testing.T) {
 	}`, addr))
 	require.NoError(t, err)
 
-	retBz, _, err = input.EVMKeeper.EVMCall(ctx, contractAddr, types.CosmosPrecompileAddress, inputBz)
+	retBz, _, err = input.EVMKeeper.EVMCall(ctx, contractAddr, types.CosmosPrecompileAddress, inputBz, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["query_cosmos"].Outputs.Unpack(retBz)
@@ -159,7 +159,7 @@ func Test_ToDenom(t *testing.T) {
 	inputBz, err := abi.Pack("to_denom", contractAddr)
 	require.NoError(t, err)
 
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["to_denom"].Outputs.Unpack(retBz)
@@ -191,7 +191,7 @@ func Test_ToERC20(t *testing.T) {
 	inputBz, err := abi.Pack("to_erc20", "bar")
 	require.NoError(t, err)
 
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["to_erc20"].Outputs.Unpack(retBz)

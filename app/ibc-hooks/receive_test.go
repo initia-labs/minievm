@@ -49,7 +49,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil)
 	require.NoError(t, err)
 
 	abi, err := counter.CounterMetaData.GetAbi()
@@ -95,7 +95,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -136,7 +136,7 @@ func Test_onReceiveIcs20Packet_memo_ICS721(t *testing.T) {
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil)
 	require.NoError(t, err)
 
 	abi, err := counter.CounterMetaData.GetAbi()
@@ -182,7 +182,7 @@ func Test_onReceiveIcs20Packet_memo_ICS721(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)

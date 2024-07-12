@@ -2,17 +2,15 @@ package keeper_test
 
 import (
 	"context"
-	"encoding/binary"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/cometbft/cometbft/crypto"
-	"github.com/cometbft/cometbft/crypto/ed25519"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -23,6 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecaddress "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,6 +39,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 
+	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -161,16 +161,10 @@ func createTestInput(t testing.TB, isCheckTx, withInitialize bool) (sdk.Context,
 	return _createTestInput(t, isCheckTx, withInitialize, dbm.NewMemDB())
 }
 
-var keyCounter uint64
-
 // we need to make this deterministic (same every test run), as encoded address size and thus gas cost,
 // depends on the actual bytes (due to ugly CanonicalAddress encoding)
-func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
-	keyCounter++
-	seed := make([]byte, 8)
-	binary.BigEndian.PutUint64(seed, keyCounter)
-
-	key := ed25519.GenPrivKeyFromSecret(seed)
+func keyPubAddr() (cryptotypes.PrivKey, cryptotypes.PubKey, sdk.AccAddress) {
+	key := ethsecp256k1.GenerateKey()
 	pub := key.PubKey()
 	addr := sdk.AccAddress(pub.Address())
 	return key, pub, addr
@@ -271,17 +265,18 @@ func _createTestInput(
 		},
 	)
 
+	// set erc20 keeper
+	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
+	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter)
+
 	if withInitialize {
 		evmParams := evmtypes.DefaultParams()
 		evmParams.AllowCustomERC20 = false
 		require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
 		require.NoError(t, evmKeeper.Initialize(ctx))
+
+		faucet.NewFundedAccount(ctx, sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1_000_000)))
 	}
-
-	// set erc20 keeper
-	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
-
-	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter)
 
 	keepers := TestKeepers{
 		AccountKeeper:       accountKeeper,

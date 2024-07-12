@@ -6,10 +6,12 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -36,9 +38,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
+	"github.com/initia-labs/minievm/jsonrpc"
+	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
 	"github.com/initia-labs/initia/app/params"
+	initiakeyring "github.com/initia-labs/initia/crypto/keyring"
 	minitiaapp "github.com/initia-labs/minievm/app"
 
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
@@ -86,7 +91,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithHomeDir(minitiaapp.DefaultNodeHome).
-		WithViper(minitiaapp.EnvPrefix)
+		WithViper(minitiaapp.EnvPrefix).
+		WithKeyringOptions(initiakeyring.EthSecp256k1Option())
 
 	rootCmd := &cobra.Command{
 		Use:   basename,
@@ -159,7 +165,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 		AddFlags: addModuleInitFlags,
 		PostSetup: func(svrCtx *server.Context, clientCtx client.Context, ctx context.Context, g *errgroup.Group) error {
 			sdk.GetConfig().Seal()
-			return nil
+
+			// start jsonrpc server
+			return jsonrpc.StartJSONRPC(
+				ctx, g, a.App().(*minitiaapp.MinitiaApp),
+				svrCtx,
+				clientCtx,
+				jsonrpcconfig.GetConfig(a.appOpts),
+			)
 		},
 	})
 
@@ -249,15 +262,23 @@ func txCommand() *cobra.Command {
 }
 
 type appCreator struct {
-	app servertypes.Application
+	app     servertypes.Application
+	appOpts servertypes.AppOptions
 }
 
 func (a *appCreator) AppCreator() servertypes.AppCreator {
 	return func(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
 		baseappOptions := server.DefaultBaseappOptions(appOpts)
 
+		// create EVM indexer db
+		dbDir, dbBackend := getDBConfig(appOpts)
+		indexerDB, err := dbm.NewDB("eth_index", dbBackend, dbDir)
+		if err != nil {
+			panic(err)
+		}
+
 		app := minitiaapp.NewMinitiaApp(
-			logger, db, traceStore, true,
+			logger, db, indexerDB, traceStore, true,
 			evmconfig.GetConfig(appOpts),
 			appOpts,
 			baseappOptions...,
@@ -265,6 +286,7 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 
 		// store app in creator
 		a.app = app
+		a.appOpts = appOpts
 
 		return app
 	}
@@ -292,13 +314,13 @@ func (a appCreator) appExport(
 
 	var initiaApp *minitiaapp.MinitiaApp
 	if height != -1 {
-		initiaApp = minitiaapp.NewMinitiaApp(logger, db, traceStore, false, evmconfig.DefaultEVMConfig(), appOpts)
+		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), traceStore, false, evmconfig.DefaultEVMConfig(), appOpts)
 
 		if err := initiaApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		initiaApp = minitiaapp.NewMinitiaApp(logger, db, traceStore, true, evmconfig.DefaultEVMConfig(), appOpts)
+		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), traceStore, true, evmconfig.DefaultEVMConfig(), appOpts)
 	}
 
 	return initiaApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
@@ -346,4 +368,21 @@ func readEnv(clientCtx client.Context) (client.Context, error) {
 	}
 
 	return clientCtx, nil
+}
+
+// getDBConfig returns the database configuration for the EVM indexer
+func getDBConfig(appOpts servertypes.AppOptions) (string, dbm.BackendType) {
+	rootDir := cast.ToString(appOpts.Get("home"))
+	dbDir := cast.ToString(appOpts.Get("db_dir"))
+	dbBackend := server.GetAppDBBackend(appOpts)
+
+	return rootify(dbDir, rootDir), dbBackend
+}
+
+// helper function to make config creation independent of root dir
+func rootify(path, root string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(root, path)
 }

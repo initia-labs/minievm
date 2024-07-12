@@ -8,6 +8,7 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 
 	indexerconfig "github.com/initia-labs/kvindexer/config"
+	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
 	"github.com/initia-labs/minievm/types"
@@ -18,6 +19,7 @@ type minitiaAppConfig struct {
 	serverconfig.Config
 	EVMConfig     evmconfig.EVMConfig         `mapstructure:"evm"`
 	IndexerConfig indexerconfig.IndexerConfig `mapstructure:"indexer"`
+	JSONRPCConfig jsonrpcconfig.JSONRPCConfig `mapstructure:"jsonrpc"`
 }
 
 // initAppConfig helps to override default appConfig template and configs.
@@ -56,10 +58,13 @@ func initAppConfig() (string, interface{}) {
 		Config:        *srvCfg,
 		EVMConfig:     evmconfig.DefaultEVMConfig(),
 		IndexerConfig: indexerconfig.DefaultConfig(),
+		JSONRPCConfig: jsonrpcconfig.DefaultJSONRPCConfig(),
 	}
 
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
-		evmconfig.DefaultConfigTemplate + indexerconfig.DefaultConfigTemplate
+		evmconfig.DefaultConfigTemplate +
+		indexerconfig.DefaultConfigTemplate +
+		jsonrpcconfig.DefaultConfigTemplate
 
 	return minitiaAppTemplate, minitiaAppConfig
 }
