@@ -56,6 +56,7 @@ func setup(db *dbm.DB, withGenesis bool) (*MinitiaApp, GenesisState) {
 	app := NewMinitiaApp(
 		log.NewNopLogger(),
 		getOrCreateMemDB(db),
+		dbm.NewMemDB(),
 		nil,
 		true,
 		evmconfig.DefaultEVMConfig(),
