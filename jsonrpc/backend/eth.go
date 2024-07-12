@@ -157,3 +157,37 @@ func (b *JSONRPCBackend) ChainID() (*big.Int, error) {
 	sdkCtx := sdk.UnwrapSDKContext(queryCtx)
 	return types.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID()), nil
 }
+
+func (b *JSONRPCBackend) Syncing() (interface{}, error) {
+	status, err := b.clientCtx.Client.Status(b.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !status.SyncInfo.CatchingUp {
+		return false, nil
+	}
+
+	latestHeight := status.SyncInfo.LatestBlockHeight
+
+	// Otherwise gather the block sync stats
+	return map[string]interface{}{
+		"startingBlock":          hexutil.Uint64(status.SyncInfo.EarliestBlockHeight),
+		"currentBlock":           hexutil.Uint64(latestHeight),
+		"highestBlock":           hexutil.Uint64(latestHeight),
+		"syncedAccounts":         hexutil.Uint64(latestHeight),
+		"syncedAccountBytes":     hexutil.Uint64(latestHeight),
+		"syncedBytecodes":        hexutil.Uint64(latestHeight),
+		"syncedBytecodeBytes":    hexutil.Uint64(latestHeight),
+		"syncedStorage":          hexutil.Uint64(latestHeight),
+		"syncedStorageBytes":     hexutil.Uint64(latestHeight),
+		"healedTrienodes":        hexutil.Uint64(latestHeight),
+		"healedTrienodeBytes":    hexutil.Uint64(latestHeight),
+		"healedBytecodes":        hexutil.Uint64(latestHeight),
+		"healedBytecodeBytes":    hexutil.Uint64(latestHeight),
+		"healingTrienodes":       hexutil.Uint64(latestHeight),
+		"healingBytecode":        hexutil.Uint64(latestHeight),
+		"txIndexFinishedBlocks":  hexutil.Uint64(latestHeight),
+		"txIndexRemainingBlocks": hexutil.Uint64(latestHeight),
+	}, nil
+}

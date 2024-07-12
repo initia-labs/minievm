@@ -6,11 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	ethns "github.com/initia-labs/minievm/jsonrpc/namespaces/eth"
-	"github.com/initia-labs/minievm/jsonrpc/namespaces/eth/filters"
-
-	// "github.com/initia-labs/minievm/jsonrpc/namespaces/eth/filters"
-	netns "github.com/initia-labs/minievm/jsonrpc/namespaces/net"
 	"github.com/rs/cors"
 	"golang.org/x/net/netutil"
 	"golang.org/x/sync/errgroup"
@@ -24,6 +19,11 @@ import (
 	"github.com/initia-labs/minievm/app"
 	"github.com/initia-labs/minievm/jsonrpc/backend"
 	"github.com/initia-labs/minievm/jsonrpc/config"
+	ethns "github.com/initia-labs/minievm/jsonrpc/namespaces/eth"
+	"github.com/initia-labs/minievm/jsonrpc/namespaces/eth/filters"
+	netns "github.com/initia-labs/minievm/jsonrpc/namespaces/net"
+	txpoolns "github.com/initia-labs/minievm/jsonrpc/namespaces/txpool"
+	web3ns "github.com/initia-labs/minievm/jsonrpc/namespaces/web3"
 )
 
 // RPC namespaces and API version
@@ -32,8 +32,8 @@ const (
 	EthNamespace    = "eth"
 	NetNamespace    = "net"
 	TxPoolNamespace = "txpool"
+	Web3Namespace   = "web3"
 	// TODO: support more namespaces
-	Web3Namespace     = "web3"
 	PersonalNamespace = "personal"
 	DebugNamespace    = "debug"
 	MinerNamespace    = "miner"
@@ -73,13 +73,18 @@ func StartJSONRPC(
 			Service:   netns.NewNetAPI(svrCtx.Logger, bkd),
 			Public:    true,
 		},
-		// TODO: implement more namespaces
-		//{
-		//	Namespace: TxPoolNamespace,
-		//	Version:   apiVersion,
-		//	Service:   txpool.NewTxPoolAPI(svrCtx.Logger, bkd),
-		//	Public:    true,
-		//},
+		{
+			Namespace: Web3Namespace,
+			Version:   apiVersion,
+			Service:   web3ns.NewWeb3API(svrCtx.Logger, bkd),
+			Public:    true,
+		},
+		{
+			Namespace: TxPoolNamespace,
+			Version:   apiVersion,
+			Service:   txpoolns.NewTxPoolAPI(svrCtx.Logger, bkd),
+			Public:    true,
+		},
 	}
 
 	for _, api := range apis {

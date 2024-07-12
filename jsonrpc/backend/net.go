@@ -4,7 +4,10 @@ import (
 	"strconv"
 	"strings"
 
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 func (b *JSONRPCBackend) Version() (string, error) {
@@ -22,4 +25,22 @@ func (b *JSONRPCBackend) Version() (string, error) {
 	}
 
 	return version, err
+}
+
+func (b *JSONRPCBackend) PeerCount() (hexutil.Uint, error) {
+	netInfo, err := b.clientCtx.Client.(rpcclient.NetworkClient).NetInfo(b.ctx)
+	if err != nil {
+		return hexutil.Uint(0), err
+	}
+
+	return hexutil.Uint(netInfo.NPeers), nil
+}
+
+func (b *JSONRPCBackend) Listening() (bool, error) {
+	netInfo, err := b.clientCtx.Client.(rpcclient.NetworkClient).NetInfo(b.ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return netInfo.Listening, nil
 }
