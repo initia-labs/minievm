@@ -32,15 +32,13 @@ func NewNetAPI(logger log.Logger, backend *backend.JSONRPCBackend) *NetAPI {
 	}
 }
 
-// TODO: implement net_listening
-//func (api *NetAPI) Listening() bool {
-//	return true
-//}
+func (api *NetAPI) Listening() (bool, error) {
+	return api.backend.Listening()
+}
 
-// TODO: implement net_peerCount
-//func (api *NetAPI) PeerCount() hexutil.Uint {
-//	return hexutil.Uint(0)
-//}
+func (api *NetAPI) PeerCount() (hexutil.Uint, error) {
+	return api.backend.PeerCount()
+}
 
 func (api *NetAPI) Version() string {
 	v, err := api.backend.Version()

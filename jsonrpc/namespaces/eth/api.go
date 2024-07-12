@@ -48,7 +48,7 @@ type EthEthereumAPI interface {
 	// Allows developers to both send ETH from one address to another, write data
 	// on-chain, and interact with smart contracts.
 	SendRawTransaction(data hexutil.Bytes) (common.Hash, error)
-	//SendTransaction(args rpctypes.TransactionArgs) (common.Hash, error)
+	// SendTransaction(args rpctypes.TransactionArgs) (common.Hash, error)
 	// eth_sendPrivateTransaction
 	// eth_cancel	PrivateTransaction
 
@@ -67,7 +67,7 @@ type EthEthereumAPI interface {
 	// smart contracts. However, no data is published to the Ethereum network.
 	Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash, so *rpctypes.StateOverride, bo *rpctypes.BlockOverrides) (hexutil.Bytes, error)
 
-	// // Chain Information
+	// Chain Information
 	// //
 	// // Returns information on the Ethereum network and internal settings.
 	// ProtocolVersion() hexutil.Uint
@@ -77,8 +77,8 @@ type EthEthereumAPI interface {
 	MaxPriorityFeePerGas() (*hexutil.Big, error)
 	ChainId() *hexutil.Big
 
-	// // Other
-	// Syncing() (interface{}, error)
+	// Other
+	Syncing() (interface{}, error)
 	// Coinbase() (string, error)
 	// Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
 	// GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
@@ -384,18 +384,17 @@ func (api *EthAPI) Mining() bool {
 // *               others              *
 // *************************************
 
-// TODO: Implement eth_syncing
-//// Syncing returns false in case the node is currently not syncing with the network. It can be up to date or has not
-//// yet received the latest block headers from its pears. In case it is synchronizing:
-//// - startingBlock: block number this node started to synchronize from
-//// - currentBlock:  block number this node is currently importing
-//// - highestBlock:  block number of the highest block header this node has received from peers
-//// - pulledStates:  number of state entries processed until now
-//// - knownStates:   number of known state entries that still need to be pulled
-//func (e *EthAPI) Syncing() (interface{}, error) {
-//	e.logger.Debug("eth_syncing")
-//	return e.backend.Syncing()
-//}
+// Syncing returns false in case the node is currently not syncing with the network. It can be up to date or has not
+// yet received the latest block headers from its pears. In case it is synchronizing:
+// - startingBlock: block number this node started to synchronize from
+// - currentBlock:  block number this node is currently importing
+// - highestBlock:  block number of the highest block header this node has received from peers
+// - pulledStates:  number of state entries processed until now
+// - knownStates:   number of known state entries that still need to be pulled
+func (e *EthAPI) Syncing() (interface{}, error) {
+	e.logger.Debug("eth_syncing")
+	return e.backend.Syncing()
+}
 
 // TODO: Implement eth_coinbase
 //// Coinbase is the address that staking rewards will be send to (alias for Etherbase).

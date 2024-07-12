@@ -4,7 +4,12 @@ import (
 	"context"
 
 	"cosmossdk.io/log"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/initia-labs/minievm/jsonrpc/backend"
+	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 )
 
 var _ TxpoolEthereumAPI = (*TxPoolAPI)(nil)
@@ -13,11 +18,10 @@ var _ TxpoolEthereumAPI = (*TxPoolAPI)(nil)
 // Current it is used for tracking what APIs should be implemented for Ethereum compatibility.
 // After fully implementing the Ethereum APIs, this interface can be removed.
 type TxpoolEthereumAPI interface {
-	// TODO: implement the following apis
-	//Content() map[string]map[string]map[string]*rpctypes.RPCTransaction
-	//ContentFrom() map[string]map[string]*rpctypes.RPCTransaction
-	//Inspect() map[string]map[string]map[string]string
-	//Status() map[string]hexutil.Uint
+	Content() (map[string]map[string]map[string]*rpctypes.RPCTransaction, error)
+	ContentFrom(addr common.Address) (map[string]map[string]*rpctypes.RPCTransaction, error)
+	Inspect() (map[string]map[string]map[string]string, error)
+	Status() (map[string]hexutil.Uint, error)
 }
 
 // TxPoolAPI is the txpool namespace for the Ethereum JSON-RPC APIs.
@@ -36,22 +40,18 @@ func NewTxPoolAPI(logger log.Logger, backend *backend.JSONRPCBackend) *TxPoolAPI
 	}
 }
 
-// TODO: implement txpool_content
-//func (api *TxPoolAPI) Content() map[string]map[string]map[string]*rpctypes.RPCTransaction {
-//	return nil
-//}
+func (api *TxPoolAPI) Content() (map[string]map[string]map[string]*rpctypes.RPCTransaction, error) {
+	return api.backend.TxPoolContent()
+}
 
-// TODO: implement txpool_contentFrom
-//func (api *TxPoolAPI) ContentFrom() map[string]map[string]*rpctypes.RPCTransaction {
-//	return nil
-//}
+func (api *TxPoolAPI) ContentFrom(addr common.Address) (map[string]map[string]*rpctypes.RPCTransaction, error) {
+	return api.backend.TxPoolContentFrom(addr)
+}
 
-// TODO: implement txpool_inspect
-//func (api *TxPoolAPI) Inspect() map[string]map[string]map[string]string {
-//	return nil
-//}
+func (api *TxPoolAPI) Inspect() (map[string]map[string]map[string]string, error) {
+	return api.backend.TxPoolInspect()
+}
 
-// TODO: implement txpool_status
-//func (api *TxPoolAPI) Status() map[string]hexutil.Uint {
-//	return nil
-//}
+func (api *TxPoolAPI) Status() (map[string]hexutil.Uint, error) {
+	return api.backend.TxPoolStatus()
+}
