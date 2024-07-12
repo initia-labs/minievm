@@ -25,8 +25,6 @@ const (
 	DefaultLogsCap = 100
 	// DefaultBlockRangeCap is the default max block range allowed for `eth_getLogs` query.
 	DefaultBlockRangeCap = 100
-	// DefaultMetricsAddress defines the default EVM Metrics server address to bind to.
-	DefaultMetricsAddress = "127.0.0.1:6065"
 	// DefaultAddress defines the default HTTP server to listen on.
 	DefaultAddress = "127.0.0.1:8545"
 	// DefaultFilterCap
@@ -49,7 +47,6 @@ const (
 	flagJSONRPCHTTPTimeout        = "json-rpc.http-timeout"
 	flagJSONRPCHTTPIdleTimeout    = "json-rpc.http-idle-timeout"
 	flagJSONRPCMaxOpenConnections = "json-rpc.max-open-connections"
-	flagJSONRPCMetricsAddress     = "json-rpc.metrics-address"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -73,8 +70,6 @@ type JSONRPCConfig struct {
 	// MaxOpenConnections sets the maximum number of simultaneous connections
 	// for the server listener.
 	MaxOpenConnections int `mapstructure:"max-open-connections"`
-	// MetricsAddress defines the metrics server to listen on
-	MetricsAddress string `mapstructure:"metrics-address"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -89,7 +84,6 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 		HTTPTimeout:        DefaultHTTPTimeout,
 		HTTPIdleTimeout:    DefaultHTTPIdleTimeout,
 		MaxOpenConnections: DefaultMaxOpenConnections,
-		MetricsAddress:     DefaultMetricsAddress,
 	}
 }
 
@@ -104,7 +98,6 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Duration(flagJSONRPCHTTPTimeout, DefaultHTTPTimeout, "Read/write timeout of http json-rpc server")
 	startCmd.Flags().Duration(flagJSONRPCHTTPIdleTimeout, DefaultHTTPIdleTimeout, "Idle timeout of http json-rpc server")
 	startCmd.Flags().Int(flagJSONRPCMaxOpenConnections, DefaultMaxOpenConnections, "Maximum number of simultaneous connections for the server listener")
-	startCmd.Flags().String(flagJSONRPCMetricsAddress, DefaultMetricsAddress, "Address to listen on for the EVM Metrics server")
 }
 
 // GetConfig load config values from the app options
@@ -119,7 +112,6 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		HTTPTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCHTTPTimeout)),
 		HTTPIdleTimeout:    cast.ToDuration(appOpts.Get(flagJSONRPCHTTPIdleTimeout)),
 		MaxOpenConnections: cast.ToInt(appOpts.Get(flagJSONRPCMaxOpenConnections)),
-		MetricsAddress:     cast.ToString(appOpts.Get(flagJSONRPCMetricsAddress)),
 	}
 }
 
@@ -159,8 +151,4 @@ http-idle-timeout = "{{ .JSONRPCConfig.HTTPIdleTimeout }}"
 # MaxOpenConnections sets the maximum number of simultaneous connections
 # for the server listener.
 max-open-connections = {{ .JSONRPCConfig.MaxOpenConnections }}
-
-# MetricsAddress defines the EVM Metrics server address to bind to. Pass --metrics in CLI to enable
-# Prometheus metrics path: /debug/metrics/prometheus
-metrics-address = "{{ .JSONRPCConfig.MetricsAddress }}"
 `

@@ -121,7 +121,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		}
 
 		// emit log events
-		if e.logChan != nil {
+		if e.logsChan != nil {
 			for idx, log := range receipt.Logs {
 				// fill in missing fields before emitting
 				log.Index = uint(idx)
@@ -129,10 +129,10 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 				log.BlockNumber = uint64(blockHeight)
 				log.TxHash = txHash
 				log.TxIndex = uint(txIndex)
-
-				// emit log event
-				e.logChan <- log
 			}
+
+			// emit logs event
+			e.logsChan <- receipt.Logs
 		}
 	}
 

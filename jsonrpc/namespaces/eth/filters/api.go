@@ -46,11 +46,12 @@ type FilterAPI struct {
 
 	logger log.Logger
 
-	filters sync.Map
+	filtersMu sync.Mutex
+	filters   map[rpc.ID]*filter
 
 	// channels for block and log events
 	blockChan   chan *coretypes.Header
-	logChan     chan *coretypes.Log
+	logsChan    chan []*coretypes.Log
 	pendingChan chan *rpctypes.RPCTransaction
 }
 
@@ -63,12 +64,12 @@ func NewFilterAPI(app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger l
 
 		logger: logger,
 
-		filters: sync.Map{},
+		filters: make(map[rpc.ID]*filter),
 	}
 
 	go api.clearUnusedFilters()
 
-	api.blockChan, api.logChan, api.pendingChan = app.EVMIndexer().Subscribe()
+	api.blockChan, api.logsChan, api.pendingChan = app.EVMIndexer().Subscribe()
 	go api.subscribeEvents()
 
 	return api
@@ -80,13 +81,13 @@ func (api *FilterAPI) clearUnusedFilters() {
 
 	for {
 		time.Sleep(timeout)
-		api.filters.Range(func(key, value interface{}) bool {
-			f := value.(*filter)
+		api.filtersMu.Lock()
+		for id, f := range api.filters {
 			if time.Since(f.lastUsed) > 5*time.Minute {
-				api.filters.Delete(key)
+				delete(api.filters, id)
 			}
-			return true
-		})
+		}
+		api.filtersMu.Unlock()
 	}
 }
 
@@ -94,24 +95,27 @@ func (api *FilterAPI) subscribeEvents() {
 	for {
 		select {
 		case block := <-api.blockChan:
-			api.filters.Range(func(key, value interface{}) bool {
-				f := value.(*filter)
+			api.filtersMu.Lock()
+			for _, f := range api.filters {
 				if f.ty == ethfilters.BlocksSubscription {
 					f.hashes = append(f.hashes, block.Hash())
 				}
-				return true
-			})
-		case log := <-api.logChan:
-			api.filters.Range(func(key, value interface{}) bool {
-				f := value.(*filter)
+			}
+			api.filtersMu.Unlock()
+		case logs := <-api.logsChan:
+			api.filtersMu.Lock()
+			for _, f := range api.filters {
 				if f.ty == ethfilters.LogsSubscription {
-					f.logs = append(f.logs, log)
+					logs = filterLogs(logs, f.crit.FromBlock, f.crit.ToBlock, f.crit.Addresses, f.crit.Topics)
+					if len(logs) > 0 {
+						f.logs = append(f.logs, logs...)
+					}
 				}
-				return true
-			})
+			}
+			api.filtersMu.Unlock()
 		case tx := <-api.pendingChan:
-			api.filters.Range(func(key, value interface{}) bool {
-				f := value.(*filter)
+			api.filtersMu.Lock()
+			for _, f := range api.filters {
 				if f.ty == ethfilters.PendingTransactionsSubscription {
 					if f.fullTx {
 						f.txs = append(f.txs, tx)
@@ -119,8 +123,8 @@ func (api *FilterAPI) subscribeEvents() {
 						f.hashes = append(f.hashes, tx.Hash)
 					}
 				}
-				return true
-			})
+			}
+			api.filtersMu.Unlock()
 		}
 	}
 }
@@ -132,12 +136,14 @@ func (api *FilterAPI) subscribeEvents() {
 // `eth_getFilterChanges` polling method that is also used for log filters.
 func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) rpc.ID {
 	id := rpc.NewID()
-	api.filters.Store(id, &filter{
+	api.filtersMu.Lock()
+	api.filters[id] = &filter{
 		ty:     ethfilters.PendingTransactionsSubscription,
 		fullTx: fullTx != nil && *fullTx,
 		txs:    make([]*rpctypes.RPCTransaction, 0),
 		hashes: make([]common.Hash, 0),
-	})
+	}
+	api.filtersMu.Unlock()
 
 	return id
 }
@@ -146,10 +152,12 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) rpc.ID {
 // It is part of the filter package since polling goes with eth_getFilterChanges.
 func (api *FilterAPI) NewBlockFilter() rpc.ID {
 	id := rpc.NewID()
-	api.filters.Store(id, &filter{
+	api.filtersMu.Lock()
+	api.filters[id] = &filter{
 		ty:     ethfilters.BlocksSubscription,
 		hashes: make([]common.Hash, 0),
-	})
+	}
+	api.filtersMu.Unlock()
 
 	return id
 }
@@ -187,11 +195,13 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 	}
 
 	id := rpc.NewID()
-	api.filters.Store(id, &filter{
+	api.filtersMu.Lock()
+	api.filters[id] = &filter{
 		ty:   ethfilters.LogsSubscription,
 		crit: crit, lastUsed: time.Now(),
 		logs: make([]*coretypes.Log, 0),
-	})
+	}
+	api.filtersMu.Unlock()
 
 	return id, nil
 }
@@ -233,39 +243,40 @@ func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteri
 
 // UninstallFilter removes the filter with the given filter id.
 func (api *FilterAPI) UninstallFilter(id rpc.ID) bool {
-	_, found := api.filters.LoadAndDelete(id)
+	api.filtersMu.Lock()
+	_, found := api.filters[id]
+	delete(api.filters, id)
+	api.filtersMu.Unlock()
 	return found
 }
 
 // GetFilterLogs returns the logs for the filter with the given id.
 // If the filter could not be found an empty array of logs is returned.
 func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretypes.Log, error) {
-	f, ok := api.filters.Load(id)
-	if !ok {
-		return nil, errFilterNotFound
-	}
+	api.filtersMu.Lock()
+	f, found := api.filters[id]
+	api.filtersMu.Lock()
 
-	filter := f.(*filter)
-	if filter.ty != ethfilters.LogsSubscription {
+	if !found || f.ty != ethfilters.LogsSubscription {
 		return nil, errFilterNotFound
 	}
 
 	var bloomFilter *Filter
-	if filter.crit.BlockHash != nil {
+	if f.crit.BlockHash != nil {
 		// Block filter requested, construct a single-shot filter
-		bloomFilter = newBlockFilter(api.logger, api.backend, *filter.crit.BlockHash, filter.crit.Addresses, filter.crit.Topics)
+		bloomFilter = newBlockFilter(api.logger, api.backend, *f.crit.BlockHash, f.crit.Addresses, f.crit.Topics)
 	} else {
 		// Convert the RPC block numbers into internal representations
 		begin := rpc.LatestBlockNumber.Int64()
-		if filter.crit.FromBlock != nil {
-			begin = filter.crit.FromBlock.Int64()
+		if f.crit.FromBlock != nil {
+			begin = f.crit.FromBlock.Int64()
 		}
 		end := rpc.LatestBlockNumber.Int64()
-		if filter.crit.ToBlock != nil {
-			end = filter.crit.ToBlock.Int64()
+		if f.crit.ToBlock != nil {
+			end = f.crit.ToBlock.Int64()
 		}
 		// Construct the range filter
-		bloomFilter = newRangeFilter(api.logger, api.backend, begin, end, filter.crit.Addresses, filter.crit.Topics)
+		bloomFilter = newRangeFilter(api.logger, api.backend, begin, end, f.crit.Addresses, f.crit.Topics)
 	}
 
 	// Run the filter and return all the logs
@@ -283,35 +294,37 @@ func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretype
 // For pending transaction and block filters the result is []common.Hash.
 // (pending)Log filters return []Log.
 func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
-	f, ok := api.filters.Load(id)
+	api.filtersMu.Lock()
+	defer api.filtersMu.Unlock()
+
+	f, ok := api.filters[id]
 	if !ok {
 		return []interface{}{}, errFilterNotFound
 	}
 
-	filter := f.(*filter)
-	filter.lastUsed = time.Now()
+	f.lastUsed = time.Now()
 
-	switch filter.ty {
+	switch f.ty {
 	case ethfilters.BlocksSubscription:
-		hashes := filter.hashes
-		filter.hashes = nil
+		hashes := f.hashes
+		f.hashes = nil
 
 		return returnHashes(hashes), nil
 	case ethfilters.LogsSubscription:
-		logs := filter.logs
-		filter.logs = nil
+		logs := f.logs
+		f.logs = nil
 
 		return returnLogs(logs), nil
 	case ethfilters.PendingTransactionsSubscription:
-		if filter.fullTx {
-			txs := filter.txs
-			filter.txs = nil
+		if f.fullTx {
+			txs := f.txs
+			f.txs = nil
 
 			return txs, nil
 		}
 
-		hashes := filter.hashes
-		filter.hashes = nil
+		hashes := f.hashes
+		f.hashes = nil
 
 		return returnHashes(hashes), nil
 	}

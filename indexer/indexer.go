@@ -39,7 +39,7 @@ type EVMIndexer interface {
 	BlockHeaderByNumber(ctx context.Context, number uint64) (*coretypes.Header, error)
 
 	// event subscription
-	Subscribe() (chan *coretypes.Header, chan *coretypes.Log, chan *rpctypes.RPCTransaction)
+	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction)
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
 }
 
@@ -61,7 +61,7 @@ type EVMIndexerImpl struct {
 	BlockHashToNumberMap     collections.Map[[]byte, uint64]
 
 	blockChan   chan *coretypes.Header
-	logChan     chan *coretypes.Log
+	logsChan    chan []*coretypes.Log
 	pendingChan chan *rpctypes.RPCTransaction
 }
 
@@ -95,7 +95,7 @@ func NewEVMIndexer(
 		BlockHashToNumberMap:     collections.NewMap(sb, prefixBlockHashToNumber, "block_hash_to_number", collections.BytesKey, collections.Uint64Value),
 
 		blockChan:   nil,
-		logChan:     nil,
+		logsChan:    nil,
 		pendingChan: nil,
 	}
 
@@ -109,9 +109,9 @@ func NewEVMIndexer(
 }
 
 // Subscribe returns channels to receive blocks and logs.
-func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan *coretypes.Log, chan *rpctypes.RPCTransaction) {
+func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction) {
 	e.blockChan = make(chan *coretypes.Header)
-	e.logChan = make(chan *coretypes.Log)
+	e.logsChan = make(chan []*coretypes.Log)
 	e.pendingChan = make(chan *rpctypes.RPCTransaction)
-	return e.blockChan, e.logChan, e.pendingChan
+	return e.blockChan, e.logsChan, e.pendingChan
 }
