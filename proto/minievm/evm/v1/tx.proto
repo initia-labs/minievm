@@ -62,7 +62,7 @@ message MsgCreate2 {
 
   // Code is hex encoded raw contract bytes code.
   string code = 2;
-  
+
   // Salt is a random value to distinguish contract creation.
   uint64 salt = 3;
 

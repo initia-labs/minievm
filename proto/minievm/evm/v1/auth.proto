@@ -15,15 +15,15 @@ message ContractAccount {
   cosmos.auth.v1beta1.BaseAccount base_account = 1 [(gogoproto.embed) = true];
 }
 
-// ShorthandAccount defines an account of shorthand address 
+// ShorthandAccount defines an account of shorthand address
 // which is used to store the original long address (32bytes).
-// 
+//
 // Also it is used to check the existence of the account before
 // creating a new account.
 message ShorthandAccount {
   option (amino.name)                = "evm/ShorthandAccount";
   option (gogoproto.goproto_getters) = false;
 
-  cosmos.auth.v1beta1.BaseAccount base_account = 1 [(gogoproto.embed) = true];
-  string original_address = 2;
+  cosmos.auth.v1beta1.BaseAccount base_account     = 1 [(gogoproto.embed) = true];
+  string                          original_address = 2;
 }
