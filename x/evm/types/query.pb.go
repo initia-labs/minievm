@@ -751,7 +751,9 @@ type QueryClient interface {
 	Code(ctx context.Context, in *QueryCodeRequest, opts ...grpc.CallOption) (*QueryCodeResponse, error)
 	// State gets the state bytes of the given address and key bytes.
 	State(ctx context.Context, in *QueryStateRequest, opts ...grpc.CallOption) (*QueryStateResponse, error)
+	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(ctx context.Context, in *QueryContractAddrByDenomRequest, opts ...grpc.CallOption) (*QueryContractAddrByDenomResponse, error)
+	// Denom gets the denom of the given contract address.
 	Denom(ctx context.Context, in *QueryDenomRequest, opts ...grpc.CallOption) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
 	Call(ctx context.Context, in *QueryCallRequest, opts ...grpc.CallOption) (*QueryCallResponse, error)
@@ -827,7 +829,9 @@ type QueryServer interface {
 	Code(context.Context, *QueryCodeRequest) (*QueryCodeResponse, error)
 	// State gets the state bytes of the given address and key bytes.
 	State(context.Context, *QueryStateRequest) (*QueryStateResponse, error)
+	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error)
+	// Denom gets the denom of the given contract address.
 	Denom(context.Context, *QueryDenomRequest) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
 	Call(context.Context, *QueryCallRequest) (*QueryCallResponse, error)
