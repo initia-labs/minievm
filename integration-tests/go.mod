@@ -10,7 +10,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.7
 	github.com/cosmos/ibc-go/v8 v8.2.1
 	github.com/ethereum/go-ethereum v1.14.2
-	github.com/initia-labs/initia v0.3.4
+	github.com/initia-labs/initia v0.3.5
 	github.com/initia-labs/minievm v0.3.0
 	github.com/stretchr/testify v1.9.0
 )

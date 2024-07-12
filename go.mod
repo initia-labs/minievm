@@ -34,7 +34,7 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.2.4
 	github.com/initia-labs/OPinit v0.3.2
-	github.com/initia-labs/initia v0.3.4
+	github.com/initia-labs/initia v0.3.5
 	github.com/initia-labs/kvindexer v0.1.3
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1
@@ -71,11 +71,9 @@ require (
 	github.com/99designs/keyring v1.2.2 // indirect
 	github.com/DataDog/datadog-go v3.2.0+incompatible // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
-	github.com/IGLOU-EU/go-wildcard v1.0.3 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.1 // indirect
-	github.com/aptos-labs/serde-reflection/serde-generate/runtime/golang v0.0.0-20231213012317-73b6bbf74833 // indirect
 	github.com/avast/retry-go/v4 v4.5.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.312 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -175,7 +173,6 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit/api v0.3.0 // indirect
-	github.com/initia-labs/movevm v0.3.4 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
