@@ -36746,8 +36746,10 @@ paths:
                     description: bridge_config is the configuration of the bridge.
                     type: object
                     properties:
-                      challenger:
-                        type: string
+                      challengers:
+                        type: array
+                        items:
+                          type: string
                         description: The address of the challenger.
                       proposer:
                         type: string
@@ -37030,8 +37032,10 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
-                  bridge_executor:
-                    type: string
+                  bridge_executors:
+                    type: array
+                    items:
+                      type: string
                     description: >-
                       the account address of bridge executor who can execute
                       permissioned bridge
@@ -38252,6 +38256,11 @@ paths:
               input:
                 type: string
                 title: hex encoded call input
+              value:
+                type: string
+                description: >-
+                  Value is the amount of fee denom token to transfer to the
+                  contract.
               trace_options:
                 title: |-
                   whether to trace the call
@@ -38322,6 +38331,7 @@ paths:
         - Query
   /minievm/evm/v1/contracts/by_denom:
     get:
+      summary: ContractAddrByDenom gets the contract address by denom.
       operationId: ContractAddrByDenom
       responses:
         '200':
@@ -38368,6 +38378,7 @@ paths:
         - Query
   /minievm/evm/v1/denoms/{contract_addr}:
     get:
+      summary: Denom gets the denom of the given contract address.
       operationId: Denom
       responses:
         '200':
@@ -38451,6 +38462,9 @@ paths:
                     type: array
                     items:
                       type: string
+                  fee_denom:
+                    type: string
+                    title: fee_denom defines the fee denom for the evm transactions
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -65908,8 +65922,10 @@ definitions:
         description: bridge_config is the configuration of the bridge.
         type: object
         properties:
-          challenger:
-            type: string
+          challengers:
+            type: array
+            items:
+              type: string
             description: The address of the challenger.
           proposer:
             type: string
@@ -65974,8 +65990,10 @@ definitions:
 
             NOTE: The amount field is an Dec which implements the custom method
             signatures required by gogoproto.
-      bridge_executor:
-        type: string
+      bridge_executors:
+        type: array
+        items:
+          type: string
         description: >-
           the account address of bridge executor who can execute permissioned
           bridge
@@ -66023,8 +66041,10 @@ definitions:
             description: bridge_config is the configuration of the bridge.
             type: object
             properties:
-              challenger:
-                type: string
+              challengers:
+                type: array
+                items:
+                  type: string
                 description: The address of the challenger.
               proposer:
                 type: string
@@ -66099,8 +66119,10 @@ definitions:
                 method
 
                 signatures required by gogoproto.
-          bridge_executor:
-            type: string
+          bridge_executors:
+            type: array
+            items:
+              type: string
             description: >-
               the account address of bridge executor who can execute
               permissioned bridge
@@ -66753,8 +66775,10 @@ definitions:
   opinit.ophost.v1.BridgeConfig:
     type: object
     properties:
-      challenger:
-        type: string
+      challengers:
+        type: array
+        items:
+          type: string
         description: The address of the challenger.
       proposer:
         type: string
@@ -66838,6 +66862,9 @@ definitions:
         type: array
         items:
           type: string
+      fee_denom:
+        type: string
+        title: fee_denom defines the fee denom for the evm transactions
     description: Params defines the set of move parameters.
   minievm.evm.v1.QueryCallRequest:
     type: object
@@ -66851,6 +66878,9 @@ definitions:
       input:
         type: string
         title: hex encoded call input
+      value:
+        type: string
+        description: Value is the amount of fee denom token to transfer to the contract.
       trace_options:
         title: |-
           whether to trace the call
@@ -66965,6 +66995,9 @@ definitions:
             type: array
             items:
               type: string
+          fee_denom:
+            type: string
+            title: fee_denom defines the fee denom for the evm transactions
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
   minievm.evm.v1.QueryStateResponse:
     type: object
