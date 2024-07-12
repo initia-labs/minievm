@@ -10,7 +10,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.7
 	github.com/cosmos/ibc-go/v8 v8.2.1
 	github.com/ethereum/go-ethereum v1.14.2
-	github.com/initia-labs/initia v0.3.3
+	github.com/initia-labs/initia v0.3.5
 	github.com/initia-labs/minievm v0.3.0
 	github.com/stretchr/testify v1.9.0
 )
@@ -149,7 +149,7 @@ require (
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
-	github.com/initia-labs/movevm v0.3.3 // indirect
+	github.com/initia-labs/movevm v0.3.4 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
@@ -269,8 +269,7 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240621094738-408dc5262680
-	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20240627065534-d2180fcfd501
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240704071917-6c77a401128c
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240419124350-4275a05abe2c
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7
 )

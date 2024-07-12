@@ -56,6 +56,9 @@ type Keeper struct {
 
 	precompiles          precompiles
 	queryCosmosWhitelist types.QueryCosmosWhitelist
+
+	// flag to check if the keeper is in the process of initialization
+	initializing bool
 }
 
 func NewKeeper(

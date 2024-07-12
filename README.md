@@ -1,7 +1,8 @@
 # MiniEVM
 
 MiniEVM is an optimistic rollup consumer chain powered by EVM, designed to simplify the process of bootstrapping an L2 network. The main advantage of using MiniEVM is that the users can leverage the OPinit stack for enhanced security and utilize all the Initia ecosystem tooling from day one, without the need to prepare a validator group or build the users' own ecosystem tools.
-- https://github.com/initia-labs/evm
+
+- [go-ethereum](https://github.com/initia-labs/evm)
 
 ## Prerequisites
 
@@ -19,6 +20,9 @@ To get started with L2, please visit the [documentation](https://initia.gitbook.
 - Integrates seamlessly with the OPinit stack, enhancing security.
 - Provides immediate access to the full suite of Initia ecosystem tools right from the start.
 
+## JSON-RPC
+
+For information of supported JSON-RPC methods, please refer to the [JSON-RPC documentation](jsonrpc/README.md).
 
 ## Contributing
 

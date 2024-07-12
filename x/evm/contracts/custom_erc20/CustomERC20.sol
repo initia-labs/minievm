@@ -5,8 +5,9 @@ import "../i_erc20/IERC20.sol";
 import "../ownable/Ownable.sol";
 import "../erc20_registry/ERC20Registry.sol";
 import "../erc20_acl/ERC20ACL.sol";
+import {ERC165, IERC165} from "../erc165/ERC165.sol";
 
-contract CustomERC20 is IERC20, Ownable, ERC20Registry, ERC20ACL {
+contract CustomERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
         address indexed owner,
@@ -20,6 +21,17 @@ contract CustomERC20 is IERC20, Ownable, ERC20Registry, ERC20ACL {
     string public symbol;
     uint8 public decimals;
     uint256 public totalSupply;
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(IERC165, ERC165) returns (bool) {
+        return
+            interfaceId == type(IERC20).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
 
     constructor(
         string memory _name,

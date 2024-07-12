@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
@@ -60,6 +61,12 @@ type IERC20Keeper interface {
 
 	// fungible asset
 	GetMetadata(ctx context.Context, denom string) (banktypes.Metadata, error)
+
+	// ABI
+	GetERC20ABI() *abi.ABI
+
+	// erc20 queries
+	GetDecimals(ctx context.Context, denom string) (uint8, error)
 }
 
 type IERC721Keeper interface {

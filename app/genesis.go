@@ -22,6 +22,8 @@ import (
 	slinkytypes "github.com/skip-mev/slinky/pkg/types"
 	marketmaptypes "github.com/skip-mev/slinky/x/marketmap/types"
 	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
+
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 // GenesisState - The genesis state of the blockchain is represented here as a map of raw json
@@ -39,7 +41,7 @@ func NewDefaultGenesisState(cdc codec.Codec, mbm module.BasicManager, denom stri
 		ConfigureMinGasPrices(cdc).
 		ConfigureICA(cdc).
 		ConfigureIBCAllowedClients(cdc).
-		ConfigureAuctionFee(cdc, denom).
+		ConfigureDefaultDenom(cdc, denom).
 		AddMarketData(cdc, cdc.InterfaceRegistry().SigningContext().AddressCodec())
 }
 
@@ -105,12 +107,17 @@ func (genState GenesisState) AddMarketData(cdc codec.JSONCodec, ac address.Codec
 	return genState
 }
 
-func (genState GenesisState) ConfigureAuctionFee(cdc codec.JSONCodec, denom string) GenesisState {
+func (genState GenesisState) ConfigureDefaultDenom(cdc codec.JSONCodec, denom string) GenesisState {
 	var auctionGenState auctiontypes.GenesisState
 	cdc.MustUnmarshalJSON(genState[auctiontypes.ModuleName], &auctionGenState)
 	auctionGenState.Params.ReserveFee.Denom = denom
 	auctionGenState.Params.MinBidIncrement.Denom = denom
 	genState[auctiontypes.ModuleName] = cdc.MustMarshalJSON(&auctionGenState)
+
+	var evmGenState evmtypes.GenesisState
+	cdc.MustUnmarshalJSON(genState[evmtypes.ModuleName], &evmGenState)
+	evmGenState.Params.FeeDenom = denom
+	genState[evmtypes.ModuleName] = cdc.MustMarshalJSON(&evmGenState)
 
 	return genState
 }
