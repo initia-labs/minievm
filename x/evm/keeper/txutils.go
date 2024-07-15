@@ -85,6 +85,12 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(chainID)
 	signer := coretypes.LatestSignerForChainID(ethChainID)
 
+	// get tx sender
+	ethSender, err := coretypes.Sender(signer, ethTx)
+	if err != nil {
+		return nil, err
+	}
+
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
 
@@ -126,7 +132,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	}
 
 	// convert sender to string
-	sender, err := u.ac.BytesToString(compressedPubKey.Address().Bytes())
+	sender, err := u.ac.BytesToString(ethSender.Bytes())
 	if err != nil {
 		return nil, err
 	}
