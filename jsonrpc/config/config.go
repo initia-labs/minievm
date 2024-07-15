@@ -26,7 +26,7 @@ const (
 	// DefaultBlockRangeCap is the default max block range allowed for `eth_getLogs` query.
 	DefaultBlockRangeCap = 100
 	// DefaultAddress defines the default HTTP server to listen on.
-	DefaultAddress = "127.0.0.1:8545"
+	DefaultAddress = "0.0.0.0:8545"
 	// DefaultFilterCap
 	DefaultFilterCap int32 = 200
 )
