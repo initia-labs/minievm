@@ -278,7 +278,6 @@ func (k ERC20Keeper) IterateSupply(ctx context.Context, cb func(supply sdk.Coin)
 
 // MintCoins implements IERC20Keeper.
 func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount sdk.Coins) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
 	if err != nil {
 		return err
@@ -294,37 +293,10 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		if found, err := k.ERC20ContractAddrsByDenom.Has(ctx, denom); err != nil {
 			return err
 		} else if !found {
-			contractAddr, err := k.nextContractAddress(ctx, types.ERC20FactoryAddress())
+			err := k.CreateERC20(ctx, denom)
 			if err != nil {
 				return err
 			}
-
-			if err := k.ERC20DenomsByContractAddr.Set(ctx, contractAddr.Bytes(), denom); err != nil {
-				return err
-			}
-
-			if err := k.ERC20ContractAddrsByDenom.Set(ctx, denom, contractAddr.Bytes()); err != nil {
-				return err
-			}
-
-			inputBz, err := k.ERC20FactoryABI.Pack("createERC20", denom, denom, uint8(0))
-			if err != nil {
-				return types.ErrFailedToPackABI.Wrap(err.Error())
-			}
-
-			ret, _, err := k.EVMCall(ctx, types.StdAddress, types.ERC20FactoryAddress(), inputBz, nil)
-			if err != nil {
-				return err
-			}
-
-			// emit erc20 created event
-			sdkCtx.EventManager().EmitEvent(
-				sdk.NewEvent(
-					types.EventTypeERC20Created,
-					sdk.NewAttribute(types.AttributeKeyDenom, denom),
-					sdk.NewAttribute(types.AttributeKeyContract, hexutil.Encode(ret[12:])),
-				),
-			)
 		}
 
 		// mint coin
@@ -343,6 +315,43 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	contractAddr, err := k.nextContractAddress(ctx, types.ERC20FactoryAddress())
+	if err != nil {
+		return err
+	}
+
+	if err := k.ERC20DenomsByContractAddr.Set(ctx, contractAddr.Bytes(), denom); err != nil {
+		return err
+	}
+
+	if err := k.ERC20ContractAddrsByDenom.Set(ctx, denom, contractAddr.Bytes()); err != nil {
+		return err
+	}
+
+	inputBz, err := k.ERC20FactoryABI.Pack("createERC20", denom, denom, uint8(0))
+	if err != nil {
+		return types.ErrFailedToPackABI.Wrap(err.Error())
+	}
+
+	ret, _, err := k.EVMCall(ctx, types.StdAddress, types.ERC20FactoryAddress(), inputBz, nil)
+	if err != nil {
+		return err
+	}
+
+	// emit erc20 created event
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeERC20Created,
+			sdk.NewAttribute(types.AttributeKeyDenom, denom),
+			sdk.NewAttribute(types.AttributeKeyContract, hexutil.Encode(ret[12:])),
+		),
+	)
 
 	return nil
 }
