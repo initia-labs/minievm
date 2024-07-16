@@ -3,9 +3,11 @@ package keeper
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math"
 	"math/big"
 
+	"cosmossdk.io/collections"
 	"github.com/holiman/uint256"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -45,17 +47,14 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM) (vm.Bloc
 		headerHash = make([]byte, 32)
 	}
 
-	var contractAddr common.Address
-	if !k.initializing {
-		params, err := k.Params.Get(ctx)
-		if err != nil {
-			return vm.BlockContext{}, err
-		}
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return vm.BlockContext{}, err
+	}
 
-		contractAddr, err = types.DenomToContractAddr(ctx, k, params.FeeDenom)
-		if err != nil {
-			return vm.BlockContext{}, err
-		}
+	contractAddr, err := types.DenomToContractAddr(ctx, k, params.FeeDenom)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return vm.BlockContext{}, err
 	}
 
 	// TODO: should we charge gas for CanTransfer and Transfer?
@@ -70,6 +69,11 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM) (vm.Bloc
 		CanTransfer: func(sd vm.StateDB, a common.Address, i *uint256.Int) bool {
 			if i == nil || i.IsZero() {
 				return true
+			}
+
+			// if the contract is not found, return false
+			if (contractAddr == common.Address{}) {
+				return false
 			}
 
 			inputBz, err := k.erc20Keeper.GetERC20ABI().Pack("balanceOf", a)
