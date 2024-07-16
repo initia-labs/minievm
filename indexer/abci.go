@@ -61,15 +61,45 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		}
 
 		ethTxs = append(ethTxs, ethTx)
-		ethLogs := e.extractLogsFromEvents(txResults.Events)
-		receipts = append(receipts, &coretypes.Receipt{
+
+		// extract logs and contract address from tx results
+		var ethLogs []*coretypes.Log
+		var contractAddr *common.Address
+		if ethTx.To() == nil {
+			var resp types.MsgCreateResponse
+			if err := unpackData(txResults.Data, &resp); err != nil {
+				e.logger.Error("failed to unpack MsgCreateResponse", "err", err)
+				return err
+			}
+
+			ethLogs = types.Logs(resp.Logs).ToEthLogs()
+			contractAddr_ := common.HexToAddress(resp.ContractAddr)
+			contractAddr = &contractAddr_
+		} else {
+			var resp types.MsgCallResponse
+			if err := unpackData(txResults.Data, &resp); err != nil {
+				e.logger.Error("failed to unpack MsgCallResponse", "err", err)
+				return err
+			}
+
+			ethLogs = types.Logs(resp.Logs).ToEthLogs()
+		}
+
+		receipt := coretypes.Receipt{
 			PostState:         nil,
 			Status:            txStatus,
 			CumulativeGasUsed: usedGas,
 			Bloom:             coretypes.Bloom(coretypes.LogsBloom(ethLogs)),
 			Logs:              ethLogs,
 			TransactionIndex:  txIndex,
-		})
+		}
+
+		// fill in contract address if it's a contract creation
+		if contractAddr != nil {
+			receipt.ContractAddress = *contractAddr
+		}
+
+		receipts = append(receipts, &receipt)
 	}
 
 	chainId := types.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID())

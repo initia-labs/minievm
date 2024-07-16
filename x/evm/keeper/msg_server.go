@@ -67,7 +67,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// deploy a contract
-	retBz, contractAddr, _, err := ms.EVMCreate(ctx, caller, codeBz, value)
+	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -75,6 +75,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	return &types.MsgCreateResponse{
 		Result:       hexutil.Encode(retBz),
 		ContractAddr: contractAddr.Hex(),
+		Logs:         logs,
 	}, nil
 }
 
@@ -125,7 +126,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// deploy a contract
-	retBz, contractAddr, _, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt)
+	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -133,6 +134,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	return &types.MsgCreate2Response{
 		Result:       hexutil.Encode(retBz),
 		ContractAddr: contractAddr.Hex(),
+		Logs:         logs,
 	}, nil
 }
 

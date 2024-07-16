@@ -3,65 +3,31 @@ package indexer
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
-
-	"github.com/spf13/cast"
-
-	abci "github.com/cometbft/cometbft/abci/types"
 
 	collcodec "cosmossdk.io/collections/codec"
-	dbm "github.com/cosmos/cosmos-db"
-	"github.com/cosmos/cosmos-sdk/server"
-	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-
-	coretypes "github.com/ethereum/go-ethereum/core/types"
-
-	"github.com/initia-labs/minievm/x/evm/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 )
 
-// helper function to make config creation independent of root dir
-func rootify(path, root string) string {
-	if filepath.IsAbs(path) {
-		return path
-	}
-	return filepath.Join(root, path)
-}
-
-// getDBConfig returns the database configuration for the EVM indexer
-func getDBConfig(appOpts servertypes.AppOptions) (string, dbm.BackendType) {
-	rootDir := cast.ToString(appOpts.Get("home"))
-	dbDir := cast.ToString(appOpts.Get("db_dir"))
-	dbBackend := server.GetAppDBBackend(appOpts)
-
-	return rootify(dbDir, rootDir), dbBackend
-}
-
-// extractLogsFromEvents extracts logs from the events
-func (e *EVMIndexerImpl) extractLogsFromEvents(events []abci.Event) []*coretypes.Log {
-	var ethLogs []*coretypes.Log
-	for _, event := range events {
-		if event.Type == types.EventTypeEVM {
-			logs := make(types.Logs, 0, len(event.Attributes))
-
-			for _, attr := range event.Attributes {
-				if attr.Key == types.AttributeKeyLog {
-					var log types.Log
-					err := json.Unmarshal([]byte(attr.Value), &log)
-					if err != nil {
-						e.logger.Error("failed to unmarshal log", "err", err)
-						continue
-					}
-
-					logs = append(logs, log)
-				}
-			}
-
-			ethLogs = logs.ToEthLogs()
-			break
-		}
+// unpackData extracts msg response from the data
+func unpackData(data []byte, resp proto.Message) error {
+	var txMsgData sdk.TxMsgData
+	if err := proto.Unmarshal(data, &txMsgData); err != nil {
+		return err
 	}
 
-	return ethLogs
+	msgResp := txMsgData.MsgResponses[0]
+	expectedTypeUrl := sdk.MsgTypeURL(resp)
+	if msgResp.TypeUrl != expectedTypeUrl {
+		return fmt.Errorf("unexpected type URL; got: %s, expected: %s", msgResp.TypeUrl, expectedTypeUrl)
+	}
+
+	// Unpack the response
+	if err := proto.Unmarshal(msgResp.Value, resp); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CollJsonVal is used for protobuf values of the newest google.golang.org/protobuf API.

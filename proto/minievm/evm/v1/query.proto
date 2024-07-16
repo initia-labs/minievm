@@ -87,11 +87,8 @@ message QueryCallRequest {
   // hex encoded call input
   string input = 3;
   // Value is the amount of fee denom token to transfer to the contract.
-  string value = 4 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable)   = false,
-    (amino.dont_omitempty) = true
-  ];
+  string value = 4
+      [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false, (amino.dont_omitempty) = true];
   // whether to trace the call
   // `nil` means no trace
   TraceOptions trace_options = 5;

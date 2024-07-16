@@ -255,9 +255,9 @@ func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, erro
 func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map[string]interface{} {
 	fields := map[string]interface{}{
 		"blockHash":         tx.BlockHash,
-		"blockNumber":       hexutil.Big(*tx.BlockNumber),
+		"blockNumber":       hexutil.Uint64(tx.BlockNumber.ToInt().Uint64()),
 		"transactionHash":   tx.Hash,
-		"transactionIndex":  hexutil.Uint64(*tx.TransactionIndex),
+		"transactionIndex":  *tx.TransactionIndex,
 		"from":              tx.From,
 		"to":                tx.To,
 		"gasUsed":           hexutil.Uint64(receipt.GasUsed),
@@ -265,7 +265,7 @@ func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map
 		"contractAddress":   nil,
 		"logs":              receipt.Logs,
 		"logsBloom":         receipt.Bloom,
-		"type":              hexutil.Uint(coretypes.LegacyTxType),
+		"type":              hexutil.Uint(tx.Type),
 		"effectiveGasPrice": (*hexutil.Big)(receipt.EffectiveGasPrice),
 	}
 
