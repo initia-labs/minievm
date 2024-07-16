@@ -23,6 +23,9 @@ message GenesisState {
 
   repeated GenesisDenomAddress denom_addresses = 5
       [(gogoproto.moretags) = "yaml:\"denom_addresses\"", (gogoproto.nullable) = false];
+
+  // erc20 factory contract address
+  bytes erc20_factory = 6;
 }
 
 // GenesisKeyValue defines store KV values.
