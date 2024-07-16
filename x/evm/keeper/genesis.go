@@ -15,18 +15,12 @@ import (
 )
 
 func (k Keeper) Initialize(ctx context.Context) error {
+	// 1. deploy erc20 factory contract
 	code, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
 	if err != nil {
 		return err
 	}
 
-	// This is temporal alive flag to prevent checking fee denom erc20 coin existence
-	// during this function execution. It will be reverted to false after the erc20
-	// fee denom contract is deployed.
-	//
-	//
-	// This function is not pointer receiver, so it will not affect the original value.
-	k.initializing = true
 	_, _, _, err = k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20FactorySalt)
 	if err != nil {
 		return err
@@ -37,13 +31,12 @@ func (k Keeper) Initialize(ctx context.Context) error {
 		return err
 	}
 
-	// deploy fee denom erc20 coins at genesis bootstrapping
+	// 2. deploy fee denom erc20 coins at genesis bootstrapping
 	err = k.erc20Keeper.CreateERC20(ctx, params.FeeDenom)
 	if err != nil {
 		return err
 	}
 
-	// k.initialize will be reverted to false.
 	return nil
 }
 

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"strings"
 
@@ -99,7 +100,9 @@ func (k ERC20Keeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom 
 	}
 
 	contractAddr, err := types.DenomToContractAddr(ctx, k, denom)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return math.ZeroInt(), nil
+	} else if err != nil {
 		return math.ZeroInt(), err
 	}
 
@@ -225,7 +228,9 @@ func (k ERC20Keeper) GetSupply(ctx context.Context, denom string) (math.Int, err
 // HasSupply implements IERC20Keeper.
 func (k ERC20Keeper) HasSupply(ctx context.Context, denom string) (bool, error) {
 	contractAddr, err := types.DenomToContractAddr(ctx, k, denom)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return false, nil
+	} else if err != nil {
 		return false, err
 	}
 
