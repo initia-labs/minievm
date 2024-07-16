@@ -1,13 +1,44 @@
 package indexer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	collcodec "cosmossdk.io/collections/codec"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/initia-labs/minievm/x/evm/types"
 )
+
+func extractLogsAndContractAddr(data []byte, isContractCreation bool) ([]*coretypes.Log, *common.Address, error) {
+	var ethLogs []*coretypes.Log
+	var contractAddr *common.Address
+
+	if isContractCreation {
+		var resp types.MsgCreateResponse
+		if err := unpackData(data, &resp); err != nil {
+			return nil, nil, err
+		}
+
+		ethLogs = types.Logs(resp.Logs).ToEthLogs()
+		contractAddr_ := common.HexToAddress(resp.ContractAddr)
+		contractAddr = &contractAddr_
+	} else {
+		var resp types.MsgCallResponse
+		if err := unpackData(data, &resp); err != nil {
+			return nil, nil, err
+		}
+
+		ethLogs = types.Logs(resp.Logs).ToEthLogs()
+	}
+
+	return ethLogs, contractAddr, nil
+}
 
 // unpackData extracts msg response from the data
 func unpackData(data []byte, resp proto.Message) error {
@@ -65,4 +96,47 @@ func (c collJsonVal[T]) Stringify(value T) string {
 
 func (c collJsonVal[T]) ValueType() string {
 	return "jsonvalue"
+}
+
+// calculate BaseFee
+func (e *EVMIndexerImpl) feeDenom(ctx context.Context) (string, error) {
+	params, err := e.evmKeeper.Params.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return params.FeeDenom, nil
+}
+
+func (e *EVMIndexerImpl) feeDenomWithDecimals(ctx context.Context) (string, uint8, error) {
+	feeDenom, err := e.feeDenom(ctx)
+	if err != nil {
+		return "", 0, err
+	}
+
+	decimals, err := e.evmKeeper.ERC20Keeper().GetDecimals(ctx, feeDenom)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return feeDenom, decimals, nil
+}
+
+func (e *EVMIndexerImpl) baseFee(ctx context.Context) (*hexutil.Big, error) {
+	params, err := e.opChildKeeper.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	feeDenom, decimals, err := e.feeDenomWithDecimals(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// multiply by 1e9 to prevent decimal drops
+	gasPrice := params.MinGasPrices.AmountOf(feeDenom).
+		MulTruncate(math.LegacyNewDec(1e9)).
+		TruncateInt().BigInt()
+
+	return (*hexutil.Big)(types.ToEthersUint(decimals+9, gasPrice)), nil
 }

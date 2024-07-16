@@ -63,26 +63,10 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		ethTxs = append(ethTxs, ethTx)
 
 		// extract logs and contract address from tx results
-		var ethLogs []*coretypes.Log
-		var contractAddr *common.Address
-		if ethTx.To() == nil {
-			var resp types.MsgCreateResponse
-			if err := unpackData(txResults.Data, &resp); err != nil {
-				e.logger.Error("failed to unpack MsgCreateResponse", "err", err)
-				return err
-			}
-
-			ethLogs = types.Logs(resp.Logs).ToEthLogs()
-			contractAddr_ := common.HexToAddress(resp.ContractAddr)
-			contractAddr = &contractAddr_
-		} else {
-			var resp types.MsgCallResponse
-			if err := unpackData(txResults.Data, &resp); err != nil {
-				e.logger.Error("failed to unpack MsgCallResponse", "err", err)
-				return err
-			}
-
-			ethLogs = types.Logs(resp.Logs).ToEthLogs()
+		ethLogs, contractAddr, err := extractLogsAndContractAddr(txResults.Data, ethTx.To() == nil)
+		if err != nil {
+			e.logger.Error("failed to extract logs and contract address", "err", err)
+			return err
 		}
 
 		receipt := coretypes.Receipt{
@@ -106,6 +90,13 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	blockGasMeter := sdkCtx.BlockGasMeter()
 	blockHeight := sdkCtx.BlockHeight()
 
+	// compute base fee from the opChild gas prices
+	baseFee, err := e.baseFee(ctx)
+	if err != nil {
+		e.logger.Error("failed to get base fee", "err", err)
+		return err
+	}
+
 	hasher := trie.NewStackTrie(nil)
 	blockHeader := coretypes.Header{
 		TxHash:      coretypes.DeriveSha(coretypes.Transactions(ethTxs), hasher),
@@ -115,6 +106,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		GasUsed:     blockGasMeter.GasConsumedToLimit(),
 		Number:      big.NewInt(blockHeight),
 		Time:        uint64(sdkCtx.BlockTime().Unix()),
+		BaseFee:     baseFee.ToInt(),
 
 		// empty values
 		Root:            coretypes.EmptyRootHash,

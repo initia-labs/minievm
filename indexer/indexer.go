@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
+	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	"github.com/initia-labs/kvindexer/store"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -50,8 +51,9 @@ type EVMIndexerImpl struct {
 	txConfig client.TxConfig
 	appCodec codec.Codec
 
-	evmKeeper *evmkeeper.Keeper
-	store     *store.CacheStore
+	store         *store.CacheStore
+	evmKeeper     *evmkeeper.Keeper
+	opChildKeeper *opchildkeeper.Keeper
 
 	schema                   collections.Schema
 	TxMap                    collections.Map[[]byte, rpctypes.RPCTransaction]
@@ -71,6 +73,7 @@ func NewEVMIndexer(
 	logger log.Logger,
 	txConfig client.TxConfig,
 	evmKeeper *evmkeeper.Keeper,
+	opChildKeeper *opchildkeeper.Keeper,
 ) (EVMIndexer, error) {
 	// TODO make cache size configurable
 	store := store.NewCacheStore(dbadapter.Store{DB: db}, 100)
@@ -81,12 +84,14 @@ func NewEVMIndexer(
 	)
 
 	indexer := &EVMIndexerImpl{
-		db:        db,
-		store:     store,
-		logger:    logger,
-		txConfig:  txConfig,
-		appCodec:  appCodec,
-		evmKeeper: evmKeeper,
+		db:       db,
+		store:    store,
+		logger:   logger,
+		txConfig: txConfig,
+		appCodec: appCodec,
+
+		evmKeeper:     evmKeeper,
+		opChildKeeper: opChildKeeper,
 
 		TxMap:                    collections.NewMap(sb, prefixTx, "tx", collections.BytesKey, CollJsonVal[rpctypes.RPCTransaction]()),
 		TxReceiptMap:             collections.NewMap(sb, prefixTxReceipt, "tx_receipt", collections.BytesKey, CollJsonVal[coretypes.Receipt]()),

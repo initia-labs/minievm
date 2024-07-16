@@ -129,12 +129,7 @@ func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {
 		return nil, err
 	}
 
-	feeDenom, err := b.feeDenom()
-	if err != nil {
-		return nil, err
-	}
-
-	decimals, err := b.app.EVMKeeper.ERC20Keeper().GetDecimals(queryCtx, feeDenom)
+	feeDenom, decimals, err := b.feeDenomWithDecimals()
 	if err != nil {
 		return nil, err
 	}
