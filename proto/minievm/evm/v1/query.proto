@@ -22,6 +22,11 @@ service Query {
     option (google.api.http).get = "/minievm/evm/v1/states/{contract_addr}/{key}";
   }
 
+  // ERC20Factory gets the ERC20Factory contract address.
+  rpc ERC20Factory(QueryERC20FactoryRequest) returns (QueryERC20FactoryResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/contracts/erc20_factory";
+  }
+
   // ContractAddrByDenom gets the contract address by denom.
   rpc ContractAddrByDenom(QueryContractAddrByDenomRequest) returns (QueryContractAddrByDenomResponse) {
     option (google.api.http).get = "/minievm/evm/v1/contracts/by_denom";
@@ -77,6 +82,46 @@ message QueryStateResponse {
   string value = 1;
 }
 
+// QueryERC20FactoryRequest is the request type for the Query/ERC20Factory RPC
+// method
+message QueryERC20FactoryRequest {}
+
+// QueryERC20FactoryResponse is the response type for the Query/ERC20Factory RPC
+// method
+message QueryERC20FactoryResponse {
+  option (gogoproto.equal) = true;
+  // 0x prefixed hex address
+  string address = 1;
+}
+
+// QueryContractAddrByDenomRequest is the request type for the Query/ContractAddrByDenom RPC
+// method
+message QueryContractAddrByDenomRequest {
+  string denom = 1;
+}
+
+// QueryContractAddrByDenomResponse is the response type for the Query/ContractAddrByDenom RPC
+// method
+message QueryContractAddrByDenomResponse {
+  option (gogoproto.equal) = true;
+  // 0x prefixed hex address
+  string address = 1;
+}
+
+// QueryDenomRequest is the request type for the Query/Denom RPC
+// method
+message QueryDenomRequest {
+  // It can be cosmos address or hex encoded address.
+  string contract_addr = 1;
+}
+
+// QueryDenomResponse is the response type for the Query/Denom RPC
+// method
+message QueryDenomResponse {
+  option (gogoproto.equal) = true;
+  string denom             = 1;
+}
+
 // QueryCallRequest is the request type for the Query/Call RPC
 // method
 message QueryCallRequest {
@@ -115,34 +160,6 @@ message QueryCallResponse {
   repeated Log logs         = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
   string       trace_output = 4;
   string       error        = 5;
-}
-
-// QueryContractAddrByDenomRequest is the request type for the Query/ContractAddrByDenom RPC
-// method
-message QueryContractAddrByDenomRequest {
-  string denom = 1;
-}
-
-// QueryContractAddrByDenomResponse is the response type for the Query/ContractAddrByDenom RPC
-// method
-message QueryContractAddrByDenomResponse {
-  option (gogoproto.equal) = true;
-  // 0x prefixed hex address
-  string address = 1;
-}
-
-// QueryDenomRequest is the request type for the Query/Denom RPC
-// method
-message QueryDenomRequest {
-  // It can be cosmos address or hex encoded address.
-  string contract_addr = 1;
-}
-
-// QueryDenomResponse is the response type for the Query/Denom RPC
-// method
-message QueryDenomResponse {
-  option (gogoproto.equal) = true;
-  string denom             = 1;
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.

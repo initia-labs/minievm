@@ -20,7 +20,8 @@ const (
 // Keys for move store
 // Items are stored with the following key: values
 var (
-	VMStorePrefix                   = []byte{0x21} // prefix for vm
+	VMStorePrefix = []byte{0x21} // prefix for vm
+
 	ERC20sPrefix                    = []byte{0x31} // prefix for erc20 stores
 	ERC20StoresPrefix               = []byte{0x32} // prefix for erc20 stores
 	ERC20DenomsByContractAddrPrefix = []byte{0x33} // prefix for erc20 denoms
@@ -30,8 +31,9 @@ var (
 	ERC721ClassIdsByContractAddrPrefix = []byte{0x42} // prefix for erc721 class ids
 	ERC721ContractAddrsByClassIdPrefix = []byte{0x43} // prefix for erc721 contract addresses
 
-	ParamsKey = []byte{0x51} // key of parameters for module x/evm
-	VMRootKey = []byte{0x61} // key of evm state root
+	ParamsKey           = []byte{0x51} // key of parameters for module x/evm
+	VMRootKey           = []byte{0x61} // key of evm state root
+	ERC20FactoryAddrKey = []byte{0x71} // key of erc20 factory contract address
 )
 
 // ContextKey type for context key

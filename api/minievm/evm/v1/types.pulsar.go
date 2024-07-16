@@ -106,10 +106,59 @@ func (x *_Params_2_list) IsValid() bool {
 	return x.list != nil
 }
 
+var _ protoreflect.List = (*_Params_4_list)(nil)
+
+type _Params_4_list struct {
+	list *[]string
+}
+
+func (x *_Params_4_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_Params_4_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfString((*x.list)[i])
+}
+
+func (x *_Params_4_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_Params_4_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_Params_4_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message Params at list field AllowedCustomErc20S as it is not of Message kind"))
+}
+
+func (x *_Params_4_list) Truncate(n int) {
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_Params_4_list) NewElement() protoreflect.Value {
+	v := ""
+	return protoreflect.ValueOfString(v)
+}
+
+func (x *_Params_4_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_Params                    protoreflect.MessageDescriptor
-	fd_Params_extra_eips         protoreflect.FieldDescriptor
-	fd_Params_allowed_publishers protoreflect.FieldDescriptor
+	md_Params                       protoreflect.MessageDescriptor
+	fd_Params_extra_eips            protoreflect.FieldDescriptor
+	fd_Params_allowed_publishers    protoreflect.FieldDescriptor
+	fd_Params_allow_custom_erc20    protoreflect.FieldDescriptor
+	fd_Params_allowed_custom_erc20s protoreflect.FieldDescriptor
+	fd_Params_fee_denom             protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -117,6 +166,9 @@ func init() {
 	md_Params = File_minievm_evm_v1_types_proto.Messages().ByName("Params")
 	fd_Params_extra_eips = md_Params.Fields().ByName("extra_eips")
 	fd_Params_allowed_publishers = md_Params.Fields().ByName("allowed_publishers")
+	fd_Params_allow_custom_erc20 = md_Params.Fields().ByName("allow_custom_erc20")
+	fd_Params_allowed_custom_erc20s = md_Params.Fields().ByName("allowed_custom_erc20s")
+	fd_Params_fee_denom = md_Params.Fields().ByName("fee_denom")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -196,6 +248,24 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
+	if x.AllowCustomErc20 != false {
+		value := protoreflect.ValueOfBool(x.AllowCustomErc20)
+		if !f(fd_Params_allow_custom_erc20, value) {
+			return
+		}
+	}
+	if len(x.AllowedCustomErc20S) != 0 {
+		value := protoreflect.ValueOfList(&_Params_4_list{list: &x.AllowedCustomErc20S})
+		if !f(fd_Params_allowed_custom_erc20s, value) {
+			return
+		}
+	}
+	if x.FeeDenom != "" {
+		value := protoreflect.ValueOfString(x.FeeDenom)
+		if !f(fd_Params_fee_denom, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -215,6 +285,12 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return len(x.ExtraEips) != 0
 	case "minievm.evm.v1.Params.allowed_publishers":
 		return len(x.AllowedPublishers) != 0
+	case "minievm.evm.v1.Params.allow_custom_erc20":
+		return x.AllowCustomErc20 != false
+	case "minievm.evm.v1.Params.allowed_custom_erc20s":
+		return len(x.AllowedCustomErc20S) != 0
+	case "minievm.evm.v1.Params.fee_denom":
+		return x.FeeDenom != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Params"))
@@ -235,6 +311,12 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.ExtraEips = nil
 	case "minievm.evm.v1.Params.allowed_publishers":
 		x.AllowedPublishers = nil
+	case "minievm.evm.v1.Params.allow_custom_erc20":
+		x.AllowCustomErc20 = false
+	case "minievm.evm.v1.Params.allowed_custom_erc20s":
+		x.AllowedCustomErc20S = nil
+	case "minievm.evm.v1.Params.fee_denom":
+		x.FeeDenom = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Params"))
@@ -263,6 +345,18 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 		}
 		listValue := &_Params_2_list{list: &x.AllowedPublishers}
 		return protoreflect.ValueOfList(listValue)
+	case "minievm.evm.v1.Params.allow_custom_erc20":
+		value := x.AllowCustomErc20
+		return protoreflect.ValueOfBool(value)
+	case "minievm.evm.v1.Params.allowed_custom_erc20s":
+		if len(x.AllowedCustomErc20S) == 0 {
+			return protoreflect.ValueOfList(&_Params_4_list{})
+		}
+		listValue := &_Params_4_list{list: &x.AllowedCustomErc20S}
+		return protoreflect.ValueOfList(listValue)
+	case "minievm.evm.v1.Params.fee_denom":
+		value := x.FeeDenom
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Params"))
@@ -291,6 +385,14 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		lv := value.List()
 		clv := lv.(*_Params_2_list)
 		x.AllowedPublishers = *clv.list
+	case "minievm.evm.v1.Params.allow_custom_erc20":
+		x.AllowCustomErc20 = value.Bool()
+	case "minievm.evm.v1.Params.allowed_custom_erc20s":
+		lv := value.List()
+		clv := lv.(*_Params_4_list)
+		x.AllowedCustomErc20S = *clv.list
+	case "minievm.evm.v1.Params.fee_denom":
+		x.FeeDenom = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Params"))
@@ -323,6 +425,16 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 		}
 		value := &_Params_2_list{list: &x.AllowedPublishers}
 		return protoreflect.ValueOfList(value)
+	case "minievm.evm.v1.Params.allowed_custom_erc20s":
+		if x.AllowedCustomErc20S == nil {
+			x.AllowedCustomErc20S = []string{}
+		}
+		value := &_Params_4_list{list: &x.AllowedCustomErc20S}
+		return protoreflect.ValueOfList(value)
+	case "minievm.evm.v1.Params.allow_custom_erc20":
+		panic(fmt.Errorf("field allow_custom_erc20 of message minievm.evm.v1.Params is not mutable"))
+	case "minievm.evm.v1.Params.fee_denom":
+		panic(fmt.Errorf("field fee_denom of message minievm.evm.v1.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Params"))
@@ -342,6 +454,13 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 	case "minievm.evm.v1.Params.allowed_publishers":
 		list := []string{}
 		return protoreflect.ValueOfList(&_Params_2_list{list: &list})
+	case "minievm.evm.v1.Params.allow_custom_erc20":
+		return protoreflect.ValueOfBool(false)
+	case "minievm.evm.v1.Params.allowed_custom_erc20s":
+		list := []string{}
+		return protoreflect.ValueOfList(&_Params_4_list{list: &list})
+	case "minievm.evm.v1.Params.fee_denom":
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.Params"))
@@ -424,6 +543,19 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
+		if x.AllowCustomErc20 {
+			n += 2
+		}
+		if len(x.AllowedCustomErc20S) > 0 {
+			for _, s := range x.AllowedCustomErc20S {
+				l = len(s)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		l = len(x.FeeDenom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -452,6 +584,32 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.FeeDenom) > 0 {
+			i -= len(x.FeeDenom)
+			copy(dAtA[i:], x.FeeDenom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FeeDenom)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if len(x.AllowedCustomErc20S) > 0 {
+			for iNdEx := len(x.AllowedCustomErc20S) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.AllowedCustomErc20S[iNdEx])
+				copy(dAtA[i:], x.AllowedCustomErc20S[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AllowedCustomErc20S[iNdEx])))
+				i--
+				dAtA[i] = 0x22
+			}
+		}
+		if x.AllowCustomErc20 {
+			i--
+			if x.AllowCustomErc20 {
+				dAtA[i] = 1
+			} else {
+				dAtA[i] = 0
+			}
+			i--
+			dAtA[i] = 0x18
 		}
 		if len(x.AllowedPublishers) > 0 {
 			for iNdEx := len(x.AllowedPublishers) - 1; iNdEx >= 0; iNdEx-- {
@@ -639,6 +797,90 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				x.AllowedPublishers = append(x.AllowedPublishers, string(dAtA[iNdEx:postIndex]))
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AllowCustomErc20", wireType)
+				}
+				var v int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				x.AllowCustomErc20 = bool(v != 0)
+			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AllowedCustomErc20S", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.AllowedCustomErc20S = append(x.AllowedCustomErc20S, string(dAtA[iNdEx:postIndex]))
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FeeDenom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.FeeDenom = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1307,6 +1549,12 @@ type Params struct {
 	// It is a list of addresses with permission to distribute contracts,
 	// and an empty list is interpreted as allowing anyone to distribute.
 	AllowedPublishers []string `protobuf:"bytes,2,rep,name=allowed_publishers,json=allowedPublishers,proto3" json:"allowed_publishers,omitempty"`
+	// allow_custom_erc20 defines whether the chain allows custom erc20 tokens
+	// to be registered on cosmos bank interface.
+	AllowCustomErc20    bool     `protobuf:"varint,3,opt,name=allow_custom_erc20,json=allowCustomErc20,proto3" json:"allow_custom_erc20,omitempty"`
+	AllowedCustomErc20S []string `protobuf:"bytes,4,rep,name=allowed_custom_erc20s,json=allowedCustomErc20s,proto3" json:"allowed_custom_erc20s,omitempty"`
+	// fee_denom defines the fee denom for the evm transactions
+	FeeDenom string `protobuf:"bytes,5,opt,name=fee_denom,json=feeDenom,proto3" json:"fee_denom,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -1341,6 +1589,27 @@ func (x *Params) GetAllowedPublishers() []string {
 		return x.AllowedPublishers
 	}
 	return nil
+}
+
+func (x *Params) GetAllowCustomErc20() bool {
+	if x != nil {
+		return x.AllowCustomErc20
+	}
+	return false
+}
+
+func (x *Params) GetAllowedCustomErc20S() []string {
+	if x != nil {
+		return x.AllowedCustomErc20S
+	}
+	return nil
+}
+
+func (x *Params) GetFeeDenom() string {
+	if x != nil {
+		return x.FeeDenom
+	}
+	return ""
 }
 
 // Log represents a contract log event. These events are generated by
@@ -1407,7 +1676,7 @@ var file_minievm_evm_v1_types_proto_rawDesc = []byte{
 	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x1a, 0x11, 0x61, 0x6d,
 	0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
 	0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb7, 0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xa0, 0x03, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
 	0x12, 0x41, 0x0a, 0x0a, 0x65, 0x78, 0x74, 0x72, 0x61, 0x5f, 0x65, 0x69, 0x70, 0x73, 0x18, 0x01,
 	0x20, 0x03, 0x28, 0x03, 0x42, 0x22, 0xe2, 0xde, 0x1f, 0x09, 0x45, 0x78, 0x74, 0x72, 0x61, 0x45,
 	0x49, 0x50, 0x73, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x65, 0x78, 0x74,
@@ -1417,24 +1686,39 @@ var file_minievm_evm_v1_types_proto_rawDesc = []byte{
 	0x22, 0xf2, 0xde, 0x1f, 0x19, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x61, 0x6c, 0x6c, 0x6f, 0x77,
 	0x65, 0x64, 0x5f, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x65, 0x72, 0x73, 0x22, 0xa8, 0xe7,
 	0xb0, 0x2a, 0x01, 0x52, 0x11, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x50, 0x75, 0x62, 0x6c,
-	0x69, 0x73, 0x68, 0x65, 0x72, 0x73, 0x3a, 0x17, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f, 0x01,
-	0x8a, 0xe7, 0xb0, 0x2a, 0x0a, 0x65, 0x76, 0x6d, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22,
-	0x4b, 0x0a, 0x03, 0x4c, 0x6f, 0x67, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x12, 0x16, 0x0a, 0x06, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09,
-	0x52, 0x06, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0xa9, 0x01, 0xc8,
-	0xe1, 0x1e, 0x00, 0xa8, 0xe2, 0x1e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x54, 0x79, 0x70,
-	0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6d, 0x69, 0x6e, 0x69,
-	0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x3b, 0x65, 0x76, 0x6d, 0x76, 0x31,
-	0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa, 0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d,
-	0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76,
-	0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a, 0x4d, 0x69, 0x6e, 0x69, 0x65,
-	0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
-	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x3a,
-	0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x73, 0x68, 0x65, 0x72, 0x73, 0x12, 0x42, 0x0a, 0x12, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x5f,
+	0x63, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x5f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x08, 0x42, 0x14, 0xe2, 0xde, 0x1f, 0x10, 0x41, 0x6c, 0x6c, 0x6f, 0x77, 0x43, 0x75, 0x73,
+	0x74, 0x6f, 0x6d, 0x45, 0x52, 0x43, 0x32, 0x30, 0x52, 0x10, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x43,
+	0x75, 0x73, 0x74, 0x6f, 0x6d, 0x45, 0x72, 0x63, 0x32, 0x30, 0x12, 0x70, 0x0a, 0x15, 0x61, 0x6c,
+	0x6c, 0x6f, 0x77, 0x65, 0x64, 0x5f, 0x63, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x5f, 0x65, 0x72, 0x63,
+	0x32, 0x30, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x09, 0x42, 0x3c, 0xe2, 0xde, 0x1f, 0x13, 0x41,
+	0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x43, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x45, 0x52, 0x43, 0x32,
+	0x30, 0x73, 0xf2, 0xde, 0x1f, 0x1c, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x61, 0x6c, 0x6c, 0x6f,
+	0x77, 0x65, 0x64, 0x5f, 0x63, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x5f, 0x65, 0x72, 0x63, 0x32, 0x30,
+	0x73, 0x22, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x13, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64,
+	0x43, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x45, 0x72, 0x63, 0x32, 0x30, 0x73, 0x12, 0x31, 0x0a, 0x09,
+	0x66, 0x65, 0x65, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x14, 0xf2, 0xde, 0x1f, 0x10, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x66, 0x65, 0x65, 0x5f, 0x64,
+	0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x52, 0x08, 0x66, 0x65, 0x65, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x3a,
+	0x17, 0x98, 0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x0a, 0x65, 0x76,
+	0x6d, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x4b, 0x0a, 0x03, 0x4c, 0x6f, 0x67, 0x12,
+	0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x74, 0x6f, 0x70,
+	0x69, 0x63, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x74, 0x6f, 0x70, 0x69, 0x63,
+	0x73, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0xa9, 0x01, 0xc8, 0xe1, 0x1e, 0x00, 0xa8, 0xe2, 0x1e, 0x01,
+	0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76,
+	0x6d, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d,
+	0x2f, 0x76, 0x31, 0x3b, 0x65, 0x76, 0x6d, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa,
+	0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31,
+	0xca, 0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56,
+	0x31, 0xe2, 0x02, 0x1a, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c,
+	0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
+	0x10, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56,
+	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

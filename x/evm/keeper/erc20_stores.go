@@ -79,7 +79,9 @@ func (k ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Add
 
 // RegisterFromFactory registers the erc20 contract address to the store.
 func (k ERC20StoresKeeper) RegisterFromFactory(ctx context.Context, caller, contractAddr common.Address) error {
-	if caller != types.ERC20FactoryAddress() {
+	if factoryAddr, err := k.GetERC20FactoryAddr(ctx); err != nil {
+		return err
+	} else if factoryAddr != caller {
 		return types.ErrInvalidERC20FactoryAddr
 	}
 

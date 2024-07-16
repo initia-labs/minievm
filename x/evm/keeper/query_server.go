@@ -144,6 +144,18 @@ func (qs *queryServerImpl) State(ctx context.Context, req *types.QueryStateReque
 	}, nil
 }
 
+// ERC20Factory implements types.QueryServer.
+func (qs *queryServerImpl) ERC20Factory(ctx context.Context, req *types.QueryERC20FactoryRequest) (*types.QueryERC20FactoryResponse, error) {
+	factoryAddr, err := qs.Keeper.GetERC20FactoryAddr(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryERC20FactoryResponse{
+		Address: factoryAddr.Hex(),
+	}, nil
+}
+
 // ContractAddrByDenom implements types.QueryServer.
 func (qs *queryServerImpl) ContractAddrByDenom(ctx context.Context, req *types.QueryContractAddrByDenomRequest) (*types.QueryContractAddrByDenomResponse, error) {
 	contractAddr, err := types.DenomToContractAddr(ctx, qs, req.Denom)

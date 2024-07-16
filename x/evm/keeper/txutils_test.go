@@ -31,7 +31,9 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 
 	feeAmount := int64(150000)
 	gasLimit := uint64(1000000)
-	ethFactoryAddr := types.ERC20FactoryAddress()
+
+	ethFactoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
 
 	abi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
 	require.NoError(t, err)
@@ -117,7 +119,8 @@ func Test_LegacyTxConversion(t *testing.T) {
 
 	feeAmount := int64(150000)
 	gasLimit := uint64(1000000)
-	ethFactoryAddr := types.ERC20FactoryAddress()
+	ethFactoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
 
 	abi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
 	require.NoError(t, err)

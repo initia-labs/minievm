@@ -15,13 +15,18 @@ import (
 )
 
 func (k Keeper) Initialize(ctx context.Context) error {
-	// 1. deploy erc20 factory contract
+	// 1. deploy and store erc20 factory contract
 	code, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
 	if err != nil {
 		return err
 	}
 
-	_, _, _, err = k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20FactorySalt)
+	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20FactorySalt)
+	if err != nil {
+		return err
+	}
+
+	err = k.ERC20FactoryAddr.Set(ctx, factoryAddr.Bytes())
 	if err != nil {
 		return err
 	}

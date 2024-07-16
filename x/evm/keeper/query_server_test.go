@@ -51,3 +51,16 @@ func Test_Query_Call(t *testing.T) {
 
 	require.Equal(t, uint64(100), ret[0].(*big.Int).Uint64())
 }
+
+func Test_Query_ERC20Factory(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	factoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
+
+	qs := keeper.NewQueryServer(&input.EVMKeeper)
+	res, err := qs.ERC20Factory(ctx, &types.QueryERC20FactoryRequest{})
+	require.NoError(t, err)
+
+	require.Equal(t, factoryAddr.Hex(), res.Address)
+}

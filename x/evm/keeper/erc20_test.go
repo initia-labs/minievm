@@ -24,7 +24,10 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 	inputBz, err := abi.Pack("createERC20", denom, denom, uint8(6))
 	require.NoError(t, err)
 
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, types.ERC20FactoryAddress(), inputBz, nil)
+	factoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
+
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, factoryAddr, inputBz, nil)
 	require.NoError(t, err)
 
 	return common.BytesToAddress(ret[12:])

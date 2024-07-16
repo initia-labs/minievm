@@ -326,7 +326,11 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 
 func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	contractAddr, err := k.nextContractAddress(ctx, types.ERC20FactoryAddress())
+	factoryAddr, err := k.GetERC20FactoryAddr(ctx)
+	if err != nil {
+		return err
+	}
+	contractAddr, err := k.nextContractAddress(ctx, factoryAddr)
 	if err != nil {
 		return err
 	}
@@ -344,7 +348,7 @@ func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string) error {
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	ret, _, err := k.EVMCall(ctx, types.StdAddress, types.ERC20FactoryAddress(), inputBz, nil)
+	ret, _, err := k.EVMCall(ctx, types.StdAddress, factoryAddr, inputBz, nil)
 	if err != nil {
 		return err
 	}

@@ -35,6 +35,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 				{
+					RpcMethod: "ERC20Factory",
+					Use:       "erc20-factory",
+					Short:     "Query erc20-factory contract address",
+					Alias:     []string{"factory"},
+				},
+				{
 					RpcMethod: "ContractAddrByDenom",
 					Use:       "contract-addr-by-denom [denom]",
 					Short:     "Query corresponding contract address by denom",

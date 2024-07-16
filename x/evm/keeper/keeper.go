@@ -44,6 +44,7 @@ type Keeper struct {
 	VMStore collections.Map[[]byte, []byte]
 
 	// erc20 stores of users
+	ERC20FactoryAddr          collections.Item[[]byte]
 	ERC20s                    collections.KeySet[[]byte]
 	ERC20Stores               collections.KeySet[collections.Pair[[]byte, []byte]]
 	ERC20DenomsByContractAddr collections.Map[[]byte, string]
@@ -85,6 +86,7 @@ func NewKeeper(
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,
 		communityPoolKeeper: communityPoolKeeper,
+		authority:           authority,
 
 		msgRouter:  msgRouter,
 		grpcRouter: grpcRouter,
@@ -95,6 +97,7 @@ func NewKeeper(
 		VMRoot:  collections.NewItem(sb, types.VMRootKey, "vm_root", collections.BytesValue),
 		VMStore: collections.NewMap(sb, types.VMStorePrefix, "vm_store", collections.BytesKey, collections.BytesValue),
 
+		ERC20FactoryAddr:          collections.NewItem(sb, types.ERC20FactoryAddrKey, "erc20_factory_addr", collections.BytesValue),
 		ERC20s:                    collections.NewKeySet(sb, types.ERC20sPrefix, "erc20s", collections.BytesKey),
 		ERC20Stores:               collections.NewKeySet(sb, types.ERC20StoresPrefix, "erc20_stores", collections.PairKeyCodec(collections.BytesKey, collections.BytesKey)),
 		ERC20DenomsByContractAddr: collections.NewMap(sb, types.ERC20DenomsByContractAddrPrefix, "erc20_denoms_by_contract_addr", collections.BytesKey, collections.StringValue),
@@ -188,4 +191,13 @@ func (k Keeper) GetContractAddrByClassId(ctx context.Context, classId string) (c
 // GetDenomByContractAddr returns denom by contract address
 func (k Keeper) GetClassIdByContractAddr(ctx context.Context, contractAddr common.Address) (string, error) {
 	return k.ERC721ClassIdsByContractAddr.Get(ctx, contractAddr.Bytes())
+}
+
+func (k Keeper) GetERC20FactoryAddr(ctx context.Context) (common.Address, error) {
+	factoryAddr, err := k.ERC20FactoryAddr.Get(ctx)
+	if err != nil {
+		return common.Address{}, types.ErrFailedToGetERC20FactoryAddr.Wrap(err.Error())
+	}
+
+	return common.BytesToAddress(factoryAddr), nil
 }
