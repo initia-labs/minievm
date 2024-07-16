@@ -279,6 +279,7 @@ func NewMinitiaApp(
 	logger log.Logger,
 	db dbm.DB,
 	indexerDB dbm.DB,
+	kvindexerDB dbm.DB,
 	traceStore io.Writer,
 	loadLatest bool,
 	evmConfig evmconfig.EVMConfig,
@@ -769,7 +770,7 @@ func NewMinitiaApp(
 		marketmap.NewAppModule(appCodec, app.MarketMapKeeper),
 	)
 
-	if err := app.setupIndexer(indexerDB, appOpts, homePath, ac, vc, appCodec); err != nil {
+	if err := app.setupIndexer(appOpts, indexerDB, kvindexerDB, ac, vc, appCodec); err != nil {
 		panic(err)
 	}
 
@@ -1270,7 +1271,7 @@ func VerifyAddressLen() func(addr []byte) error {
 	}
 }
 
-func (app *MinitiaApp) setupIndexer(indexerDB dbm.DB, appOpts servertypes.AppOptions, homePath string, ac, vc address.Codec, appCodec codec.Codec) error {
+func (app *MinitiaApp) setupIndexer(appOpts servertypes.AppOptions, indexerDB dbm.DB, kvindexerdb dbm.DB, ac, vc address.Codec, appCodec codec.Codec) error {
 	// initialize the indexer fake-keeper
 	indexerConfig, err := indexerconfig.NewConfig(appOpts)
 	if err != nil {
@@ -1279,7 +1280,7 @@ func (app *MinitiaApp) setupIndexer(indexerDB dbm.DB, appOpts servertypes.AppOpt
 	app.indexerKeeper = indexerkeeper.NewKeeper(
 		appCodec,
 		"evm",
-		homePath,
+		kvindexerdb,
 		indexerConfig,
 		ac,
 		vc,

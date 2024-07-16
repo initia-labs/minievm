@@ -35,7 +35,7 @@ require (
 	github.com/holiman/uint256 v1.2.4
 	github.com/initia-labs/OPinit v0.3.2
 	github.com/initia-labs/initia v0.3.5
-	github.com/initia-labs/kvindexer v0.1.3
+	github.com/initia-labs/kvindexer v0.1.5
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0
@@ -74,6 +74,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.1 // indirect
+	github.com/allegro/bigcache/v3 v3.1.0 // indirect
 	github.com/avast/retry-go/v4 v4.5.1 // indirect
 	github.com/aws/aws-sdk-go v1.44.312 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
