@@ -1334,7 +1334,7 @@ func (app *MinitiaApp) setupIndexer(indexerDB dbm.DB, appOpts servertypes.AppOpt
 	}
 
 	// add evm indexer
-	evmIndexer, err := evmindexer.NewEVMIndexer(indexerDB, appCodec, app.Logger(), app.txConfig, app.EVMKeeper)
+	evmIndexer, err := evmindexer.NewEVMIndexer(indexerDB, appCodec, app.Logger(), app.txConfig, app.EVMKeeper, app.OPChildKeeper)
 	if err != nil {
 		return err
 	}

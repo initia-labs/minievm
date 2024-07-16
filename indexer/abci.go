@@ -61,20 +61,41 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		}
 
 		ethTxs = append(ethTxs, ethTx)
-		ethLogs := e.extractLogsFromEvents(txResults.Events)
-		receipts = append(receipts, &coretypes.Receipt{
+
+		// extract logs and contract address from tx results
+		ethLogs, contractAddr, err := extractLogsAndContractAddr(txResults.Data, ethTx.To() == nil)
+		if err != nil {
+			e.logger.Error("failed to extract logs and contract address", "err", err)
+			return err
+		}
+
+		receipt := coretypes.Receipt{
 			PostState:         nil,
 			Status:            txStatus,
 			CumulativeGasUsed: usedGas,
 			Bloom:             coretypes.Bloom(coretypes.LogsBloom(ethLogs)),
 			Logs:              ethLogs,
 			TransactionIndex:  txIndex,
-		})
+		}
+
+		// fill in contract address if it's a contract creation
+		if contractAddr != nil {
+			receipt.ContractAddress = *contractAddr
+		}
+
+		receipts = append(receipts, &receipt)
 	}
 
 	chainId := types.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID())
 	blockGasMeter := sdkCtx.BlockGasMeter()
 	blockHeight := sdkCtx.BlockHeight()
+
+	// compute base fee from the opChild gas prices
+	baseFee, err := e.baseFee(ctx)
+	if err != nil {
+		e.logger.Error("failed to get base fee", "err", err)
+		return err
+	}
 
 	hasher := trie.NewStackTrie(nil)
 	blockHeader := coretypes.Header{
@@ -85,6 +106,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		GasUsed:     blockGasMeter.GasConsumedToLimit(),
 		Number:      big.NewInt(blockHeight),
 		Time:        uint64(sdkCtx.BlockTime().Unix()),
+		BaseFee:     baseFee.ToInt(),
 
 		// empty values
 		Root:            coretypes.EmptyRootHash,
