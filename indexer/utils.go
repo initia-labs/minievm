@@ -20,7 +20,7 @@ import (
 
 func extractLogsAndContractAddr(txStatus uint64, data []byte, isContractCreation bool) ([]*coretypes.Log, *common.Address, error) {
 	if txStatus != coretypes.ReceiptStatusSuccessful {
-		return nil, nil, nil
+		return []*coretypes.Log{}, nil, nil
 	}
 
 	var ethLogs []*coretypes.Log

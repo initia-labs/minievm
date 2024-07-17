@@ -2,7 +2,7 @@ package app
 
 const (
 	// FeeDeductionGasAmount is a estimated gas amount of fee payment
-	FeeDeductionGasAmount = 150_000
+	FeeDeductionGasAmount = 200_000
 
 	// AccountAddressPrefix is the prefix of bech32 encoded address
 	AccountAddressPrefix = "init"
