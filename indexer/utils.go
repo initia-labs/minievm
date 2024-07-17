@@ -8,14 +8,21 @@ import (
 	collcodec "cosmossdk.io/collections/codec"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func extractLogsAndContractAddr(data []byte, isContractCreation bool) ([]*coretypes.Log, *common.Address, error) {
+func extractLogsAndContractAddr(txStatus uint64, data []byte, isContractCreation bool) ([]*coretypes.Log, *common.Address, error) {
+	if txStatus != coretypes.ReceiptStatusSuccessful {
+		return nil, nil, nil
+	}
+
 	var ethLogs []*coretypes.Log
 	var contractAddr *common.Address
 
@@ -45,6 +52,10 @@ func unpackData(data []byte, resp proto.Message) error {
 	var txMsgData sdk.TxMsgData
 	if err := proto.Unmarshal(data, &txMsgData); err != nil {
 		return err
+	}
+
+	if len(txMsgData.MsgResponses) == 0 {
+		return sdkerrors.ErrLogic.Wrap("failed to unpack data; got nil Msg response")
 	}
 
 	msgResp := txMsgData.MsgResponses[0]

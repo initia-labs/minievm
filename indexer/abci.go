@@ -63,7 +63,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		ethTxs = append(ethTxs, ethTx)
 
 		// extract logs and contract address from tx results
-		ethLogs, contractAddr, err := extractLogsAndContractAddr(txResults.Data, ethTx.To() == nil)
+		ethLogs, contractAddr, err := extractLogsAndContractAddr(txStatus, txResults.Data, ethTx.To() == nil)
 		if err != nil {
 			e.logger.Error("failed to extract logs and contract address", "err", err)
 			return err
