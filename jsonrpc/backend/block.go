@@ -106,10 +106,13 @@ func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bo
 
 	txs := []*rpctypes.RPCTransaction{}
 	if fullTx {
-		b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+		err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
 			txs = append(txs, tx)
 			return false, nil
 		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return formatBlock(header, txs), nil
@@ -129,10 +132,13 @@ func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[stri
 	txs := []*rpctypes.RPCTransaction{}
 	if fullTx {
 		blockNumber := header.Number.Uint64()
-		b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+		err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
 			txs = append(txs, tx)
 			return false, nil
 		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return formatBlock(header, txs), nil

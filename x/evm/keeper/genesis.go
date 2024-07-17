@@ -104,14 +104,17 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 	}
 
 	kvs := []types.GenesisKeyValue{}
-	k.VMStore.Walk(ctx, nil, func(key, value []byte) (stop bool, err error) {
+	err = k.VMStore.Walk(ctx, nil, func(key, value []byte) (stop bool, err error) {
 		kvs = append(kvs, types.GenesisKeyValue{Key: key, Value: value})
 		return false, nil
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	var stores *types.GenesisERC20Stores
 	erc20Stores := []types.GenesisERC20Stores{}
-	k.ERC20Stores.Walk(ctx, nil, func(key collections.Pair[[]byte, []byte]) (stop bool, err error) {
+	err = k.ERC20Stores.Walk(ctx, nil, func(key collections.Pair[[]byte, []byte]) (stop bool, err error) {
 		if stores == nil || !bytes.Equal(stores.Address, key.K1()) {
 			erc20Stores = append(erc20Stores, types.GenesisERC20Stores{
 				Address: key.K1(),
@@ -125,9 +128,12 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		stores.Stores = append(stores.Stores, key.K2())
 		return false, nil
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	denomAddresses := []types.GenesisDenomAddress{}
-	k.ERC20ContractAddrsByDenom.Walk(ctx, nil, func(denom string, contractAddr []byte) (stop bool, err error) {
+	err = k.ERC20ContractAddrsByDenom.Walk(ctx, nil, func(denom string, contractAddr []byte) (stop bool, err error) {
 		denomAddresses = append(denomAddresses, types.GenesisDenomAddress{
 			Denom:           denom,
 			ContractAddress: contractAddr,
@@ -135,6 +141,9 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 
 		return false, nil
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	factoryAddr, err := k.ERC20FactoryAddr.Get(ctx)
 	if err != nil {

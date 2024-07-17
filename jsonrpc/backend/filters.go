@@ -21,10 +21,13 @@ func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error
 	}
 
 	txs := []*rpctypes.RPCTransaction{}
-	b.app.EVMIndexer().IterateBlockTxs(queryCtx, height, func(tx *rpctypes.RPCTransaction) (bool, error) {
+	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, height, func(tx *rpctypes.RPCTransaction) (bool, error) {
 		txs = append(txs, tx)
 		return false, nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	for _, tx := range txs {
 		receipt, err := b.app.EVMIndexer().TxReceiptByHash(queryCtx, tx.Hash)
