@@ -65,7 +65,7 @@ func TestInitGenesisOnMigration(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewLogger(os.Stdout)
 	app := NewMinitiaApp(
-		logger, db, dbm.NewMemDB(),
+		logger, db, dbm.NewMemDB(), dbm.NewMemDB(),
 		nil, true, evmconfig.DefaultEVMConfig(),
 		EmptyAppOptions{},
 	)
@@ -124,7 +124,7 @@ func TestGetKey(t *testing.T) {
 	db := dbm.NewMemDB()
 	app := NewMinitiaApp(
 		log.NewLogger(os.Stdout),
-		db, dbm.NewMemDB(), nil, true,
+		db, dbm.NewMemDB(), dbm.NewMemDB(), nil, true,
 		evmconfig.DefaultEVMConfig(),
 		EmptyAppOptions{},
 	)

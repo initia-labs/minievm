@@ -47,6 +47,9 @@ import (
 	minitiaapp "github.com/initia-labs/minievm/app"
 
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
+	kvindexerconfig "github.com/initia-labs/kvindexer/config"
+	kvindexerstore "github.com/initia-labs/kvindexer/store"
+	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
 )
 
 // NewRootCmd creates a new root command for initiad. It is called once in the
@@ -276,9 +279,15 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 		if err != nil {
 			panic(err)
 		}
+		kvdbConfig := getKVIndexerDBConfig(appOpts)
+
+		kvindexerDB, err := kvindexerstore.OpenDB(dbDir, kvindexerkeeper.StoreName, kvdbConfig.BackendConfig)
+		if err != nil {
+			panic(err)
+		}
 
 		app := minitiaapp.NewMinitiaApp(
-			logger, db, indexerDB, traceStore, true,
+			logger, db, indexerDB, kvindexerDB, traceStore, true,
 			evmconfig.GetConfig(appOpts),
 			appOpts,
 			baseappOptions...,
@@ -314,13 +323,13 @@ func (a appCreator) appExport(
 
 	var initiaApp *minitiaapp.MinitiaApp
 	if height != -1 {
-		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), traceStore, false, evmconfig.DefaultEVMConfig(), appOpts)
+		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), dbm.NewMemDB(), traceStore, false, evmconfig.DefaultEVMConfig(), appOpts)
 
 		if err := initiaApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), traceStore, true, evmconfig.DefaultEVMConfig(), appOpts)
+		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), dbm.NewMemDB(), traceStore, true, evmconfig.DefaultEVMConfig(), appOpts)
 	}
 
 	return initiaApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
@@ -377,6 +386,16 @@ func getDBConfig(appOpts servertypes.AppOptions) (string, dbm.BackendType) {
 	dbBackend := server.GetAppDBBackend(appOpts)
 
 	return rootify(dbDir, rootDir), dbBackend
+}
+
+// getKVIndexerDBConfig returns the database configuration for the KV indexer
+func getKVIndexerDBConfig(appOpts servertypes.AppOptions) *kvindexerconfig.IndexerConfig {
+	dbBackend, err := kvindexerconfig.NewConfig(appOpts)
+	if err != nil {
+		panic(err)
+	}
+
+	return dbBackend
 }
 
 // helper function to make config creation independent of root dir
