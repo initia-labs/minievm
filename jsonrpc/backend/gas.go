@@ -61,16 +61,21 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 	}
 
 	txBuilder := b.app.TxConfig().NewTxBuilder()
-	txBuilder.SetMsgs(sdkMsgs...)
-	txBuilder.SetSignatures(signing.SignatureV2{
+	if err = txBuilder.SetMsgs(sdkMsgs...); err != nil {
+		return hexutil.Uint64(0), err
+	}
+	if err = txBuilder.SetSignatures(signing.SignatureV2{
 		PubKey: nil,
 		Data: &signing.SingleSignatureData{
 			SignMode:  keeper.SignMode_SIGN_MODE_ETHEREUM,
 			Signature: nil,
 		},
 		Sequence: uint64(*args.Nonce),
-	})
+	}); err != nil {
+		return hexutil.Uint64(0), err
+	}
 	tx := txBuilder.GetTx()
+
 	txBytes, err := b.app.TxConfig().TxEncoder()(tx)
 	if err != nil {
 		return hexutil.Uint64(0), err

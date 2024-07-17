@@ -93,7 +93,7 @@ func SetupWithGenesisAccounts(
 	// allow empty validator
 	if valSet == nil || len(valSet.Validators) == 0 {
 		privVal := ed25519.GenPrivKey()
-		pubKey, err := cryptocodec.ToTmPubKeyInterface(privVal.PubKey())
+		pubKey, err := cryptocodec.ToTmPubKeyInterface(privVal.PubKey()) //nolint:staticcheck
 		if err != nil {
 			panic(err)
 		}
@@ -104,7 +104,7 @@ func SetupWithGenesisAccounts(
 
 	validators := make([]opchildtypes.Validator, 0, len(valSet.Validators))
 	for _, val := range valSet.Validators {
-		pk, err := cryptocodec.FromTmPubKeyInterface(val.PubKey)
+		pk, err := cryptocodec.FromTmPubKeyInterface(val.PubKey) //nolint:staticcheck
 		if err != nil {
 			panic(err)
 		}

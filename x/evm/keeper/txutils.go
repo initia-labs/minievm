@@ -154,10 +154,14 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	}
 
 	txBuilder := authtx.NewTxConfig(u.cdc, authtx.DefaultSignModes).NewTxBuilder()
-	txBuilder.SetMsgs(sdkMsgs...)
+	if err = txBuilder.SetMsgs(sdkMsgs...); err != nil {
+		return nil, err
+	}
 	txBuilder.SetFeeAmount(feeAmount)
 	txBuilder.SetGasLimit(gasLimit)
-	txBuilder.SetSignatures(sig)
+	if err = txBuilder.SetSignatures(sig); err != nil {
+		return nil, err
+	}
 
 	// set memo
 	memo, err := json.Marshal(metadata{
