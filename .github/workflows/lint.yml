@@ -24,7 +24,7 @@ jobs:
   golangci:
     env:
       # for private repo access
-      GOPRIVATE: github.com/initia-labs,github.com/skip-mev/slinky
+      GOPRIVATE: github.com/initia-labs
       GITHUB_ACCESS_TOKEN: ${{ secrets.GH_READ_TOKEN }}
       GOLANGCI_LINT_VERSION: v1.59.1
     name: golangci-lint
