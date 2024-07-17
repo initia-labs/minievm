@@ -25,7 +25,11 @@ func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, e
 		return common.Hash{}, err
 	}
 
-	return tx.Hash(), b.SendTx(tx)
+	if err := b.SendTx(tx); err != nil {
+		return common.Hash{}, err
+	}
+
+	return tx.Hash(), nil
 }
 
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
