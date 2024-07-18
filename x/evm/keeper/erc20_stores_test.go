@@ -11,15 +11,15 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/initia-labs/minievm/x/evm/contracts/custom_erc20"
+	"github.com/initia-labs/minievm/x/evm/contracts/initia_erc20"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
 func deployCustomERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, denom string, success bool) common.Address {
-	abi, err := custom_erc20.CustomErc20MetaData.GetAbi()
+	abi, err := initia_erc20.InitiaErc20MetaData.GetAbi()
 	require.NoError(t, err)
 
-	bin, err := hexutil.Decode(custom_erc20.CustomErc20MetaData.Bin)
+	bin, err := hexutil.Decode(initia_erc20.InitiaErc20MetaData.Bin)
 	require.NoError(t, err)
 
 	inputBz, err := abi.Pack("", denom, denom, uint8(6))

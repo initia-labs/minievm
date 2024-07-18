@@ -7,7 +7,7 @@ import "../erc20_registry/ERC20Registry.sol";
 import "../erc20_acl/ERC20ACL.sol";
 import {ERC165, IERC165} from "../erc165/ERC165.sol";
 
-contract CustomERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
+contract InitiaERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
         address indexed owner,
