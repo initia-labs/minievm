@@ -38376,6 +38376,48 @@ paths:
           type: string
       tags:
         - Query
+  /minievm/evm/v1/contracts/erc20_factory:
+    get:
+      summary: ERC20Factory gets the ERC20Factory contract address.
+      operationId: ERC20Factory
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              address:
+                type: string
+                title: 0x prefixed hex address
+            title: >-
+              QueryERC20FactoryResponse is the response type for the
+              Query/ERC20Factory RPC
+
+              method
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   /minievm/evm/v1/denoms/{contract_addr}:
     get:
       summary: Denom gets the denom of the given contract address.
@@ -66963,6 +67005,17 @@ definitions:
         type: string
     title: |-
       QueryDenomResponse is the response type for the Query/Denom RPC
+      method
+  minievm.evm.v1.QueryERC20FactoryResponse:
+    type: object
+    properties:
+      address:
+        type: string
+        title: 0x prefixed hex address
+    title: >-
+      QueryERC20FactoryResponse is the response type for the Query/ERC20Factory
+      RPC
+
       method
   minievm.evm.v1.QueryParamsResponse:
     type: object
