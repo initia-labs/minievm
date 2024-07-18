@@ -43,6 +43,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.1 // indirect
+	github.com/allegro/bigcache/v3 v3.1.0 // indirect
 	github.com/aptos-labs/serde-reflection/serde-generate/runtime/golang v0.0.0-20231213012317-73b6bbf74833 // indirect
 	github.com/aws/aws-sdk-go v1.44.312 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -145,7 +146,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v0.3.2 // indirect
 	github.com/initia-labs/OPinit/api v0.3.0 // indirect
-	github.com/initia-labs/kvindexer v0.1.3 // indirect
+	github.com/initia-labs/kvindexer v0.1.5 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect

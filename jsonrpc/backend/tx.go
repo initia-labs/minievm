@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -74,7 +75,15 @@ func (b *JSONRPCBackend) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTr
 		return nil, err
 	}
 
-	return b.app.EVMIndexer().TxByHash(queryCtx, hash)
+	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get transaction by hash", "err", err)
+		return nil, NewTxIndexingError()
+	}
+
+	return tx, nil
 }
 
 // GetTransactionCount returns the number of transactions at the given block number.
@@ -89,7 +98,10 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 		}
 
 		blockNumberU64, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, blockHash)
-		if err != nil {
+		if err != nil && errors.Is(err, collections.ErrNotFound) {
+			return nil, nil
+		} else if err != nil {
+			b.svrCtx.Logger.Error("failed to get block number by hash", "err", err)
 			return nil, err
 		}
 
@@ -126,13 +138,19 @@ func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]int
 	}
 
 	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
-	if err != nil {
-		return nil, err
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get transaction by hash", "err", err)
+		return nil, NewTxIndexingError()
 	}
 
 	receipt, err := b.app.EVMIndexer().TxReceiptByHash(queryCtx, hash)
-	if err != nil {
-		return nil, err
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get transaction receipt by hash", "err", err)
+		return nil, NewTxIndexingError()
 	}
 
 	return marshalReceipt(receipt, tx), nil
@@ -146,11 +164,22 @@ func (b *JSONRPCBackend) GetTransactionByBlockHashAndIndex(hash common.Hash, idx
 	}
 
 	number, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get block number by hash", "err", err)
 		return nil, err
 	}
 
-	return b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
+	rpcTx, err := b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get transaction by block and index", "err", err)
+		return nil, err
+	}
+
+	return rpcTx, nil
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction at the given block number and index.
@@ -161,7 +190,15 @@ func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockN
 	}
 
 	number := uint64(blockNum.Int64())
-	return b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
+	rpcTx, err := b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get transaction by block and index", "err", err)
+		return nil, err
+	}
+
+	return rpcTx, nil
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions in a block from a block matching the given block hash.
@@ -169,6 +206,8 @@ func (b *JSONRPCBackend) GetBlockTransactionCountByHash(hash common.Hash) (*hexu
 	block, err := b.GetBlockByHash(hash, true)
 	if err != nil {
 		return nil, err
+	} else if block == nil {
+		return nil, nil
 	}
 
 	numTxs := hexutil.Uint(len(block["transactions"].([]*rpctypes.RPCTransaction)))
@@ -180,6 +219,8 @@ func (b *JSONRPCBackend) GetBlockTransactionCountByNumber(blockNum rpc.BlockNumb
 	block, err := b.GetBlockByNumber(blockNum, true)
 	if err != nil {
 		return nil, err
+	} else if block == nil {
+		return nil, nil
 	}
 
 	numTxs := hexutil.Uint(len(block["transactions"].([]*rpctypes.RPCTransaction)))
@@ -194,8 +235,13 @@ func (b *JSONRPCBackend) GetRawTransactionByHash(hash common.Hash) (hexutil.Byte
 	}
 
 	rpcTx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
-	if err != nil {
-		return nil, err
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get raw transaction by hash", "err", err)
+		return nil, NewTxIndexingError()
+	} else if rpcTx == nil {
+		return nil, nil
 	}
 
 	return rpcTx.ToTransaction().MarshalBinary()
@@ -206,6 +252,8 @@ func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.H
 	rpcTx, err := b.GetTransactionByBlockHashAndIndex(blockHash, index)
 	if err != nil {
 		return nil, err
+	} else if rpcTx == nil {
+		return nil, nil
 	}
 
 	return rpcTx.ToTransaction().MarshalBinary()

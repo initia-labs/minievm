@@ -1,6 +1,9 @@
 package backend
 
 import (
+	"errors"
+
+	"cosmossdk.io/collections"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -67,7 +70,10 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 	}
 
 	header, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, blockNumber)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get block header by number", "err", err)
 		return nil, err
 	}
 
@@ -81,7 +87,10 @@ func (b *JSONRPCBackend) GetHeaderByHash(hash common.Hash) (*coretypes.Header, e
 	}
 
 	header, err := b.app.EVMIndexer().BlockHeaderByHash(queryCtx, hash)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get block header by hash", "err", err)
 		return nil, err
 	}
 
@@ -100,7 +109,10 @@ func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bo
 	}
 
 	header, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, blockNumber)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get block header by number", "err", err)
 		return nil, err
 	}
 
@@ -125,7 +137,10 @@ func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[stri
 	}
 
 	header, err := b.app.EVMIndexer().BlockHeaderByHash(queryCtx, hash)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.svrCtx.Logger.Error("failed to get block header by hash", "err", err)
 		return nil, err
 	}
 

@@ -70,7 +70,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	// convert gas fee unit from wei to cosmos fee unit
 	gasLimit := ethTx.Gas()
 	gasFeeAmount := computeGasFeeAmount(gasFeeCap, gasLimit, decimals)
-	feeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromUint64(gasFeeAmount.Uint64())))
+	feeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(gasFeeAmount)))
 
 	// convert value unit from wei to cosmos fee unit
 	value := types.FromEthersUnit(decimals, ethTx.Value())
