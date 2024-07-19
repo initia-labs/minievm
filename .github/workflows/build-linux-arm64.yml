@@ -1,0 +1,75 @@
+
+name: Build Linux ARM64
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set environment variables
+        run: |
+          echo "GOARCH=arm64" >> $GITHUB_ENV
+          echo "GOOS=linux" >> $GITHUB_ENV
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="v0.0.0-${GITHUB_SHA::8}"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "ARCH_NAME=aarch64" >> $GITHUB_ENV
+          
+      - name: Build for ARM64
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          # Activate BuildKit and create a new builder
+          docker buildx create --use --name arm64-builder --platform linux/arm64
+          docker buildx inspect --bootstrap
+
+          # Building images for ARM64
+          docker buildx build --platform linux/arm64 --load --tag minitia/minitiad-shared:arm64 . -f Dockerfile.arm64
+
+          # Extract build output using ARM64 images
+          mkdir -p ./build
+          docker create --name temp minitia/minitiad-shared:arm64
+          docker cp temp:/usr/local/bin/minitiad ./build/
+          docker rm temp
+
+          # Packaging of results
+          cd ./build
+          mkdir -p minievm_${VERSION}
+          mv minitiad minievm_${VERSION}/
+          tar -czvf minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz minievm_${VERSION}
+          mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz ../
+
+          # Check build results
+          cd ..
+          ls -l
+          file minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz
+
+          # remove builder
+          docker buildx rm arm64-builder
+
+      - name: List files
+        run: ls -l
+        
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+              ./minievm_${{ env.VERSION }}_Linux_${{ env.ARCH_NAME }}.tar.gz
