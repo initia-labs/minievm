@@ -123,7 +123,7 @@ build-linux:
 	mkdir -p $(BUILDDIR)
 	docker build --no-cache --tag initia/minievm ./
 	docker create --name temp initia/minievm:latest
-	docker cp temp:/usr/local/bin/minievm $(BUILDDIR)/
+	docker cp temp:/usr/local/bin/minitiad $(BUILDDIR)/
 	docker rm temp
 
 install: go.sum 
