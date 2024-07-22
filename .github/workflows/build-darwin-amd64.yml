@@ -1,0 +1,60 @@
+name: Build Darwin AMD64
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: macos-13
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22.4'
+
+      - name: Set environment variables
+        run: |
+          MINIWASM_NETWORK_NAME="minievm-1"
+          echo "MINIWASM_NETWORK_NAME=${MINIWASM_NETWORK_NAME}" >> $GITHUB_ENV        
+          echo "GOARCH=amd64" >> $GITHUB_ENV
+          echo "GOOS=darwin" >> $GITHUB_ENV
+          if [[ "${{ github.ref }}" == "refs/tags/"* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="v0.0.0-${GITHUB_SHA::8}"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "ARCH_NAME=x86_64" >> $GITHUB_ENV
+
+      - name: Ensure dependencies
+        run: |
+          go mod tidy
+
+      - name: Print environment variables
+        run: |
+          echo "GOARCH=${GOARCH}"
+          echo "GOOS=${GOOS}"
+          echo "VERSION=${VERSION}"
+          echo "ARCH_NAME=${ARCH_NAME}"
+          echo "WASMVM_VERSION=${WASMVM_VERSION}"
+          echo "MINIWASM_NETWORK_NAME=${MINIWASM_NETWORK_NAME}"
+
+      - name: Build and Package for Darwin ADM642
+        run: |
+          cd ../minievm \
+          && make build \
+          && cd ./build \
+          && tar -czvf minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz ./minitiad \
+          && mv ./minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz $GITHUB_WORKSPACE/ \
+          && rm -rf ./minitiad   
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            minievm_${{ env.VERSION }}_Darwin_${{ env.ARCH_NAME }}.tar.gz
