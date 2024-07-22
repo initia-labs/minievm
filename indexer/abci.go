@@ -31,6 +31,13 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	batch := e.db.NewBatch()
 	defer batch.Close()
 
+	// compute base fee from the opChild gas prices
+	baseFee, err := e.baseFee(ctx)
+	if err != nil {
+		e.logger.Error("failed to get base fee", "err", err)
+		return err
+	}
+
 	txIndex := uint(0)
 	cumulativeGasUsed := uint64(0)
 	ethTxs := make([]*coretypes.Transaction, 0, len(req.Txs))
@@ -81,6 +88,11 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			EffectiveGasPrice: ethTx.GasPrice(),
 		}
 
+		// currently we do not support fee refund, so the effective gas price is the same as the gas price
+		// if ethTx.Type() == coretypes.DynamicFeeTxType {
+		// 	receipt.EffectiveGasPrice = new(big.Int).Add(ethTx.EffectiveGasTipValue(baseFee.ToInt()), baseFee.ToInt())
+		// }
+
 		// fill in contract address if it's a contract creation
 		if contractAddr != nil {
 			receipt.ContractAddress = *contractAddr
@@ -92,13 +104,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	chainId := types.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID())
 	blockGasMeter := sdkCtx.BlockGasMeter()
 	blockHeight := sdkCtx.BlockHeight()
-
-	// compute base fee from the opChild gas prices
-	baseFee, err := e.baseFee(ctx)
-	if err != nil {
-		e.logger.Error("failed to get base fee", "err", err)
-		return err
-	}
 
 	hasher := trie.NewStackTrie(nil)
 	blockHeader := coretypes.Header{
