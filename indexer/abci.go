@@ -32,7 +32,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	defer batch.Close()
 
 	txIndex := uint(0)
-	usedGas := uint64(0)
+	cumulativeGasUsed := uint64(0)
 	ethTxs := make([]*coretypes.Transaction, 0, len(req.Txs))
 	receipts := make([]*coretypes.Receipt, 0, len(req.Txs))
 	for idx, txBytes := range req.Txs {
@@ -51,19 +51,20 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			continue
 		}
 
-		txIndex++
-		usedGas += ethTx.Gas()
-
-		txResults := res.TxResults[idx]
+		txResult := res.TxResults[idx]
 		txStatus := coretypes.ReceiptStatusSuccessful
-		if txResults.Code != abci.CodeTypeOK {
+		if txResult.Code != abci.CodeTypeOK {
 			txStatus = coretypes.ReceiptStatusFailed
 		}
 
+		gasUsed := uint64(txResult.GasUsed)
+		cumulativeGasUsed += gasUsed
+
+		txIndex++
 		ethTxs = append(ethTxs, ethTx)
 
 		// extract logs and contract address from tx results
-		ethLogs, contractAddr, err := extractLogsAndContractAddr(txStatus, txResults.Data, ethTx.To() == nil)
+		ethLogs, contractAddr, err := extractLogsAndContractAddr(txStatus, txResult.Data, ethTx.To() == nil)
 		if err != nil {
 			e.logger.Error("failed to extract logs and contract address", "err", err)
 			return err
@@ -72,8 +73,8 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		receipt := coretypes.Receipt{
 			PostState:         nil,
 			Status:            txStatus,
-			CumulativeGasUsed: usedGas,
-			GasUsed:           usedGas,
+			CumulativeGasUsed: cumulativeGasUsed,
+			GasUsed:           gasUsed,
 			Bloom:             coretypes.Bloom(coretypes.LogsBloom(ethLogs)),
 			Logs:              ethLogs,
 			TransactionIndex:  txIndex,
