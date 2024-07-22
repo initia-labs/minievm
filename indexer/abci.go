@@ -73,9 +73,11 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			PostState:         nil,
 			Status:            txStatus,
 			CumulativeGasUsed: usedGas,
+			GasUsed:           usedGas,
 			Bloom:             coretypes.Bloom(coretypes.LogsBloom(ethLogs)),
 			Logs:              ethLogs,
 			TransactionIndex:  txIndex,
+			EffectiveGasPrice: ethTx.GasPrice(),
 		}
 
 		// fill in contract address if it's a contract creation
