@@ -39,6 +39,10 @@ type EVMIndexer interface {
 	BlockHeaderByHash(ctx context.Context, hash common.Hash) (*coretypes.Header, error)
 	BlockHeaderByNumber(ctx context.Context, number uint64) (*coretypes.Header, error)
 
+	// cosmos tx hash
+	CosmosTxHashByTxHash(ctx context.Context, hash common.Hash) ([]byte, error)
+	TxHashByCosmosTxHash(ctx context.Context, hash []byte) (common.Hash, error)
+
 	// event subscription
 	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction)
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
@@ -61,6 +65,8 @@ type EVMIndexerImpl struct {
 	BlockHeaderMap           collections.Map[uint64, coretypes.Header]
 	BlockAndIndexToTxHashMap collections.Map[collections.Pair[uint64, uint64], []byte]
 	BlockHashToNumberMap     collections.Map[[]byte, uint64]
+	TxHashToCosmosTxHash     collections.Map[[]byte, []byte]
+	CosmosTxHashToTxHash     collections.Map[[]byte, []byte]
 
 	blockChan   chan *coretypes.Header
 	logsChan    chan []*coretypes.Log
@@ -98,6 +104,8 @@ func NewEVMIndexer(
 		BlockHeaderMap:           collections.NewMap(sb, prefixBlockHeader, "block_header", collections.Uint64Key, CollJsonVal[coretypes.Header]()),
 		BlockAndIndexToTxHashMap: collections.NewMap(sb, prefixBlockAndIndexToTxHash, "block_and_index_to_tx_hash", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), collections.BytesValue),
 		BlockHashToNumberMap:     collections.NewMap(sb, prefixBlockHashToNumber, "block_hash_to_number", collections.BytesKey, collections.Uint64Value),
+		TxHashToCosmosTxHash:     collections.NewMap(sb, prefixTxHashToCosmosTxHash, "tx_hash_to_cosmos_tx_hash", collections.BytesKey, collections.BytesValue),
+		CosmosTxHashToTxHash:     collections.NewMap(sb, prefixCosmosTxHashToTxHash, "cosmos_tx_hash_to_tx_hash", collections.BytesKey, collections.BytesValue),
 
 		blockChan:   nil,
 		logsChan:    nil,

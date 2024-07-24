@@ -73,3 +73,18 @@ func (e *EVMIndexerImpl) TxReceiptByHash(ctx context.Context, hash common.Hash) 
 func (e *EVMIndexerImpl) BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error) {
 	return e.BlockHashToNumberMap.Get(ctx, hash.Bytes())
 }
+
+// CosmosTxHashByTxHash implements EVMIndexer.
+func (e *EVMIndexerImpl) CosmosTxHashByTxHash(ctx context.Context, hash common.Hash) ([]byte, error) {
+	return e.TxHashToCosmosTxHash.Get(ctx, hash.Bytes())
+}
+
+// TxHashByCosmosTxHash implements EVMIndexer.
+func (e *EVMIndexerImpl) TxHashByCosmosTxHash(ctx context.Context, hash []byte) (common.Hash, error) {
+	bz, err := e.CosmosTxHashToTxHash.Get(ctx, hash)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	return common.BytesToHash(bz), nil
+}

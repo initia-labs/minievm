@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	comettypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/collections"
 	storetypes "cosmossdk.io/store/types"
@@ -62,6 +63,17 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		txStatus := coretypes.ReceiptStatusSuccessful
 		if txResult.Code != abci.CodeTypeOK {
 			txStatus = coretypes.ReceiptStatusFailed
+		}
+
+		// index tx hash
+		cosmosTxHash := comettypes.Tx(txBytes).Hash()
+		if err := e.TxHashToCosmosTxHash.Set(ctx, ethTx.Hash().Bytes(), cosmosTxHash); err != nil {
+			e.logger.Error("failed to store tx hash to cosmos tx hash", "err", err)
+			return err
+		}
+		if err := e.CosmosTxHashToTxHash.Set(ctx, cosmosTxHash, ethTx.Hash().Bytes()); err != nil {
+			e.logger.Error("failed to store cosmos tx hash to tx hash", "err", err)
+			return err
 		}
 
 		gasUsed := uint64(txResult.GasUsed)

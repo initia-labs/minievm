@@ -19,6 +19,7 @@ import (
 	"github.com/initia-labs/minievm/app"
 	"github.com/initia-labs/minievm/jsonrpc/backend"
 	"github.com/initia-labs/minievm/jsonrpc/config"
+	cosmosns "github.com/initia-labs/minievm/jsonrpc/namespaces/cosmos"
 	ethns "github.com/initia-labs/minievm/jsonrpc/namespaces/eth"
 	"github.com/initia-labs/minievm/jsonrpc/namespaces/eth/filters"
 	netns "github.com/initia-labs/minievm/jsonrpc/namespaces/net"
@@ -29,14 +30,14 @@ import (
 // RPC namespaces and API version
 const (
 	// TODO: implement commented apis in the namespaces for full Ethereum compatibility
-	EthNamespace    = "eth"
-	NetNamespace    = "net"
-	TxPoolNamespace = "txpool"
-	Web3Namespace   = "web3"
-	// TODO: support more namespaces
+	EthNamespace      = "eth"
+	NetNamespace      = "net"
+	TxPoolNamespace   = "txpool"
+	Web3Namespace     = "web3"
 	PersonalNamespace = "personal"
 	DebugNamespace    = "debug"
 	MinerNamespace    = "miner"
+	CosmosNamespace   = "cosmos"
 
 	apiVersion = "1.0"
 )
@@ -83,6 +84,12 @@ func StartJSONRPC(
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
 			Service:   txpoolns.NewTxPoolAPI(svrCtx.Logger, bkd),
+			Public:    true,
+		},
+		{
+			Namespace: CosmosNamespace,
+			Version:   apiVersion,
+			Service:   cosmosns.NewCosmosAPI(svrCtx.Logger, bkd),
 			Public:    true,
 		},
 	}
