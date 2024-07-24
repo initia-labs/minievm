@@ -5,11 +5,10 @@ import (
 
 	"cosmossdk.io/collections"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // CosmosTxHashByTxHash returns the Cosmos transaction hash by the Ethereum transaction hash.
-func (b *JSONRPCBackend) CosmosTxHashByTxHash(hash common.Hash) (hexutil.Bytes, error) {
+func (b *JSONRPCBackend) CosmosTxHashByTxHash(hash common.Hash) ([]byte, error) {
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err

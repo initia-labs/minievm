@@ -6,7 +6,6 @@ import (
 	"cosmossdk.io/log"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/initia-labs/minievm/jsonrpc/backend"
 )
 
@@ -28,10 +27,18 @@ func NewCosmosAPI(logger log.Logger, backend *backend.JSONRPCBackend) *CosmosAPI
 	return api
 }
 
-func (api *CosmosAPI) CosmosTxHashByTxHash(hash common.Hash) (hexutil.Bytes, error) {
-	return api.backend.CosmosTxHashByTxHash(hash)
+func (api *CosmosAPI) CosmosTxHashByTxHash(hash common.Hash) (common.UnprefixedHash, error) {
+	bz, err := api.backend.CosmosTxHashByTxHash(hash)
+	if err != nil {
+		return common.UnprefixedHash{}, err
+	}
+	if bz == nil {
+		return common.UnprefixedHash{}, nil
+	}
+
+	return common.UnprefixedHash(bz), nil
 }
 
-func (api *CosmosAPI) TxHashByCosmosTxHash(hash hexutil.Bytes) (common.Hash, error) {
-	return api.backend.TxHashByCosmosTxHash(hash)
+func (api *CosmosAPI) TxHashByCosmosTxHash(hash common.UnprefixedHash) (common.Hash, error) {
+	return api.backend.TxHashByCosmosTxHash(hash[:])
 }
