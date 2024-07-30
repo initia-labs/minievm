@@ -7,7 +7,6 @@ import (
 
 	"cosmossdk.io/core/address"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -32,11 +31,10 @@ func (mbh EVMBridgeHook) Hook(ctx context.Context, sender sdk.AccAddress, msgByt
 		return err
 	}
 
-	senderAddr, err := mbh.ac.StringToBytes(msg.Sender)
+	// overwrite sender with the actual sender
+	msg.Sender, err = mbh.ac.BytesToString(sender)
 	if err != nil {
 		return err
-	} else if !sender.Equals(sdk.AccAddress(senderAddr)) {
-		return sdkerrors.ErrUnauthorized
 	}
 
 	ms := evmkeeper.NewMsgServerImpl(mbh.evmKeeper)
