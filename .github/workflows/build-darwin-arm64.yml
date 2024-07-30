@@ -1,4 +1,3 @@
-
 name: Build Darwin ARM64
 
 on:
@@ -15,7 +14,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22.4'
+          go-version: "1.22.4"
       - name: Set environment variables
         run: |
           MINIWASM_NETWORK_NAME="minievm-1"
@@ -29,11 +28,11 @@ jobs:
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "ARCH_NAME=aarch64" >> $GITHUB_ENV
-          
+
       - name: Ensure dependencies
         run: |
           go mod tidy
-          
+
       - name: Print environment variables
         run: |
           echo "GOARCH=${GOARCH}"
@@ -49,10 +48,13 @@ jobs:
           && cd ./build \
           && tar -czvf minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz ./minitiad \
           && mv ./minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz $GITHUB_WORKSPACE/ \
-          && rm -rf ./minitiad   
-  
+          && rm -rf ./minitiad
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             minievm_${{ env.VERSION }}_Darwin_${{ env.ARCH_NAME }}.tar.gz
+        env:
+          VERSION: ${{ env.VERSION }}
+          ARCH_NAME: ${{ env.ARCH_NAME }}
