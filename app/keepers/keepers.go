@@ -66,13 +66,11 @@ import (
 	icaauthtypes "github.com/initia-labs/initia/x/intertx/types"
 
 	// OPinit imports
-
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	opchildlanes "github.com/initia-labs/OPinit/x/opchild/lanes"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	// skip imports
-
 	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
 	auctiontypes "github.com/skip-mev/block-sdk/v2/x/auction/types"
 	marketmapkeeper "github.com/skip-mev/slinky/x/marketmap/keeper"
@@ -81,20 +79,17 @@ import (
 	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
 
 	// local imports
-
 	apphook "github.com/initia-labs/minievm/app/hook"
 	ibcevmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
-
 	bankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	// noble forwarding keeper
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 	forwarding "github.com/noble-assets/forwarding/v2/x/forwarding"
 	forwardingkeeper "github.com/noble-assets/forwarding/v2/x/forwarding/keeper"
 	forwardingtypes "github.com/noble-assets/forwarding/v2/x/forwarding/types"
-	// kvindexer
 )
 
 type AppKeepers struct {

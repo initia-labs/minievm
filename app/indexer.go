@@ -6,19 +6,8 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 
-	// ibc imports
-
-	// initia imports
-
-	// OPinit imports
-
-	// skip imports
-
 	// local imports
-
 	evmindexer "github.com/initia-labs/minievm/indexer"
-
-	// noble forwarding keeper
 
 	// kvindexer
 	kvindexer "github.com/initia-labs/kvindexer"

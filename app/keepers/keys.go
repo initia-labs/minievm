@@ -36,8 +36,10 @@ import (
 	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
 
 	// noble forwarding keeper
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 	forwardingtypes "github.com/noble-assets/forwarding/v2/x/forwarding/types"
+
+	// local imports
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 func (appKeepers *AppKeepers) GenerateKeys() {

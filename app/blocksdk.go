@@ -7,9 +7,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 	cosmosante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
+	// OPinit imports
 	opchildlanes "github.com/initia-labs/OPinit/x/opchild/lanes"
+
+	// initia imports
 	initialanes "github.com/initia-labs/initia/app/lanes"
 
+	// skip-mev imports
 	blockabci "github.com/skip-mev/block-sdk/v2/abci"
 	blockchecktx "github.com/skip-mev/block-sdk/v2/abci/checktx"
 	signer_extraction "github.com/skip-mev/block-sdk/v2/adapters/signer_extraction_adapter"
@@ -17,6 +21,7 @@ import (
 	blockbase "github.com/skip-mev/block-sdk/v2/block/base"
 	mevlane "github.com/skip-mev/block-sdk/v2/lanes/mev"
 
+	// local imports
 	appante "github.com/initia-labs/minievm/app/ante"
 )
 

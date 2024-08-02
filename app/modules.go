@@ -38,7 +38,6 @@ import (
 	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
 
 	// initia imports
-
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
 	ibcnfttransfer "github.com/initia-labs/initia/x/ibc/nft-transfer"
@@ -51,7 +50,6 @@ import (
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	// skip imports
-
 	"github.com/skip-mev/block-sdk/v2/x/auction"
 	auctiontypes "github.com/skip-mev/block-sdk/v2/x/auction/types"
 	marketmap "github.com/skip-mev/slinky/x/marketmap"
@@ -60,15 +58,13 @@ import (
 	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
 
 	// local imports
-
 	"github.com/initia-labs/minievm/x/bank"
 	"github.com/initia-labs/minievm/x/evm"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	// noble forwarding keeper
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 	forwarding "github.com/noble-assets/forwarding/v2/x/forwarding"
 	forwardingtypes "github.com/noble-assets/forwarding/v2/x/forwarding/types"
-	// kvindexer
 )
 
 // module account permissions

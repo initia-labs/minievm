@@ -65,7 +65,6 @@ import (
 
 	// local imports
 	"github.com/initia-labs/minievm/app/keepers"
-
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
