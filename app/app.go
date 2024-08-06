@@ -162,6 +162,7 @@ import (
 	indexer "github.com/initia-labs/kvindexer"
 	indexerconfig "github.com/initia-labs/kvindexer/config"
 	blocksubmodule "github.com/initia-labs/kvindexer/submodules/block"
+	nftsubmodule "github.com/initia-labs/kvindexer/submodules/evm-nft"
 	"github.com/initia-labs/kvindexer/submodules/pair"
 	tx "github.com/initia-labs/kvindexer/submodules/tx"
 	indexermodule "github.com/initia-labs/kvindexer/x/kvindexer"
@@ -1301,7 +1302,12 @@ func (app *MinitiaApp) setupIndexer(appOpts servertypes.AppOptions, indexerDB db
 		return err
 	}
 
-	err = app.indexerKeeper.RegisterSubmodules(smBlock, smTx, smPair)
+	smNft, err := nftsubmodule.NewEvmNFTSubmodule(ac, appCodec, app.indexerKeeper, app.EVMKeeper, smPair)
+	if err != nil {
+		return err
+	}
+
+	err = app.indexerKeeper.RegisterSubmodules(smBlock, smTx, smPair, smNft)
 	if err != nil {
 		return err
 	}

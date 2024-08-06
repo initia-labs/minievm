@@ -35,8 +35,9 @@ require (
 	github.com/holiman/uint256 v1.2.4
 	github.com/initia-labs/OPinit v0.3.2
 	github.com/initia-labs/initia v0.3.5
-	github.com/initia-labs/kvindexer v0.1.5
+	github.com/initia-labs/kvindexer v0.1.7
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.6
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0
 	github.com/noble-assets/forwarding/v2 v2.0.0-20240514101621-172acc02aac6
