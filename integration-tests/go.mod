@@ -1,8 +1,6 @@
 module github.com/initia-labs/minievm/integration-tests
 
-go 1.22.0
-
-toolchain go1.22.2
+go 1.22.5
 
 require (
 	cosmossdk.io/math v1.3.0
@@ -50,7 +48,7 @@ require (
 	github.com/bgentry/speakeasy v0.1.1-0.20220910012023-760eaf8b6816 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
-	github.com/celestiaorg/go-square v1.0.1 // indirect
+	github.com/celestiaorg/go-square/v2 v2.0.0-rc0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -267,7 +265,7 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240802023941-2bc1747194c0
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240807072006-9d86e6bfaf87
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7
 )
