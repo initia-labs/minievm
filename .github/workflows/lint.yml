@@ -40,7 +40,7 @@ jobs:
             go.mod
             go.sum
       # install golangci-lint
-      - run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}
+      - run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@${{ env.GOLANGCI_LINT_VERSION }}
       - name: run go linters (long)
         if: env.GIT_DIFF
         id: lint_long

@@ -2,33 +2,32 @@ package test
 
 import (
 	"math/big"
+	"testing"
 	"time"
 
-	"cosmossdk.io/math"
-	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
-	"github.com/ethereum/go-ethereum/common"
-
-	sdktypes "github.com/cosmos/cosmos-sdk/types"
-
-	ibctesting "github.com/initia-labs/initia/x/ibc/testing"
-	minievmapp "github.com/initia-labs/minievm/app"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
-	"github.com/initia-labs/minievm/x/evm/types"
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
-
-	"testing"
+	"github.com/stretchr/testify/suite"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+
+	"cosmossdk.io/math"
+
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
+
 	nfttransferkeeper "github.com/initia-labs/initia/x/ibc/nft-transfer/keeper"
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
-	"github.com/stretchr/testify/suite"
+	ibctesting "github.com/initia-labs/initia/x/ibc/testing"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
+	minievmapp "github.com/initia-labs/minievm/app"
+	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type KeeperTestSuite struct {
@@ -146,7 +145,7 @@ func (suite *KeeperTestSuite) CreateNftClass(
 
 func (suite *KeeperTestSuite) MintNft(
 	endpoint *ibctesting.Endpoint,
-	receiver sdktypes.AccAddress,
+	receiver sdk.AccAddress,
 	classId, className, tokenUri string, tokenId math.Int,
 ) {
 	evmKeeper := getMinitiaApp(endpoint.Chain).EVMKeeper
@@ -164,7 +163,7 @@ func (suite *KeeperTestSuite) MintNft(
 	inputBz, err := nftKeeper.ABI.Pack("mint", receiverAddr, bigTokenId, tokenUri, "")
 	suite.Require().NoError(err)
 
-	contractAddr, err := types.ContractAddressFromClassId(ctx, nftKeeper, classId)
+	contractAddr, err := evmtypes.ContractAddressFromClassId(ctx, nftKeeper, classId)
 	suite.Require().NoError(err)
 
 	_, _, err = nftKeeper.EVMCall(ctx, createAccountAddr, contractAddr, inputBz, nil)
