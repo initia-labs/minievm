@@ -39,7 +39,7 @@ func (b *JSONRPCBackend) GetBalance(address common.Address, blockNrOrHash rpc.Bl
 }
 
 func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash, overrides *rpctypes.StateOverride, blockOverrides *rpctypes.BlockOverrides) (hexutil.Bytes, error) {
-	if overrides != nil {
+	if overrides != nil && len(*overrides) > 0 {
 		return nil, errors.New("state overrides are not supported")
 	}
 	if blockOverrides != nil {
