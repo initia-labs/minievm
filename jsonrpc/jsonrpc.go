@@ -123,7 +123,7 @@ func StartJSONRPC(
 	var addr string
 	if !isWebSocket {
 		addr = jsonRPCConfig.Address
-		router.Handle("/", rpcServer).Methods("GET").Methods("POST")
+		router.Handle("/", rpcServer).Methods("POST")
 	} else {
 		allowedOrigins := []string{}
 		if jsonRPCConfig.EnableUnsafeCORS {
@@ -148,7 +148,7 @@ func StartJSONRPC(
 		IdleTimeout:       jsonRPCConfig.HTTPIdleTimeout,
 	}
 
-	ln, err := listen(httpSrv.Addr, jsonRPCConfig)
+	ln, err := listen(addr, jsonRPCConfig)
 	if err != nil {
 		return err
 	}
@@ -158,9 +158,9 @@ func StartJSONRPC(
 
 		go func() {
 			if !isWebSocket {
-				svrCtx.Logger.Info("Starting JSON-RPC server", "address", jsonRPCConfig.Address)
+				svrCtx.Logger.Info("Starting JSON-RPC server", "address", addr)
 			} else {
-				svrCtx.Logger.Info("Starting JSON-RPC WebSocket server", "address", jsonRPCConfig.AddressWS)
+				svrCtx.Logger.Info("Starting JSON-RPC WebSocket server", "address", addr)
 			}
 
 			errCh <- httpSrv.Serve(ln)
@@ -173,9 +173,9 @@ func StartJSONRPC(
 			// The calling process canceled or closed the provided context, so we must
 			// gracefully stop the gRPC server.
 			if !isWebSocket {
-				logger.Info("stopping Ethereum JSONRPC server...", "address", jsonRPCConfig.Address)
+				logger.Info("stopping Ethereum JSONRPC server...", "address", addr)
 			} else {
-				logger.Info("stopping Ethereum JSONRPC WebSocket server...", "address", jsonRPCConfig.AddressWS)
+				logger.Info("stopping Ethereum JSONRPC WebSocket server...", "address", addr)
 			}
 
 			return httpSrv.Close()

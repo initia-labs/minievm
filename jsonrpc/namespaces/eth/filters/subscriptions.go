@@ -48,7 +48,7 @@ func (api *FilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 		for {
 			select {
 			case h := <-headerChan:
-				notifier.Notify(rpcSub.ID, h)
+				_ = notifier.Notify(rpcSub.ID, h)
 			case <-rpcSub.Err():
 				return
 			}
@@ -109,7 +109,7 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 			case logs := <-logsChan:
 				for _, log := range logs {
 					log := log
-					notifier.Notify(rpcSub.ID, &log)
+					_ = notifier.Notify(rpcSub.ID, &log)
 				}
 			case <-rpcSub.Err(): // client send an unsubscribe request
 				return
@@ -151,9 +151,9 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 		for {
 			select {
 			case rpcTx := <-txChan:
-				notifier.Notify(rpcSub.ID, rpcTx)
+				_ = notifier.Notify(rpcSub.ID, rpcTx)
 			case hash := <-hashChan:
-				notifier.Notify(rpcSub.ID, hash)
+				_ = notifier.Notify(rpcSub.ID, hash)
 			case <-rpcSub.Err():
 				return
 			}
