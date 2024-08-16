@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/spf13/cast"
@@ -136,7 +137,7 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		EnableWS:             cast.ToBool(appOpts.Get(flagJSONRPCEnableWS)),
 		AddressWS:            cast.ToString(appOpts.Get(flagJSONRPCAddressWS)),
 		EnableUnsafeCORS:     cast.ToBool(appOpts.Get(flagJSONRPCEnableUnsafeCORS)),
-		APIs:                 cast.ToStringSlice(appOpts.Get(flagJSONRPCAPIs)),
+		APIs:                 strings.Split(cast.ToString(appOpts.Get(flagJSONRPCAPIs)), ","),
 		FilterCap:            cast.ToInt32(appOpts.Get(flagJSONRPCFilterCap)),
 		BlockRangeCap:        cast.ToInt32(appOpts.Get(flagJSONRPCBlockRangeCap)),
 		HTTPTimeout:          cast.ToDuration(appOpts.Get(flagJSONRPCHTTPTimeout)),
