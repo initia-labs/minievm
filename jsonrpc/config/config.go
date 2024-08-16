@@ -41,7 +41,7 @@ const (
 
 var (
 	// DefaultAPIs defines the default list of JSON-RPC namespaces that should be enabled.
-	DefaultAPIs = []string{"eth" /*"txpool", "personal", "net", "debug", "web3"*/}
+	DefaultAPIs = []string{"eth", "net", "txpool", "web3", "personal", "debug", "miner", "cosmos"}
 )
 
 const (
