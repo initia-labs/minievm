@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"slices"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -49,11 +50,19 @@ func StartJSONRPC(
 	svrCtx *server.Context,
 	clientCtx client.Context,
 	jsonRPCConfig config.JSONRPCConfig,
+	isWebSocket bool,
 ) error {
-	logger := svrCtx.Logger.With("module", "geth")
+	if !isWebSocket && !jsonRPCConfig.Enable {
+		return nil
+	} else if isWebSocket && !jsonRPCConfig.EnableWS {
+		return nil
+	}
+
+	logger := svrCtx.Logger.With("module", "geth").With("api", "jsonrpc")
 	ethlog.SetDefault(ethlog.NewLogger(newLogger(logger)))
 
 	rpcServer := rpc.NewServer()
+	rpcServer.SetBatchLimits(jsonRPCConfig.BatchRequestLimit, jsonRPCConfig.BatchResponseMaxSize)
 	bkd := backend.NewJSONRPCBackend(app, svrCtx, clientCtx, jsonRPCConfig)
 	apis := []rpc.API{
 		{
@@ -95,6 +104,10 @@ func StartJSONRPC(
 	}
 
 	for _, api := range apis {
+		if slices.Index(jsonRPCConfig.APIs, api.Namespace) == -1 {
+			continue
+		}
+
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
 			svrCtx.Logger.Error(
 				"failed to register service in JSON RPC namespace",
@@ -105,8 +118,21 @@ func StartJSONRPC(
 		}
 	}
 
-	r := mux.NewRouter()
-	r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
+	router := mux.NewRouter()
+
+	var addr string
+	if !isWebSocket {
+		addr = jsonRPCConfig.Address
+		router.Handle("/", rpcServer).Methods("GET").Methods("POST")
+	} else {
+		allowedOrigins := []string{}
+		if jsonRPCConfig.EnableUnsafeCORS {
+			allowedOrigins = []string{"*"}
+		}
+
+		addr = jsonRPCConfig.AddressWS
+		router.Handle("/", rpcServer.WebsocketHandler(allowedOrigins))
+	}
 
 	handlerWithCors := cors.Default()
 	if jsonRPCConfig.EnableUnsafeCORS {
@@ -114,15 +140,14 @@ func StartJSONRPC(
 	}
 
 	httpSrv := &http.Server{
-		Addr:              jsonRPCConfig.Address,
-		Handler:           handlerWithCors.Handler(r),
+		Addr:              addr,
+		Handler:           handlerWithCors.Handler(router),
 		ReadHeaderTimeout: jsonRPCConfig.HTTPTimeout,
 		ReadTimeout:       jsonRPCConfig.HTTPTimeout,
 		WriteTimeout:      jsonRPCConfig.HTTPTimeout,
 		IdleTimeout:       jsonRPCConfig.HTTPIdleTimeout,
 	}
 
-	// httpSrv.Serve()
 	ln, err := listen(httpSrv.Addr, jsonRPCConfig)
 	if err != nil {
 		return err
@@ -132,7 +157,12 @@ func StartJSONRPC(
 		errCh := make(chan error)
 
 		go func() {
-			svrCtx.Logger.Info("Starting JSON-RPC server", "address", jsonRPCConfig.Address)
+			if !isWebSocket {
+				svrCtx.Logger.Info("Starting JSON-RPC server", "address", jsonRPCConfig.Address)
+			} else {
+				svrCtx.Logger.Info("Starting JSON-RPC WebSocket server", "address", jsonRPCConfig.AddressWS)
+			}
+
 			errCh <- httpSrv.Serve(ln)
 		}()
 
@@ -142,11 +172,23 @@ func StartJSONRPC(
 		case <-ctx.Done():
 			// The calling process canceled or closed the provided context, so we must
 			// gracefully stop the gRPC server.
-			logger.Info("stopping Ethereum JSONRPC server...", "address", jsonRPCConfig.Address)
+			if !isWebSocket {
+				logger.Info("stopping Ethereum JSONRPC server...", "address", jsonRPCConfig.Address)
+			} else {
+				logger.Info("stopping Ethereum JSONRPC WebSocket server...", "address", jsonRPCConfig.AddressWS)
+			}
+
 			return httpSrv.Close()
 
 		case err := <-errCh:
-			logger.Error("failed to start Ethereum JSONRPC server", "err", err)
+			if err != nil {
+				if !isWebSocket {
+					logger.Error("failed to start Ethereum JSONRPC server", "err", err)
+				} else {
+					logger.Error("failed to start Ethereum JSONRPC WebSocket server", "err", err)
+				}
+			}
+
 			return err
 		}
 	})

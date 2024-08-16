@@ -170,12 +170,28 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 			sdk.GetConfig().Seal()
 
 			// start jsonrpc server
-			return jsonrpc.StartJSONRPC(
+			if err := jsonrpc.StartJSONRPC(
 				ctx, g, a.App().(*minitiaapp.MinitiaApp),
 				svrCtx,
 				clientCtx,
 				jsonrpcconfig.GetConfig(a.appOpts),
-			)
+				false,
+			); err != nil {
+				return err
+			}
+
+			// start jsonrpc websocket server
+			if err := jsonrpc.StartJSONRPC(
+				ctx, g, a.App().(*minitiaapp.MinitiaApp),
+				svrCtx,
+				clientCtx,
+				jsonrpcconfig.GetConfig(a.appOpts),
+				true,
+			); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	})
 

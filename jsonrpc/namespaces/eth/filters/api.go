@@ -22,6 +22,7 @@ var (
 	errFilterNotFound    = errors.New("filter not found")
 	errInvalidBlockRange = errors.New("invalid block range params")
 	errExceedMaxTopics   = errors.New("exceed max topics")
+	errExceedFilterCap   = errors.New("exceed filter cap")
 )
 
 // The maximum number of topic criteria allowed, vm.LOG4 - vm.LOG0
@@ -46,8 +47,9 @@ type FilterAPI struct {
 
 	logger log.Logger
 
-	filtersMu sync.Mutex
-	filters   map[rpc.ID]*filter
+	filtersMu     sync.Mutex
+	filters       map[rpc.ID]*filter
+	subscriptions map[rpc.ID]*subscription
 
 	// channels for block and log events
 	blockChan   chan *coretypes.Header
@@ -64,7 +66,8 @@ func NewFilterAPI(app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger l
 
 		logger: logger,
 
-		filters: make(map[rpc.ID]*filter),
+		filters:       make(map[rpc.ID]*filter),
+		subscriptions: make(map[rpc.ID]*subscription),
 	}
 
 	go api.clearUnusedFilters()
@@ -101,6 +104,11 @@ func (api *FilterAPI) subscribeEvents() {
 					f.hashes = append(f.hashes, block.Hash())
 				}
 			}
+			for _, s := range api.subscriptions {
+				if s.ty == ethfilters.BlocksSubscription {
+					s.headerChan <- block
+				}
+			}
 			api.filtersMu.Unlock()
 		case logs := <-api.logsChan:
 			api.filtersMu.Lock()
@@ -110,6 +118,11 @@ func (api *FilterAPI) subscribeEvents() {
 					if len(logs) > 0 {
 						f.logs = append(f.logs, logs...)
 					}
+				}
+			}
+			for _, s := range api.subscriptions {
+				if s.ty == ethfilters.LogsSubscription {
+					s.logsChan <- logs
 				}
 			}
 			api.filtersMu.Unlock()
@@ -124,6 +137,15 @@ func (api *FilterAPI) subscribeEvents() {
 					}
 				}
 			}
+			for _, s := range api.subscriptions {
+				if s.ty == ethfilters.PendingTransactionsSubscription {
+					if s.fullTx {
+						s.txChan <- tx
+					} else {
+						s.hashChan <- tx.Hash
+					}
+				}
+			}
 			api.filtersMu.Unlock()
 		}
 	}
@@ -134,7 +156,11 @@ func (api *FilterAPI) subscribeEvents() {
 //
 // It is part of the filter package because this filter can be used through the
 // `eth_getFilterChanges` polling method that is also used for log filters.
-func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) rpc.ID {
+func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) {
+	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
+		return "", errExceedFilterCap
+	}
+
 	id := rpc.NewID()
 	api.filtersMu.Lock()
 	api.filters[id] = &filter{
@@ -145,12 +171,16 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) rpc.ID {
 	}
 	api.filtersMu.Unlock()
 
-	return id
+	return id, nil
 }
 
 // NewBlockFilter creates a filter that fetches blocks that are imported into the chain.
 // It is part of the filter package since polling goes with eth_getFilterChanges.
-func (api *FilterAPI) NewBlockFilter() rpc.ID {
+func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
+	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
+		return "", errExceedFilterCap
+	}
+
 	id := rpc.NewID()
 	api.filtersMu.Lock()
 	api.filters[id] = &filter{
@@ -159,7 +189,7 @@ func (api *FilterAPI) NewBlockFilter() rpc.ID {
 	}
 	api.filtersMu.Unlock()
 
-	return id
+	return id, nil
 }
 
 // NewFilter creates a new filter and returns the filter id. It can be
@@ -173,6 +203,9 @@ func (api *FilterAPI) NewBlockFilter() rpc.ID {
 func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) {
 	if len(crit.Topics) > maxTopics {
 		return "", errExceedMaxTopics
+	}
+	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
+		return "", errExceedFilterCap
 	}
 
 	var from, to rpc.BlockNumber
@@ -208,7 +241,6 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 
 // GetLogs returns logs matching the given argument that are stored within the state.
 func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteria) ([]*coretypes.Log, error) {
-	api.backend.RPCFilterCap()
 	if len(crit.Topics) > maxTopics {
 		return nil, errExceedMaxTopics
 	}

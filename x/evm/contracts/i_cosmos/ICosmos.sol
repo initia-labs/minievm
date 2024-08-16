@@ -60,6 +60,20 @@ interface ICosmos {
     //    "currency_pair_ids": ["BITCOIN/USD", "ETHEREUM/USD"]
     // }
     //
+    // res: {
+    //    "prices": [
+    //        {
+    //        "price": {
+    //            "price": "5796264752",
+    //            "block_timestamp": "2024-08-16T04:18:25.372878802Z",
+    //            "block_height": "4231677"
+    //        },
+    //        "nonce": "4230787",
+    //        "decimals": "5",
+    //        "id": "2"
+    //        }
+    //    ]
+    // }
     function query_cosmos(
         string memory path,
         string memory req

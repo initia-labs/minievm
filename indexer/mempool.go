@@ -30,7 +30,7 @@ func (m *MempoolWrapper) CountTx() int {
 
 // Insert implements mempool.Mempool.
 func (m *MempoolWrapper) Insert(ctx context.Context, tx sdk.Tx) error {
-	if m.indexer.pendingChan != nil {
+	if len(m.indexer.pendingChans) > 0 {
 		txUtils := evmkeeper.NewTxUtils(m.indexer.evmKeeper)
 		ethTx, _, err := txUtils.ConvertCosmosTxToEthereumTx(ctx, tx)
 		if err != nil {
@@ -43,7 +43,10 @@ func (m *MempoolWrapper) Insert(ctx context.Context, tx sdk.Tx) error {
 			chainId := evmtypes.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID())
 			rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainId)
 
-			m.indexer.pendingChan <- rpcTx
+			// emit the transaction to all pending channels
+			for _, pendingChan := range m.indexer.pendingChans {
+				pendingChan <- rpcTx
+			}
 		}
 	}
 

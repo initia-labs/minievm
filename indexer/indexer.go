@@ -68,9 +68,9 @@ type EVMIndexerImpl struct {
 	TxHashToCosmosTxHash     collections.Map[[]byte, []byte]
 	CosmosTxHashToTxHash     collections.Map[[]byte, []byte]
 
-	blockChan   chan *coretypes.Header
-	logsChan    chan []*coretypes.Log
-	pendingChan chan *rpctypes.RPCTransaction
+	blockChans   []chan *coretypes.Header
+	logsChans    []chan []*coretypes.Log
+	pendingChans []chan *rpctypes.RPCTransaction
 }
 
 func NewEVMIndexer(
@@ -107,9 +107,9 @@ func NewEVMIndexer(
 		TxHashToCosmosTxHash:     collections.NewMap(sb, prefixTxHashToCosmosTxHash, "tx_hash_to_cosmos_tx_hash", collections.BytesKey, collections.BytesValue),
 		CosmosTxHashToTxHash:     collections.NewMap(sb, prefixCosmosTxHashToTxHash, "cosmos_tx_hash_to_tx_hash", collections.BytesKey, collections.BytesValue),
 
-		blockChan:   nil,
-		logsChan:    nil,
-		pendingChan: nil,
+		blockChans:   nil,
+		logsChans:    nil,
+		pendingChans: nil,
 	}
 
 	schema, err := sb.Build()
@@ -123,8 +123,12 @@ func NewEVMIndexer(
 
 // Subscribe returns channels to receive blocks and logs.
 func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction) {
-	e.blockChan = make(chan *coretypes.Header)
-	e.logsChan = make(chan []*coretypes.Log)
-	e.pendingChan = make(chan *rpctypes.RPCTransaction)
-	return e.blockChan, e.logsChan, e.pendingChan
+	blockChan := make(chan *coretypes.Header)
+	logsChan := make(chan []*coretypes.Log)
+	pendingChan := make(chan *rpctypes.RPCTransaction)
+
+	e.blockChans = append(e.blockChans, blockChan)
+	e.logsChans = append(e.logsChans, logsChan)
+	e.pendingChans = append(e.pendingChans, pendingChan)
+	return blockChan, logsChan, pendingChan
 }
