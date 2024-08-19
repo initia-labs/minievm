@@ -80,14 +80,11 @@ func CollJsonVal[T any]() collcodec.ValueCodec[T] {
 type collJsonVal[T any] struct{}
 
 func (c collJsonVal[T]) Encode(value T) ([]byte, error) {
-	return json.Marshal(value)
+	return c.EncodeJSON(value)
 }
 
 func (c collJsonVal[T]) Decode(b []byte) (T, error) {
-	var value T
-
-	err := json.Unmarshal(b, &value)
-	return value, err
+	return c.DecodeJSON(b)
 }
 
 func (c collJsonVal[T]) EncodeJSON(value T) ([]byte, error) {

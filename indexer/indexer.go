@@ -17,7 +17,7 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
-	"github.com/initia-labs/kvindexer/store"
+
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 )
@@ -55,7 +55,7 @@ type EVMIndexerImpl struct {
 	txConfig client.TxConfig
 	appCodec codec.Codec
 
-	store         *store.CacheStore
+	store         *CacheStore
 	evmKeeper     *evmkeeper.Keeper
 	opChildKeeper *opchildkeeper.Keeper
 
@@ -82,7 +82,7 @@ func NewEVMIndexer(
 	opChildKeeper *opchildkeeper.Keeper,
 ) (EVMIndexer, error) {
 	// TODO make cache size configurable
-	store := store.NewCacheStore(dbadapter.Store{DB: db}, 100)
+	store := NewCacheStore(dbadapter.Store{DB: db}, 100)
 	sb := collections.NewSchemaBuilderFromAccessor(
 		func(ctx context.Context) corestoretypes.KVStore {
 			return store
