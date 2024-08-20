@@ -777,8 +777,8 @@ github.com/initia-labs/OPinit v0.4.1 h1:g6IVEAOe2X31pgjk/q0zg4R1GfNj2QP3q5s3HMcW
 github.com/initia-labs/OPinit v0.4.1/go.mod h1:n0eqwOnVGE1vuTnW+3jzyEXfE4ndTM0vCRGmPu9VvUc=
 github.com/initia-labs/OPinit/api v0.4.1 h1:Q8etW92LiwekKZxzDYVFdiHF3uOpEA4nyajy8zpcxB0=
 github.com/initia-labs/OPinit/api v0.4.1/go.mod h1:Xy/Nt3ubXLQ4zKn0m7RuQOM1sj8TVdlNNyek21TGYR0=
-github.com/initia-labs/cometbft v0.0.0-20240807072006-9d86e6bfaf87 h1:pLdZxGPBfj/N3vq0XEJMdbb9mUZQ/Xi0NpjNq8DEpeg=
-github.com/initia-labs/cometbft v0.0.0-20240807072006-9d86e6bfaf87/go.mod h1:xCLFOVbO/2WIk/3m0qVemx1FdYo5dI64ehkwPou08Yo=
+github.com/initia-labs/cometbft v0.0.0-20240820063101-22962752beb2 h1:UwPPVwxKIptZ8RvaoICK3Kl6335qgmtszjwHbQzrw7k=
+github.com/initia-labs/cometbft v0.0.0-20240820063101-22962752beb2/go.mod h1:xCLFOVbO/2WIk/3m0qVemx1FdYo5dI64ehkwPou08Yo=
 github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7 h1:V7K8wvE5FVVv6WTeITI+nqWfo4b9WlZyXQH0Olz5UVI=
 github.com/initia-labs/evm v0.0.0-20240620024053-f13ebda716b7/go.mod h1:x2gtBG0WHLgY08FE97lfhjtpcR5vcSAZbi34JnrsBbQ=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d h1:TLq8lB1PtQ0pjGf+bN8YgGVeLMuytZ26SBGMOs1seKY=
