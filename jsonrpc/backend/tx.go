@@ -54,7 +54,6 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 		return err
 	}
 
-	// check whether sequence is in order
 	authTx, ok := cosmosTx.(authsigning.Tx)
 	if !ok {
 		return NewInternalError("failed to convert cosmosTx to authsigning.Tx")
