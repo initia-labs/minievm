@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	bigcache "github.com/allegro/bigcache/v3"
+	lrucache "github.com/hashicorp/golang-lru/v2"
 
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -19,7 +20,7 @@ type JSONRPCBackend struct {
 	logger log.Logger
 
 	queuedTxs *bigcache.BigCache
-	sendTxMut sync.Mutex
+	accMuts   *lrucache.Cache[string, *sync.Mutex]
 
 	ctx       context.Context
 	svrCtx    *server.Context
@@ -54,10 +55,19 @@ func NewJSONRPCBackend(
 		return nil, err
 	}
 
+	// support concurrent 100 accounts mutex
+	accMuts, err := lrucache.New[string, *sync.Mutex](100)
+	if err != nil {
+		return nil, err
+	}
+
 	return &JSONRPCBackend{
-		app:       app,
-		logger:    logger,
+		app:    app,
+		logger: logger,
+
 		queuedTxs: queuedTxs,
+		accMuts:   accMuts,
+
 		ctx:       ctx,
 		svrCtx:    svrCtx,
 		clientCtx: clientCtx,

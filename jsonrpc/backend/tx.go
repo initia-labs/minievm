@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -36,9 +37,6 @@ func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, e
 }
 
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
-	b.sendTxMut.Lock()
-	defer b.sendTxMut.Unlock()
-
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return err
@@ -70,13 +68,24 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	accSeq := uint64(0)
 	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
+	// hold mutex for each sender
+	senderHex := hexutil.Encode(sender.Bytes())
+	accMut, ok := b.accMuts.Get(senderHex)
+	if !ok {
+		accMut = &sync.Mutex{}
+		_ = b.accMuts.Add(senderHex, accMut)
+	}
+
+	accMut.Lock()
+	defer accMut.Unlock()
+
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
 	}
 
-	b.logger.Debug("enqueue tx", "sender", sender, "txSeq", txSeq, "accSeq", accSeq)
-	cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
+	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
+	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
 	if err := b.queuedTxs.Set(cacheKey, txBytes); err != nil {
 		b.logger.Error("failed to enqueue tx", "key", cacheKey, "err", err)
 		return NewInternalError("failed to enqueue tx")
@@ -84,14 +93,14 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 	// check if there are queued txs which can be sent
 	for {
-		cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), accSeq)
+		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
 		if txBytes, err := b.queuedTxs.Get(cacheKey); err == nil {
 			if err := b.queuedTxs.Delete(cacheKey); err != nil {
 				b.logger.Error("failed to delete queued tx", "key", cacheKey, "err", err)
 				return NewInternalError("failed to delete queued tx")
 			}
 
-			b.logger.Debug("broadcast queued tx", "sender", sender, "txSeq", accSeq)
+			b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
 			res, err := b.clientCtx.BroadcastTxSync(txBytes)
 			if err != nil {
 				return err
