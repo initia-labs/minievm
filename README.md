@@ -6,7 +6,7 @@ MiniEVM is an optimistic rollup consumer chain powered by EVM, designed to simpl
 
 ## Prerequisites
 
-- Go v1.22.2+
+- Go v1.22.5+
 
 ## Getting Started
 

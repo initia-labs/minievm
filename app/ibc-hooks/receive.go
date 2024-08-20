@@ -1,7 +1,6 @@
 package evm_hooks
 
 import (
-	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -53,11 +52,7 @@ func (h EVMHooks) onRecvIcs20Packet(
 	//
 	// If that succeeds, we make the contract call
 	data.Receiver = intermediateSender
-	bz, err := json.Marshal(data)
-	if err != nil {
-		return newEmitErrorAcknowledgement(err)
-	}
-	packet.Data = bz
+	packet.Data = data.GetBytes()
 
 	ack := im.App.OnRecvPacket(ctx, packet, relayer)
 	if !ack.Success() {
@@ -91,7 +86,7 @@ func (h EVMHooks) onRecvIcs721Packet(
 	if allowed, err := h.checkACL(im, ctx, msg.ContractAddr); err != nil {
 		return newEmitErrorAcknowledgement(err)
 	} else if !allowed {
-		return im.App.OnRecvPacket(ctx, packet, relayer)
+		return newEmitErrorAcknowledgement(fmt.Errorf("contract `%s` is not allowed to be used in ibchooks", msg.ContractAddr))
 	}
 
 	// Validate whether the receiver is correctly specified or not.
@@ -109,11 +104,7 @@ func (h EVMHooks) onRecvIcs721Packet(
 	//
 	// If that succeeds, we make the contract call
 	data.Receiver = intermediateSender
-	bz, err := json.Marshal(data)
-	if err != nil {
-		return newEmitErrorAcknowledgement(err)
-	}
-	packet.Data = bz
+	packet.Data = data.GetBytes(packet.SourcePort)
 
 	ack := im.App.OnRecvPacket(ctx, packet, relayer)
 	if !ack.Success() {
