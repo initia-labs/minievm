@@ -76,27 +76,11 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 		accSeq = acc.GetSequence()
 	}
 
-	if accSeq != txSeq {
-		// sequence is not in order, put tx into queuedTxs
-		b.logger.Debug("queue tx which is not in order", "sender", sender, "sequence", accSeq, "tx_sequence", txSeq)
-
-		cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
-		if err := b.queuedTxs.Set(cacheKey, txBytes); err != nil {
-			b.logger.Error("failed to enqueue tx", "key", cacheKey, "err", err)
-			return NewInternalError("failed to enqueue tx")
-		}
-	} else {
-		// sequence is in order, broadcast tx
-		res, err := b.clientCtx.BroadcastTxSync(txBytes)
-		if err != nil {
-			return err
-		}
-		if res.Code != 0 {
-			return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
-		}
-
-		// increment account sequence
-		accSeq++
+	b.logger.Debug("enqueue tx", "sender", sender, "txSeq", txSeq, "accSeq", accSeq)
+	cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
+	if err := b.queuedTxs.Set(cacheKey, txBytes); err != nil {
+		b.logger.Error("failed to enqueue tx", "key", cacheKey, "err", err)
+		return NewInternalError("failed to enqueue tx")
 	}
 
 	// check if there are queued txs which can be sent
@@ -108,6 +92,7 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 				return NewInternalError("failed to delete queued tx")
 			}
 
+			b.logger.Debug("broadcast queued tx", "sender", sender, "txSeq", accSeq)
 			res, err := b.clientCtx.BroadcastTxSync(txBytes)
 			if err != nil {
 				return err
