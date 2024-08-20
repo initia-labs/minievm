@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -45,15 +46,33 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 		return err
 	}
 
-	if authTx, ok := cosmosTx.(authsigning.Tx); ok {
-		if sigs, err := authTx.GetSignaturesV2(); err == nil && len(sigs) > 0 {
-			b.logger.Debug("eth_sendTx", "sequence", sigs[0].Sequence)
-		}
-	}
-
 	txBytes, err := b.app.TxEncode(cosmosTx)
 	if err != nil {
 		return err
+	}
+
+	// check whether sequence is in order
+	var sender sdk.AccAddress
+	var txSeq uint64
+	if authTx, ok := cosmosTx.(authsigning.Tx); ok {
+		if sigs, err := authTx.GetSignaturesV2(); err == nil && len(sigs) > 0 {
+			sig := sigs[0]
+			txSeq = sig.Sequence
+
+			checkCtx := b.app.GetContextForCheckTx(nil)
+			sender = sdk.AccAddress(sig.PubKey.Address().Bytes())
+			if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
+				seq := acc.GetSequence()
+
+				// sequence is not in order, put tx into queuedTxs
+				if seq != txSeq {
+					b.logger.Debug("queue tx which is not in order", "sender", sender, "sequence", seq, "tx_sequence", txSeq)
+
+					cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
+					return b.queuedTxs.Set(cacheKey, txBytes)
+				}
+			}
+		}
 	}
 
 	res, err := b.clientCtx.BroadcastTxSync(txBytes)
@@ -62,6 +81,29 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	}
 	if res.Code != 0 {
 		return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+	}
+
+	// check if there are queued txs which can be sent
+	if sender != nil {
+		for {
+			cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq+1)
+			if txBytes, err := b.queuedTxs.Get(cacheKey); err == nil {
+				if err := b.queuedTxs.Delete(cacheKey); err != nil {
+					b.logger.Error("failed to delete queued tx", "key", cacheKey, "err", err)
+					continue
+				}
+
+				res, err := b.clientCtx.BroadcastTxSync(txBytes)
+				if err != nil {
+					return err
+				}
+				if res.Code != 0 {
+					return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+				}
+			} else {
+				break
+			}
+		}
 	}
 
 	return nil

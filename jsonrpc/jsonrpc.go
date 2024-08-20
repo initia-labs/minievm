@@ -63,7 +63,12 @@ func StartJSONRPC(
 
 	rpcServer := rpc.NewServer()
 	rpcServer.SetBatchLimits(jsonRPCConfig.BatchRequestLimit, jsonRPCConfig.BatchResponseMaxSize)
-	bkd := backend.NewJSONRPCBackend(app, logger, svrCtx, clientCtx, jsonRPCConfig)
+
+	bkd, err := backend.NewJSONRPCBackend(app, logger, svrCtx, clientCtx, jsonRPCConfig)
+	if err != nil {
+		return err
+	}
+
 	apis := []rpc.API{
 		{
 			Namespace: EthNamespace,
