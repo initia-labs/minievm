@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"sync"
 
 	bigcache "github.com/allegro/bigcache/v3"
 
@@ -18,6 +19,7 @@ type JSONRPCBackend struct {
 	logger log.Logger
 
 	queuedTxs *bigcache.BigCache
+	sendTxMut sync.Mutex
 
 	ctx       context.Context
 	svrCtx    *server.Context
@@ -46,12 +48,19 @@ func NewJSONRPCBackend(
 	cacheConfig.HardMaxCacheSize = cfg.QueuedTransactionCap
 
 	ctx := context.Background()
+
 	queuedTxs, err := bigcache.New(ctx, cacheConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return &JSONRPCBackend{
-		app, logger, queuedTxs, ctx, svrCtx, clientCtx, cfg,
+		app:       app,
+		logger:    logger,
+		queuedTxs: queuedTxs,
+		ctx:       ctx,
+		svrCtx:    svrCtx,
+		clientCtx: clientCtx,
+		cfg:       cfg,
 	}, nil
 }

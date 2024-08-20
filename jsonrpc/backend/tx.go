@@ -36,6 +36,9 @@ func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, e
 }
 
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
+	b.sendTxMut.Lock()
+	defer b.sendTxMut.Unlock()
+
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return err
