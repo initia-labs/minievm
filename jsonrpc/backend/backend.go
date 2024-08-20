@@ -41,8 +41,6 @@ func NewJSONRPCBackend(
 	if err != nil {
 		return nil, err
 	}
-
-	// support concurrent 100 accounts mutex
 	accMuts, err := lrucache.New[string, *sync.Mutex](cfg.QueuedTransactionCap / 10)
 	if err != nil {
 		return nil, err
