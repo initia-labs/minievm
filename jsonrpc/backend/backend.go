@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	bigcache "github.com/allegro/bigcache/v3"
 	lrucache "github.com/hashicorp/golang-lru/v2"
 
 	"cosmossdk.io/log"
@@ -19,7 +18,7 @@ type JSONRPCBackend struct {
 	app    *app.MinitiaApp
 	logger log.Logger
 
-	queuedTxs *bigcache.BigCache
+	queuedTxs *lrucache.Cache[string, []byte]
 	accMuts   *lrucache.Cache[string, *sync.Mutex]
 
 	ctx       context.Context
@@ -38,29 +37,18 @@ func NewJSONRPCBackend(
 	cfg config.JSONRPCConfig,
 ) (*JSONRPCBackend, error) {
 
-	if cfg.QueuedTransactionCap == 0 {
-		cfg.QueuedTransactionCap = config.DefaultQueuedTransactionCap
-	}
-	if cfg.QueuedTransactionTTL == 0 {
-		cfg.QueuedTransactionTTL = config.DefaultQueuedTransactionTTL
-	}
-
-	cacheConfig := bigcache.DefaultConfig(cfg.QueuedTransactionTTL)
-	cacheConfig.HardMaxCacheSize = cfg.QueuedTransactionCap
-
-	ctx := context.Background()
-
-	queuedTxs, err := bigcache.New(ctx, cacheConfig)
+	queuedTxs, err := lrucache.New[string, []byte](cfg.QueuedTransactionCap)
 	if err != nil {
 		return nil, err
 	}
 
 	// support concurrent 100 accounts mutex
-	accMuts, err := lrucache.New[string, *sync.Mutex](100)
+	accMuts, err := lrucache.New[string, *sync.Mutex](cfg.QueuedTransactionCap / 10)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx := context.Background()
 	return &JSONRPCBackend{
 		app:    app,
 		logger: logger,

@@ -86,19 +86,13 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
 	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
-	if err := b.queuedTxs.Set(cacheKey, txBytes); err != nil {
-		b.logger.Error("failed to enqueue tx", "key", cacheKey, "err", err)
-		return NewInternalError("failed to enqueue tx")
-	}
+	_ = b.queuedTxs.Add(cacheKey, txBytes)
 
 	// check if there are queued txs which can be sent
 	for {
 		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
-		if txBytes, err := b.queuedTxs.Get(cacheKey); err == nil {
-			if err := b.queuedTxs.Delete(cacheKey); err != nil {
-				b.logger.Error("failed to delete queued tx", "key", cacheKey, "err", err)
-				return NewInternalError("failed to delete queued tx")
-			}
+		if txBytes, ok := b.queuedTxs.Get(cacheKey); ok {
+			_ = b.queuedTxs.Remove(cacheKey)
 
 			b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
 			res, err := b.clientCtx.BroadcastTxSync(txBytes)
