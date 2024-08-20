@@ -73,7 +73,7 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
-		b.svrCtx.Logger.Error("failed to get block header by number", "err", err)
+		b.logger.Error("failed to get block header by number", "err", err)
 		return nil, err
 	}
 
@@ -90,7 +90,7 @@ func (b *JSONRPCBackend) GetHeaderByHash(hash common.Hash) (*coretypes.Header, e
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
-		b.svrCtx.Logger.Error("failed to get block header by hash", "err", err)
+		b.logger.Error("failed to get block header by hash", "err", err)
 		return nil, err
 	}
 
@@ -112,7 +112,7 @@ func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bo
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
-		b.svrCtx.Logger.Error("failed to get block header by number", "err", err)
+		b.logger.Error("failed to get block header by number", "err", err)
 		return nil, err
 	}
 
@@ -140,7 +140,7 @@ func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[stri
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
-		b.svrCtx.Logger.Error("failed to get block header by hash", "err", err)
+		b.logger.Error("failed to get block header by hash", "err", err)
 		return nil, err
 	}
 

@@ -63,42 +63,42 @@ func StartJSONRPC(
 
 	rpcServer := rpc.NewServer()
 	rpcServer.SetBatchLimits(jsonRPCConfig.BatchRequestLimit, jsonRPCConfig.BatchResponseMaxSize)
-	bkd := backend.NewJSONRPCBackend(app, svrCtx, clientCtx, jsonRPCConfig)
+	bkd := backend.NewJSONRPCBackend(app, logger, svrCtx, clientCtx, jsonRPCConfig)
 	apis := []rpc.API{
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   ethns.NewEthAPI(svrCtx.Logger, bkd),
+			Service:   ethns.NewEthAPI(logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   filters.NewFilterAPI(app, bkd, svrCtx.Logger),
+			Service:   filters.NewFilterAPI(app, bkd, logger),
 			Public:    true,
 		},
 		{
 			Namespace: NetNamespace,
 			Version:   apiVersion,
-			Service:   netns.NewNetAPI(svrCtx.Logger, bkd),
+			Service:   netns.NewNetAPI(logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: Web3Namespace,
 			Version:   apiVersion,
-			Service:   web3ns.NewWeb3API(svrCtx.Logger, bkd),
+			Service:   web3ns.NewWeb3API(logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
-			Service:   txpoolns.NewTxPoolAPI(svrCtx.Logger, bkd),
+			Service:   txpoolns.NewTxPoolAPI(logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: CosmosNamespace,
 			Version:   apiVersion,
-			Service:   cosmosns.NewCosmosAPI(svrCtx.Logger, bkd),
+			Service:   cosmosns.NewCosmosAPI(logger, bkd),
 			Public:    true,
 		},
 	}
@@ -109,7 +109,7 @@ func StartJSONRPC(
 		}
 
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
-			svrCtx.Logger.Error(
+			logger.Error(
 				"failed to register service in JSON RPC namespace",
 				"namespace", api.Namespace,
 				"service", api.Service,
@@ -158,9 +158,9 @@ func StartJSONRPC(
 
 		go func() {
 			if !isWebSocket {
-				svrCtx.Logger.Info("Starting JSON-RPC server", "address", addr)
+				logger.Info("Starting JSON-RPC server", "address", addr)
 			} else {
-				svrCtx.Logger.Info("Starting JSON-RPC WebSocket server", "address", addr)
+				logger.Info("Starting JSON-RPC WebSocket server", "address", addr)
 			}
 
 			errCh <- httpSrv.Serve(ln)

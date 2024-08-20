@@ -83,7 +83,7 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 
 	gasInfo, _, err := b.app.Simulate(txBytes)
 	if err != nil {
-		b.svrCtx.Logger.Error("failed to simulate tx", "err", err)
+		b.logger.Error("failed to simulate tx", "err", err)
 		return hexutil.Uint64(0), err
 	}
 
