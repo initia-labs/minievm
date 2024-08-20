@@ -68,14 +68,10 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	accSeq := uint64(0)
 	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
-	// hold mutex for each sender
 	senderHex := hexutil.Encode(sender.Bytes())
-	accMut, ok := b.accMuts.Get(senderHex)
-	if !ok {
-		accMut = &sync.Mutex{}
-		_ = b.accMuts.Add(senderHex, accMut)
-	}
 
+	// hold mutex for each sender
+	accMut := b.getAccMut(senderHex)
 	accMut.Lock()
 	defer accMut.Unlock()
 
@@ -110,6 +106,19 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	}
 
 	return nil
+}
+
+func (b *JSONRPCBackend) getAccMut(senderHex string) *sync.Mutex {
+	b.mut.Lock()
+	defer b.mut.Unlock()
+
+	accMut, ok := b.accMuts.Get(senderHex)
+	if !ok {
+		accMut = &sync.Mutex{}
+		_ = b.accMuts.Add(senderHex, accMut)
+	}
+
+	return accMut
 }
 
 func (b *JSONRPCBackend) getQueryCtx() (context.Context, error) {

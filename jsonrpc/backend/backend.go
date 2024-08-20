@@ -19,7 +19,9 @@ type JSONRPCBackend struct {
 	logger log.Logger
 
 	queuedTxs *lrucache.Cache[string, []byte]
-	accMuts   *lrucache.Cache[string, *sync.Mutex]
+
+	mut     sync.Mutex // mutex for accMuts
+	accMuts *lrucache.Cache[string, *sync.Mutex]
 
 	ctx       context.Context
 	svrCtx    *server.Context
