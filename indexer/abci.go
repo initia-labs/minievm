@@ -29,11 +29,8 @@ func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseComm
 func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.RequestFinalizeBlock, res abci.ResponseFinalizeBlock) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	batch := e.db.NewBatch()
-	defer batch.Close()
-
 	// compute base fee from the opChild gas prices
-	baseFee, err := e.baseFee(ctx)
+	baseFee, err := e.baseFee(sdkCtx)
 	if err != nil {
 		e.logger.Error("failed to get base fee", "err", err)
 		return err
@@ -67,11 +64,11 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 
 		// index tx hash
 		cosmosTxHash := comettypes.Tx(txBytes).Hash()
-		if err := e.TxHashToCosmosTxHash.Set(ctx, ethTx.Hash().Bytes(), cosmosTxHash); err != nil {
+		if err := e.TxHashToCosmosTxHash.Set(sdkCtx, ethTx.Hash().Bytes(), cosmosTxHash); err != nil {
 			e.logger.Error("failed to store tx hash to cosmos tx hash", "err", err)
 			return err
 		}
-		if err := e.CosmosTxHashToTxHash.Set(ctx, cosmosTxHash, ethTx.Hash().Bytes()); err != nil {
+		if err := e.CosmosTxHashToTxHash.Set(sdkCtx, cosmosTxHash, ethTx.Hash().Bytes()); err != nil {
 			e.logger.Error("failed to store cosmos tx hash to tx hash", "err", err)
 			return err
 		}
@@ -147,17 +144,17 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 
 		// store tx
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), chainId)
-		if err := e.TxMap.Set(ctx, txHash.Bytes(), *rpcTx); err != nil {
+		if err := e.TxMap.Set(sdkCtx, txHash.Bytes(), *rpcTx); err != nil {
 			e.logger.Error("failed to store rpcTx", "err", err)
 			return err
 		}
-		if err := e.TxReceiptMap.Set(ctx, txHash.Bytes(), *receipt); err != nil {
+		if err := e.TxReceiptMap.Set(sdkCtx, txHash.Bytes(), *receipt); err != nil {
 			e.logger.Error("failed to store tx receipt", "err", err)
 			return err
 		}
 
 		// store index
-		if err := e.BlockAndIndexToTxHashMap.Set(ctx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err != nil {
+		if err := e.BlockAndIndexToTxHashMap.Set(sdkCtx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err != nil {
 			e.logger.Error("failed to store blockAndIndexToTxHash", "err", err)
 			return err
 		}
@@ -181,11 +178,11 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	}
 
 	// index block header
-	if err := e.BlockHeaderMap.Set(ctx, uint64(blockHeight), blockHeader); err != nil {
+	if err := e.BlockHeaderMap.Set(sdkCtx, uint64(blockHeight), blockHeader); err != nil {
 		e.logger.Error("failed to marshal blockHeader", "err", err)
 		return err
 	}
-	if err := e.BlockHashToNumberMap.Set(ctx, blockHash.Bytes(), uint64(blockHeight)); err != nil {
+	if err := e.BlockHashToNumberMap.Set(sdkCtx, blockHash.Bytes(), uint64(blockHeight)); err != nil {
 		e.logger.Error("failed to store blockHashToNumber", "err", err)
 		return err
 	}
