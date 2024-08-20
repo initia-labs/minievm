@@ -30,7 +30,7 @@ func NewInternalError(msg string) *InternalError {
 }
 
 func (e *InternalError) Error() string {
-	return "internal jsonrpc error; " + e.msg
+	return "internal jsonrpc error: " + e.msg
 }
 
 func (e *InternalError) ErrorCode() int {
