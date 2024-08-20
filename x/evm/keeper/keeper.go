@@ -148,6 +148,11 @@ func (k *Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", "x/"+types.ModuleName)
 }
 
+// Config returns the x/evm configuration.
+func (k Keeper) Config() evmconfig.EVMConfig {
+	return k.config
+}
+
 // ERC20Keeper returns the ERC20Keeper
 func (k Keeper) ERC20Keeper() types.IERC20Keeper {
 	return k.erc20Keeper

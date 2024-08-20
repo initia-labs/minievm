@@ -2,6 +2,9 @@ package backend
 
 import (
 	"context"
+	"sync"
+
+	bigcache "github.com/allegro/bigcache/v3"
 
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -15,11 +18,14 @@ type JSONRPCBackend struct {
 	app    *app.MinitiaApp
 	logger log.Logger
 
+	queuedTxs *bigcache.BigCache
+	sendTxMut sync.Mutex
+
+	ctx       context.Context
 	svrCtx    *server.Context
 	clientCtx client.Context
-	cfg       config.JSONRPCConfig
 
-	ctx context.Context
+	cfg config.JSONRPCConfig
 }
 
 // NewJSONRPCBackend creates a new JSONRPCBackend instance
@@ -29,9 +35,32 @@ func NewJSONRPCBackend(
 	svrCtx *server.Context,
 	clientCtx client.Context,
 	cfg config.JSONRPCConfig,
-) *JSONRPCBackend {
-	ctx := context.Background()
-	return &JSONRPCBackend{
-		app, logger, svrCtx, clientCtx, cfg, ctx,
+) (*JSONRPCBackend, error) {
+
+	if cfg.QueuedTransactionCap == 0 {
+		cfg.QueuedTransactionCap = config.DefaultQueuedTransactionCap
 	}
+	if cfg.QueuedTransactionTTL == 0 {
+		cfg.QueuedTransactionTTL = config.DefaultQueuedTransactionTTL
+	}
+
+	cacheConfig := bigcache.DefaultConfig(cfg.QueuedTransactionTTL)
+	cacheConfig.HardMaxCacheSize = cfg.QueuedTransactionCap
+
+	ctx := context.Background()
+
+	queuedTxs, err := bigcache.New(ctx, cacheConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &JSONRPCBackend{
+		app:       app,
+		logger:    logger,
+		queuedTxs: queuedTxs,
+		ctx:       ctx,
+		svrCtx:    svrCtx,
+		clientCtx: clientCtx,
+		cfg:       cfg,
+	}, nil
 }

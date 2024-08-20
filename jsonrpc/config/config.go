@@ -38,6 +38,11 @@ const (
 	DefaultBatchRequestLimit = 1000
 	// DefaultBatchResponseMaxSize is the default maximum number of bytes returned from a batched call
 	DefaultBatchResponseMaxSize = 25 * 1000 * 1000
+	// DefaultQueuedTransactionCap is the default maximum size (MiB) of queued transactions that can be in the transaction pool.
+	DefaultQueuedTransactionCap = 100
+	// DefaultQueuedTransactionTTL is the default maximum time a queued transaction can
+	// remain in the transaction pool before being evicted.
+	DefaultQueuedTransactionTTL = 1 * time.Minute
 )
 
 var (
@@ -60,6 +65,8 @@ const (
 	flagJSONRPCMaxOpenConnections   = "json-rpc.max-open-connections"
 	flagJSONRPCBatchRequestLimit    = "json-rpc.batch-request-limit"
 	flagJSONRPCBatchResponseMaxSize = "json-rpc.batch-response-max-size"
+	flagJSONRPCQueuedTransactionCap = "json-rpc.queued-transaction-cap"
+	flagJSONRPCQueuedTransactionTTL = "json-rpc.queued-transaction-ttl"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -91,24 +98,36 @@ type JSONRPCConfig struct {
 	BatchRequestLimit int `mapstructure:"batch-request-limit"`
 	// Maximum number of bytes returned from a batched call
 	BatchResponseMaxSize int `mapstructure:"batch-response-max-size"`
+	// QueuedTransactionCap is a maximum size (MiB) of queued transactions that can be in the transaction pool.
+	QueuedTransactionCap int `mapstructure:"queued-transaction-cap"`
+	// QueuedTransactionTTL is the maximum time a queued transaction can
+	// remain in the transaction pool before being evicted.
+	QueuedTransactionTTL time.Duration `mapstructure:"queued-transaction-ttl"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
 func DefaultJSONRPCConfig() JSONRPCConfig {
 	return JSONRPCConfig{
-		Enable:               DefaultEnable,
-		Address:              DefaultAddress,
-		EnableWS:             DefaultEnable,
-		AddressWS:            DefaultAddressWS,
-		EnableUnsafeCORS:     DefaultEnableUnsafeCORS,
-		APIs:                 DefaultAPIs,
-		FilterCap:            DefaultFilterCap,
-		BlockRangeCap:        DefaultBlockRangeCap,
-		HTTPTimeout:          DefaultHTTPTimeout,
-		HTTPIdleTimeout:      DefaultHTTPIdleTimeout,
-		MaxOpenConnections:   DefaultMaxOpenConnections,
+		Enable:           DefaultEnable,
+		Address:          DefaultAddress,
+		EnableWS:         DefaultEnable,
+		AddressWS:        DefaultAddressWS,
+		EnableUnsafeCORS: DefaultEnableUnsafeCORS,
+
+		APIs: DefaultAPIs,
+
+		FilterCap:     DefaultFilterCap,
+		BlockRangeCap: DefaultBlockRangeCap,
+
+		HTTPTimeout:        DefaultHTTPTimeout,
+		HTTPIdleTimeout:    DefaultHTTPIdleTimeout,
+		MaxOpenConnections: DefaultMaxOpenConnections,
+
 		BatchRequestLimit:    DefaultBatchRequestLimit,
 		BatchResponseMaxSize: DefaultBatchResponseMaxSize,
+
+		QueuedTransactionCap: DefaultQueuedTransactionCap,
+		QueuedTransactionTTL: DefaultQueuedTransactionTTL,
 	}
 }
 
@@ -127,6 +146,8 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCMaxOpenConnections, DefaultMaxOpenConnections, "Maximum number of simultaneous connections for the server listener")
 	startCmd.Flags().Int(flagJSONRPCBatchRequestLimit, DefaultBatchRequestLimit, "Maximum number of requests in a batch")
 	startCmd.Flags().Int(flagJSONRPCBatchResponseMaxSize, DefaultBatchResponseMaxSize, "Maximum number of bytes returned from a batched call")
+	startCmd.Flags().Int(flagJSONRPCQueuedTransactionCap, DefaultQueuedTransactionCap, "Maximum size (MiB) of queued transactions that can be in the transaction pool")
+	startCmd.Flags().Duration(flagJSONRPCQueuedTransactionTTL, DefaultQueuedTransactionTTL, "Maximum time a queued transaction can remain in the transaction pool before being evicted")
 }
 
 // GetConfig load config values from the app options
@@ -145,6 +166,8 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		MaxOpenConnections:   cast.ToInt(appOpts.Get(flagJSONRPCMaxOpenConnections)),
 		BatchRequestLimit:    cast.ToInt(appOpts.Get(flagJSONRPCBatchRequestLimit)),
 		BatchResponseMaxSize: cast.ToInt(appOpts.Get(flagJSONRPCBatchResponseMaxSize)),
+		QueuedTransactionCap: cast.ToInt(appOpts.Get(flagJSONRPCQueuedTransactionCap)),
+		QueuedTransactionTTL: cast.ToDuration(appOpts.Get(flagJSONRPCQueuedTransactionTTL)),
 	}
 }
 
@@ -196,4 +219,11 @@ batch-request-limit = {{ .JSONRPCConfig.BatchRequestLimit }}
 
 # Maximum number of bytes returned from a batched call
 batch-response-max-size = {{ .JSONRPCConfig.BatchResponseMaxSize }}
+
+# QueuedTransactionCap is a maximum size (MiB) of queued transactions that can be in the transaction pool.
+queued-transaction-cap = {{ .JSONRPCConfig.QueuedTransactionCap }}
+
+# QueuedTransactionTTL is the maximum time a queued transaction can
+# remain in the transaction pool before being evicted.
+queued-transaction-ttl = "{{ .JSONRPCConfig.QueuedTransactionTTL }}"
 `

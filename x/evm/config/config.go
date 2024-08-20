@@ -7,22 +7,31 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 )
 
-// DefaultContractSimulationGasLimit - default max simulation gas
-const DefaultContractSimulationGasLimit = uint64(3_000_000)
+const (
+	// DefaultContractSimulationGasLimit - default max simulation gas
+	DefaultContractSimulationGasLimit = uint64(3_000_000)
+	// DefaultIndexerCacheSize is the default maximum size (MiB) of the cache.
+	DefaultIndexerCacheSize = 100
+)
 
 const (
 	flagContractSimulationGasLimit = "evm.contract-simulation-gas-limit"
+	flagIndexerCacheSize           = "evm.indexer-cache-size"
 )
 
 // EVMConfig is the extra config required for evm
 type EVMConfig struct {
+	// ContractSimulationGasLimit is the maximum gas amount can be used in a tx simulation call.
 	ContractSimulationGasLimit uint64 `mapstructure:"contract-simulation-gas-limit"`
+	// IndexerCacheSize is the maximum size (MiB) of the cache.
+	IndexerCacheSize int `mapstructure:"indexer-cache-size"`
 }
 
 // DefaultEVMConfig returns the default settings for EVMConfig
 func DefaultEVMConfig() EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: DefaultContractSimulationGasLimit,
+		IndexerCacheSize:           DefaultIndexerCacheSize,
 	}
 }
 
@@ -30,12 +39,14 @@ func DefaultEVMConfig() EVMConfig {
 func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: cast.ToUint64(appOpts.Get(flagContractSimulationGasLimit)),
+		IndexerCacheSize:           cast.ToInt(appOpts.Get(flagIndexerCacheSize)),
 	}
 }
 
 // AddConfigFlags implements servertypes.EVMConfigFlags interface.
 func AddConfigFlags(startCmd *cobra.Command) {
-	startCmd.Flags().Uint64(flagContractSimulationGasLimit, DefaultContractSimulationGasLimit, "Set the max simulation gas for evm contract execution")
+	startCmd.Flags().Uint64(flagContractSimulationGasLimit, DefaultContractSimulationGasLimit, "Maximum simulation gas amount for evm contract execution")
+	startCmd.Flags().Int(flagIndexerCacheSize, DefaultIndexerCacheSize, "Maximum size (MiB) of the indexer cache")
 }
 
 // DefaultConfigTemplate default config template for evm
@@ -48,4 +59,7 @@ const DefaultConfigTemplate = `
 
 # The maximum gas amount can be used in a tx simulation call.
 contract-simulation-gas-limit = "{{ .EVMConfig.ContractSimulationGasLimit }}"
+
+# IndexerCacheSize is the maximum size (MiB) of the cache for evm indexer.
+indexer-cache-size = {{ .EVMConfig.IndexerCacheSize }}
 `

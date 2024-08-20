@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -35,6 +36,9 @@ func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, e
 }
 
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
+	b.sendTxMut.Lock()
+	defer b.sendTxMut.Unlock()
+
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return err
@@ -45,23 +49,61 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 		return err
 	}
 
-	if authTx, ok := cosmosTx.(authsigning.Tx); ok {
-		if sigs, err := authTx.GetSignaturesV2(); err == nil && len(sigs) > 0 {
-			b.logger.Debug("eth_sendTx", "sequence", sigs[0].Sequence)
-		}
-	}
-
 	txBytes, err := b.app.TxEncode(cosmosTx)
 	if err != nil {
 		return err
 	}
 
-	res, err := b.clientCtx.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
+	authTx, ok := cosmosTx.(authsigning.Tx)
+	if !ok {
+		return NewInternalError("failed to convert cosmosTx to authsigning.Tx")
 	}
-	if res.Code != 0 {
-		return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+
+	sigs, err := authTx.GetSignaturesV2()
+	if err != nil || len(sigs) != 1 {
+		b.logger.Error("failed to get signatures from authsigning.Tx", "err", err)
+		return NewInternalError("failed to get signatures from authsigning.Tx")
+	}
+
+	sig := sigs[0]
+	txSeq := sig.Sequence
+	accSeq := uint64(0)
+	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
+
+	checkCtx := b.app.GetContextForCheckTx(nil)
+	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
+		accSeq = acc.GetSequence()
+	}
+
+	b.logger.Debug("enqueue tx", "sender", sender, "txSeq", txSeq, "accSeq", accSeq)
+	cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
+	if err := b.queuedTxs.Set(cacheKey, txBytes); err != nil {
+		b.logger.Error("failed to enqueue tx", "key", cacheKey, "err", err)
+		return NewInternalError("failed to enqueue tx")
+	}
+
+	// check if there are queued txs which can be sent
+	for {
+		cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), accSeq)
+		if txBytes, err := b.queuedTxs.Get(cacheKey); err == nil {
+			if err := b.queuedTxs.Delete(cacheKey); err != nil {
+				b.logger.Error("failed to delete queued tx", "key", cacheKey, "err", err)
+				return NewInternalError("failed to delete queued tx")
+			}
+
+			b.logger.Debug("broadcast queued tx", "sender", sender, "txSeq", accSeq)
+			res, err := b.clientCtx.BroadcastTxSync(txBytes)
+			if err != nil {
+				return err
+			}
+			if res.Code != 0 {
+				return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+			}
+		} else {
+			break
+		}
+
+		accSeq++
 	}
 
 	return nil

@@ -19,6 +19,7 @@ import (
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 )
 
@@ -81,8 +82,12 @@ func NewEVMIndexer(
 	evmKeeper *evmkeeper.Keeper,
 	opChildKeeper *opchildkeeper.Keeper,
 ) (EVMIndexer, error) {
-	// TODO make cache size configurable
-	store := NewCacheStore(dbadapter.Store{DB: db}, 100)
+	cfg := evmKeeper.Config()
+	if cfg.IndexerCacheSize == 0 {
+		cfg.IndexerCacheSize = evmconfig.DefaultIndexerCacheSize
+	}
+
+	store := NewCacheStore(dbadapter.Store{DB: db}, cfg.IndexerCacheSize)
 	sb := collections.NewSchemaBuilderFromAccessor(
 		func(ctx context.Context) corestoretypes.KVStore {
 			return store
