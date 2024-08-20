@@ -20,3 +20,20 @@ func (e *TxIndexingError) ErrorCode() int {
 
 // ErrorData returns the hex encoded revert reason.
 func (e *TxIndexingError) ErrorData() interface{} { return "transaction indexing is in progress" }
+
+type InternalError struct {
+	msg string
+}
+
+func NewInternalError(msg string) *InternalError {
+	return &InternalError{msg: msg}
+}
+
+func (e *InternalError) Error() string {
+	return "internal jsonrpc error; " + e.msg
+}
+
+func (e *InternalError) ErrorCode() int {
+	// Internal JSON-RPC error
+	return -32603
+}

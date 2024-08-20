@@ -55,58 +55,71 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	}
 
 	// check whether sequence is in order
-	var sender sdk.AccAddress
-	var txSeq uint64
-	if authTx, ok := cosmosTx.(authsigning.Tx); ok {
-		if sigs, err := authTx.GetSignaturesV2(); err == nil && len(sigs) > 0 {
-			sig := sigs[0]
-			txSeq = sig.Sequence
+	authTx, ok := cosmosTx.(authsigning.Tx)
+	if !ok {
+		return NewInternalError("failed to convert cosmosTx to authsigning.Tx")
+	}
 
-			checkCtx := b.app.GetContextForCheckTx(nil)
-			sender = sdk.AccAddress(sig.PubKey.Address().Bytes())
-			if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
-				seq := acc.GetSequence()
+	sigs, err := authTx.GetSignaturesV2()
+	if err != nil || len(sigs) != 1 {
+		b.logger.Error("failed to get signatures from authsigning.Tx", "err", err)
+		return NewInternalError("failed to get signatures from authsigning.Tx")
+	}
 
-				// sequence is not in order, put tx into queuedTxs
-				if seq != txSeq {
-					b.logger.Debug("queue tx which is not in order", "sender", sender, "sequence", seq, "tx_sequence", txSeq)
+	sig := sigs[0]
+	txSeq := sig.Sequence
+	accSeq := uint64(0)
+	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
-					cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
-					return b.queuedTxs.Set(cacheKey, txBytes)
-				}
-			}
+	checkCtx := b.app.GetContextForCheckTx(nil)
+	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
+		accSeq = acc.GetSequence()
+	}
+
+	if accSeq != txSeq {
+		// sequence is not in order, put tx into queuedTxs
+		b.logger.Debug("queue tx which is not in order", "sender", sender, "sequence", accSeq, "tx_sequence", txSeq)
+
+		cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
+		if err := b.queuedTxs.Set(cacheKey, txBytes); err != nil {
+			b.logger.Error("failed to enqueue tx", "key", cacheKey, "err", err)
+			return NewInternalError("failed to enqueue tx")
 		}
-	}
+	} else {
+		// sequence is in order, broadcast tx
+		res, err := b.clientCtx.BroadcastTxSync(txBytes)
+		if err != nil {
+			return err
+		}
+		if res.Code != 0 {
+			return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+		}
 
-	res, err := b.clientCtx.BroadcastTxSync(txBytes)
-	if err != nil {
-		return err
-	}
-	if res.Code != 0 {
-		return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+		// increment account sequence
+		accSeq++
 	}
 
 	// check if there are queued txs which can be sent
-	if sender != nil {
-		for {
-			cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq+1)
-			if txBytes, err := b.queuedTxs.Get(cacheKey); err == nil {
-				if err := b.queuedTxs.Delete(cacheKey); err != nil {
-					b.logger.Error("failed to delete queued tx", "key", cacheKey, "err", err)
-					continue
-				}
-
-				res, err := b.clientCtx.BroadcastTxSync(txBytes)
-				if err != nil {
-					return err
-				}
-				if res.Code != 0 {
-					return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
-				}
-			} else {
-				break
+	for {
+		cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), accSeq)
+		if txBytes, err := b.queuedTxs.Get(cacheKey); err == nil {
+			if err := b.queuedTxs.Delete(cacheKey); err != nil {
+				b.logger.Error("failed to delete queued tx", "key", cacheKey, "err", err)
+				return NewInternalError("failed to delete queued tx")
 			}
+
+			res, err := b.clientCtx.BroadcastTxSync(txBytes)
+			if err != nil {
+				return err
+			}
+			if res.Code != 0 {
+				return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+			}
+		} else {
+			break
 		}
+
+		accSeq++
 	}
 
 	return nil
