@@ -36,9 +36,6 @@ func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, e
 }
 
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
-	b.sendTxMut.Lock()
-	defer b.sendTxMut.Unlock()
-
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return err
@@ -70,28 +67,28 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	accSeq := uint64(0)
 	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
+	senderHex := hexutil.Encode(sender.Bytes())
+
+	// hold mutex for each sender
+	b.acquireAccMut(senderHex)
+	defer b.releaseAccMut(senderHex)
+
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
 	}
 
-	b.logger.Debug("enqueue tx", "sender", sender, "txSeq", txSeq, "accSeq", accSeq)
-	cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), txSeq)
-	if err := b.queuedTxs.Set(cacheKey, txBytes); err != nil {
-		b.logger.Error("failed to enqueue tx", "key", cacheKey, "err", err)
-		return NewInternalError("failed to enqueue tx")
-	}
+	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
+	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
+	_ = b.queuedTxs.Add(cacheKey, txBytes)
 
 	// check if there are queued txs which can be sent
 	for {
-		cacheKey := fmt.Sprintf("%X-%d", sender.Bytes(), accSeq)
-		if txBytes, err := b.queuedTxs.Get(cacheKey); err == nil {
-			if err := b.queuedTxs.Delete(cacheKey); err != nil {
-				b.logger.Error("failed to delete queued tx", "key", cacheKey, "err", err)
-				return NewInternalError("failed to delete queued tx")
-			}
+		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
+		if txBytes, ok := b.queuedTxs.Get(cacheKey); ok {
+			_ = b.queuedTxs.Remove(cacheKey)
 
-			b.logger.Debug("broadcast queued tx", "sender", sender, "txSeq", accSeq)
+			b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
 			res, err := b.clientCtx.BroadcastTxSync(txBytes)
 			if err != nil {
 				return err
