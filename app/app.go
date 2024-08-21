@@ -491,13 +491,6 @@ func (app *MinitiaApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.AP
 	}
 }
 
-// Simulate customize gas simulation to add fee deduction gas amount.
-func (app *MinitiaApp) Simulate(txBytes []byte) (sdk.GasInfo, *sdk.Result, error) {
-	gasInfo, result, err := app.BaseApp.Simulate(txBytes)
-	gasInfo.GasUsed += FeeDeductionGasAmount
-	return gasInfo, result, err
-}
-
 // RegisterTxService implements the Application.RegisterTxService method.
 func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 	authtx.RegisterTxService(

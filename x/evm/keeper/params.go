@@ -15,3 +15,12 @@ func (k Keeper) ExtraEIPs(ctx context.Context) ([]int, error) {
 
 	return extraEIPs, nil
 }
+
+func (k Keeper) GetFeeDenom(ctx context.Context) (string, error) {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return params.FeeDenom, nil
+}
