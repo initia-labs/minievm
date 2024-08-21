@@ -36,28 +36,35 @@ func (suite *AnteTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {
 	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID())
 	suite.Require().NoError(err)
 
-	gasMeter := storetypes.NewGasMeter(250000)
+	gasMeter := storetypes.NewGasMeter(500000)
 	feeAnte.AnteHandle(suite.ctx.WithGasMeter(gasMeter), tx, false, nil)
 	suite.Require().Zero(gasMeter.GasConsumed(), "should not consume gas for fee deduction")
 
 	// Case 2. fee denom and other denom
 	suite.txBuilder.SetFeeAmount(feeAmount.Add(atomFeeAmount...))
 
-	gasMeter = storetypes.NewGasMeter(250000)
+	gasMeter = storetypes.NewGasMeter(500000)
 	feeAnte.AnteHandle(suite.ctx.WithGasMeter(gasMeter), tx, false, nil)
-	suite.Require().NotZero(uint64(1039), "should consume gas for fee deduction")
+	suite.Require().NotZero(gasMeter.GasConsumed(), "should consume gas for fee deduction")
 
 	// Case 3. other denom
 	suite.txBuilder.SetFeeAmount(feeAmount.Add(atomFeeAmount...))
 
-	gasMeter = storetypes.NewGasMeter(250000)
+	gasMeter = storetypes.NewGasMeter(500000)
 	feeAnte.AnteHandle(suite.ctx.WithGasMeter(gasMeter), tx, false, nil)
-	suite.Require().NotZero(uint64(1039), "should consume gas for fee deduction")
+	suite.Require().NotZero(gasMeter.GasConsumed(), "should consume gas for fee deduction")
 
 	// Case 4. no fee
 	suite.txBuilder.SetFeeAmount(sdk.NewCoins())
 
-	gasMeter = storetypes.NewGasMeter(250000)
+	gasMeter = storetypes.NewGasMeter(500000)
 	feeAnte.AnteHandle(suite.ctx.WithGasMeter(gasMeter), tx, false, nil)
-	suite.Require().NotZero(uint64(1039), "should consume gas for fee deduction")
+	suite.Require().NotZero(gasMeter.GasConsumed(), "should consume gas for fee deduction")
+
+	// Case 5. simulate gas consumption
+	suite.txBuilder.SetFeeAmount(sdk.NewCoins())
+
+	gasMeter = storetypes.NewGasMeter(500000)
+	feeAnte.AnteHandle(suite.ctx.WithGasMeter(gasMeter), tx, true, nil)
+	suite.Require().Greater(gasMeter.GasConsumed(), uint64(250000), "should consume gas for fee deduction")
 }
