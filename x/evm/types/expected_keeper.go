@@ -69,7 +69,7 @@ type IERC20Keeper interface {
 	GetDecimals(ctx context.Context, denom string) (uint8, error)
 
 	// contract creation
-	CreateERC20(ctx context.Context, denom string) error
+	CreateERC20(ctx context.Context, denom string, decimals uint8) error
 }
 
 type IERC721Keeper interface {

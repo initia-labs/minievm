@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -141,6 +142,7 @@ func (f *TestFaucet) NewFundedAccount(ctx sdk.Context, amounts ...sdk.Coin) sdk.
 }
 
 type TestKeepers struct {
+	Decimals            uint8
 	AccountKeeper       authkeeper.AccountKeeper
 	BankKeeper          bankkeeper.Keeper
 	CommunityPoolKeeper *MockCommunityPoolKeeper
@@ -270,16 +272,19 @@ func _createTestInput(
 	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
 	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter)
 
+	decimals := uint8(evmtypes.EtherDecimals)
 	if withInitialize {
+		decimals = uint8(rand.Intn(int(evmtypes.EtherDecimals) + 1))
 		evmParams := evmtypes.DefaultParams()
 		evmParams.AllowCustomERC20 = false
 		require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
-		require.NoError(t, evmKeeper.Initialize(ctx))
+		require.NoError(t, evmKeeper.InitializeWithDecimals(ctx, decimals))
 
 		faucet.NewFundedAccount(ctx, sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1_000_000)))
 	}
 
 	keepers := TestKeepers{
+		Decimals:            decimals,
 		AccountKeeper:       accountKeeper,
 		CommunityPoolKeeper: communityPoolKeeper,
 		EVMKeeper:           *evmKeeper,

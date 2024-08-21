@@ -14,7 +14,15 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
+// Initialize initializes the EVM state at genesis
+// 1. deploy and store erc20 factory contract
+// 2. deploy fee denom erc20 coins at genesis bootstrapping with 18 decimals
 func (k Keeper) Initialize(ctx context.Context) error {
+	return k.InitializeWithDecimals(ctx, types.EtherDecimals)
+}
+
+// InitializeWithDecimals initializes the EVM state at genesis with the given decimals
+func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) error {
 	// 1. deploy and store erc20 factory contract
 	code, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
 	if err != nil {
@@ -37,7 +45,7 @@ func (k Keeper) Initialize(ctx context.Context) error {
 	}
 
 	// 2. deploy fee denom erc20 coins at genesis bootstrapping
-	err = k.erc20Keeper.CreateERC20(ctx, params.FeeDenom)
+	err = k.erc20Keeper.CreateERC20(ctx, params.FeeDenom, decimals)
 	if err != nil {
 		return err
 	}
