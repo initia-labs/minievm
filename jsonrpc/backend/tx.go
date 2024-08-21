@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -71,9 +70,8 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	senderHex := hexutil.Encode(sender.Bytes())
 
 	// hold mutex for each sender
-	accMut := b.getAccMut(senderHex)
-	accMut.Lock()
-	defer accMut.Unlock()
+	b.acquireAccMut(senderHex)
+	defer b.releaseAccMut(senderHex)
 
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
@@ -106,19 +104,6 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	}
 
 	return nil
-}
-
-func (b *JSONRPCBackend) getAccMut(senderHex string) *sync.Mutex {
-	b.mut.Lock()
-	defer b.mut.Unlock()
-
-	accMut, ok := b.accMuts.Get(senderHex)
-	if !ok {
-		accMut = &sync.Mutex{}
-		_ = b.accMuts.Add(senderHex, accMut)
-	}
-
-	return accMut
 }
 
 func (b *JSONRPCBackend) getQueryCtx() (context.Context, error) {
