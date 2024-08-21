@@ -29,8 +29,12 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	_, _, addr := keyPubAddr()
 	input.Faucet.Mint(ctx, addr, sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1000000000000000000)))
 
-	feeAmount := int64(150000)
-	gasLimit := uint64(1000000)
+	decimals := input.Decimals
+	gasLimit := uint64(1_000_000)
+	feeAmount := new(big.Int).Mul(
+		big.NewInt(int64(gasLimit)),
+		new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)-8), nil), // gas price is 1e-8
+	)
 
 	ethFactoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
 	require.NoError(t, err)
@@ -41,9 +45,9 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	inputBz, err := abi.Pack("createERC20", "bar", "bar", uint8(6))
 	require.NoError(t, err)
 
-	gasFeeCap := types.ToEthersUint(0, big.NewInt(feeAmount))
+	gasFeeCap := types.ToEthersUint(decimals, feeAmount)
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
-	value := types.ToEthersUint(0, big.NewInt(100))
+	value := types.ToEthersUint(decimals, big.NewInt(100))
 
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
 	ethTx := coretypes.NewTx(&coretypes.DynamicFeeTx{
@@ -90,7 +94,7 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	})
 
 	authTx := sdkTx.(authsigning.Tx)
-	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(feeAmount+1))))
+	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1))))
 
 	sigs, err := authTx.GetSignaturesV2()
 	require.NoError(t, err)
@@ -117,8 +121,13 @@ func Test_LegacyTxConversion(t *testing.T) {
 	_, _, addr := keyPubAddr()
 	input.Faucet.Mint(ctx, addr, sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1000000000000000000)))
 
-	feeAmount := int64(150000)
-	gasLimit := uint64(1000000)
+	decimals := input.Decimals
+	gasLimit := uint64(1_000_000)
+	feeAmount := new(big.Int).Mul(
+		big.NewInt(int64(gasLimit)),
+		new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)-8), nil), // gas price is 1e-8
+	)
+
 	ethFactoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
 	require.NoError(t, err)
 
@@ -128,9 +137,9 @@ func Test_LegacyTxConversion(t *testing.T) {
 	inputBz, err := abi.Pack("createERC20", "bar", "bar", uint8(6))
 	require.NoError(t, err)
 
-	gasFeeCap := types.ToEthersUint(0, big.NewInt(feeAmount))
+	gasFeeCap := types.ToEthersUint(decimals, feeAmount)
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
-	value := types.ToEthersUint(0, big.NewInt(100))
+	value := types.ToEthersUint(decimals, big.NewInt(100))
 
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
 	ethTx := coretypes.NewTx(&coretypes.LegacyTx{
@@ -175,7 +184,7 @@ func Test_LegacyTxConversion(t *testing.T) {
 	})
 
 	authTx := sdkTx.(authsigning.Tx)
-	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(feeAmount+1))))
+	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1))))
 
 	sigs, err := authTx.GetSignaturesV2()
 	require.NoError(t, err)
@@ -200,7 +209,6 @@ func Test_LegacyTxConversion(t *testing.T) {
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
 	EqualEthTransaction(t, signedTx, ethTx2)
-
 }
 
 func EqualEthTransaction(t *testing.T, expected, actual *coretypes.Transaction) {
