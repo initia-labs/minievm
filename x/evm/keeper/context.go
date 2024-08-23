@@ -23,13 +23,13 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func (k Keeper) NewStateDB(ctx context.Context) (*state.StateDB, error) {
+func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, feeContrect common.Address) (*state.StateDB, error) {
 	return state.NewStateDB(
 		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
 		k.VMStore, k.TransientVMStore, k.TransientCreated,
 		k.TransientSelfDestruct, k.TransientLogs, k.TransientLogSize,
 		k.TransientAccessList, k.TransientRefund, k.TransientExecIndex,
-		nil, nil, common.Address{},
+		evm, k.ERC20Keeper().GetERC20ABI(), feeContrect,
 	)
 }
 
@@ -47,7 +47,7 @@ type callableEVM interface {
 	StaticCall(vm.ContractRef, common.Address, []byte, uint64) ([]byte, uint64, error)
 }
 
-func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContractAddr common.Address) (vm.BlockContext, error) {
+func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContract common.Address) (vm.BlockContext, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	headerHash := sdkCtx.HeaderHash()
 	if len(headerHash) == 0 {
@@ -69,7 +69,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 			}
 
 			// if the contract is not found, return false
-			if (feeContractAddr == common.Address{}) {
+			if (feeContract == common.Address{}) {
 				return false
 			}
 
@@ -78,7 +78,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 				return false
 			}
 
-			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), feeContractAddr, inputBz, 100000)
+			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), feeContract, inputBz, 100000)
 			if err != nil {
 				k.Logger(ctx).Warn("failed to check balance", "error", err)
 				return false
@@ -106,7 +106,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 				panic(err)
 			}
 
-			_, _, err = evm.Call(vm.AccountRef(a1), feeContractAddr, inputBz, 100000, uint256.NewInt(0))
+			_, _, err = evm.Call(vm.AccountRef(a1), feeContract, inputBz, 100000, uint256.NewInt(0))
 			if err != nil {
 				k.Logger(ctx).Warn("failed to transfer token", "error", err)
 				panic(err)
@@ -133,7 +133,7 @@ func (k Keeper) buildTxContext(_ context.Context, caller common.Address) vm.TxCo
 }
 
 // createEVM creates a new EVM instance.
-func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (context.Context, *vm.EVM, error) {
+func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (context.Context, *vm.EVM, error) {
 	extraEIPs, err := k.ExtraEIPs(ctx)
 	if err != nil {
 		return ctx, nil, err
@@ -144,19 +144,19 @@ func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tr
 		return ctx, nil, err
 	}
 
-	feeContractAddr, err := types.DenomToContractAddr(ctx, k, params.FeeDenom)
+	feeContract, err := types.DenomToContractAddr(ctx, k, params.FeeDenom)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return ctx, nil, err
 	}
 
 	evm := &vm.EVM{}
-	blockContext, err := k.buildBlockContext(ctx, evm, feeContractAddr)
+	blockContext, err := k.buildBlockContext(ctx, evm, feeContract)
 	if err != nil {
 		return ctx, nil, err
 	}
 
 	txContext := k.buildTxContext(ctx, caller)
-	stateDB, err := k.NewStateDB(ctx)
+	stateDB, err := k.NewStateDB(ctx, evm, feeContract)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -222,7 +222,7 @@ func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contra
 
 // EVMStaticCallWithTracer executes an EVM call with the given input data and tracer in static mode.
 func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, tracer *tracing.Hooks) ([]byte, error) {
-	ctx, evm, err := k.createEVM(ctx, caller, tracer)
+	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr
 
 // EVMCallWithTracer executes an EVM call with the given input data and tracer.
 func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
-	ctx, evm, err := k.createEVM(ctx, caller, tracer)
+	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -341,7 +341,7 @@ func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []
 // if salt is nil, it will create a contract with the CREATE opcode.
 // if salt is not nil, it will create a contract with the CREATE2 opcode.
 func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint64, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
-	ctx, evm, err := k.createEVM(ctx, caller, tracer)
+	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, common.Address{}, nil, err
 	}
@@ -428,7 +428,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 // nextContractAddress returns the next contract address which will be created by the given caller
 // in CREATE opcode.
 func (k Keeper) nextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
-	stateDB, err := k.NewStateDB(ctx)
+	stateDB, err := k.NewStateDB(ctx, nil, common.Address{})
 	if err != nil {
 		return common.Address{}, err
 	}

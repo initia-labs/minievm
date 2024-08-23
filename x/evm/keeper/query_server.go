@@ -105,7 +105,7 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 
 // Code implements types.QueryServer.
 func (qs *queryServerImpl) Code(ctx context.Context, req *types.QueryCodeRequest) (*types.QueryCodeResponse, error) {
-	stateDB, err := qs.NewStateDB(ctx)
+	stateDB, err := qs.NewStateDB(ctx, nil, common.Address{})
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (qs *queryServerImpl) Code(ctx context.Context, req *types.QueryCodeRequest
 
 // State implements types.QueryServer.
 func (qs *queryServerImpl) State(ctx context.Context, req *types.QueryStateRequest) (*types.QueryStateResponse, error) {
-	stateDB, err := qs.NewStateDB(ctx)
+	stateDB, err := qs.NewStateDB(ctx, nil, common.Address{})
 	if err != nil {
 		return nil, err
 	}

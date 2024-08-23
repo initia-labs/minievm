@@ -193,7 +193,7 @@ func (k BaseKeeper) DenomMetadata(c context.Context, req *types.QueryDenomMetada
 		if errors.Is(err, collections.ErrNotFound) {
 			return nil, status.Errorf(codes.NotFound, "client metadata for denom %s", req.Denom)
 		} else if err != nil {
-			return nil, status.Errorf(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 

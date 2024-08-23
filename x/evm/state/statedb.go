@@ -31,8 +31,9 @@ type callableEVM interface {
 var _ vm.StateDB = &StateDB{}
 
 type StateDB struct {
-	ctx    context.Context
-	logger log.Logger
+	logger     log.Logger
+	ctx        context.Context
+	initialCtx context.Context
 
 	vmStore               collections.Map[[]byte, []byte]
 	transientVMStore      collections.Map[collections.Pair[uint64, []byte], []byte]
@@ -84,8 +85,9 @@ func NewStateDB(
 	}
 
 	s := &StateDB{
-		ctx:    ctx,
-		logger: logger,
+		logger:     logger,
+		ctx:        ctx,
+		initialCtx: ctx,
 
 		vmStore:               vmStore,
 		transientVMStore:      transientVMStore,
@@ -102,9 +104,6 @@ func NewStateDB(
 		feeContractAddr: feeContractAddr,
 	}
 
-	// take snapshot for the initial state
-	s.Snapshot()
-
 	return s, nil
 }
 
@@ -119,11 +118,12 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 		panic(err)
 	}
 
-	_, _, err = s.evm.Call(vm.AccountRef(addr), s.feeContractAddr, inputBz, 100000, uint256.NewInt(0))
+	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, 100000, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to mint token", "error", err)
 		panic(err)
 	}
+
 }
 
 // SubBalance burn coins from the account with addr
@@ -137,7 +137,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing
 		panic(err)
 	}
 
-	_, _, err = s.evm.Call(vm.AccountRef(addr), s.feeContractAddr, inputBz, 100000, uint256.NewInt(0))
+	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, 100000, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to burn token", "error", err)
 		panic(err)
@@ -155,6 +155,9 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 	if err != nil {
 		s.logger.Warn("failed to check balance", "error", err)
 		panic(err)
+	}
+	if len(retBz) == 0 {
+		return uint256.NewInt(0)
 	}
 
 	res, err := s.erc20ABI.Unpack("balanceOf", retBz)
@@ -377,7 +380,7 @@ func (s *StateDB) GetCommittedState(addr common.Address, state common.Hash) comm
 	originCtx := s.ctx
 
 	// use initial context to get the committed state
-	s.ctx = s.snaps[0].ctx
+	s.ctx = s.initialCtx
 	defer func() { s.ctx = originCtx }()
 
 	return s.GetState(addr, state)
@@ -489,7 +492,9 @@ func (s *StateDB) SetState(addr common.Address, slot common.Hash, value common.H
 	sa := s.getStateAccount(addr)
 	if sa == nil {
 		sa = EmptyStateAccount()
-		s.vmStore.Set(s.ctx, accountKey(addr), sa.Marshal())
+		if err := s.vmStore.Set(s.ctx, accountKey(addr), sa.Marshal()); err != nil {
+			panic(err)
+		}
 	}
 
 	if err := s.vmStore.Set(s.ctx, stateKey(addr, slot), value[:]); err != nil {
@@ -504,7 +509,9 @@ func (s *StateDB) SetTransientState(addr common.Address, key, value common.Hash)
 		return
 	}
 
-	s.transientVMStore.Set(s.ctx, collections.Join(s.execIndex, key[:]), value[:])
+	if err := s.transientVMStore.Set(s.ctx, collections.Join(s.execIndex, key[:]), value[:]); err != nil {
+		panic(err)
+	}
 }
 
 // GetTransientState gets transient storage for a given account.
@@ -521,16 +528,33 @@ func (s *StateDB) GetTransientState(addr common.Address, key common.Hash) common
 
 // Snapshot creates new snapshot(cache context) and return the snapshot id
 func (s *StateDB) Snapshot() int {
+	// get a current snapshot id
+	sid := len(s.snaps) - 1
+
+	// create a new snapshot
 	snap := NewSnapshot(s.ctx)
 	s.snaps = append(s.snaps, snap)
+
+	// use the new snapshot context
 	s.ctx = snap.ctx
-	return len(s.snaps) - 2
+
+	// return the current snapshot id
+	return sid
 }
 
 // RevertToSnapshot reverts the state to the snapshot with the given id
 func (s *StateDB) RevertToSnapshot(i int) {
+	if i == -1 {
+		s.ctx = s.initialCtx
+		s.snaps = s.snaps[:0]
+		return
+	}
+
+	// revert to the snapshot with the given id
 	snap := s.snaps[i]
 	s.ctx = snap.ctx
+
+	// clear the snapshots after the given id
 	s.snaps = s.snaps[:i]
 }
 
@@ -569,9 +593,6 @@ func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase co
 			s.AddAddressToAccessList(coinbase)
 		}
 	}
-
-	// take snapshot for the committed state
-	s.Snapshot()
 }
 
 func (s *StateDB) Commit() error {
@@ -581,7 +602,7 @@ func (s *StateDB) Commit() error {
 	}
 
 	// use the initial context
-	s.ctx = s.snaps[0].ctx
+	s.ctx = s.initialCtx
 
 	// clear destructed accounts
 	err := s.transientSelfDestruct.Walk(s.ctx, collections.NewPrefixedPairRange[uint64, []byte](s.execIndex), func(key collections.Pair[uint64, []byte]) (stop bool, err error) {
@@ -613,7 +634,7 @@ func (s *StateDB) AddLog(log *types.Log) {
 	}
 }
 
-func (s *StateDB) Logs() []evmtypes.Log {
+func (s *StateDB) Logs() evmtypes.Logs {
 	logSize, err := s.transientLogSize.Get(s.ctx, s.execIndex)
 	if err != nil {
 		panic(err)
