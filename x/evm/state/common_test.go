@@ -1,16 +1,13 @@
-package keeper_test
+package state_test
 
 import (
 	"context"
-	"encoding/binary"
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/cometbft/cometbft/crypto"
-	"github.com/cometbft/cometbft/crypto/ed25519"
-	"github.com/cometbft/cometbft/crypto/secp256k1"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log"
@@ -25,6 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecaddress "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -34,6 +32,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -41,7 +40,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 
-	"github.com/initia-labs/minievm/x/bank"
+	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -53,33 +52,6 @@ var ModuleBasics = module.NewBasicManager(
 	auth.AppModuleBasic{},
 	bank.AppModuleBasic{},
 	evm.AppModuleBasic{},
-)
-
-var (
-	pubKeys = []crypto.PubKey{
-		secp256k1.GenPrivKey().PubKey(),
-		secp256k1.GenPrivKey().PubKey(),
-		secp256k1.GenPrivKey().PubKey(),
-		secp256k1.GenPrivKey().PubKey(),
-		secp256k1.GenPrivKey().PubKey(),
-	}
-
-	addrs = []sdk.AccAddress{
-		sdk.AccAddress(pubKeys[0].Address()),
-		sdk.AccAddress(pubKeys[1].Address()),
-		sdk.AccAddress(pubKeys[2].Address()),
-		sdk.AccAddress(pubKeys[3].Address()),
-		sdk.AccAddress(pubKeys[4].Address()),
-	}
-
-	initiaSupply = math.NewInt(100_000_000_000)
-	testDenoms   = []string{
-		"test1",
-		"test2",
-		"test3",
-		"test4",
-		"test5",
-	}
 )
 
 type EncodingConfig struct {
@@ -119,17 +91,6 @@ func MakeEncodingConfig(_ testing.TB) EncodingConfig {
 	}
 }
 
-var bondDenom = sdk.DefaultBondDenom
-
-func initialTotalSupply() sdk.Coins {
-	faucetBalance := sdk.NewCoins(sdk.NewCoin(bondDenom, initiaSupply))
-	for _, testDenom := range testDenoms {
-		faucetBalance = faucetBalance.Add(sdk.NewCoin(testDenom, initiaSupply))
-	}
-
-	return faucetBalance
-}
-
 type TestFaucet struct {
 	t                testing.TB
 	bankKeeper       bankkeeper.Keeper
@@ -139,7 +100,6 @@ type TestFaucet struct {
 }
 
 func NewTestFaucet(t testing.TB, ctx sdk.Context, bankKeeper bankkeeper.Keeper, minterModuleName string, initiaSupply ...sdk.Coin) *TestFaucet {
-	require.NotEmpty(t, initiaSupply)
 	r := &TestFaucet{t: t, bankKeeper: bankKeeper, minterModuleName: minterModuleName}
 	_, _, addr := keyPubAddr()
 	r.sender = addr
@@ -149,6 +109,10 @@ func NewTestFaucet(t testing.TB, ctx sdk.Context, bankKeeper bankkeeper.Keeper, 
 }
 
 func (f *TestFaucet) Mint(parentCtx sdk.Context, addr sdk.AccAddress, amounts ...sdk.Coin) {
+	if len(amounts) == 0 {
+		return
+	}
+
 	amounts = sdk.Coins(amounts).Sort()
 	require.NotEmpty(f.t, amounts)
 	ctx := parentCtx.WithEventManager(sdk.NewEventManager()) // discard all faucet related events
@@ -178,6 +142,7 @@ func (f *TestFaucet) NewFundedAccount(ctx sdk.Context, amounts ...sdk.Coin) sdk.
 }
 
 type TestKeepers struct {
+	Decimals            uint8
 	AccountKeeper       authkeeper.AccountKeeper
 	BankKeeper          bankkeeper.Keeper
 	CommunityPoolKeeper *MockCommunityPoolKeeper
@@ -189,25 +154,19 @@ type TestKeepers struct {
 
 // createDefaultTestInput common settings for createTestInput
 func createDefaultTestInput(t testing.TB) (sdk.Context, TestKeepers) {
-	return createTestInput(t, false)
+	return createTestInput(t, false, true)
 }
 
 // createTestInput encoders can be nil to accept the defaults, or set it to override some of the message handlers (like default)
-func createTestInput(t testing.TB, isCheckTx bool) (sdk.Context, TestKeepers) {
+func createTestInput(t testing.TB, isCheckTx, withInitialize bool) (sdk.Context, TestKeepers) {
 	// Load default move config
-	return _createTestInput(t, isCheckTx, dbm.NewMemDB())
+	return _createTestInput(t, isCheckTx, withInitialize, dbm.NewMemDB())
 }
-
-var keyCounter uint64
 
 // we need to make this deterministic (same every test run), as encoded address size and thus gas cost,
 // depends on the actual bytes (due to ugly CanonicalAddress encoding)
-func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
-	keyCounter++
-	seed := make([]byte, 8)
-	binary.BigEndian.PutUint64(seed, keyCounter)
-
-	key := ed25519.GenPrivKeyFromSecret(seed)
+func keyPubAddr() (cryptotypes.PrivKey, cryptotypes.PubKey, sdk.AccAddress) {
+	key := ethsecp256k1.GenerateKey()
 	pub := key.PubKey()
 	addr := sdk.AccAddress(pub.Address())
 	return key, pub, addr
@@ -217,6 +176,7 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
 func _createTestInput(
 	t testing.TB,
 	isCheckTx bool,
+	withInitialize bool,
 	db dbm.DB,
 ) (sdk.Context, TestKeepers) {
 	keys := storetypes.NewKVStoreKeys(
@@ -307,18 +267,31 @@ func _createTestInput(
 		queryRouter,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		evmconfig.DefaultEVMConfig(),
-		evmtypes.DefaultQueryCosmosWhitelist(),
+		evmtypes.QueryCosmosWhitelist{
+			"/cosmos.bank.v1beta1.Query/Balance": {
+				Request:  &banktypes.QueryBalanceRequest{},
+				Response: &banktypes.QueryBalanceResponse{},
+			},
+		},
 	)
-	evmParams := evmtypes.DefaultParams()
-	require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
-	require.NoError(t, evmKeeper.Initialize(ctx))
 
 	// set erc20 keeper
 	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
+	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter)
 
-	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter, initialTotalSupply()...)
+	decimals := uint8(evmtypes.EtherDecimals)
+	if withInitialize {
+		decimals = uint8(rand.Intn(int(evmtypes.EtherDecimals) + 1))
+		evmParams := evmtypes.DefaultParams()
+		evmParams.AllowCustomERC20 = false
+		require.NoError(t, evmKeeper.Params.Set(ctx, evmParams))
+		require.NoError(t, evmKeeper.InitializeWithDecimals(ctx, decimals))
+
+		faucet.NewFundedAccount(ctx, sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1_000_000)))
+	}
 
 	keepers := TestKeepers{
+		Decimals:            decimals,
 		AccountKeeper:       accountKeeper,
 		CommunityPoolKeeper: communityPoolKeeper,
 		EVMKeeper:           *evmKeeper,

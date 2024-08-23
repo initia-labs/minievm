@@ -4,32 +4,39 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"math"
 	"math/big"
 
-	"cosmossdk.io/collections"
 	"github.com/holiman/uint256"
+
+	"cosmossdk.io/collections"
+	storetypes "cosmossdk.io/store/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/tracing"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/initia-labs/minievm/x/evm/state"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
+
+func (k Keeper) NewStateDB(ctx context.Context) (*state.StateDB, error) {
+	return state.NewStateDB(
+		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
+		k.VMStore, k.TransientVMStore, k.TransientCreated,
+		k.TransientSelfDestruct, k.TransientLogs, k.TransientLogSize,
+		k.TransientAccessList, k.TransientRefund, k.TransientExecIndex,
+		nil, nil, common.Address{},
+	)
+}
 
 func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
 	gasLimit := sdkCtx.GasMeter().GasRemaining()
 	if sdkCtx.ExecMode() == sdk.ExecModeSimulate {
 		gasLimit = k.config.ContractSimulationGasLimit
-	} else if sdkCtx.GasMeter().Limit() == 0 {
-		// infinite gas meter
-		gasLimit = math.MaxUint64
 	}
 
 	return gasLimit
@@ -40,21 +47,11 @@ type callableEVM interface {
 	StaticCall(vm.ContractRef, common.Address, []byte, uint64) ([]byte, uint64, error)
 }
 
-func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM) (vm.BlockContext, error) {
+func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContractAddr common.Address) (vm.BlockContext, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	headerHash := sdkCtx.HeaderHash()
 	if len(headerHash) == 0 {
 		headerHash = make([]byte, 32)
-	}
-
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return vm.BlockContext{}, err
-	}
-
-	contractAddr, err := types.DenomToContractAddr(ctx, k, params.FeeDenom)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return vm.BlockContext{}, err
 	}
 
 	// TODO: should we charge gas for CanTransfer and Transfer?
@@ -72,7 +69,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM) (vm.Bloc
 			}
 
 			// if the contract is not found, return false
-			if (contractAddr == common.Address{}) {
+			if (feeContractAddr == common.Address{}) {
 				return false
 			}
 
@@ -81,7 +78,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM) (vm.Bloc
 				return false
 			}
 
-			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), contractAddr, inputBz, 100000)
+			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), feeContractAddr, inputBz, 100000)
 			if err != nil {
 				k.Logger(ctx).Warn("failed to check balance", "error", err)
 				return false
@@ -109,7 +106,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM) (vm.Bloc
 				panic(err)
 			}
 
-			_, _, err = evm.Call(vm.AccountRef(a1), contractAddr, inputBz, 100000, uint256.NewInt(0))
+			_, _, err = evm.Call(vm.AccountRef(a1), feeContractAddr, inputBz, 100000, uint256.NewInt(0))
 			if err != nil {
 				k.Logger(ctx).Warn("failed to transfer token", "error", err)
 				panic(err)
@@ -142,14 +139,24 @@ func (k Keeper) createEVM(ctx context.Context, caller common.Address, tracer *tr
 		return ctx, nil, err
 	}
 
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return ctx, nil, err
+	}
+
+	feeContractAddr, err := types.DenomToContractAddr(ctx, k, params.FeeDenom)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return ctx, nil, err
+	}
+
 	evm := &vm.EVM{}
-	blockContext, err := k.buildBlockContext(ctx, evm)
+	blockContext, err := k.buildBlockContext(ctx, evm, feeContractAddr)
 	if err != nil {
 		return ctx, nil, err
 	}
 
 	txContext := k.buildTxContext(ctx, caller)
-	stateDB, err := k.newStateDB(ctx)
+	stateDB, err := k.NewStateDB(ctx)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -258,6 +265,9 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		value = uint256.NewInt(0)
 	}
 
+	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), nil)
+
 	retBz, gasRemaining, err := evm.Call(
 		vm.AccountRef(caller),
 		contractAddr,
@@ -279,26 +289,12 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 
 	// commit state transition
 	stateDB := evm.StateDB.(*state.StateDB)
-	stateRoot, err := stateDB.Commit(evm.Context.BlockNumber.Uint64(), true)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// commit trie db
-	if stateRoot != coretypes.EmptyRootHash {
-		err := stateDB.Database().TrieDB().Commit(stateRoot, false)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	// update state root
-	if err := k.VMRoot.Set(ctx, stateRoot[:]); err != nil {
+	if err := stateDB.Commit(); err != nil {
 		return nil, nil, err
 	}
 
 	retHex := hexutil.Encode(retBz)
-	logs := types.NewLogs(stateDB.Logs())
+	logs := stateDB.Logs()
 
 	// emit action events
 	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
@@ -356,6 +352,9 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 		value = uint256.NewInt(0)
 	}
 
+	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), nil)
+
 	var gasRemaining uint64
 	if salt == nil {
 		retBz, contractAddr, gasRemaining, err = evm.Create(
@@ -387,26 +386,13 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 
 	// commit state transition
 	stateDB := evm.StateDB.(*state.StateDB)
-	stateRoot, err := stateDB.Commit(evm.Context.BlockNumber.Uint64(), true)
+	err = stateDB.Commit()
 	if err != nil {
 		return nil, common.Address{}, nil, err
 	}
 
-	// commit trie db
-	if stateRoot != coretypes.EmptyRootHash {
-		err := stateDB.Database().TrieDB().Commit(stateRoot, false)
-		if err != nil {
-			return nil, common.Address{}, nil, err
-		}
-	}
-
-	// update state root
-	if err := k.VMRoot.Set(ctx, stateRoot[:]); err != nil {
-		return nil, common.Address{}, nil, err
-	}
-
 	retHex := hexutil.Encode(retBz)
-	logs = types.NewLogs(stateDB.Logs())
+	logs = stateDB.Logs()
 
 	// emit action events
 	sdkCtx.EventManager().EmitEvent(sdk.NewEvent(
@@ -442,7 +428,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 // nextContractAddress returns the next contract address which will be created by the given caller
 // in CREATE opcode.
 func (k Keeper) nextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
-	stateDB, err := k.newStateDB(ctx)
+	stateDB, err := k.NewStateDB(ctx)
 	if err != nil {
 		return common.Address{}, err
 	}

@@ -88,6 +88,23 @@ func transferERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, rec
 
 }
 
+func Test_BalanceOf(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	_, _, addr := keyPubAddr()
+	_, _, addr2 := keyPubAddr()
+
+	input.Faucet.Fund(ctx, addr, sdk.NewCoin("foo", math.NewInt(100)))
+
+	amount, err := input.EVMKeeper.ERC20Keeper().GetBalance(ctx, addr, "foo")
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(100), amount)
+
+	amount, err = input.EVMKeeper.ERC20Keeper().GetBalance(ctx, addr2, "foo")
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(0), amount)
+}
+
 func Test_TransferToModuleAccount(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 

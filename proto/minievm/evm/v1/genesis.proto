@@ -11,21 +11,18 @@ message GenesisState {
   // params defines the parameters of the module.
   Params params = 1 [(gogoproto.nullable) = false];
 
-  // state root
-  bytes state_root = 2;
-
   // vm kv store
-  repeated GenesisKeyValue key_values = 3 [(gogoproto.moretags) = "yaml:\"key_values\"", (gogoproto.nullable) = false];
+  repeated GenesisKeyValue key_values = 2 [(gogoproto.moretags) = "yaml:\"key_values\"", (gogoproto.nullable) = false];
 
   // erc20 stores
-  repeated GenesisERC20Stores erc20_stores = 4
+  repeated GenesisERC20Stores erc20_stores = 3
       [(gogoproto.moretags) = "yaml:\"erc20_stores\"", (gogoproto.nullable) = false];
 
-  repeated GenesisDenomAddress denom_addresses = 5
+  repeated GenesisDenomAddress denom_addresses = 4
       [(gogoproto.moretags) = "yaml:\"denom_addresses\"", (gogoproto.nullable) = false];
 
   // erc20 factory contract address
-  bytes erc20_factory = 6;
+  bytes erc20_factory = 5;
 }
 
 // GenesisKeyValue defines store KV values.
