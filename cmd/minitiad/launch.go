@@ -11,6 +11,7 @@ import (
 	"github.com/initia-labs/OPinit/contrib/launchtools/steps"
 	"github.com/initia-labs/initia/app/params"
 	minitiaapp "github.com/initia-labs/minievm/app"
+	"github.com/initia-labs/minievm/types"
 )
 
 // DefaultLaunchStepFactories is a list of default launch step factories.
@@ -50,6 +51,12 @@ func LaunchCommand(ac *appCreator, enc params.EncodingConfig, mbm module.BasicMa
 	return launchtools.LaunchCmd(
 		ac,
 		func(denom string) map[string]json.RawMessage {
+			// default denom in OPinit is "umin"
+			if denom == "umin" {
+				// convert to "GAS"
+				denom = types.BaseDenom
+			}
+
 			return minitiaapp.NewDefaultGenesisState(enc.Codec, mbm, denom)
 		},
 		DefaultLaunchStepFactories,

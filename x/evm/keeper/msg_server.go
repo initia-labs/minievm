@@ -179,6 +179,15 @@ func (ms *msgServerImpl) UpdateParams(ctx context.Context, msg *types.MsgUpdateP
 		return nil, govtypes.ErrInvalidSigner.Wrapf("invalid authority; expected %s, got %s", ms.authority, msg.Authority)
 	}
 
+	params, err := ms.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if params.FeeDenom != msg.Params.FeeDenom {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap("fee denom cannot be changed")
+	}
+
 	// validate params
 	if err := msg.Params.Validate(ms.ac); err != nil {
 		return nil, err

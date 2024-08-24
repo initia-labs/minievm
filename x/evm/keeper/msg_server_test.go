@@ -138,6 +138,15 @@ func Test_MsgServer_UpdateParams(t *testing.T) {
 	})
 	require.Error(t, err)
 
+	// cannot change fee denom
+	params = types.DefaultParams()
+	params.FeeDenom = "otherdenom"
+	_, err = msgServer.UpdateParams(ctx, &types.MsgUpdateParams{
+		Authority: input.EVMKeeper.GetAuthority(),
+		Params:    params,
+	})
+	require.ErrorContains(t, err, "fee denom cannot be changed")
+
 	// valid
 	_, _, addr := keyPubAddr()
 	params = types.DefaultParams()
