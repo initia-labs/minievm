@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
@@ -207,7 +208,7 @@ func (ms *msgServerImpl) UpdateParams(ctx context.Context, msg *types.MsgUpdateP
 // testFeeDenom tests if the fee denom has sudoMint and sudoBurn.
 func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) (err error) {
 	_, err = types.DenomToContractAddr(ctx, ms, params.FeeDenom)
-	if err != nil && err == collections.ErrNotFound {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return types.ErrInvalidFeeDenom.Wrap("fee denom is not found")
 	} else if err != nil {
 		return err
