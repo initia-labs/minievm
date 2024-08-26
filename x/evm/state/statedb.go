@@ -11,14 +11,17 @@ import (
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/log"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/stateless"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/trie/utils"
 
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
@@ -31,9 +34,10 @@ type callableEVM interface {
 var _ vm.StateDB = &StateDB{}
 
 type StateDB struct {
-	logger     log.Logger
-	ctx        context.Context
-	initialCtx context.Context
+	ctx           context.Context
+	initialCtx    context.Context
+	logger        log.Logger
+	accountKeeper evmtypes.AccountKeeper
 
 	vmStore               collections.Map[[]byte, []byte]
 	transientVMStore      collections.Map[collections.Pair[uint64, []byte], []byte]
@@ -51,11 +55,19 @@ type StateDB struct {
 
 	// Snapshot stack
 	snaps []*Snapshot
+
+	pointCache *utils.PointCache
 }
+
+const (
+	// Number of address->curve point associations to keep.
+	pointCacheSize = 4096
+)
 
 func NewStateDB(
 	ctx context.Context,
 	logger log.Logger,
+	accountKeeper evmtypes.AccountKeeper,
 	// store params
 	vmStore collections.Map[[]byte, []byte],
 	transientVMStore collections.Map[collections.Pair[uint64, []byte], []byte],
@@ -85,9 +97,10 @@ func NewStateDB(
 	}
 
 	s := &StateDB{
-		logger:     logger,
-		ctx:        ctx,
-		initialCtx: ctx,
+		ctx:           ctx,
+		initialCtx:    ctx,
+		logger:        logger,
+		accountKeeper: accountKeeper,
 
 		vmStore:               vmStore,
 		transientVMStore:      transientVMStore,
@@ -102,6 +115,8 @@ func NewStateDB(
 		evm:             evm,
 		erc20ABI:        erc20ABI,
 		feeContractAddr: feeContractAddr,
+
+		pointCache: utils.NewPointCache(pointCacheSize),
 	}
 
 	return s, nil
@@ -256,14 +271,43 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	if err := s.vmStore.Set(s.ctx, accountKey(addr), EmptyStateAccount().Marshal()); err != nil {
 		panic(err)
 	}
+}
 
-	if err := s.transientCreated.Set(s.ctx, collections.Join(s.execIndex, addr.Bytes())); err != nil {
+// CreateContract creates a contract account with the given address
+func (s *StateDB) CreateContract(contractAddr common.Address) {
+	if err := s.transientCreated.Set(s.ctx, collections.Join(s.execIndex, contractAddr.Bytes())); err != nil {
 		panic(err)
+	}
+
+	// If the account is empty, converts a normal account to a contract account
+	// Else, creates a contract account if the account does not exist.
+	if s.accountKeeper.HasAccount(s.ctx, sdk.AccAddress(contractAddr.Bytes())) {
+		account := s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(contractAddr.Bytes()))
+
+		// check the account is empty or not
+		if !evmtypes.IsEmptyAccount(account) {
+			panic(evmtypes.ErrAddressAlreadyExists.Wrap(contractAddr.String()))
+		}
+
+		// convert base account to contract account only if this account is empty
+		contractAccount := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
+		contractAccount.AccountNumber = account.GetAccountNumber()
+		s.accountKeeper.SetAccount(s.ctx, contractAccount)
+	} else {
+		// create contract account
+		contractAccount := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
+		contractAccount.AccountNumber = s.accountKeeper.NextAccountNumber(s.ctx)
+		s.accountKeeper.SetAccount(s.ctx, contractAccount)
 	}
 }
 
 // Empty returns empty according to the EIP161 specification (balance = nonce = code = 0)
 func (s *StateDB) Empty(addr common.Address) bool {
+	// check if the account has non-zero balance
+	if balance := s.GetBalance(addr); balance.Sign() != 0 {
+		return false
+	}
+
 	accBz, err := s.vmStore.Get(s.ctx, accountKey(addr))
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return true
@@ -272,17 +316,7 @@ func (s *StateDB) Empty(addr common.Address) bool {
 	}
 
 	// check if the account has non-zero nonce or code hash
-	sa := EmptyStateAccount().Unmarshal(accBz)
-	if !sa.IsEmpty() {
-		return false
-	}
-
-	// check if the account has non-zero balance
-	if balance := s.GetBalance(addr); balance.Sign() != 0 {
-		return false
-	}
-
-	return true
+	return EmptyStateAccount().Unmarshal(accBz).IsEmpty()
 }
 
 // Exist reports whether the given account address exists in the state.
@@ -481,8 +515,7 @@ func (s *StateDB) Selfdestruct6780(addr common.Address) {
 	ok, err := s.transientCreated.Has(s.ctx, collections.Join(s.execIndex, addr.Bytes()))
 	if err != nil {
 		panic(err)
-	}
-	if ok {
+	} else if ok {
 		s.SelfDestruct(addr)
 	}
 }
@@ -606,7 +639,11 @@ func (s *StateDB) Commit() error {
 
 	// clear destructed accounts
 	err := s.transientSelfDestruct.Walk(s.ctx, collections.NewPrefixedPairRange[uint64, []byte](s.execIndex), func(key collections.Pair[uint64, []byte]) (stop bool, err error) {
-		err = s.vmStore.Clear(s.ctx, new(collections.Range[[]byte]).Prefix(key.K2()))
+		addr := common.BytesToAddress(key.K2())
+		err = s.vmStore.Clear(s.ctx, new(collections.Range[[]byte]).Prefix(addr.Bytes()))
+
+		// remove cosmos account
+		s.accountKeeper.RemoveAccount(s.ctx, s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(addr.Bytes())))
 		return false, err
 	})
 	if err != nil {
@@ -654,7 +691,44 @@ func (s *StateDB) Logs() evmtypes.Logs {
 	return logs
 }
 
-// AddPreimage implements vm.StateDB.
+// GetStorageRoot return non-empty storage root if the account with addr has non-empty storage
+// or there is non-empty cosmos account.
+func (s *StateDB) GetStorageRoot(addr common.Address) common.Hash {
+	nonEmptyHash := common.Hash{1}
+
+	// check whether the non-empty account exists in the account keeper
+	if s.accountKeeper.HasAccount(s.ctx, sdk.AccAddress(addr.Bytes())) {
+		account := s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(addr.Bytes()))
+
+		// check the account is empty or not
+		if !evmtypes.IsEmptyAccount(account) {
+			return nonEmptyHash
+		}
+	}
+
+	// check whether the non-empty storage exists in the vm store
+	iter, err := s.vmStore.Iterate(s.ctx, new(collections.Range[[]byte]).Prefix(stateKeyPrefix(addr)))
+	if err != nil {
+		panic(err)
+	} else if iter.Valid() {
+		return nonEmptyHash
+	}
+
+	// return empty storage root
+	return common.Hash{}
+}
+
+// unused in the current implementation
+func (s *StateDB) PointCache() *utils.PointCache {
+	return nil
+}
+
+// unused in the current implementation
+func (s *StateDB) Witness() *stateless.Witness {
+	return nil
+}
+
+// unused in the current implementation
 func (s *StateDB) AddPreimage(common.Hash, []byte) {
 	// no-op
 }

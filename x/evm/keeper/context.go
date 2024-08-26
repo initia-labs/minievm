@@ -13,20 +13,22 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/trie/utils"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/initia-labs/minievm/x/evm/state"
+	evmstate "github.com/initia-labs/minievm/x/evm/state"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, feeContrect common.Address) (*state.StateDB, error) {
-	return state.NewStateDB(
+func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, feeContrect common.Address) (*evmstate.StateDB, error) {
+	return evmstate.NewStateDB(
 		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
-		k.VMStore, k.TransientVMStore, k.TransientCreated,
+		k.accountKeeper, k.VMStore, k.TransientVMStore, k.TransientCreated,
 		k.TransientSelfDestruct, k.TransientLogs, k.TransientLogSize,
 		k.TransientAccessList, k.TransientRefund, k.TransientExecIndex,
 		evm, k.ERC20Keeper().GetERC20ABI(), feeContrect,
@@ -125,10 +127,11 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 
 func (k Keeper) buildTxContext(_ context.Context, caller common.Address) vm.TxContext {
 	return vm.TxContext{
-		Origin:     caller,
-		BlobFeeCap: nil,
-		BlobHashes: nil,
-		GasPrice:   nil,
+		Origin:       caller,
+		BlobFeeCap:   nil,
+		BlobHashes:   nil,
+		GasPrice:     nil,
+		AccessEvents: state.NewAccessEvents(utils.NewPointCache(4096)),
 	}
 }
 
@@ -162,9 +165,8 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	}
 
 	vmConfig := vm.Config{
-		Tracer:              tracer,
-		ExtraEips:           extraEIPs,
-		ContractCreatedHook: k.contractCreatedHook(ctx),
+		Tracer:    tracer,
+		ExtraEips: extraEIPs,
 	}
 
 	// set cosmos messages to context
@@ -184,35 +186,6 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	}
 
 	return ctx, evm, nil
-}
-
-// contractCreatedHook returns a callback function that is called when a contract is created.
-//
-// It converts a normal account to a contract account if the account is empty and create
-// creates a contract account if the account does not exist.
-func (k Keeper) contractCreatedHook(ctx context.Context) vm.ContractCreatedHook {
-	return func(contractAddr common.Address) error {
-		if k.accountKeeper.HasAccount(ctx, sdk.AccAddress(contractAddr.Bytes())) {
-			account := k.accountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))
-
-			// check the account is empty or not
-			if !types.IsEmptyAccount(account) {
-				return types.ErrAddressAlreadyExists.Wrap(contractAddr.String())
-			}
-
-			// convert base account to contract account only if this account is empty
-			contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
-			contractAccount.AccountNumber = account.GetAccountNumber()
-			k.accountKeeper.SetAccount(ctx, contractAccount)
-		} else {
-			// create contract account
-			contractAccount := types.NewContractAccountWithAddress(contractAddr.Bytes())
-			contractAccount.AccountNumber = k.accountKeeper.NextAccountNumber(ctx)
-			k.accountKeeper.SetAccount(ctx, contractAccount)
-		}
-
-		return nil
-	}
 }
 
 // EVMStaticCall executes an EVM call with the given input data in static mode.
@@ -288,7 +261,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	}
 
 	// commit state transition
-	stateDB := evm.StateDB.(*state.StateDB)
+	stateDB := evm.StateDB.(*evmstate.StateDB)
 	if err := stateDB.Commit(); err != nil {
 		return nil, nil, err
 	}
@@ -372,6 +345,10 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 			uint256.NewInt(*salt),
 		)
 	}
+	// go-ethereum returns gasRemaining as 0 if the contract address is already in use
+	if errors.Is(err, vm.ErrContractAddressCollision) {
+		return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+	}
 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
@@ -385,7 +362,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	// commit state transition
-	stateDB := evm.StateDB.(*state.StateDB)
+	stateDB := evm.StateDB.(*evmstate.StateDB)
 	err = stateDB.Commit()
 	if err != nil {
 		return nil, common.Address{}, nil, err
@@ -425,9 +402,9 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	return retBz, contractAddr, logs, nil
 }
 
-// nextContractAddress returns the next contract address which will be created by the given caller
+// NextContractAddress returns the next contract address which will be created by the given caller
 // in CREATE opcode.
-func (k Keeper) nextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
+func (k Keeper) NextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
 	stateDB, err := k.NewStateDB(ctx, nil, common.Address{})
 	if err != nil {
 		return common.Address{}, err

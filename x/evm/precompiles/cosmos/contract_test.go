@@ -479,6 +479,12 @@ func (k MockAccountKeeper) SetAccount(ctx context.Context, acc sdk.AccountI) {
 	k.accounts[str] = acc
 }
 
+// RemoveAccount implements types.AccountKeeper.
+func (k MockAccountKeeper) RemoveAccount(ctx context.Context, acc sdk.AccountI) {
+	str, _ := k.ac.BytesToString(acc.GetAddress().Bytes())
+	delete(k.accounts, str)
+}
+
 var _ types.BankKeeper = &MockBankKeeper{}
 
 // mock bank keeper for testing

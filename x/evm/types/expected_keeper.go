@@ -20,6 +20,7 @@ type AccountKeeper interface {
 	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 	SetAccount(ctx context.Context, acc sdk.AccountI)
 	HasAccount(ctx context.Context, addr sdk.AccAddress) bool
+	RemoveAccount(ctx context.Context, acc sdk.AccountI)
 
 	NewAccountWithAddress(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 	NextAccountNumber(ctx context.Context) uint64

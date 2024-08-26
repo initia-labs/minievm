@@ -330,7 +330,7 @@ func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string, decimals uin
 	if err != nil {
 		return err
 	}
-	contractAddr, err := k.nextContractAddress(ctx, factoryAddr)
+	contractAddr, err := k.NextContractAddress(ctx, factoryAddr)
 	if err != nil {
 		return err
 	}

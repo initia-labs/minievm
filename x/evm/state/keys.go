@@ -29,6 +29,10 @@ func stateKey(addr common.Address, slot common.Hash) []byte {
 	return append(addr.Bytes(), append(StateKeyPrefix, slot.Bytes()...)...)
 }
 
+func stateKeyPrefix(addr common.Address) []byte {
+	return append(addr.Bytes(), StateKeyPrefix...)
+}
+
 func uint64ToBytes(v uint64) []byte {
 	bz := make([]byte, 8)
 	binary.BigEndian.PutUint64(bz, v)
