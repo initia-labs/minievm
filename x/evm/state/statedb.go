@@ -1,7 +1,6 @@
 package state
 
 import (
-	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -34,8 +33,8 @@ type callableEVM interface {
 var _ vm.StateDB = &StateDB{}
 
 type StateDB struct {
-	ctx           context.Context
-	initialCtx    context.Context
+	ctx           sdk.Context
+	initialCtx    sdk.Context
 	logger        log.Logger
 	accountKeeper evmtypes.AccountKeeper
 
@@ -55,17 +54,14 @@ type StateDB struct {
 
 	// Snapshot stack
 	snaps []*Snapshot
-
-	pointCache *utils.PointCache
 }
 
 const (
-	// Number of address->curve point associations to keep.
-	pointCacheSize = 4096
+	erc20OpGasLimit = 100000
 )
 
 func NewStateDB(
-	ctx context.Context,
+	ctx sdk.Context,
 	logger log.Logger,
 	accountKeeper evmtypes.AccountKeeper,
 	// store params
@@ -115,8 +111,6 @@ func NewStateDB(
 		evm:             evm,
 		erc20ABI:        erc20ABI,
 		feeContractAddr: feeContractAddr,
-
-		pointCache: utils.NewPointCache(pointCacheSize),
 	}
 
 	return s, nil
@@ -133,7 +127,7 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 		panic(err)
 	}
 
-	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, 100000, uint256.NewInt(0))
+	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to mint token", "error", err)
 		panic(err)
@@ -152,7 +146,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing
 		panic(err)
 	}
 
-	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, 100000, uint256.NewInt(0))
+	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to burn token", "error", err)
 		panic(err)
@@ -166,7 +160,7 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 		panic(err)
 	}
 
-	retBz, _, err := s.evm.StaticCall(vm.AccountRef(evmtypes.NullAddress), s.feeContractAddr, inputBz, 100000)
+	retBz, _, err := s.evm.StaticCall(vm.AccountRef(evmtypes.NullAddress), s.feeContractAddr, inputBz, erc20OpGasLimit)
 	if err != nil {
 		s.logger.Warn("failed to check balance", "error", err)
 		panic(err)
@@ -299,6 +293,12 @@ func (s *StateDB) CreateContract(contractAddr common.Address) {
 		contractAccount.AccountNumber = s.accountKeeper.NextAccountNumber(s.ctx)
 		s.accountKeeper.SetAccount(s.ctx, contractAccount)
 	}
+
+	// emit cosmos contract created event
+	s.ctx.EventManager().EmitEvent(sdk.NewEvent(
+		evmtypes.EventTypeContractCreated,
+		sdk.NewAttribute(evmtypes.AttributeKeyContract, contractAddr.Hex()),
+	))
 }
 
 // Empty returns empty according to the EIP161 specification (balance = nonce = code = 0)

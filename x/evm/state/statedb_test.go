@@ -391,3 +391,27 @@ func Test_ContractAddrConfilct_DueToCosmosAccount(t *testing.T) {
 	_, _, _, err = input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil)
 	require.ErrorContains(t, err, vm.ErrContractAddressCollision.Error())
 }
+
+func Test_CreateContract_OverrideEmptyAccount(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	_, _, addr := keyPubAddr()
+
+	contractAddr, err := input.EVMKeeper.NextContractAddress(ctx, common.BytesToAddress(addr.Bytes()))
+	require.NoError(t, err)
+
+	// fund addr
+	input.Faucet.Fund(ctx, contractAddr.Bytes(), sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000000000))
+
+	// deploy contract
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	caller := common.BytesToAddress(addr.Bytes())
+	_, _, _, err = input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil)
+	require.NoError(t, err)
+
+	contractAcc := input.AccountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))
+	_, ok := contractAcc.(*evmtypes.ContractAccount)
+	require.True(t, ok)
+}

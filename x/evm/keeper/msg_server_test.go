@@ -145,7 +145,7 @@ func Test_MsgServer_UpdateParams(t *testing.T) {
 		Authority: input.EVMKeeper.GetAuthority(),
 		Params:    params,
 	})
-	require.ErrorContains(t, err, "fee denom cannot be changed")
+	require.ErrorContains(t, err, "not found")
 
 	// valid
 	_, _, addr := keyPubAddr()
@@ -159,4 +159,20 @@ func Test_MsgServer_UpdateParams(t *testing.T) {
 	resParams, err := input.EVMKeeper.Params.Get(ctx)
 	require.NoError(t, err)
 	require.Equal(t, params, resParams)
+
+	// deploy custom erc20 contract
+	evmAddr := common.BytesToAddress(addr.Bytes())
+	fooContractAddr := deployCustomERC20(t, ctx, input, evmAddr, "foo", true)
+	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
+
+	// cannot change fee denom which does not support sudoMint and sudoBurn
+	params = types.DefaultParams()
+	params.FeeDenom = fooDenom
+	_, err = msgServer.UpdateParams(ctx, &types.MsgUpdateParams{
+		Authority: input.EVMKeeper.GetAuthority(),
+		Params:    params,
+	})
+	require.ErrorContains(t, err, "sudoMint and sudoBurn")
 }

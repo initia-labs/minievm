@@ -27,6 +27,7 @@ import (
 
 func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, feeContrect common.Address) (*evmstate.StateDB, error) {
 	return evmstate.NewStateDB(
+		// delegate gas meter to the EVM
 		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
 		k.accountKeeper, k.VMStore, k.TransientVMStore, k.TransientCreated,
 		k.TransientSelfDestruct, k.TransientLogs, k.TransientLogSize,
@@ -36,7 +37,7 @@ func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, feeContrect com
 }
 
 func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
-	gasLimit := sdkCtx.GasMeter().GasRemaining()
+	gasLimit := sdkCtx.GasMeter().Limit() - sdkCtx.GasMeter().GasConsumedToLimit()
 	if sdkCtx.ExecMode() == sdk.ExecModeSimulate {
 		gasLimit = k.config.ContractSimulationGasLimit
 	}
@@ -344,10 +345,6 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 			value,
 			uint256.NewInt(*salt),
 		)
-	}
-	// go-ethereum returns gasRemaining as 0 if the contract address is already in use
-	if errors.Is(err, vm.ErrContractAddressCollision) {
-		return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
 	}
 
 	// London enforced
