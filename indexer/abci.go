@@ -137,6 +137,14 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		Extra:           []byte{},
 	}
 
+	// fill parent hash
+	if blockHeight > 1 {
+		parentHeader, err := e.BlockHeaderMap.Get(sdkCtx, uint64(blockHeight-1))
+		if err == nil {
+			blockHeader.ParentHash = parentHeader.Hash()
+		}
+	}
+
 	blockHash := blockHeader.Hash()
 	for txIndex, ethTx := range ethTxs {
 		txHash := ethTx.Hash()

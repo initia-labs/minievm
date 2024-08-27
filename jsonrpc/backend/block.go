@@ -117,17 +117,15 @@ func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bo
 	}
 
 	txs := []*rpctypes.RPCTransaction{}
-	if fullTx {
-		err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
-			txs = append(txs, tx)
-			return false, nil
-		})
-		if err != nil {
-			return nil, err
-		}
+	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+		txs = append(txs, tx)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return formatBlock(header, txs), nil
+	return formatBlock(header, txs, fullTx), nil
 }
 
 func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
@@ -145,23 +143,30 @@ func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[stri
 	}
 
 	txs := []*rpctypes.RPCTransaction{}
-	if fullTx {
-		blockNumber := header.Number.Uint64()
-		err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
-			txs = append(txs, tx)
-			return false, nil
-		})
-		if err != nil {
-			return nil, err
-		}
+	blockNumber := header.Number.Uint64()
+	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+		txs = append(txs, tx)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return formatBlock(header, txs), nil
+	return formatBlock(header, txs, fullTx), nil
 }
 
-func formatBlock(header *coretypes.Header, txs []*rpctypes.RPCTransaction) map[string]interface{} {
+func formatBlock(header *coretypes.Header, txs []*rpctypes.RPCTransaction, fullTx bool) map[string]interface{} {
 	fields := formatHeader(header)
-	fields["transactions"] = txs
+
+	if fullTx {
+		fields["transactions"] = txs
+	} else {
+		txsHashes := []common.Hash{}
+		for _, tx := range txs {
+			txsHashes = append(txsHashes, tx.Hash)
+		}
+		fields["transactions"] = txsHashes
+	}
 
 	// empty values
 	fields["size"] = hexutil.Uint64(0)
