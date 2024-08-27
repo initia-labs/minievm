@@ -204,6 +204,9 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
 
+	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), nil)
+
 	retBz, gasRemaining, err := evm.StaticCall(
 		vm.AccountRef(caller),
 		contractAddr,
