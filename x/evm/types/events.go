@@ -5,6 +5,9 @@ const (
 	EventTypeCreate = "create"
 	EventTypeEVM    = "evm"
 
+	// state db events
+	EventTypeContractCreated = "contract_created"
+
 	// erc20 events
 	EventTypeERC20Created = "erc20_created"
 	// erc721 events

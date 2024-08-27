@@ -11,7 +11,6 @@ func Test_Genesis(t *testing.T) {
 	ctx, input := createTestInput(t, false, false)
 
 	genState := types.DefaultGenesis()
-	genState.StateRoot = []byte{1, 2, 3, 4}
 	genState.Erc20Factory = []byte{5, 6, 7, 8}
 	genState.Erc20Stores = []types.GenesisERC20Stores{
 		{

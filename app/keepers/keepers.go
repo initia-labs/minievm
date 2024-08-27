@@ -549,6 +549,7 @@ func NewAppKeeper(
 		ac,
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[evmtypes.StoreKey]),
+		runtime.NewTransientStoreService(appKeepers.tkeys[evmtypes.TStoreKey]),
 		accountKeeper,
 		bankKeeper,
 		communityPoolKeeper,

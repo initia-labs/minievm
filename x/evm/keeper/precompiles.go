@@ -63,3 +63,12 @@ func (ps precompiles) toMap(ctx context.Context) map[common.Address]vm.Precompil
 
 	return m
 }
+
+func (ps precompiles) toAddrs() []common.Address {
+	addrs := make([]common.Address, len(ps))
+	for i, p := range ps {
+		addrs[i] = p.addr
+	}
+
+	return addrs
+}

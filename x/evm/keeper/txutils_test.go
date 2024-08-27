@@ -107,7 +107,13 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	v, r, s := signedTx.RawSignatureValues()
 	sigData := sig.Data.(*signing.SingleSignatureData)
 	require.Equal(t, sigData.SignMode, keeper.SignMode_SIGN_MODE_ETHEREUM)
-	require.Equal(t, sigData.Signature, append(append(r.Bytes(), s.Bytes()...), byte(v.Uint64())))
+
+	sigBytes := make([]byte, 65)
+	copy(sigBytes[32-len(r.Bytes()):32], r.Bytes())
+	copy(sigBytes[64-len(s.Bytes()):64], s.Bytes())
+	sigBytes[64] = byte(v.Uint64())
+
+	require.Equal(t, sigData.Signature, sigBytes)
 
 	// Convert back to ethereum tx
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)

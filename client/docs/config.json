@@ -147,6 +147,14 @@
         }
       },
       {
+        "url": "./tmp-swagger-gen/initia/ibchooks/v1/query.swagger.json",
+        "operationIds": {
+          "rename": {
+            "Params": "IBCHooksParams"
+          }
+        }
+      },
+      {
         "url": "./tmp-swagger-gen/opinit/opchild/v1/query.swagger.json",
         "operationIds": {
           "rename": {

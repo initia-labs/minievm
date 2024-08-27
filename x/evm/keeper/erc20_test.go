@@ -88,6 +88,59 @@ func transferERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, rec
 
 }
 
+func approveERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, spender common.Address, amount sdk.Coin, expectErr bool) {
+	abi, err := erc20.Erc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("approve", spender, amount.Amount.BigInt())
+	require.NoError(t, err)
+
+	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	if expectErr {
+		require.Error(t, err)
+	} else {
+		require.NoError(t, err)
+	}
+}
+
+func transferFromERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, from, to common.Address, amount sdk.Coin, expectErr bool) {
+	abi, err := erc20.Erc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("transferFrom", from, to, amount.Amount.BigInt())
+	require.NoError(t, err)
+
+	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	if expectErr {
+		require.Error(t, err)
+	} else {
+		require.NoError(t, err)
+	}
+}
+
+func Test_BalanceOf(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	_, _, addr := keyPubAddr()
+	_, _, addr2 := keyPubAddr()
+
+	input.Faucet.Fund(ctx, addr, sdk.NewCoin("foo", math.NewInt(100)))
+
+	amount, err := input.EVMKeeper.ERC20Keeper().GetBalance(ctx, addr, "foo")
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(100), amount)
+
+	amount, err = input.EVMKeeper.ERC20Keeper().GetBalance(ctx, addr2, "foo")
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(0), amount)
+}
+
 func Test_TransferToModuleAccount(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 
@@ -406,4 +459,41 @@ func Test_IterateAccountBalances(t *testing.T) {
 		}
 		return false, nil
 	})
+}
+
+func Test_Approve(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	_, _, addr2 := keyPubAddr()
+
+	evmAddr := common.BytesToAddress(addr.Bytes())
+	evmAddr2 := common.BytesToAddress(addr2.Bytes())
+
+	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
+	require.NoError(t, err)
+
+	// deploy erc20 contract
+	fooContractAddr := deployERC20(t, ctx, input, evmAddr, "foo")
+	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
+
+	// mint erc20
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
+
+	// approve erc20
+	approveERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
+
+	// transferFrom erc20
+	transferFromERC20(t, ctx, input, evmAddr2, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
+
+	amount, err := erc20Keeper.GetBalance(ctx, addr, fooDenom)
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(50), amount)
+	amount, err = erc20Keeper.GetBalance(ctx, addr2, fooDenom)
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(50), amount)
+
+	// should fail to transferFrom more than approved
+	transferFromERC20(t, ctx, input, evmAddr2, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), true)
 }

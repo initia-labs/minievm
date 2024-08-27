@@ -6,9 +6,7 @@ import (
 
 	"cosmossdk.io/collections"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -59,15 +57,11 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 	}
 
 	// if the state root is empty, initialize the state
-	if common.BytesToHash(genState.StateRoot) == coretypes.EmptyRootHash {
+	if len(genState.KeyValues) == 0 {
 		if err := k.Initialize(ctx); err != nil {
 			return err
 		}
 	} else {
-		if err := k.VMRoot.Set(ctx, genState.StateRoot); err != nil {
-			return err
-		}
-
 		if err := k.ERC20FactoryAddr.Set(ctx, genState.Erc20Factory); err != nil {
 			return err
 		}
@@ -102,11 +96,6 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 
 func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 	params, err := k.Params.Get(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	stateRoot, err := k.VMRoot.Get(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -160,7 +149,6 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 
 	return &types.GenesisState{
 		Params:         params,
-		StateRoot:      stateRoot,
 		KeyValues:      kvs,
 		Erc20Stores:    erc20Stores,
 		DenomAddresses: denomAddresses,
