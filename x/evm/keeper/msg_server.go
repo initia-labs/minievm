@@ -168,7 +168,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
 
-	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value)
+	retBz, logs, err := ms.EVMCallWithNonceIncrement(ctx, caller, contractAddr, inputBz, value)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
