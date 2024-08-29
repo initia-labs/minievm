@@ -2,8 +2,8 @@ syntax = "proto3";
 package minievm.evm.v1;
 
 import "amino/amino.proto";
-import "gogoproto/gogo.proto";
 import "cosmos/auth/v1beta1/auth.proto";
+import "gogoproto/gogo.proto";
 
 option go_package = "github.com/initia-labs/minievm/x/evm/types";
 
@@ -13,6 +13,7 @@ message ContractAccount {
   option (gogoproto.goproto_getters) = false;
 
   cosmos.auth.v1beta1.BaseAccount base_account = 1 [(gogoproto.embed) = true];
+  bytes                           code_hash    = 2;
 }
 
 // ShorthandAccount defines an account of shorthand address

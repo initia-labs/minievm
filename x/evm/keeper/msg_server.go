@@ -142,10 +142,30 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}, nil
 }
 
+// increaseNonce increases the nonce of the given account.
+func (ms *msgServerImpl) increaseNonce(ctx context.Context, caller sdk.AccAddress) error {
+	senderAcc := ms.accountKeeper.GetAccount(ctx, caller)
+	if senderAcc == nil {
+		senderAcc = ms.accountKeeper.NewAccountWithAddress(ctx, caller)
+	}
+	if err := senderAcc.SetSequence(senderAcc.GetSequence() + 1); err != nil {
+		return err
+	}
+	ms.accountKeeper.SetAccount(ctx, senderAcc)
+	return nil
+}
+
 // Call implements types.MsgServer.
 func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.MsgCallResponse, error) {
 	sender, err := ms.ac.StringToBytes(msg.Sender)
 	if err != nil {
+		return nil, err
+	}
+
+	// increase nonce before execution like evm does
+	//
+	// NOTE: evm only increases nonce at Call not Create, so we should do the same.
+	if err := ms.increaseNonce(ctx, sender); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +188,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
 
-	retBz, logs, err := ms.EVMCallWithNonceIncrement(ctx, caller, contractAddr, inputBz, value)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}

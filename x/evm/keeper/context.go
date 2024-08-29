@@ -226,16 +226,11 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 
 // EVMCall executes an EVM call with the given input data.
 func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int) ([]byte, types.Logs, error) {
-	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, false, nil)
-}
-
-// EVMCallWithNonceIncrement executes an EVM call with the given input data and increment the nonce of the caller.
-func (k Keeper) EVMCallWithNonceIncrement(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int) ([]byte, types.Logs, error) {
-	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, true, nil)
+	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, nil)
 }
 
 // EVMCallWithTracer executes an EVM call with the given input data and tracer.
-func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, increseNonce bool, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
+func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, nil, err
@@ -249,9 +244,6 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), nil)
-	if increseNonce {
-		evm.StateDB.SetNonce(caller, evm.StateDB.GetNonce(caller)+1)
-	}
 
 	retBz, gasRemaining, err := evm.Call(
 		vm.AccountRef(caller),

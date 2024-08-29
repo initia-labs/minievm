@@ -23,7 +23,8 @@ var (
 // NewContractAccountWithAddress create new contract account with the given address.
 func NewContractAccountWithAddress(addr sdk.AccAddress) *ContractAccount {
 	return &ContractAccount{
-		authtypes.NewBaseAccountWithAddress(addr),
+		BaseAccount: authtypes.NewBaseAccountWithAddress(addr),
+		CodeHash:    []byte{},
 	}
 }
 
@@ -67,5 +68,5 @@ func IsEmptyAccount(account sdk.AccountI) bool {
 	_, isShorthandAccount := account.(ShorthandAccountI)
 	_, isContractAccount := account.(*ContractAccount)
 
-	return !isModuleAccount && !isShorthandAccount && !isContractAccount && account.GetPubKey() == nil
+	return !isModuleAccount && !isShorthandAccount && !isContractAccount && account.GetPubKey() == nil && account.GetSequence() == 0
 }

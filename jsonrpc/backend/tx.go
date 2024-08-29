@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
@@ -76,6 +77,10 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
+	}
+
+	if accSeq > txSeq {
+		return fmt.Errorf("%w: next nonce %v, tx nonce %v", core.ErrNonceTooLow, accSeq, txSeq)
 	}
 
 	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
@@ -161,8 +166,12 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 	if blockNumber == rpc.PendingBlockNumber {
 		queryCtx = b.app.GetContextForCheckTx(nil)
 	} else {
+		if blockNumber < 0 {
+			blockNumber = 0
+		}
+
 		var err error
-		queryCtx, err = b.app.CreateQueryContext(0, false)
+		queryCtx, err = b.app.CreateQueryContext(blockNumber.Int64(), false)
 		if err != nil {
 			return nil, err
 		}
