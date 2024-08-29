@@ -1,7 +1,6 @@
 package state
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -262,9 +261,8 @@ func (s *StateDB) SlotInAccessList(addr common.Address, slot common.Hash) (addre
 
 // CreateAccount set the nonce of the account with addr to 0
 func (s *StateDB) CreateAccount(addr common.Address) {
-	if err := s.vmStore.Set(s.ctx, accountKey(addr), EmptyStateAccount().Marshal()); err != nil {
-		panic(err)
-	}
+	acc := s.accountKeeper.NewAccountWithAddress(s.ctx, addr.Bytes())
+	s.accountKeeper.SetAccount(s.ctx, acc)
 }
 
 // CreateContract creates a contract account with the given address
@@ -276,22 +274,22 @@ func (s *StateDB) CreateContract(contractAddr common.Address) {
 	// If the account is empty, converts a normal account to a contract account
 	// Else, creates a contract account if the account does not exist.
 	if s.accountKeeper.HasAccount(s.ctx, sdk.AccAddress(contractAddr.Bytes())) {
-		account := s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(contractAddr.Bytes()))
+		acc := s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(contractAddr.Bytes()))
 
 		// check the account is empty or not
-		if !evmtypes.IsEmptyAccount(account) {
+		if !evmtypes.IsEmptyAccount(acc) {
 			panic(evmtypes.ErrAddressAlreadyExists.Wrap(contractAddr.String()))
 		}
 
 		// convert base account to contract account only if this account is empty
-		contractAccount := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
-		contractAccount.AccountNumber = account.GetAccountNumber()
-		s.accountKeeper.SetAccount(s.ctx, contractAccount)
+		contractAcc := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
+		contractAcc.AccountNumber = acc.GetAccountNumber()
+		s.accountKeeper.SetAccount(s.ctx, contractAcc)
 	} else {
 		// create contract account
-		contractAccount := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
-		contractAccount.AccountNumber = s.accountKeeper.NextAccountNumber(s.ctx)
-		s.accountKeeper.SetAccount(s.ctx, contractAccount)
+		contractAcc := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
+		contractAcc.AccountNumber = s.accountKeeper.NextAccountNumber(s.ctx)
+		s.accountKeeper.SetAccount(s.ctx, contractAcc)
 	}
 
 	// emit cosmos contract created event
@@ -301,6 +299,19 @@ func (s *StateDB) CreateContract(contractAddr common.Address) {
 	))
 }
 
+func (s *StateDB) getAccount(addr common.Address) sdk.AccountI {
+	return s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(addr.Bytes()))
+}
+
+func (s *StateDB) getOrNewAccount(addr common.Address) sdk.AccountI {
+	acc := s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(addr.Bytes()))
+	if acc == nil {
+		acc = s.accountKeeper.NewAccountWithAddress(s.ctx, sdk.AccAddress(addr.Bytes()))
+	}
+
+	return acc
+}
+
 // Empty returns empty according to the EIP161 specification (balance = nonce = code = 0)
 func (s *StateDB) Empty(addr common.Address) bool {
 	// check if the account has non-zero balance
@@ -308,47 +319,30 @@ func (s *StateDB) Empty(addr common.Address) bool {
 		return false
 	}
 
-	accBz, err := s.vmStore.Get(s.ctx, accountKey(addr))
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return true
-	} else if err != nil {
-		panic(err)
-	}
-
-	// check if the account has non-zero nonce or code hash
-	return EmptyStateAccount().Unmarshal(accBz).IsEmpty()
+	acc := s.getAccount(addr)
+	return acc == nil || evmtypes.IsEmptyAccount(acc)
 }
 
 // Exist reports whether the given account address exists in the state.
 // Notably this also returns true for self-destructed accounts.
 func (s *StateDB) Exist(addr common.Address) bool {
-	ok, err := s.vmStore.Has(s.ctx, accountKey(addr))
-	if err != nil {
-		panic(err)
-	}
-
-	return ok
-}
-
-func (s *StateDB) getStateAccount(addr common.Address) *StateAccount {
-	acc, err := s.vmStore.Get(s.ctx, accountKey(addr))
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return nil
-	} else if err != nil {
-		panic(err)
-	}
-
-	return EmptyStateAccount().Unmarshal(acc)
+	acc := s.getAccount(addr)
+	return acc != nil
 }
 
 // GetCode returns the code of the account with addr
 func (s *StateDB) GetCode(addr common.Address) []byte {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
+	acc := s.getAccount(addr)
+	if acc == nil {
 		return nil
 	}
 
-	code, err := s.vmStore.Get(s.ctx, codeKey(addr, sa.CodeHash))
+	cacc, ok := acc.(*evmtypes.ContractAccount)
+	if !ok {
+		return nil
+	}
+
+	code, err := s.vmStore.Get(s.ctx, codeKey(addr, cacc.CodeHash))
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil
 	} else if err != nil {
@@ -358,55 +352,68 @@ func (s *StateDB) GetCode(addr common.Address) []byte {
 	return code
 }
 
-// SetCode store the code of the account with addr
+// SetCode store the code of the account with addr, and set the code hash to the account
+// It is always used in conjunction with CreateContract, so don't need to check account conversion.
 func (s *StateDB) SetCode(addr common.Address, code []byte) {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
-		sa = EmptyStateAccount()
+	ca := s.getOrNewAccount(addr)
+	if evmtypes.IsEmptyAccount(ca) {
+		an := ca.GetAccountNumber()
+		ca = evmtypes.NewContractAccountWithAddress(addr.Bytes())
+		if err := ca.SetAccountNumber(an); err != nil {
+			panic(err)
+		}
 	}
 
-	// set the code hash in the state account
-	sa.CodeHash = crypto.Keccak256Hash(code).Bytes()
-	if err := s.vmStore.Set(s.ctx, accountKey(addr), sa.Marshal()); err != nil {
-		panic(err)
-	}
+	codeHash := crypto.Keccak256Hash(code).Bytes()
+	ca.(*evmtypes.ContractAccount).CodeHash = codeHash
+	s.accountKeeper.SetAccount(s.ctx, ca)
 
 	// set the code in the store
-	if err := s.vmStore.Set(s.ctx, codeKey(addr, sa.CodeHash), code); err != nil {
+	if err := s.vmStore.Set(s.ctx, codeKey(addr, codeHash), code); err != nil {
 		panic(err)
 	}
 
 	// set the code size in the store
-	if err := s.vmStore.Set(s.ctx, codeSizeKey(addr, sa.CodeHash), uint64ToBytes(uint64(len(code)))); err != nil {
+	if err := s.vmStore.Set(s.ctx, codeSizeKey(addr, codeHash), uint64ToBytes(uint64(len(code)))); err != nil {
 		panic(err)
 	}
 }
 
 // GetCodeHash returns the code hash of the account with addr
 func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
-		return common.Hash{}
+	acc := s.getAccount(addr)
+	if acc == nil {
+		return types.EmptyCodeHash
 	}
 
-	return common.BytesToHash(sa.CodeHash)
+	cacc, ok := acc.(*evmtypes.ContractAccount)
+	if !ok {
+		return types.EmptyCodeHash
+	}
+
+	return common.BytesToHash(cacc.CodeHash)
 }
 
 // GetCodeSize returns the code size of the account with addr
 func (s *StateDB) GetCodeSize(addr common.Address) int {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
+	acc := s.getAccount(addr)
+	if acc == nil {
 		return 0
 	}
 
-	codeSize, err := s.vmStore.Get(s.ctx, codeSizeKey(addr, sa.CodeHash))
+	cacc, ok := acc.(*evmtypes.ContractAccount)
+	if !ok {
+		return 0
+	}
+
+	codeSize, err := s.vmStore.Get(s.ctx, codeSizeKey(addr, cacc.CodeHash))
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return 0
 	} else if err != nil {
 		panic(err)
 	}
 
-	return int(binary.BigEndian.Uint64(codeSize))
+	return int(bytesToUint64(codeSize))
 }
 
 // GetCommittedState returns the committed state of the account with addr
@@ -422,25 +429,21 @@ func (s *StateDB) GetCommittedState(addr common.Address, state common.Hash) comm
 
 // GetNonce returns the nonce of the account with addr
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
-	sa := s.getStateAccount(addr)
-	if sa != nil {
-		return sa.Nonce
+	acc := s.getAccount(addr)
+	if acc == nil {
+		return 0
 	}
 
-	return 0
+	return acc.GetSequence()
 }
 
 // SetNonce sets the nonce of the account with addr
 func (s *StateDB) SetNonce(addr common.Address, nonce uint64) {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
-		sa = EmptyStateAccount()
-	}
-
-	sa.Nonce = nonce
-	if err := s.vmStore.Set(s.ctx, accountKey(addr), sa.Marshal()); err != nil {
+	acc := s.getOrNewAccount(addr)
+	if err := acc.SetSequence(nonce); err != nil {
 		panic(err)
 	}
+	s.accountKeeper.SetAccount(s.ctx, acc)
 }
 
 // GetRefund returns the refund
@@ -455,8 +458,8 @@ func (s *StateDB) GetRefund() uint64 {
 
 // GetState returns the state of the account with addr and slot
 func (s *StateDB) GetState(addr common.Address, slot common.Hash) common.Hash {
-	sa := s.getStateAccount(addr)
-	if sa != nil {
+	acc := s.getAccount(addr)
+	if acc != nil {
 		state, err := s.vmStore.Get(s.ctx, stateKey(addr, slot))
 		if err != nil && errors.Is(err, collections.ErrNotFound) {
 			return common.Hash{}
@@ -472,8 +475,8 @@ func (s *StateDB) GetState(addr common.Address, slot common.Hash) common.Hash {
 
 // HasSelfDestructed return true if the account with addr has self-destructed
 func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
-	sa := s.getStateAccount(addr)
-	if sa != nil {
+	acc := s.getAccount(addr)
+	if acc != nil {
 		ok, err := s.transientSelfDestruct.Has(s.ctx, collections.Join(s.execIndex, addr.Bytes()))
 		if err != nil {
 			panic(err)
@@ -491,8 +494,8 @@ func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
 // The account's state object is still available until the state is committed,
 // getStateObject will return a non-nil account after SelfDestruct.
 func (s *StateDB) SelfDestruct(addr common.Address) {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
+	acc := s.getAccount(addr)
+	if acc == nil {
 		return
 	}
 
@@ -507,8 +510,8 @@ func (s *StateDB) SelfDestruct(addr common.Address) {
 
 // Selfdestruct6780 calls selfdestruct and clears the account balance if the account is created in the same transaction.
 func (s *StateDB) Selfdestruct6780(addr common.Address) {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
+	acc := s.getAccount(addr)
+	if acc == nil {
 		return
 	}
 
@@ -522,14 +525,6 @@ func (s *StateDB) Selfdestruct6780(addr common.Address) {
 
 // SetState implements vm.StateDB.
 func (s *StateDB) SetState(addr common.Address, slot common.Hash, value common.Hash) {
-	sa := s.getStateAccount(addr)
-	if sa == nil {
-		sa = EmptyStateAccount()
-		if err := s.vmStore.Set(s.ctx, accountKey(addr), sa.Marshal()); err != nil {
-			panic(err)
-		}
-	}
-
 	if err := s.vmStore.Set(s.ctx, stateKey(addr, slot), value[:]); err != nil {
 		panic(err)
 	}

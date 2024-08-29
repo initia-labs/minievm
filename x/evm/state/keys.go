@@ -7,15 +7,10 @@ import (
 )
 
 var (
-	AccountKeyPrefix  = []byte("account")
 	CodeKeyPrefix     = []byte("code")
 	CodeSizeKeyPrefix = []byte("codesize")
 	StateKeyPrefix    = []byte("state")
 )
-
-func accountKey(addr common.Address) []byte {
-	return append(addr.Bytes(), AccountKeyPrefix...)
-}
 
 func codeKey(addr common.Address, codeHash []byte) []byte {
 	return append(addr.Bytes(), append(CodeKeyPrefix, codeHash...)...)

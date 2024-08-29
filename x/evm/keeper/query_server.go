@@ -83,7 +83,7 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		// if contract address is not provided, then it's a contract creation
 		retBz, _, logs, err = qs.EVMCreateWithTracer(sdkCtx, caller, inputBz, value, nil, tracer)
 	} else {
-		retBz, logs, err = qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, value, false, tracer)
+		retBz, logs, err = qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, value, tracer)
 
 	}
 
