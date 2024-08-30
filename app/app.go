@@ -43,7 +43,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
@@ -65,6 +64,7 @@ import (
 
 	// local imports
 	"github.com/initia-labs/minievm/app/keepers"
+	"github.com/initia-labs/minievm/app/posthandler"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
@@ -360,14 +360,9 @@ func (app *MinitiaApp) SetCheckTx(handler blockchecktx.CheckTx) {
 }
 
 func (app *MinitiaApp) setPostHandler() {
-	postHandler, err := posthandler.NewPostHandler(
-		posthandler.HandlerOptions{},
-	)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-
-	app.SetPostHandler(postHandler)
+	app.SetPostHandler(posthandler.NewPostHandler(
+		app.AccountKeeper,
+	))
 }
 
 // SetKVIndexer sets the kvindexer keeper and module for the app and registers the services.

@@ -245,6 +245,8 @@ func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 
 	// decrement sequence of all signers which is used in EVM
 	// when we execute evm messages, it whould handle sequence number increment.
+	//
+	// NOTE: Need to revert it if a tx failed. See ../posthandler/sequence.go
 	if simulate || ctx.ExecMode() == sdk.ExecModeFinalize {
 		signerMap := make(map[string]bool)
 		for _, msg := range tx.GetMsgs() {
