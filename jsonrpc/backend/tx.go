@@ -358,6 +358,70 @@ func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, erro
 	return result, nil
 }
 
+func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.RPCTransaction, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	txs := []*rpctypes.RPCTransaction{}
+	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+		txs = append(txs, tx)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return txs, nil
+}
+
+func (b *JSONRPCBackend) getBlockRecepts(blockNumber uint64) ([]*coretypes.Receipt, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	recepts := []*coretypes.Receipt{}
+	err = b.app.EVMIndexer().IterateBlockTxRecepts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
+		recepts = append(recepts, recept)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return recepts, nil
+}
+
+func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
+	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+
+	txs, err := b.getBlockTransactions(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	receipts, err := b.getBlockRecepts(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(txs) != len(receipts) {
+		return nil, fmt.Errorf("receipts length mismatch: %d vs %d", len(txs), len(receipts))
+	}
+
+	result := make([]map[string]interface{}, len(receipts))
+	for i, receipt := range receipts {
+		result[i] = marshalReceipt(receipt, txs[i])
+	}
+
+	return result, nil
+}
+
 // marshalReceipt marshals a transaction receipt into a JSON object.
 func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map[string]interface{} {
 	fields := map[string]interface{}{

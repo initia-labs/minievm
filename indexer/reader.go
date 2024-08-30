@@ -63,6 +63,19 @@ func (e *EVMIndexerImpl) IterateBlockTxs(ctx context.Context, blockHeight uint64
 	})
 }
 
+// IterateBlockTxs implements EVMIndexer.
+func (e *EVMIndexerImpl) IterateBlockTxRecepts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error {
+	return e.BlockAndIndexToTxHashMap.Walk(ctx, collections.NewPrefixedPairRange[uint64, uint64](blockHeight), func(key collections.Pair[uint64, uint64], txHashBz []byte) (bool, error) {
+		txHash := common.BytesToHash(txHashBz)
+		txRecept, err := e.TxReceiptByHash(ctx, txHash)
+		if err != nil {
+			return true, err
+		}
+
+		return cb(txRecept)
+	})
+}
+
 // TxReceiptByHash implements EVMIndexer.
 func (e *EVMIndexerImpl) TxReceiptByHash(ctx context.Context, hash common.Hash) (*coretypes.Receipt, error) {
 	receipt, err := e.TxReceiptMap.Get(ctx, hash.Bytes())

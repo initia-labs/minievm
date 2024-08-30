@@ -141,6 +141,11 @@ func (api *EthAPI) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]int
 	return api.backend.GetBlockByHash(hash, fullTx)
 }
 
+func (api *EthAPI) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
+	api.logger.Debug("eth_getBlockReceipts", "block number or hash", blockNrOrHash)
+	return api.backend.GetBlockReceipts(ctx, blockNrOrHash)
+}
+
 // *************************************
 // *              Read Txs             *
 // *************************************
