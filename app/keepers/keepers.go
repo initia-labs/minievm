@@ -185,7 +185,7 @@ func NewAppKeeper(
 	appKeepers.CapabilityKeeper.Seal()
 
 	// add keepers
-	appKeepers.EVMKeeper = &evmkeeper.Keeper{}
+	appKeepers.EVMKeeper = new(evmkeeper.Keeper)
 	erc20Keeper := new(evmkeeper.ERC20Keeper)
 	erc721Keeper := new(evmkeeper.ERC721Keeper)
 
@@ -545,7 +545,7 @@ func NewAppKeeper(
 	// EVMKeeper Configuration //
 	//////////////////////////////
 
-	appKeepers.EVMKeeper = evmkeeper.NewKeeper(
+	*appKeepers.EVMKeeper = *evmkeeper.NewKeeper(
 		ac,
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[evmtypes.StoreKey]),
