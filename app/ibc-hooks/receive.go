@@ -88,7 +88,6 @@ func (h EVMHooks) approveERC20(ctx sdk.Context, intermediateSender string, contr
 		return nil, err
 	}
 
-	// need to convert denom to proper ibc denom
 	erc20Addr, err := h.evmKeeper.GetContractAddrByDenom(ctx, denom)
 	if err != nil {
 		return nil, err
