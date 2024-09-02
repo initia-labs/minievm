@@ -2,18 +2,20 @@ package cli
 
 import (
 	"fmt"
+	"math/big"
 	"os"
 	"strconv"
 	"strings"
 
 	"cosmossdk.io/core/address"
+	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -38,20 +40,18 @@ func GetTxCmd(ac address.Codec) *cobra.Command {
 
 func CreateCmd(ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create [bin file1] [bin file2] [...]",
+		Use:   "create [bin-file] --input [input-hex-string] --value [value]",
 		Short: "Deploy evm contracts with CREATE opcode",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`
 Deploy evm contracts. allowed to upload up to 100 files at once.
 
 Example:
-$ %s tx evm create \
-    ERC20.bin \
-	CustomDex.bin --from mykey
+$ %s tx evm create ERC20.bin --input 0x1234 --value 100 --from mykey
 `, version.AppName,
 			),
 		),
-		Args:    cobra.RangeArgs(1, 100),
+		Args:    cobra.ExactArgs(1),
 		Aliases: []string{"CREATE"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -59,56 +59,64 @@ $ %s tx evm create \
 				return err
 			}
 
-			contracts := make([][]byte, len(args))
-			for i, arg := range args {
-				hexStrBz, err := os.ReadFile(arg)
-				if err != nil {
-					return err
-				}
-
-				contracts[i], err = hexutil.Decode("0x" + string(hexStrBz))
-				if err != nil {
-					return err
-				}
-			}
-
 			sender, err := ac.BytesToString(clientCtx.FromAddress)
 			if err != nil {
 				return err
 			}
 
-			msgs := make([]sdk.Msg, len(contracts))
-			for i, contract := range contracts {
-				msgs[i] = &types.MsgCreate{
-					Sender: sender,
-					Code:   hexutil.Encode(contract),
-				}
+			contractBz, err := os.ReadFile(args[0])
+			if err != nil {
+				return errors.Wrap(err, "failed to read contract file")
 			}
 
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msgs...)
+			input, err := cmd.Flags().GetString(FlagInput)
+			if err != nil {
+				return errors.Wrap(err, "failed to get input")
+			}
+			inputBz, err := hexutil.Decode(input)
+			if err != nil {
+				return errors.Wrap(err, "failed to decode input")
+			}
+
+			value, err := cmd.Flags().GetString(FlagValue)
+			if err != nil {
+				return errors.Wrap(err, "failed to get value")
+			}
+			val, ok := new(big.Int).SetString(value, 10)
+			if !ok {
+				return fmt.Errorf("invalid value: %s", value)
+			}
+
+			msg := &types.MsgCreate{
+				Sender: sender,
+				Code:   hexutil.Encode(append(contractBz, inputBz...)),
+				Value:  math.NewIntFromBigInt(val),
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(FlagInput, "0x", "input hex string")
+	cmd.Flags().String(FlagValue, "0", "value")
 	return cmd
 }
 
 func Create2Cmd(ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create2 [slat]:[bin file1] [salt]:[bin file2] [...]",
+		Use:   "create2 [salt] [bin file]  --input [input-hex-string] --value [value]",
 		Short: "Deploy evm contracts with CREATE2 opcode",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`
 Deploy evm contracts. allowed to upload up to 100 files at once.
 
 Example:
-$ %s tx evm create2 \
-    1:ERC20.bin \
-	CustomDex.bin --from mykey
+$ %s tx evm create2 100 ERC20.bin --input 0x1234 --value 100 --from mykey
 `, version.AppName,
 			),
 		),
-		Args:    cobra.RangeArgs(1, 100),
+		Args:    cobra.ExactArgs(2),
 		Aliases: []string{"CREATE2"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -116,49 +124,52 @@ $ %s tx evm create2 \
 				return err
 			}
 
-			salts := make([]uint64, len(args))
-			contracts := make([][]byte, len(args))
-			for i, arg := range args {
-				s := strings.Split(arg, ":")
-				if len(s) != 2 {
-					return fmt.Errorf("invalid argument: %s", arg)
-				}
-
-				salts[i], err = strconv.ParseUint(s[0], 10, 64)
-				if err != nil {
-					return err
-				}
-
-				hexStrBz, err := os.ReadFile(s[1])
-				if err != nil {
-					return err
-				}
-
-				contracts[i], err = hexutil.Decode("0x" + string(hexStrBz))
-				if err != nil {
-					return err
-				}
-			}
-
 			sender, err := ac.BytesToString(clientCtx.FromAddress)
 			if err != nil {
 				return err
 			}
 
-			msgs := make([]sdk.Msg, len(contracts))
-			for i, contract := range contracts {
-				msgs[i] = &types.MsgCreate2{
-					Sender: sender,
-					Salt:   salts[i],
-					Code:   hexutil.Encode(contract),
-				}
+			salt, err := strconv.ParseUint(args[0], 10, 64)
+			if err != nil {
+				return errors.Wrap(err, "failed to parse salt")
+			}
+			contractBz, err := os.ReadFile(args[1])
+			if err != nil {
+				return errors.Wrap(err, "failed to read contract file")
 			}
 
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msgs...)
+			input, err := cmd.Flags().GetString(FlagInput)
+			if err != nil {
+				return errors.Wrap(err, "failed to get input")
+			}
+			inputBz, err := hexutil.Decode(input)
+			if err != nil {
+				return errors.Wrap(err, "failed to decode input")
+			}
+
+			value, err := cmd.Flags().GetString(FlagValue)
+			if err != nil {
+				return errors.Wrap(err, "failed to get value")
+			}
+			val, ok := new(big.Int).SetString(value, 10)
+			if !ok {
+				return fmt.Errorf("invalid value: %s", value)
+			}
+
+			msg := &types.MsgCreate2{
+				Sender: sender,
+				Salt:   salt,
+				Code:   hexutil.Encode(append(contractBz, inputBz...)),
+				Value:  math.NewIntFromBigInt(val),
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(FlagInput, "0x", "input hex string")
+	cmd.Flags().String(FlagValue, "0", "value")
 	return cmd
 }
 
@@ -198,10 +209,20 @@ $ %s tx evm call 0x1 0x123456 --from mykey
 				return err
 			}
 
+			value, err := cmd.Flags().GetString(FlagValue)
+			if err != nil {
+				return errors.Wrap(err, "failed to get value")
+			}
+			val, ok := new(big.Int).SetString(value, 10)
+			if !ok {
+				return fmt.Errorf("invalid value: %s", value)
+			}
+
 			msg := types.MsgCall{
 				Sender:       sender,
 				ContractAddr: args[0],
 				Input:        args[1],
+				Value:        math.NewIntFromBigInt(val),
 			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
@@ -209,5 +230,6 @@ $ %s tx evm call 0x1 0x123456 --from mykey
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(FlagValue, "0", "value")
 	return cmd
 }

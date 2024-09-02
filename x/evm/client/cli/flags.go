@@ -10,6 +10,8 @@ const (
 	FlagWithMemory     = "with-memory"
 	FlagWithStack      = "with-stack"
 	FlagWithReturnData = "with-return-data"
+	FlagInput          = "input"
+	FlagValue          = "value"
 )
 
 func FlagTraceOptions() *flag.FlagSet {
