@@ -36,10 +36,10 @@ require (
 	github.com/holiman/uint256 v1.3.1
 	github.com/initia-labs/OPinit v0.4.1
 	github.com/initia-labs/initia v0.4.1
-	github.com/initia-labs/kvindexer v0.1.5
+	github.com/initia-labs/kvindexer v0.1.8
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.0
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1
-	github.com/initia-labs/kvindexer/submodules/tx v0.1.0
 	github.com/noble-assets/forwarding/v2 v2.0.0-20240521090705-86712c4c9e43
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
@@ -175,6 +175,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit/api v0.4.1 // indirect
+	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect

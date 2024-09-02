@@ -785,10 +785,12 @@ github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d h1:TLq8lB1Pt
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d/go.mod h1:zh6x1osR0hNvEcFrC/lhGD08sMfQmr9wHVvZ/mRWMCs=
 github.com/initia-labs/initia v0.4.1 h1:P9olCgk4BPZ+dH5wCWKajzHZzjg8zPNrXx+J1Mpexa8=
 github.com/initia-labs/initia v0.4.1/go.mod h1:cmzwPsLJAP4farjNC62Vkc7wGieRCKvBBUu5trNJyNQ=
-github.com/initia-labs/kvindexer v0.1.5 h1:YLR4d237dNkGR8pe2zRGxx3CFB2CU6hhUmeJsshUw/0=
-github.com/initia-labs/kvindexer v0.1.5/go.mod h1:OV85HaQ9KVrg+zGPUlxT9RF9nAaM3Yq4/3MoHqGqhWk=
+github.com/initia-labs/kvindexer v0.1.8 h1:PZ7FPYZO2zFXBdnvVlwMFVv6O59fpgCObELxVYB0hBo=
+github.com/initia-labs/kvindexer v0.1.8/go.mod h1:OV85HaQ9KVrg+zGPUlxT9RF9nAaM3Yq4/3MoHqGqhWk=
 github.com/initia-labs/kvindexer/submodules/block v0.1.0 h1:y+EXnksd/I2F96mzIoQA64nZUZON2P+99YrSzeLCLoY=
 github.com/initia-labs/kvindexer/submodules/block v0.1.0/go.mod h1:4c+c59wVAnjuaJv/pcDYaUkeVmOqVV+orqEjya/RIjo=
+github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.0 h1:xizMwP6yGgt5kmosbQ7TRj45U1ZSLXpQMeDjbXC0Mj4=
+github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.0/go.mod h1:7PGKjNmW1K77fM23/+mDKLehAvrwGNidXJHzUrKjNfY=
 github.com/initia-labs/kvindexer/submodules/pair v0.1.1 h1:o151gA4jIbqEl+pWTOCizkiOPgkA5ANuNbHfqAQijoE=
 github.com/initia-labs/kvindexer/submodules/pair v0.1.1/go.mod h1:8X1GE1ZLkH7z8TKb5MUh7UClTkcqVFIwXIIRdsqeUZY=
 github.com/initia-labs/kvindexer/submodules/tx v0.1.0 h1:6kbf6wmzXPN0XCQLasiFgq1AlZHkt5K3/ZG+IWw1nNs=
