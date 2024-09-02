@@ -74,6 +74,7 @@ type IERC20Keeper interface {
 }
 
 type IERC721Keeper interface {
+	GetERC721ABI() *abi.ABI
 	CreateOrUpdateClass(ctx context.Context, classId, classUri, classData string) error
 	Transfers(ctx context.Context, sender, escrowAddress sdk.AccAddress, classId string, tokenIds []string) error
 	Burns(ctx context.Context, owner sdk.AccAddress, classId string, tokenIds []string) error

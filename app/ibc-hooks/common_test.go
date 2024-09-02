@@ -327,7 +327,6 @@ func _createTestInput(
 	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter, initialTotalSupply()...)
 
 	// ibc middleware setup
-
 	mockIBCMiddleware := mockIBCMiddleware{}
 	evmHooks := evmhooks.NewEVMHooks(appCodec, ac, evmKeeper)
 

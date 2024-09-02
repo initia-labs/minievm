@@ -26,7 +26,7 @@ const senderPrefix = "ibc-evm-hook-intermediary"
 // @dev: use 20bytes of address as intermediate sender address
 //
 // TODO - make this as module account to check address collision
-func deriveIntermediateSender(channel, originalSender string) string {
+func DeriveIntermediateSender(channel, originalSender string) string {
 	senderStr := fmt.Sprintf("%s/%s", channel, originalSender)
 	senderAddr := sdk.AccAddress(address.Hash(senderPrefix, []byte(senderStr)))
 	return senderAddr.String()
@@ -130,4 +130,65 @@ func isAckError(appCodec codec.Codec, acknowledgement []byte) bool {
 	}
 
 	return false
+}
+
+func LocalDenom(packet channeltypes.Packet, denom string) string {
+	if transfertypes.ReceiverChainIsSource(packet.GetSourcePort(), packet.GetSourceChannel(), denom) {
+		voucherPrefix := transfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
+		unprefixedDenom := denom[len(voucherPrefix):]
+
+		// coin denomination used in sending from the escrow address
+		denom := unprefixedDenom
+
+		// The denomination used to send the coins is either the native denom or the hash of the path
+		// if the denomination is not native.
+		denomTrace := transfertypes.ParseDenomTrace(unprefixedDenom)
+		if !denomTrace.IsNativeDenom() {
+			denom = denomTrace.IBCDenom()
+		}
+
+		return denom
+	}
+
+	// since SendPacket did not prefix the denomination, we must prefix denomination here
+	sourcePrefix := transfertypes.GetDenomPrefix(packet.GetDestPort(), packet.GetDestChannel())
+	// NOTE: sourcePrefix contains the trailing "/"
+	prefixedDenom := sourcePrefix + denom
+
+	// construct the denomination trace from the full raw denomination
+	denomTrace := transfertypes.ParseDenomTrace(prefixedDenom)
+
+	voucherDenom := denomTrace.IBCDenom()
+	return voucherDenom
+}
+
+func LocalClassId(packet channeltypes.Packet, classId string) string {
+	if nfttransfertypes.ReceiverChainIsSource(packet.GetSourcePort(), packet.GetSourceChannel(), classId) {
+		// remove prefix added by sender chain
+		voucherPrefix := nfttransfertypes.GetClassIdPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
+		unprefixedClassId := classId[len(voucherPrefix):]
+
+		// token class id used in sending from the escrow address
+		classId := unprefixedClassId
+
+		// The class id used to send the coins is either the native classId or the hash of the path
+		// if the class id is not native.
+		classTrace := nfttransfertypes.ParseClassTrace(unprefixedClassId)
+		if classTrace.Path != "" {
+			classId = classTrace.IBCClassId()
+		}
+
+		return classId
+	}
+
+	// since SendPacket did not prefix the class id, we must prefix class id here
+	sourcePrefix := nfttransfertypes.GetClassIdPrefix(packet.GetDestPort(), packet.GetDestChannel())
+	// NOTE: sourcePrefix contains the trailing "/"
+	prefixedClassId := sourcePrefix + classId
+
+	// construct the class id trace from the full raw class id
+	classTrace := nfttransfertypes.ParseClassTrace(prefixedClassId)
+
+	voucherClassId := classTrace.IBCClassId()
+	return voucherClassId
 }

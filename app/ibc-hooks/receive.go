@@ -2,8 +2,11 @@ package evm_hooks
 
 import (
 	"fmt"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
@@ -43,7 +46,7 @@ func (h EVMHooks) onRecvIcs20Packet(
 	}
 
 	// Calculate the receiver / contract caller based on the packet's channel and sender
-	intermediateSender := deriveIntermediateSender(packet.GetDestChannel(), data.GetSender())
+	intermediateSender := DeriveIntermediateSender(packet.GetDestChannel(), data.GetSender())
 
 	// The funds sent on this packet need to be transferred to the intermediary account for the sender.
 	// For this, we override the ICS20 packet's Receiver (essentially hijacking the funds to this new address)
@@ -60,12 +63,45 @@ func (h EVMHooks) onRecvIcs20Packet(
 	}
 
 	msg.Sender = intermediateSender
+	localDenom := LocalDenom(packet, data.Denom)
+	_, err = h.approveERC20(ctx, intermediateSender, common.HexToAddress(msg.ContractAddr), localDenom, data.Amount)
+	if err != nil {
+		return newEmitErrorAcknowledgement(err)
+	}
 	_, err = h.execMsg(ctx, msg)
 	if err != nil {
 		return newEmitErrorAcknowledgement(err)
 	}
 
 	return ack
+}
+
+func (h EVMHooks) approveERC20(ctx sdk.Context, intermediateSender string, contractAddr common.Address, denom, amount string) (*evmtypes.MsgCallResponse, error) {
+	amt, ok := new(big.Int).SetString(amount, 10)
+	if !ok {
+		return nil, fmt.Errorf("failed to parse amount %s", amount)
+	}
+
+	erc20ABI := h.evmKeeper.ERC20Keeper().GetERC20ABI()
+	inputBz, err := erc20ABI.Pack("approve", contractAddr, amt)
+	if err != nil {
+		return nil, err
+	}
+
+	// need to convert denom to proper ibc denom
+	erc20Addr, err := h.evmKeeper.GetContractAddrByDenom(ctx, denom)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &evmtypes.MsgCall{
+		Sender:       intermediateSender,
+		ContractAddr: erc20Addr.Hex(),
+		Input:        hexutil.Encode(inputBz),
+	}
+
+	evmMsgServer := evmkeeper.NewMsgServerImpl(h.evmKeeper)
+	return evmMsgServer.Call(ctx, msg)
 }
 
 func (h EVMHooks) onRecvIcs721Packet(
@@ -95,7 +131,7 @@ func (h EVMHooks) onRecvIcs721Packet(
 	}
 
 	// Calculate the receiver / contract caller based on the packet's channel and sender
-	intermediateSender := deriveIntermediateSender(packet.GetDestChannel(), data.GetSender())
+	intermediateSender := DeriveIntermediateSender(packet.GetDestChannel(), data.GetSender())
 
 	// The funds sent on this packet need to be transferred to the intermediary account for the sender.
 	// For this, we override the ICS721 packet's Receiver (essentially hijacking the funds to this new address)
@@ -111,7 +147,15 @@ func (h EVMHooks) onRecvIcs721Packet(
 		return ack
 	}
 
+	// approve the transfer of the NFT to the contract
 	msg.Sender = intermediateSender
+	localClassId := LocalClassId(packet, data.ClassId)
+	for _, tokenId := range data.TokenIds {
+		_, err = h.approveERC721(ctx, intermediateSender, common.HexToAddress(msg.ContractAddr), localClassId, tokenId)
+		if err != nil {
+			return newEmitErrorAcknowledgement(err)
+		}
+	}
 	_, err = h.execMsg(ctx, msg)
 	if err != nil {
 		return newEmitErrorAcknowledgement(err)
@@ -120,7 +164,34 @@ func (h EVMHooks) onRecvIcs721Packet(
 	return ack
 }
 
-func (im EVMHooks) execMsg(ctx sdk.Context, msg *evmtypes.MsgCall) (*evmtypes.MsgCallResponse, error) {
-	evmMsgServer := evmkeeper.NewMsgServerImpl(im.evmKeeper)
+func (h EVMHooks) execMsg(ctx sdk.Context, msg *evmtypes.MsgCall) (*evmtypes.MsgCallResponse, error) {
+	evmMsgServer := evmkeeper.NewMsgServerImpl(h.evmKeeper)
+	return evmMsgServer.Call(ctx, msg)
+}
+
+func (h EVMHooks) approveERC721(ctx sdk.Context, intermediateSender string, contractAddr common.Address, classId, tokenId string) (*evmtypes.MsgCallResponse, error) {
+	tid, ok := evmtypes.TokenIdToBigInt(classId, tokenId)
+	if !ok {
+		return nil, evmtypes.ErrInvalidTokenId
+	}
+
+	erc721ABI := h.evmKeeper.ERC721Keeper().GetERC721ABI()
+	inputBz, err := erc721ABI.Pack("approve", contractAddr, tid)
+	if err != nil {
+		return nil, err
+	}
+
+	erc721Addr, err := h.evmKeeper.GetContractAddrByClassId(ctx, classId)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &evmtypes.MsgCall{
+		Sender:       intermediateSender,
+		ContractAddr: erc721Addr.Hex(),
+		Input:        hexutil.Encode(inputBz),
+	}
+
+	evmMsgServer := evmkeeper.NewMsgServerImpl(h.evmKeeper)
 	return evmMsgServer.Call(ctx, msg)
 }
