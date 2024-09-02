@@ -118,9 +118,9 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 		GetHash: func(u uint64) common.Hash { return common.Hash{} },
 		// unused fields
 		Coinbase:    common.Address{},
-		Difficulty:  nil,
-		BaseFee:     nil,
-		BlobBaseFee: nil,
+		Difficulty:  big.NewInt(0),
+		BaseFee:     big.NewInt(0),
+		BlobBaseFee: big.NewInt(0),
 		// put header hash to bypass isMerge check in evm
 		Random: (*common.Hash)(headerHash),
 	}, nil
