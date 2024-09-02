@@ -13,8 +13,8 @@ import (
 	kvindexer "github.com/initia-labs/kvindexer"
 	kvindexerconfig "github.com/initia-labs/kvindexer/config"
 	blocksubmodule "github.com/initia-labs/kvindexer/submodules/block"
+	tx "github.com/initia-labs/kvindexer/submodules/evm-tx"
 	"github.com/initia-labs/kvindexer/submodules/pair"
-	tx "github.com/initia-labs/kvindexer/submodules/tx"
 	kvindexermodule "github.com/initia-labs/kvindexer/x/kvindexer"
 	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
 )
