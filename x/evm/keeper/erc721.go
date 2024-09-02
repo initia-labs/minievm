@@ -41,6 +41,11 @@ func NewERC721Keeper(k *Keeper) (types.IERC721Keeper, error) {
 	return &ERC721Keeper{k, abi, erc721Bin}, nil
 }
 
+// GetERC721ABI implements IERC721Keeper.
+func (k ERC721Keeper) GetERC721ABI() *abi.ABI {
+	return k.ABI
+}
+
 func (k ERC721Keeper) isCollectionInitialized(ctx context.Context, classId string) (bool, error) {
 	return k.ERC721ContractAddrsByClassId.Has(ctx, classId)
 }
