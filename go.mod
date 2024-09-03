@@ -38,7 +38,7 @@ require (
 	github.com/initia-labs/initia v0.4.1
 	github.com/initia-labs/kvindexer v0.1.8
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.0
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.1
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1
 	github.com/noble-assets/forwarding/v2 v2.0.0-20240521090705-86712c4c9e43
 	github.com/pkg/errors v0.9.1
