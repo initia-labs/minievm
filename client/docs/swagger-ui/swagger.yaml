@@ -37516,6 +37516,9 @@ paths:
                         type: string
                         format: uint64
                         description: The the first l2 block will be recorded on l1.
+                      oracle_enabled:
+                        type: boolean
+                        description: oracle_enabled is a flag to enable oracle.
                       metadata:
                         type: string
                         format: byte
@@ -67395,6 +67398,9 @@ definitions:
             type: string
             format: uint64
             description: The the first l2 block will be recorded on l1.
+          oracle_enabled:
+            type: boolean
+            description: oracle_enabled is a flag to enable oracle.
           metadata:
             type: string
             format: byte
@@ -67523,6 +67529,9 @@ definitions:
                 type: string
                 format: uint64
                 description: The the first l2 block will be recorded on l1.
+              oracle_enabled:
+                type: boolean
+                description: oracle_enabled is a flag to enable oracle.
               metadata:
                 type: string
                 format: byte
@@ -68296,6 +68305,9 @@ definitions:
         type: string
         format: uint64
         description: The the first l2 block will be recorded on l1.
+      oracle_enabled:
+        type: boolean
+        description: oracle_enabled is a flag to enable oracle.
       metadata:
         type: string
         format: byte
