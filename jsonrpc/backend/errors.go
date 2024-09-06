@@ -1,5 +1,7 @@
 package backend
 
+import "errors"
+
 // TxIndexingError is an API error that indicates the transaction indexing is not
 // fully finished yet with JSON error code and a binary data blob.
 type TxIndexingError struct{}
@@ -37,3 +39,8 @@ func (e *InternalError) ErrorCode() int {
 	// Internal JSON-RPC error
 	return -32603
 }
+
+var (
+	errInvalidPercentile = errors.New("invalid reward percentile")
+	errRequestBeyondHead = errors.New("request beyond head block")
+)

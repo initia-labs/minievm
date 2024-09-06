@@ -79,6 +79,7 @@ func NewStateDB(
 	feeContractAddr common.Address,
 ) (*StateDB, error) {
 	// transient store is not a part of consensus, so we can use random execID
+	// TODO - should we check if the execID is already used?
 	execID := rand.Uint64()
 	err := transientLogSize.Set(ctx, execID, 0)
 	if err != nil {

@@ -7,9 +7,12 @@ import (
 	"strings"
 
 	"cosmossdk.io/log"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/initia-labs/minievm/jsonrpc/backend"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 )
@@ -315,15 +318,53 @@ func (api *EthAPI) EstimateGas(
 	return api.backend.EstimateGas(args, blockNrOptional, so)
 }
 
-//// TODO: Implement eth_feeHistory
-//// FeeHistory returns the fee history for the last blockCount blocks.
-//func (e *EthAPI) FeeHistory(blockCount rpc.DecimalOrHex,
-//	lastBlock rpc.BlockNumber,
-//	rewardPercentiles []float64,
-//) (*rpctypes.FeeHistoryResult, error) {
-//	e.logger.Debug("eth_feeHistory")
-//	return e.backend.FeeHistory(blockCount, lastBlock, rewardPercentiles)
-//}
+type feeHistoryResult struct {
+	OldestBlock      *hexutil.Big     `json:"oldestBlock"`
+	Reward           [][]*hexutil.Big `json:"reward,omitempty"`
+	BaseFee          []*hexutil.Big   `json:"baseFeePerGas,omitempty"`
+	GasUsedRatio     []float64        `json:"gasUsedRatio"`
+	BlobBaseFee      []*hexutil.Big   `json:"baseFeePerBlobGas,omitempty"`
+	BlobGasUsedRatio []float64        `json:"blobGasUsedRatio,omitempty"`
+}
+
+// FeeHistory returns the fee history for the last blockCount blocks.
+func (api *EthAPI) FeeHistory(blockCount math.HexOrDecimal64, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*feeHistoryResult, error) {
+	api.logger.Debug("eth_feeHistory")
+	oldest, reward, baseFee, gasUsed, blobBaseFee, blobGasUsed, err := api.backend.FeeHistory(uint64(blockCount), lastBlock, rewardPercentiles)
+	if err != nil {
+		return nil, err
+	}
+	results := &feeHistoryResult{
+		OldestBlock:  (*hexutil.Big)(oldest),
+		GasUsedRatio: gasUsed,
+	}
+	if reward != nil {
+		results.Reward = make([][]*hexutil.Big, len(reward))
+		for i, w := range reward {
+			results.Reward[i] = make([]*hexutil.Big, len(w))
+			for j, v := range w {
+				results.Reward[i][j] = (*hexutil.Big)(v)
+			}
+		}
+	}
+	if baseFee != nil {
+		results.BaseFee = make([]*hexutil.Big, len(baseFee))
+		for i, v := range baseFee {
+			results.BaseFee[i] = (*hexutil.Big)(v)
+		}
+	}
+	if blobBaseFee != nil {
+		results.BlobBaseFee = make([]*hexutil.Big, len(blobBaseFee))
+		for i, v := range blobBaseFee {
+			results.BlobBaseFee[i] = (*hexutil.Big)(v)
+		}
+	}
+	if blobGasUsed != nil {
+		results.BlobGasUsedRatio = blobGasUsed
+	}
+
+	return results, nil
+}
 
 // MaxPriorityFeePerGas returns a suggestion for a gas tip cap for dynamic fee transactions.
 func (api *EthAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
@@ -400,70 +441,6 @@ func (e *EthAPI) Syncing() (interface{}, error) {
 	e.logger.Debug("eth_syncing")
 	return e.backend.Syncing()
 }
-
-// TODO: Implement eth_coinbase
-//// Coinbase is the address that staking rewards will be send to (alias for Etherbase).
-//func (e *EthAPI) Coinbase() (string, error) {
-//	e.logger.Debug("eth_coinbase")
-//
-//	coinbase, err := e.backend.GetCoinbase()
-//	if err != nil {
-//		return "", err
-//	}
-//	ethAddr := common.BytesToAddress(coinbase.Bytes())
-//	return ethAddr.Hex(), nil
-//}
-
-// TODO: Implement eth_sign
-//// Sign signs the provided data using the private key of address via Geth's signature standard.
-//func (e *EthAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-//	e.logger.Debug("eth_sign", "address", address.Hex(), "data", common.Bytes2Hex(data))
-//	return e.backend.Sign(address, data)
-//}
-
-// TODO: Implement eth_signTypedData
-//// SignTypedData signs EIP-712 conformant typed data
-//func (e *EthAPI) SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error) {
-//	e.logger.Debug("eth_signTypedData", "address", address.Hex(), "data", typedData)
-//	return e.backend.SignTypedData(address, typedData)
-//}
-
-// TODO: Implement eth_fillTransaction
-//// FillTransaction fills the defaults (nonce, gas, gasPrice or 1559 fields)
-//// on a given unsigned transaction, and returns it to the caller for further
-//// processing (signing + broadcast).
-//func (e *EthAPI) FillTransaction(args rpctypes.TransactionArgs) (ethapi.SignTransactionResult, error) {
-//	// Set some sanity defaults and terminate on failure
-//	args, err := e.backend.SetTxDefaults(args)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	// Assemble the transaction and obtain rlp
-//	tx := args.ToTransaction().AsTransaction()
-//
-//	data, err := tx.MarshalBinary()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &ethapi.SignTransactionResult{
-//		Raw: data,
-//		Tx:  tx,
-//	}, nil
-//}
-
-// TODO: Implement eth_resend
-//// Resend accepts an existing transaction and a new gas price and limit. It will remove
-//// the given transaction from the pool and reinsert it with the new gas price and limit.
-//func (e *EthAPI) Resend(_ context.Context,
-//	args rpctypes.TransactionArgs,
-//	gasPrice *hexutil.Big,
-//	gasLimit *hexutil.Uint64,
-//) (common.Hash, error) {
-//	e.logger.Debug("eth_resend", "args", args.String())
-//	return e.backend.Resend(args, gasPrice, gasLimit)
-//}
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.

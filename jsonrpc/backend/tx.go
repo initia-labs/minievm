@@ -376,7 +376,7 @@ func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.R
 	return txs, nil
 }
 
-func (b *JSONRPCBackend) getBlockRecepts(blockNumber uint64) ([]*coretypes.Receipt, error) {
+func (b *JSONRPCBackend) getBLockReceipts(blockNumber uint64) ([]*coretypes.Receipt, error) {
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err
@@ -405,7 +405,7 @@ func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc
 		return nil, err
 	}
 
-	receipts, err := b.getBlockRecepts(blockNumber)
+	receipts, err := b.getBLockReceipts(blockNumber)
 	if err != nil {
 		return nil, err
 	}

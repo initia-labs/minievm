@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -197,7 +198,9 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		return nil, nil, nil
 	}
 	md := metadata{}
-	if err := json.Unmarshal([]byte(memo), &md); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader([]byte(memo)))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&md); err != nil {
 		return nil, nil, nil
 	}
 

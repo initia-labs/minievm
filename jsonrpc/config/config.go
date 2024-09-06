@@ -40,6 +40,10 @@ const (
 	DefaultBatchResponseMaxSize = 25 * 1000 * 1000
 	// DefaultQueuedTransactionCap is the default maximum number of queued transactions that can be in the transaction pool.
 	DefaultQueuedTransactionCap = 1000
+	// DefaultFeeHistoryMaxHeaders is the default maximum number of headers, which can be used to lookup the fee history.
+	DefaultFeeHistoryMaxHeaders = 1024
+	// DefaultFeeHistoryMaxBlocks is the default maximum number of blocks, which can be used to lookup the fee history.
+	DefaultFeeHistoryMaxBlocks = 1024
 )
 
 var (
@@ -64,6 +68,8 @@ const (
 	flagJSONRPCBatchResponseMaxSize = "json-rpc.batch-response-max-size"
 	flagJSONRPCQueuedTransactionCap = "json-rpc.queued-transaction-cap"
 	flagJSONRPCQueuedTransactionTTL = "json-rpc.queued-transaction-ttl"
+	flagJSONRPCFeeHistoryMaxHeaders = "json-rpc.fee-history-max-headers"
+	flagJSONRPCFeeHistoryMaxBlocks  = "json-rpc.fee-history-max-blocks"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -97,6 +103,10 @@ type JSONRPCConfig struct {
 	BatchResponseMaxSize int `mapstructure:"batch-response-max-size"`
 	// QueuedTransactionCap is a maximum number of queued transactions that can be in the transaction pool.
 	QueuedTransactionCap int `mapstructure:"queued-transaction-cap"`
+	// FeeHistoryMaxHeaders is the maximum number of headers, which can be used to lookup the fee history.
+	FeeHistoryMaxHeaders int `mapstructure:"fee-history-max-headers"`
+	// FeeHistoryMaxBlocks is the maximum number of blocks, which can be used to lookup the fee history.
+	FeeHistoryMaxBlocks int `mapstructure:"fee-history-max-blocks"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -121,6 +131,9 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 		BatchResponseMaxSize: DefaultBatchResponseMaxSize,
 
 		QueuedTransactionCap: DefaultQueuedTransactionCap,
+
+		FeeHistoryMaxHeaders: DefaultFeeHistoryMaxHeaders,
+		FeeHistoryMaxBlocks:  DefaultFeeHistoryMaxBlocks,
 	}
 }
 
@@ -140,6 +153,8 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCBatchRequestLimit, DefaultBatchRequestLimit, "Maximum number of requests in a batch")
 	startCmd.Flags().Int(flagJSONRPCBatchResponseMaxSize, DefaultBatchResponseMaxSize, "Maximum number of bytes returned from a batched call")
 	startCmd.Flags().Int(flagJSONRPCQueuedTransactionCap, DefaultQueuedTransactionCap, "Maximum number of queued transactions that can be in the transaction pool")
+	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxHeaders, DefaultFeeHistoryMaxHeaders, "Maximum number of headers used to lookup the fee history")
+	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxBlocks, DefaultFeeHistoryMaxBlocks, "Maximum number of blocks used to lookup the fee history")
 }
 
 // GetConfig load config values from the app options
@@ -159,6 +174,8 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		BatchRequestLimit:    cast.ToInt(appOpts.Get(flagJSONRPCBatchRequestLimit)),
 		BatchResponseMaxSize: cast.ToInt(appOpts.Get(flagJSONRPCBatchResponseMaxSize)),
 		QueuedTransactionCap: cast.ToInt(appOpts.Get(flagJSONRPCQueuedTransactionCap)),
+		FeeHistoryMaxHeaders: cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxHeaders)),
+		FeeHistoryMaxBlocks:  cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxBlocks)),
 	}
 }
 
@@ -214,4 +231,10 @@ batch-response-max-size = {{ .JSONRPCConfig.BatchResponseMaxSize }}
 # QueuedTransactionCap is the maximum number of queued transactions that 
 # can be in the transaction pool.
 queued-transaction-cap = {{ .JSONRPCConfig.QueuedTransactionCap }}
+
+# FeeHistoryMaxHeaders is the maximum number of headers, which can be used to lookup the fee history.
+fee-history-max-headers = {{ .JSONRPCConfig.FeeHistoryMaxHeaders }}
+
+# FeeHistoryMaxBlocks is the maximum number of blocks, which can be used to lookup the fee history.
+fee-history-max-blocks = {{ .JSONRPCConfig.FeeHistoryMaxBlocks }}
 `

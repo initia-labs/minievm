@@ -18,7 +18,8 @@ type JSONRPCBackend struct {
 	app    *app.MinitiaApp
 	logger log.Logger
 
-	queuedTxs *lrucache.Cache[string, []byte]
+	queuedTxs    *lrucache.Cache[string, []byte]
+	historyCache *lrucache.Cache[cacheKey, processedFees]
 
 	mut     sync.Mutex // mutex for accMuts
 	accMuts map[string]*AccMut
@@ -42,14 +43,20 @@ func NewJSONRPCBackend(
 	if err != nil {
 		return nil, err
 	}
+	historyCache, err := lrucache.New[cacheKey, processedFees](2048)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx := context.Background()
 	return &JSONRPCBackend{
 		app:    app,
 		logger: logger,
 
-		queuedTxs: queuedTxs,
-		accMuts:   make(map[string]*AccMut),
+		queuedTxs:    queuedTxs,
+		historyCache: historyCache,
+
+		accMuts: make(map[string]*AccMut),
 
 		ctx:       ctx,
 		svrCtx:    svrCtx,
