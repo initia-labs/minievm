@@ -129,9 +129,9 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 func (k Keeper) buildTxContext(_ context.Context, caller common.Address) vm.TxContext {
 	return vm.TxContext{
 		Origin:       caller,
-		BlobFeeCap:   nil,
-		BlobHashes:   nil,
-		GasPrice:     nil,
+		BlobFeeCap:   big.NewInt(0),
+		BlobHashes:   []common.Hash{},
+		GasPrice:     big.NewInt(0),
 		AccessEvents: state.NewAccessEvents(utils.NewPointCache(4096)),
 	}
 }
