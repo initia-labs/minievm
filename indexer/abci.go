@@ -167,7 +167,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			return err
 		}
 
-		// emit log events
 		if len(e.logsChans) > 0 {
 			for idx, log := range receipt.Logs {
 				// fill in missing fields before emitting
