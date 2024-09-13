@@ -3,12 +3,10 @@ package keeper
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"math/big"
 
 	"github.com/holiman/uint256"
 
-	"cosmossdk.io/collections"
 	storetypes "cosmossdk.io/store/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -25,14 +23,14 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, feeContrect common.Address) (*evmstate.StateDB, error) {
+func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, fee types.Fee) (*evmstate.StateDB, error) {
 	return evmstate.NewStateDB(
 		// delegate gas meter to the EVM
 		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
 		k.accountKeeper, k.VMStore, k.TransientVMStore, k.TransientCreated,
 		k.TransientSelfDestruct, k.TransientLogs, k.TransientLogSize,
 		k.TransientAccessList, k.TransientRefund, k.TransientExecIndex,
-		evm, k.ERC20Keeper().GetERC20ABI(), feeContrect,
+		evm, k.ERC20Keeper().GetERC20ABI(), fee.Contract(),
 	)
 }
 
@@ -50,19 +48,20 @@ type callableEVM interface {
 	StaticCall(vm.ContractRef, common.Address, []byte, uint64) ([]byte, uint64, error)
 }
 
-func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContract common.Address) (vm.BlockContext, error) {
+func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, fee types.Fee) (vm.BlockContext, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	headerHash := sdkCtx.HeaderHash()
 	if len(headerHash) == 0 {
 		headerHash = make([]byte, 32)
 	}
 
-	// TODO: should we charge gas for CanTransfer and Transfer?
-	//
-	// In order to charge gas, we need to fork the EVM and add gas charge
-	// logic to the CanTransfer and Transfer functions.
-	//
+	baseFee, err := k.baseFee(ctx, fee)
+	if err != nil {
+		return vm.BlockContext{}, err
+	}
+
 	return vm.BlockContext{
+		BaseFee:     baseFee,
 		GasLimit:    k.computeGasLimit(sdkCtx),
 		BlockNumber: big.NewInt(sdkCtx.BlockHeight()),
 		Time:        uint64(sdkCtx.BlockTime().Unix()),
@@ -72,7 +71,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 			}
 
 			// if the contract is not found, return false
-			if (feeContract == common.Address{}) {
+			if (fee.Contract() == common.Address{}) {
 				return false
 			}
 
@@ -81,7 +80,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 				return false
 			}
 
-			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), feeContract, inputBz, 100000)
+			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), fee.Contract(), inputBz, 100000)
 			if err != nil {
 				k.Logger(ctx).Warn("failed to check balance", "error", err)
 				return false
@@ -109,31 +108,37 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, feeContr
 				panic(err)
 			}
 
-			_, _, err = evm.Call(vm.AccountRef(a1), feeContract, inputBz, 100000, uint256.NewInt(0))
+			_, _, err = evm.Call(vm.AccountRef(a1), fee.Contract(), inputBz, 100000, uint256.NewInt(0))
 			if err != nil {
 				k.Logger(ctx).Warn("failed to transfer token", "error", err)
 				panic(err)
 			}
 		},
+		// At this point, we don't know the hash of the ethereum block, so we just return an empty hash
 		GetHash: func(u uint64) common.Hash { return common.Hash{} },
+		// put header hash to bypass isMerge check in evm
+		Random: (*common.Hash)(headerHash),
 		// unused fields
 		Coinbase:    common.Address{},
 		Difficulty:  big.NewInt(0),
-		BaseFee:     big.NewInt(0),
 		BlobBaseFee: big.NewInt(0),
-		// put header hash to bypass isMerge check in evm
-		Random: (*common.Hash)(headerHash),
 	}, nil
 }
 
-func (k Keeper) buildTxContext(_ context.Context, caller common.Address) vm.TxContext {
+func (k Keeper) buildTxContext(ctx context.Context, caller common.Address, fee types.Fee) (vm.TxContext, error) {
+	gasPrice, err := k.extractGasPriceFromContext(ctx, fee)
+	if err != nil {
+		return vm.TxContext{}, err
+	}
+
 	return vm.TxContext{
 		Origin:       caller,
-		BlobFeeCap:   big.NewInt(0),
-		BlobHashes:   []common.Hash{},
-		GasPrice:     big.NewInt(0),
+		GasPrice:     gasPrice,
 		AccessEvents: state.NewAccessEvents(utils.NewPointCache(4096)),
-	}
+		// unused fields
+		BlobFeeCap: big.NewInt(0),
+		BlobHashes: []common.Hash{},
+	}, nil
 }
 
 // createEVM creates a new EVM instance.
@@ -143,24 +148,21 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		return ctx, nil, err
 	}
 
-	params, err := k.Params.Get(ctx)
+	fee, err := k.LoadFee(ctx)
 	if err != nil {
-		return ctx, nil, err
-	}
-
-	feeContract, err := types.DenomToContractAddr(ctx, k, params.FeeDenom)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return ctx, nil, err
 	}
 
 	evm := &vm.EVM{}
-	blockContext, err := k.buildBlockContext(ctx, evm, feeContract)
+	blockContext, err := k.buildBlockContext(ctx, evm, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
-
-	txContext := k.buildTxContext(ctx, caller)
-	stateDB, err := k.NewStateDB(ctx, evm, feeContract)
+	txContext, err := k.buildTxContext(ctx, caller, fee)
+	if err != nil {
+		return ctx, nil, err
+	}
+	stateDB, err := k.NewStateDB(ctx, evm, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -405,7 +407,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 // NextContractAddress returns the next contract address which will be created by the given caller
 // in CREATE opcode.
 func (k Keeper) NextContractAddress(ctx context.Context, caller common.Address) (common.Address, error) {
-	stateDB, err := k.NewStateDB(ctx, nil, common.Address{})
+	stateDB, err := k.NewStateDB(ctx, nil, types.Fee{})
 	if err != nil {
 		return common.Address{}, err
 	}

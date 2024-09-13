@@ -1,18 +1,15 @@
 package indexer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	collcodec "cosmossdk.io/collections/codec"
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -104,47 +101,4 @@ func (c collJsonVal[T]) Stringify(value T) string {
 
 func (c collJsonVal[T]) ValueType() string {
 	return "jsonvalue"
-}
-
-// calculate BaseFee
-func (e *EVMIndexerImpl) feeDenom(ctx context.Context) (string, error) {
-	params, err := e.evmKeeper.Params.Get(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return params.FeeDenom, nil
-}
-
-func (e *EVMIndexerImpl) feeDenomWithDecimals(ctx context.Context) (string, uint8, error) {
-	feeDenom, err := e.feeDenom(ctx)
-	if err != nil {
-		return "", 0, err
-	}
-
-	decimals, err := e.evmKeeper.ERC20Keeper().GetDecimals(ctx, feeDenom)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return feeDenom, decimals, nil
-}
-
-func (e *EVMIndexerImpl) baseFee(ctx context.Context) (*hexutil.Big, error) {
-	params, err := e.opChildKeeper.GetParams(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	feeDenom, decimals, err := e.feeDenomWithDecimals(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// multiply by 1e9 to prevent decimal drops
-	gasPrice := params.MinGasPrices.AmountOf(feeDenom).
-		MulTruncate(math.LegacyNewDec(1e9)).
-		TruncateInt().BigInt()
-
-	return (*hexutil.Big)(types.ToEthersUint(decimals+9, gasPrice)), nil
 }
