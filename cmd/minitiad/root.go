@@ -100,6 +100,11 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		Use:   basename,
 		Short: "minitia App",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			// except for launch command, seal the config
+			if cmd.Name() != "launch" {
+				sdk.GetConfig().Seal()
+			}
+
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
@@ -165,8 +170,6 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 	server.AddCommandsWithStartCmdOptions(rootCmd, minitiaapp.DefaultNodeHome, a.AppCreator(), a.appExport, server.StartCmdOptions{
 		AddFlags: addModuleInitFlags,
 		PostSetup: func(svrCtx *server.Context, clientCtx client.Context, ctx context.Context, g *errgroup.Group) error {
-			sdk.GetConfig().Seal()
-
 			// start jsonrpc server
 			if err := jsonrpc.StartJSONRPC(
 				ctx, g, a.App().(*minitiaapp.MinitiaApp),
