@@ -424,6 +424,20 @@ func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc
 
 // marshalReceipt marshals a transaction receipt into a JSON object.
 func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map[string]interface{} {
+	for idx, log := range receipt.Logs {
+		log.Index = uint(idx)
+		if tx.BlockHash != nil {
+			log.BlockHash = *tx.BlockHash
+		}
+		if tx.BlockNumber != nil {
+			log.BlockNumber = tx.BlockNumber.ToInt().Uint64()
+		}
+		log.TxHash = tx.Hash
+		if tx.TransactionIndex != nil {
+			log.TxIndex = uint(*tx.TransactionIndex)
+		}
+	}
+
 	fields := map[string]interface{}{
 		"blockHash":         tx.BlockHash,
 		"blockNumber":       hexutil.Uint64(tx.BlockNumber.ToInt().Uint64()),

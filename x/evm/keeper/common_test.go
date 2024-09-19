@@ -146,6 +146,7 @@ type TestKeepers struct {
 	AccountKeeper       authkeeper.AccountKeeper
 	BankKeeper          bankkeeper.Keeper
 	CommunityPoolKeeper *MockCommunityPoolKeeper
+	GasPriceKeeper      *MockGasPriceKeeper
 	EVMKeeper           evmkeeper.Keeper
 	EncodingConfig      EncodingConfig
 	Faucet              *TestFaucet
@@ -255,6 +256,7 @@ func _createTestInput(
 	banktypes.RegisterQueryServer(queryRouter, &bankKeeper)
 
 	communityPoolKeeper := &MockCommunityPoolKeeper{}
+	gasPriceKeeper := &MockGasPriceKeeper{GasPrices: map[string]math.LegacyDec{}}
 	evmKeeper := evmkeeper.NewKeeper(
 		ac,
 		appCodec,
@@ -263,6 +265,7 @@ func _createTestInput(
 		accountKeeper,
 		bankKeeper,
 		communityPoolKeeper,
+		gasPriceKeeper,
 		msgRouter,
 		queryRouter,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
@@ -294,6 +297,7 @@ func _createTestInput(
 		Decimals:            decimals,
 		AccountKeeper:       accountKeeper,
 		CommunityPoolKeeper: communityPoolKeeper,
+		GasPriceKeeper:      gasPriceKeeper,
 		EVMKeeper:           *evmKeeper,
 		BankKeeper:          bankKeeper,
 		EncodingConfig:      encodingConfig,
@@ -313,4 +317,17 @@ func (k *MockCommunityPoolKeeper) FundCommunityPool(ctx context.Context, amount 
 	k.CommunityPool = k.CommunityPool.Add(amount...)
 
 	return nil
+}
+
+type MockGasPriceKeeper struct {
+	GasPrices map[string]math.LegacyDec
+}
+
+func (k *MockGasPriceKeeper) GasPrice(ctx context.Context, denom string) (math.LegacyDec, error) {
+	gasPrice, ok := k.GasPrices[denom]
+	if !ok {
+		return math.LegacyZeroDec(), nil
+	}
+
+	return gasPrice, nil
 }

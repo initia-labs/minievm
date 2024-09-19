@@ -24,6 +24,7 @@ type Keeper struct {
 	accountKeeper       types.AccountKeeper
 	bankKeeper          types.BankKeeper
 	communityPoolKeeper types.CommunityPoolKeeper
+	gasPriceKeeper      types.GasPriceKeeper
 	erc20Keeper         types.IERC20Keeper
 	erc20StoresKeeper   types.IERC20StoresKeeper
 	erc721Keeper        types.IERC721Keeper
@@ -77,6 +78,7 @@ func NewKeeper(
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	communityPoolKeeper types.CommunityPoolKeeper,
+	gasPriceKeeper types.GasPriceKeeper,
 	msgRouter baseapp.MessageRouter,
 	grpcRouter *baseapp.GRPCQueryRouter,
 	authority string,
@@ -98,6 +100,7 @@ func NewKeeper(
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,
 		communityPoolKeeper: communityPoolKeeper,
+		gasPriceKeeper:      gasPriceKeeper,
 		authority:           authority,
 
 		msgRouter:  msgRouter,

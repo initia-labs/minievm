@@ -29,8 +29,8 @@ func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseComm
 func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.RequestFinalizeBlock, res abci.ResponseFinalizeBlock) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// compute base fee from the opChild gas prices
-	baseFee, err := e.baseFee(sdkCtx)
+	// load base fee from evm keeper
+	baseFee, err := e.evmKeeper.BaseFee(sdkCtx)
 	if err != nil {
 		e.logger.Error("failed to get base fee", "err", err)
 		return err
@@ -123,7 +123,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		GasUsed:     blockGasMeter.GasConsumedToLimit(),
 		Number:      big.NewInt(blockHeight),
 		Time:        uint64(sdkCtx.BlockTime().Unix()),
-		BaseFee:     baseFee.ToInt(),
+		BaseFee:     baseFee,
 
 		// empty values
 		Root:            coretypes.EmptyRootHash,
@@ -167,7 +167,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			return err
 		}
 
-		// emit log events
 		if len(e.logsChans) > 0 {
 			for idx, log := range receipt.Logs {
 				// fill in missing fields before emitting

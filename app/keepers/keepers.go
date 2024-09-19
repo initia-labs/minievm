@@ -548,6 +548,7 @@ func NewAppKeeper(
 	// EVMKeeper Configuration //
 	//////////////////////////////
 
+	gasPriceKeeper := newGasPriceKeeper(appKeepers.OPChildKeeper)
 	*appKeepers.EVMKeeper = *evmkeeper.NewKeeper(
 		ac,
 		appCodec,
@@ -556,6 +557,7 @@ func NewAppKeeper(
 		accountKeeper,
 		bankKeeper,
 		communityPoolKeeper,
+		gasPriceKeeper,
 		bApp.MsgServiceRouter(),
 		bApp.GRPCQueryRouter(),
 		authorityAddr,

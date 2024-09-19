@@ -22,6 +22,8 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
+var _ types.IERC20Keeper = &ERC20Keeper{}
+
 type ERC20Keeper struct {
 	*Keeper
 	ERC20Bin        []byte
@@ -130,7 +132,7 @@ func (k ERC20Keeper) GetMetadata(ctx context.Context, denom string) (banktypes.M
 		return banktypes.Metadata{}, err
 	}
 
-	decimals, err := k.decimals(ctx, contractAddr)
+	decimals, err := k.Decimals(ctx, contractAddr)
 	if err != nil {
 		return banktypes.Metadata{}, err
 	}
@@ -330,18 +332,6 @@ func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string, decimals uin
 	if err != nil {
 		return err
 	}
-	contractAddr, err := k.NextContractAddress(ctx, factoryAddr)
-	if err != nil {
-		return err
-	}
-
-	if err := k.ERC20DenomsByContractAddr.Set(ctx, contractAddr.Bytes(), denom); err != nil {
-		return err
-	}
-
-	if err := k.ERC20ContractAddrsByDenom.Set(ctx, denom, contractAddr.Bytes()); err != nil {
-		return err
-	}
 
 	inputBz, err := k.ERC20FactoryABI.Pack("createERC20", denom, denom, uint8(decimals))
 	if err != nil {
@@ -350,6 +340,20 @@ func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string, decimals uin
 
 	ret, _, err := k.EVMCall(ctx, types.StdAddress, factoryAddr, inputBz, nil)
 	if err != nil {
+		return err
+	}
+
+	res, err := k.ERC20FactoryABI.Unpack("createERC20", ret)
+	if err != nil {
+		return types.ErrFailedToUnpackABI.Wrap(err.Error())
+	}
+
+	// store created erc20 contract address <> denom mapping
+	contractAddr := res[0].(common.Address)
+	if err := k.ERC20DenomsByContractAddr.Set(ctx, contractAddr.Bytes(), denom); err != nil {
+		return err
+	}
+	if err := k.ERC20ContractAddrsByDenom.Set(ctx, denom, contractAddr.Bytes()); err != nil {
 		return err
 	}
 
@@ -499,16 +503,19 @@ func (k ERC20Keeper) GetDecimals(ctx context.Context, denom string) (uint8, erro
 		return 0, err
 	}
 
-	return k.decimals(ctx, contractAddr)
+	return k.Decimals(ctx, contractAddr)
 }
 
-func (k ERC20Keeper) decimals(ctx context.Context, contractAddr common.Address) (uint8, error) {
+func (k ERC20Keeper) Decimals(ctx context.Context, contractAddr common.Address) (uint8, error) {
 	inputBz, err := k.ERC20ABI.Pack("decimals")
 	if err != nil {
 		return 0, types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(
+		// set the context value to prevent infinite loop
+		sdk.UnwrapSDKContext(ctx).WithValue(types.ContextKeyLoadDecimals, true),
+		types.NullAddress, contractAddr, inputBz)
 	if err != nil {
 		return 0, err
 	}

@@ -14,6 +14,7 @@ import (
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 	"github.com/initia-labs/initia/app/ante/accnum"
 	"github.com/initia-labs/initia/app/ante/sigverify"
+	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
 	"github.com/skip-mev/block-sdk/v2/block"
@@ -85,6 +86,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		accnum.NewAccountNumberDecorator(options.AccountKeeper),
 		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
+		evmante.NewGasPricesDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
