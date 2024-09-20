@@ -142,14 +142,14 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.4.3 // indirect
-	github.com/initia-labs/OPinit/api v0.4.3 // indirect
+	github.com/initia-labs/OPinit v0.4.4 // indirect
+	github.com/initia-labs/OPinit/api v0.4.4 // indirect
 	github.com/initia-labs/kvindexer v0.1.8 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
-	github.com/initia-labs/movevm v0.4.5 // indirect
+	github.com/initia-labs/movevm v0.4.9 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
@@ -265,7 +265,7 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240920025550-5f9e1f33d35f
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240920052708-9503a2ea4a25
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240826053041-8320cc435dfd
 )
