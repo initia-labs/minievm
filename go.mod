@@ -34,8 +34,8 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.1
-	github.com/initia-labs/OPinit v0.4.3
-	github.com/initia-labs/initia v0.4.7
+	github.com/initia-labs/OPinit v0.4.4
+	github.com/initia-labs/initia v0.4.9
 	github.com/initia-labs/kvindexer v0.1.8
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
 	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.2
@@ -173,7 +173,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit/api v0.4.3 // indirect
+	github.com/initia-labs/OPinit/api v0.4.4 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -281,7 +281,7 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240905084435-48a115dd696d
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240920025550-5f9e1f33d35f
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240826053041-8320cc435dfd
 )

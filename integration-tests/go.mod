@@ -8,7 +8,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.9
 	github.com/cosmos/ibc-go/v8 v8.4.0
 	github.com/ethereum/go-ethereum v1.14.7
-	github.com/initia-labs/initia v0.4.7
+	github.com/initia-labs/initia v0.4.9
 	github.com/initia-labs/minievm v0.4.0
 	github.com/stretchr/testify v1.9.0
 )
@@ -265,7 +265,7 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240905084435-48a115dd696d
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240920025550-5f9e1f33d35f
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20240826053041-8320cc435dfd
 )
