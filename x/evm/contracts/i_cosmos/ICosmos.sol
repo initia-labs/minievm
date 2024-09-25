@@ -55,7 +55,7 @@ interface ICosmos {
     // query a whitelisted cosmos querys.
     //
     // example)
-    // path: "/slinky.oracle.v1.Query/GetPrices"
+    // path: "/connect.oracle.v2.Query/GetPrices"
     // req: {
     //    "currency_pair_ids": ["BITCOIN/USD", "ETHEREUM/USD"]
     // }
