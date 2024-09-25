@@ -35,7 +35,7 @@ import (
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/cosmos"
 	"github.com/initia-labs/minievm/x/evm/types"
 
-	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
+	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
 )
 
 func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, types.BankKeeper) {
@@ -287,7 +287,7 @@ func Test_ExecuteCosmos(t *testing.T) {
 func Test_QueryCosmos(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 
-	queryPath := "/slinky.oracle.v1.Query/Prices"
+	queryPath := "/connect.oracle.v2.Query/Prices"
 	expectedRet := oracletypes.GetPricesResponse{
 		Prices: []oracletypes.GetPriceResponse{
 			{

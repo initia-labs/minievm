@@ -15,6 +15,7 @@ import (
 
 // NewMultipleRollbackCmd creates a command to rollback CometBFT and multistore state by one height.
 func NewMultipleRollbackCmd(appCreator types.AppCreator) *cobra.Command {
+	removeBlock := false
 	cmd := &cobra.Command{
 		Use:   "mrollback [height]",
 		Short: "rollback Cosmos SDK and CometBFT state to the given height",
@@ -47,7 +48,7 @@ blocks after the given height are removed from the blockchain.
 			}
 
 			// rollback CometBFT state
-			height, hash, err := cmtcmd.RollbackMultipleState(ctx.Config, height)
+			height, hash, err := cmtcmd.RollbackStateTo(ctx.Config, height, removeBlock)
 			if err != nil {
 				return fmt.Errorf("failed to rollback CometBFT state: %w", err)
 			}
@@ -61,5 +62,6 @@ blocks after the given height are removed from the blockchain.
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&removeBlock, "hard", false, "remove blocks as well as state")
 	return cmd
 }

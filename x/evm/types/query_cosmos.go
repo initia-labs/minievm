@@ -4,7 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	proto "github.com/cosmos/gogoproto/proto"
 
-	oracletypes "github.com/skip-mev/slinky/x/oracle/types"
+	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
 )
 
 type ProtoSet struct {
@@ -16,15 +16,15 @@ type QueryCosmosWhitelist map[string]ProtoSet
 
 func DefaultQueryCosmosWhitelist() QueryCosmosWhitelist {
 	res := make(QueryCosmosWhitelist)
-	res["/slinky.oracle.v1.Query/GetPrices"] = ProtoSet{
+	res["/connect.oracle.v2.Query/GetPrices"] = ProtoSet{
 		Request:  &oracletypes.GetPricesRequest{},
 		Response: &oracletypes.GetPricesResponse{},
 	}
-	res["/slinky.oracle.v1.Query/GetPrice"] = ProtoSet{
+	res["/connect.oracle.v2.Query/GetPrice"] = ProtoSet{
 		Request:  &oracletypes.GetPriceRequest{},
 		Response: &oracletypes.GetPriceResponse{},
 	}
-	res["/slinky.oracle.v1.Query/GetAllCurrencyPairs"] = ProtoSet{
+	res["/connect.oracle.v2.Query/GetAllCurrencyPairs"] = ProtoSet{
 		Request:  &oracletypes.GetAllCurrencyPairsRequest{},
 		Response: &oracletypes.GetAllCurrencyPairsResponse{},
 	}
