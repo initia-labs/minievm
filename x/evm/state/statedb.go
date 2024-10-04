@@ -80,7 +80,12 @@ func NewStateDB(
 	feeContractAddr common.Address,
 ) (*StateDB, error) {
 	eidx := atomic.AddUint64(execIndex, 1)
+
 	err := transientLogSize.Set(ctx, eidx, 0)
+	if err != nil {
+		return nil, err
+	}
+	err = transientLogSize.Set(ctx, eidx, 0)
 	if err != nil {
 		return nil, err
 	}
