@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"math/rand/v2"
+	"sync/atomic"
 
 	"github.com/holiman/uint256"
 
@@ -73,29 +73,23 @@ func NewStateDB(
 	transientLogSize collections.Map[uint64, uint64],
 	transientAccessList collections.KeySet[collections.Pair[uint64, []byte]],
 	transientRefund collections.Map[uint64, uint64],
-	transientExecIndexStore collections.Sequence,
+	execIndex *uint64,
 	// erc20 params
 	evm callableEVM,
 	erc20ABI *abi.ABI,
 	feeContractAddr common.Address,
 ) (*StateDB, error) {
-	execIndex, err := transientExecIndexStore.Next(ctx)
+	eidx := atomic.AddUint64(execIndex, 1)
+
+	err := transientLogSize.Set(ctx, eidx, 0)
 	if err != nil {
 		return nil, err
 	}
-
-	// Use a random execIndex for simulate and check mode to ensure uniqueness.
-	// This is necessary due to the possibility of the execIndex being overwritten by finalize.commit() or ante.commit().
-	// This approach avoids the issue described in https://github.com/cosmos/cosmos-sdk/issues/20685.
-	if ctx.ExecMode() == sdk.ExecModeSimulate || ctx.ExecMode() == sdk.ExecModeCheck {
-		execIndex = rand.Uint64()
-	}
-
-	err = transientLogSize.Set(ctx, execIndex, 0)
+	err = transientLogSize.Set(ctx, eidx, 0)
 	if err != nil {
 		return nil, err
 	}
-	err = transientRefund.Set(ctx, execIndex, 0)
+	err = transientRefund.Set(ctx, eidx, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +108,7 @@ func NewStateDB(
 		transientLogSize:      transientLogSize,
 		transientAccessList:   transientAccessList,
 		transientRefund:       transientRefund,
-		execIndex:             execIndex,
+		execIndex:             eidx,
 
 		evm:             evm,
 		erc20ABI:        erc20ABI,
