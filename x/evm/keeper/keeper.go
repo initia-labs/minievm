@@ -245,7 +245,8 @@ func (k Keeper) GetERC20FactoryAddr(ctx context.Context) (common.Address, error)
 	return common.BytesToAddress(factoryAddr), nil
 }
 
-// keep recent 256 block hashes
+// keep track recent 256 block hashes
+// - https://www.ethervm.io/#40
 func (k Keeper) TrackBlockHash(ctx context.Context, blockHeight uint64, hash common.Hash) error {
 	if blockHeight > 256 {
 		err := k.EVMBlockHashes.Remove(ctx, blockHeight-256)
