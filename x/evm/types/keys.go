@@ -38,6 +38,8 @@ var (
 	ERC721ClassIdsByContractAddrPrefix = []byte{0x42} // prefix for erc721 class ids
 	ERC721ContractAddrsByClassIdPrefix = []byte{0x43} // prefix for erc721 contract addresses
 
+	EVMBlockHashPrefix = []byte{0x71} // prefix for evm block hashes
+
 	ParamsKey           = []byte{0x51} // key of parameters for module x/evm
 	ERC20FactoryAddrKey = []byte{0x61} // key of erc20 factory contract address
 )

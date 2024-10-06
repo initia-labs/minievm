@@ -115,7 +115,14 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, fee type
 			}
 		},
 		// At this point, we don't know the hash of the ethereum block, so we just return an empty hash
-		GetHash: func(u uint64) common.Hash { return common.Hash{} },
+		GetHash: func(n uint64) common.Hash {
+			bz, err := k.EVMBlockHashes.Get(sdkCtx, n)
+			if err != nil {
+				return common.Hash{}
+			}
+
+			return common.BytesToHash(bz)
+		},
 		// put header hash to bypass isMerge check in evm
 		Random: (*common.Hash)(headerHash),
 		// unused fields

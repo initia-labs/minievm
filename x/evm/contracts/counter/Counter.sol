@@ -35,4 +35,8 @@ contract Counter is IIBCAsyncCallback {
     ) external returns (string memory result) {
         return COSMOS_CONTRACT.query_cosmos(path, req);
     }
+
+    function get_blockhash(uint64 n) external view returns (bytes32) {
+        return blockhash(n);
+    }
 }
