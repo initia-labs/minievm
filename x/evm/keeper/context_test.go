@@ -160,7 +160,7 @@ func Test_GetHash(t *testing.T) {
 	require.Equal(t, [32]byte{}, [32]byte(queryRes))
 	require.Empty(t, logs)
 
-	// query 100 may return empty
+	// vaild query
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(101))
 	require.NoError(t, err)
 
@@ -169,12 +169,21 @@ func Test_GetHash(t *testing.T) {
 	require.Equal(t, hash101, [32]byte(queryRes))
 	require.Empty(t, logs)
 
-	// query 100 may return empty
+	// vaild query
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(356))
 	require.NoError(t, err)
 
 	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil)
 	require.NoError(t, err)
 	require.Equal(t, hash356, [32]byte(queryRes))
+	require.Empty(t, logs)
+
+	// return empty bytes if block height is greater than current block height
+	queryInputBz, err = parsed.Pack("get_blockhash", uint64(357))
+	require.NoError(t, err)
+
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil)
+	require.NoError(t, err)
+	require.Equal(t, [32]byte{}, [32]byte(queryRes))
 	require.Empty(t, logs)
 }
