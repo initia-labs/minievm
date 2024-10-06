@@ -250,7 +250,7 @@ func (k Keeper) TrackBlockHash(ctx context.Context, blockHeight uint64, hash com
 	if blockHeight > 256 {
 		err := k.EVMBlockHashes.Remove(ctx, blockHeight-256)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 
