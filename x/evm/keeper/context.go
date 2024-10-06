@@ -114,7 +114,6 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, fee type
 				panic(err)
 			}
 		},
-		// At this point, we don't know the hash of the ethereum block, so we just return an empty hash
 		GetHash: func(n uint64) common.Hash {
 			bz, err := k.EVMBlockHashes.Get(sdkCtx, n)
 			if err != nil {
