@@ -1394,8 +1394,7 @@ github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANyt
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
-github.com/initia-labs/OPinit v0.5.2 h1:KEiC72KGBa+X5DDMRrzVJCqNEGi7KX5cOYH/zAoDaQk=
-github.com/initia-labs/OPinit v0.5.2/go.mod h1:lx1amLMszculwPu8ln+btJno38UV28fd2nP7XC88ZeE=
+github.com/initia-labs/OPinit v0.5.4 h1:5p/YwEsmKdQdlOl6swULHeENvftqaHfm/bpS+h7+zLg=
 github.com/initia-labs/OPinit/api v0.5.1 h1:zwyJf7HtKJCKvLJ1R9PjVfJO1L+d/jKoeFyT7WTLHFI=
 github.com/initia-labs/OPinit/api v0.5.1/go.mod h1:gHK6DEWb3/DqQD5LjKirUx9jilAh2UioXanoQdgqVfU=
 github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261 h1:V62KOhe6Em3wAvJsDVP+3is98I3mk/29OKNVs4IxeFQ=
@@ -1404,8 +1403,7 @@ github.com/initia-labs/evm v0.0.0-20240826053041-8320cc435dfd h1:WJGpV8iEm9Z/HcY
 github.com/initia-labs/evm v0.0.0-20240826053041-8320cc435dfd/go.mod h1:Mq0biU2jbdmKSZoqOj29017ygFrMnB5/Rifwp980W4o=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d h1:TLq8lB1PtQ0pjGf+bN8YgGVeLMuytZ26SBGMOs1seKY=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d/go.mod h1:zh6x1osR0hNvEcFrC/lhGD08sMfQmr9wHVvZ/mRWMCs=
-github.com/initia-labs/initia v0.5.2 h1:1HQaLCi4ZnfVRGNU24wDixwCARGHWwU81cDGB2QO2mw=
-github.com/initia-labs/initia v0.5.2/go.mod h1:dDsBItzItjqapfRB6JR0ku5chNRSSaxWgJdj42i+Mio=
+github.com/initia-labs/initia v0.5.5 h1:NmWrca23YdLpGibbGNN8Wy68MWDDA8rfxy939BSd0oM=
 github.com/initia-labs/kvindexer v0.1.8 h1:PZ7FPYZO2zFXBdnvVlwMFVv6O59fpgCObELxVYB0hBo=
 github.com/initia-labs/kvindexer v0.1.8/go.mod h1:OV85HaQ9KVrg+zGPUlxT9RF9nAaM3Yq4/3MoHqGqhWk=
 github.com/initia-labs/kvindexer/submodules/block v0.1.0 h1:y+EXnksd/I2F96mzIoQA64nZUZON2P+99YrSzeLCLoY=
@@ -1416,8 +1414,7 @@ github.com/initia-labs/kvindexer/submodules/pair v0.1.1 h1:o151gA4jIbqEl+pWTOCiz
 github.com/initia-labs/kvindexer/submodules/pair v0.1.1/go.mod h1:8X1GE1ZLkH7z8TKb5MUh7UClTkcqVFIwXIIRdsqeUZY=
 github.com/initia-labs/kvindexer/submodules/tx v0.1.0 h1:6kbf6wmzXPN0XCQLasiFgq1AlZHkt5K3/ZG+IWw1nNs=
 github.com/initia-labs/kvindexer/submodules/tx v0.1.0/go.mod h1:i0XeLbLa6xdgTR01WF8kaAO50vMmwxbeq0fKexwpFHU=
-github.com/initia-labs/movevm v0.4.12 h1:P30q4U2jUN/al3bX391ZkXr3t59owNTwr9qmC4d1S0Q=
-github.com/initia-labs/movevm v0.4.12/go.mod h1:aUWdvFZPdULjJ2McQTE+mLnfnG3CLAz0TWJRFzFFUwg=
+github.com/initia-labs/movevm v0.5.0 h1:dBSxoVyUumSE4x6/ZSOWtvbtZpw+V4W25/NH6qLU0uQ=
 github.com/jackpal/go-nat-pmp v1.0.2 h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7BdWus=
 github.com/jackpal/go-nat-pmp v1.0.2/go.mod h1:QPH045xvCAeXUZOxsnwmrtiCoxIr9eob+4orBN1SBKc=
 github.com/jhump/protoreflect v1.15.3 h1:6SFRuqU45u9hIZPJAoZ8c28T3nK64BNdp9w6jFonzls=
