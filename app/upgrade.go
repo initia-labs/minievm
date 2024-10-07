@@ -1,12 +1,20 @@
 package app
 
 import (
+	"context"
+
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 )
 
-// const upgradeName = "0.2.0-beta.3"
+const upgradeName = "0.5.3"
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
-
+	app.UpgradeKeeper.SetUpgradeHandler(
+		upgradeName,
+		func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			return vm, nil
+		},
+	)
 }
