@@ -8,7 +8,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.10
 	github.com/cosmos/ibc-go/v8 v8.5.0
 	github.com/ethereum/go-ethereum v1.14.9
-	github.com/initia-labs/initia v0.5.5
+	github.com/initia-labs/initia v0.5.6
 	github.com/initia-labs/minievm v0.5.2
 	github.com/stretchr/testify v1.9.0
 )
@@ -144,7 +144,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.5.4 // indirect
+	github.com/initia-labs/OPinit v0.5.5 // indirect
 	github.com/initia-labs/OPinit/api v0.5.1 // indirect
 	github.com/initia-labs/kvindexer v0.1.8 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
