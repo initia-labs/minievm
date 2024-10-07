@@ -69,6 +69,9 @@ type Keeper struct {
 	ERC721ClassIdsByContractAddr collections.Map[[]byte, string]
 	ERC721ContractAddrsByClassId collections.Map[string, []byte]
 
+	// evm stores
+	EVMBlockHashes collections.Map[uint64, []byte]
+
 	precompiles          precompiles
 	queryCosmosWhitelist types.QueryCosmosWhitelist
 }
@@ -134,6 +137,8 @@ func NewKeeper(
 		ERC721ClassURIs:              collections.NewMap(sb, types.ERC721ClassURIPrefix, "erc721_class_uris", collections.BytesKey, collections.StringValue),
 		ERC721ClassIdsByContractAddr: collections.NewMap(sb, types.ERC721ClassIdsByContractAddrPrefix, "erc721_class_ids_by_contract_addr", collections.BytesKey, collections.StringValue),
 		ERC721ContractAddrsByClassId: collections.NewMap(sb, types.ERC721ContractAddrsByClassIdPrefix, "erc721_contract_addrs_by_class_id", collections.StringKey, collections.BytesValue),
+
+		EVMBlockHashes: collections.NewMap(sb, types.EVMBlockHashPrefix, "evm_block_hashes", collections.Uint64Key, collections.BytesValue),
 
 		precompiles:          []precompile{},
 		queryCosmosWhitelist: queryCosmosWhitelist,
@@ -238,4 +243,17 @@ func (k Keeper) GetERC20FactoryAddr(ctx context.Context) (common.Address, error)
 	}
 
 	return common.BytesToAddress(factoryAddr), nil
+}
+
+// keep track recent 256 block hashes
+// - https://www.ethervm.io/#40
+func (k Keeper) TrackBlockHash(ctx context.Context, blockHeight uint64, hash common.Hash) error {
+	if blockHeight > 256 {
+		err := k.EVMBlockHashes.Remove(ctx, blockHeight-256)
+		if err != nil {
+			return err
+		}
+	}
+
+	return k.EVMBlockHashes.Set(ctx, blockHeight, hash.Bytes())
 }

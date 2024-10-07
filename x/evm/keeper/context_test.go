@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	"github.com/holiman/uint256"
+	"golang.org/x/crypto/sha3"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -118,4 +119,71 @@ func Test_Call(t *testing.T) {
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil)
 	require.ErrorContains(t, err, types.ErrReverted.Error())
+}
+
+func Test_GetHash(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	// fund addr
+	input.Faucet.Fund(ctx, addr, sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000000000))
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// set block hash
+	hash100 := sha3.Sum256([]byte("block100"))
+	hash101 := sha3.Sum256([]byte("block101"))
+	hash356 := sha3.Sum256([]byte("block356"))
+	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 100, common.BytesToHash(hash100[:])))
+	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 101, common.BytesToHash(hash101[:])))
+	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 356, common.BytesToHash(hash356[:])))
+
+	// set current block height
+	ctx = ctx.WithBlockHeight(357)
+
+	// query 100 should return empty bytes because only resent 256 block hashes are stored
+	queryInputBz, err := parsed.Pack("get_blockhash", uint64(100))
+	require.NoError(t, err)
+
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil)
+	require.NoError(t, err)
+	require.Equal(t, [32]byte{}, [32]byte(queryRes))
+	require.Empty(t, logs)
+
+	// vaild query
+	queryInputBz, err = parsed.Pack("get_blockhash", uint64(101))
+	require.NoError(t, err)
+
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil)
+	require.NoError(t, err)
+	require.Equal(t, hash101, [32]byte(queryRes))
+	require.Empty(t, logs)
+
+	// vaild query
+	queryInputBz, err = parsed.Pack("get_blockhash", uint64(356))
+	require.NoError(t, err)
+
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil)
+	require.NoError(t, err)
+	require.Equal(t, hash356, [32]byte(queryRes))
+	require.Empty(t, logs)
+
+	// return empty bytes if block height is greater than current block height
+	queryInputBz, err = parsed.Pack("get_blockhash", uint64(357))
+	require.NoError(t, err)
+
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil)
+	require.NoError(t, err)
+	require.Equal(t, [32]byte{}, [32]byte(queryRes))
+	require.Empty(t, logs)
 }
