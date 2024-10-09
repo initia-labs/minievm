@@ -1,22 +1,32 @@
-FROM golang:1.22-bullseye AS go-builder
+# Stage 1: Build the Go project
+FROM golang:1.22-alpine3.19 AS go-builder
 
-# Install minimum necessary dependencies, build Cosmos SDK, remove packages
-RUN apt update
-RUN apt install -y curl git build-essential ca-certificates
-# debug: for live editting in the image
-RUN apt install -y vim
+# Use build arguments for the target architecture
+ARG TARGETARCH
+ARG GOARCH
+
+# Install necessary packages
+RUN set -eux; apk add --no-cache ca-certificates build-base git cmake
 
 WORKDIR /code
 COPY . /code/
 
-RUN LEDGER_ENABLED=false make build
+# Install mimalloc
+RUN git clone --depth 1 https://github.com/microsoft/mimalloc; cd mimalloc; mkdir build; cd build; cmake ..; make -j$(nproc); make install
+ENV MIMALLOC_RESERVE_HUGE_OS_PAGES=4
 
-FROM ubuntu:20.04
+RUN LEDGER_ENABLED=false GOARCH=${GOARCH} LDFLAGS="-linkmode=external -extldflags \"-L/code/mimalloc/build -lmimalloc -Wl,-z,muldefs -static\"" make build
 
-WORKDIR /root
+FROM alpine:3.19
 
-COPY --from=go-builder /etc/ssl/certs /etc/ssl/certs
-COPY --from=go-builder /code/build/minitiad /usr/local/bin/minitiad
+RUN addgroup minitia \
+    && adduser -G minitia -D -h /minitia minitia
+
+WORKDIR /minitia
+
+COPY --from=go-builder  /code/build/minitiad /usr/local/bin/minitiad
+
+USER minitia
 
 # rest server
 EXPOSE 1317
@@ -26,5 +36,9 @@ EXPOSE 9090
 EXPOSE 26656
 # tendermint rpc
 EXPOSE 26657
+# geth jsonrpc
+EXPOSE 8545
+# geth jsonrpc ws
+EXPOSE 8546
 
 CMD ["/usr/local/bin/minitiad", "version"]

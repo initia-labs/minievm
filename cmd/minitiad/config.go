@@ -61,6 +61,9 @@ func initAppConfig() (string, interface{}) {
 		JSONRPCConfig: jsonrpcconfig.DefaultJSONRPCConfig(),
 	}
 
+	minitiaAppConfig.JSONRPCConfig.Address = "0.0.0.0:8545"
+	minitiaAppConfig.JSONRPCConfig.AddressWS = "0.0.0.0:8546"
+
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
 		evmconfig.DefaultConfigTemplate +
 		indexerconfig.DefaultConfigTemplate +
