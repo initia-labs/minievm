@@ -2,7 +2,7 @@ FROM golang:1.22-bullseye AS go-builder
 
 # Install minimum necessary dependencies, build Cosmos SDK, remove packages
 RUN apt update
-RUN apt install -y curl git build-essential
+RUN apt install -y curl git build-essential ca-certificates
 # debug: for live editting in the image
 RUN apt install -y vim
 
@@ -15,6 +15,7 @@ FROM ubuntu:20.04
 
 WORKDIR /root
 
+COPY --from=go-builder /etc/ssl/certs /etc/ssl/certs
 COPY --from=go-builder /code/build/minitiad /usr/local/bin/minitiad
 
 # rest server
