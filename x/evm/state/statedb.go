@@ -386,12 +386,12 @@ func (s *StateDB) SetCode(addr common.Address, code []byte) {
 func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
 	acc := s.getAccount(addr)
 	if acc == nil {
-		return types.EmptyCodeHash
+		return common.Hash{}
 	}
 
 	cacc, ok := acc.(*evmtypes.ContractAccount)
 	if !ok {
-		return types.EmptyCodeHash
+		return common.Hash{}
 	}
 
 	return common.BytesToHash(cacc.CodeHash)
