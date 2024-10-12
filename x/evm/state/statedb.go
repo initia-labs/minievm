@@ -391,7 +391,7 @@ func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
 
 	cacc, ok := acc.(*evmtypes.ContractAccount)
 	if !ok {
-		return common.Hash{}
+		return types.EmptyCodeHash
 	}
 
 	return common.BytesToHash(cacc.CodeHash)
