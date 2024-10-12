@@ -97,7 +97,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			EffectiveGasPrice: ethTx.GasPrice(),
 		}
 
-		// currently we do not support fee refund, so the effective gas price is the same as the gas price
+		// currently we do not support fee refund for gas tip, so the effective gas price is the same as the gas price
 		// if ethTx.Type() == coretypes.DynamicFeeTxType {
 		// 	receipt.EffectiveGasPrice = new(big.Int).Add(ethTx.EffectiveGasTipValue(baseFee.ToInt()), baseFee.ToInt())
 		// }

@@ -1,6 +1,10 @@
 package keeper
 
-import "context"
+import (
+	"context"
+
+	"cosmossdk.io/math"
+)
 
 func (k Keeper) ExtraEIPs(ctx context.Context) ([]int, error) {
 	params, err := k.Params.Get(ctx)
@@ -23,4 +27,13 @@ func (k Keeper) GetFeeDenom(ctx context.Context) (string, error) {
 	}
 
 	return params.FeeDenom, nil
+}
+
+func (k Keeper) GasRefundRatio(ctx context.Context) (math.LegacyDec, error) {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return math.LegacyZeroDec(), err
+	}
+
+	return params.GasRefundRatio, nil
 }
