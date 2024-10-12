@@ -627,14 +627,6 @@ func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase co
 }
 
 func (s *StateDB) Commit() error {
-	// commit all changes
-	for i := range s.snaps {
-		s.snaps[len(s.snaps)-i-1].Commit()
-	}
-
-	// use the initial context
-	s.ctx = s.initialCtx
-
 	// clear destructed accounts
 	err := s.transientSelfDestruct.Walk(s.ctx, collections.NewPrefixedPairRange[uint64, []byte](s.execIndex), func(key collections.Pair[uint64, []byte]) (stop bool, err error) {
 		addr := common.BytesToAddress(key.K2())
@@ -653,6 +645,14 @@ func (s *StateDB) Commit() error {
 	if err != nil {
 		return err
 	}
+
+	// commit all changes
+	for i := range s.snaps {
+		s.snaps[len(s.snaps)-i-1].Commit()
+	}
+
+	// use the initial context
+	s.ctx = s.initialCtx
 
 	return nil
 }
