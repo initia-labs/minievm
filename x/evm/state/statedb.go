@@ -638,6 +638,12 @@ func (s *StateDB) Commit() error {
 	// clear destructed accounts
 	err := s.transientSelfDestruct.Walk(s.ctx, collections.NewPrefixedPairRange[uint64, []byte](s.execIndex), func(key collections.Pair[uint64, []byte]) (stop bool, err error) {
 		addr := common.BytesToAddress(key.K2())
+
+		// If ether was sent to account post-selfdestruct it is burnt.
+		if bal := s.GetBalance(addr); bal.Sign() != 0 {
+			s.SubBalance(addr, bal, tracing.BalanceDecreaseSelfdestructBurn)
+		}
+
 		err = s.vmStore.Clear(s.ctx, new(collections.Range[[]byte]).Prefix(addr.Bytes()))
 
 		// remove cosmos account
