@@ -34,13 +34,19 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 }
 
 func burnERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, from common.Address, amount sdk.Coin, expectErr bool) {
+	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
+	require.NoError(t, err)
+
 	abi, err := erc20.Erc20MetaData.GetAbi()
 	require.NoError(t, err)
 
-	inputBz, err := abi.Pack("burn", from, amount.Amount.BigInt())
+	inputBz, err := abi.Pack("approve", caller, amount.Amount.BigInt())
 	require.NoError(t, err)
 
-	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, from, erc20ContractAddr, inputBz, nil)
+	require.NoError(t, err)
+
+	inputBz, err = abi.Pack("burnFrom", from, amount.Amount.BigInt())
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
