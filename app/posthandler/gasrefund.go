@@ -44,7 +44,7 @@ func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, 
 		}
 
 		gasPrices := value.(sdk.DecCoins)
-		gasLeft := ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
+		gasLeft := ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumedToLimit()
 		gasRefund := gasRefundRatio.MulInt64(int64(gasLeft)).TruncateInt().Uint64()
 
 		// gas used for refund operation
