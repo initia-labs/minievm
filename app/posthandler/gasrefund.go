@@ -29,6 +29,11 @@ func NewGasRefundDecorator(ek EVMKeeper) sdk.PostDecorator {
 // PostHandle handles the gas refund logic for EVM transactions.
 func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, success bool, next sdk.PostHandler) (newCtx sdk.Context, err error) {
 	if success && ctx.ExecMode() == sdk.ExecModeFinalize {
+		// Conduct gas refund only for the successful EVM transactions
+		if ok, err := erd.ek.TxUtils().IsEthereumTx(ctx, tx); err != nil || !ok {
+			return ctx, nil
+		}
+
 		feeTx, ok := tx.(sdk.FeeTx)
 		if !ok {
 			return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")

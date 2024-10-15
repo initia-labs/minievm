@@ -48,14 +48,14 @@ func verifySignature(
 	handler *txsigning.HandlerMap,
 	txData txsigning.TxData,
 	// required to verify EVM signatures
-	ek *evmkeeper.Keeper,
+	ek EVMKeeper,
 	tx sdk.Tx,
 ) error {
 	switch data := signatureData.(type) {
 	case *signing.SingleSignatureData:
 		if data.SignMode == evmkeeper.SignMode_SIGN_MODE_ETHEREUM {
 			// eth sign mode
-			ethTx, expectedSender, err := evmkeeper.NewTxUtils(ek).ConvertCosmosTxToEthereumTx(ctx, tx)
+			ethTx, expectedSender, err := ek.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
 			if err != nil {
 				return err
 			}

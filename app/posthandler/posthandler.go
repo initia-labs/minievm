@@ -24,4 +24,5 @@ func NewPostHandler(
 type EVMKeeper interface {
 	GasRefundRatio(context.Context) (math.LegacyDec, error)
 	ERC20Keeper() evmtypes.IERC20Keeper
+	TxUtils() evmtypes.TxUtils
 }

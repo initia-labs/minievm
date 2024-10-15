@@ -22,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -33,13 +32,13 @@ import (
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SigVerificationDecorator struct {
 	ak              authante.AccountKeeper
-	ek              *evmkeeper.Keeper
+	ek              EVMKeeper
 	signModeHandler *txsigning.HandlerMap
 }
 
 func NewSigVerificationDecorator(
 	ak authante.AccountKeeper,
-	ek *evmkeeper.Keeper,
+	ek EVMKeeper,
 	signModeHandler *txsigning.HandlerMap) SigVerificationDecorator {
 	return SigVerificationDecorator{
 		ak:              ak,
