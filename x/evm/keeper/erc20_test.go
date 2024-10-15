@@ -62,7 +62,7 @@ func burnERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, from co
 	inputBz, err := abi.Pack("approve", caller, amount.Amount.BigInt())
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, from, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, from, erc20ContractAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	inputBz, err = abi.Pack("burnFrom", from, amount.Amount.BigInt())
