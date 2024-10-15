@@ -33,6 +33,7 @@ var (
 	ErrInvalidValue                = errorsmod.Register(ModuleName, 24, "Invalid value")
 	ErrFailedToGetERC20FactoryAddr = errorsmod.Register(ModuleName, 25, "Failed to get ERC20 factory address")
 	ErrInvalidFeeDenom             = errorsmod.Register(ModuleName, 26, "Invalid fee denom")
+	ErrInvalidGasRefundRatio       = errorsmod.Register(ModuleName, 27, "Invalid gas refund ratio")
 )
 
 func NewRevertError(revert []byte) error {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
 
@@ -94,4 +95,10 @@ type GRPCRouter interface {
 
 type GasPriceKeeper interface {
 	GasPrice(ctx context.Context, denom string) (math.LegacyDec, error)
+}
+
+type TxUtils interface {
+	ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx) (*coretypes.Transaction, *common.Address, error)
+	ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *coretypes.Transaction) (sdk.Tx, error)
+	IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error)
 }

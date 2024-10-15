@@ -28,6 +28,7 @@ type Keeper struct {
 	erc20Keeper         types.IERC20Keeper
 	erc20StoresKeeper   types.IERC20StoresKeeper
 	erc721Keeper        types.IERC721Keeper
+	txUtils             types.TxUtils
 
 	// grpc routers
 	msgRouter  baseapp.MessageRouter
@@ -167,6 +168,8 @@ func NewKeeper(
 		panic(err)
 	}
 
+	k.txUtils = NewTxUtils(k)
+
 	// setup precompiles
 	if err := k.loadPrecompiles(); err != nil {
 		panic(err)
@@ -204,6 +207,11 @@ func (k Keeper) ERC20StoresKeeper() types.IERC20StoresKeeper {
 // ERC721Keeper returns the ERC721Keeper
 func (k Keeper) ERC721Keeper() types.IERC721Keeper {
 	return k.erc721Keeper
+}
+
+// TxUtils returns the TxUtils
+func (k Keeper) TxUtils() types.TxUtils {
+	return k.txUtils
 }
 
 // GetContractAddrByDenom returns contract address by denom

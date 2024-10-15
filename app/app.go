@@ -363,6 +363,7 @@ func (app *MinitiaApp) SetCheckTx(handler blockchecktx.CheckTx) {
 func (app *MinitiaApp) setPostHandler() {
 	app.SetPostHandler(posthandler.NewPostHandler(
 		app.AccountKeeper,
+		app.EVMKeeper,
 	))
 }
 

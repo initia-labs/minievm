@@ -47,6 +47,19 @@ const (
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
 func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch r.(type) {
+			case storetypes.ErrorOutOfGas:
+				// convert cosmos out of gas error to EVM out of gas error
+				usedGas = suppliedGas + 1
+				err = nil
+			default:
+				panic(r)
+			}
+		}
+	}()
+
 	method, err := e.ABI.MethodById(input)
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())

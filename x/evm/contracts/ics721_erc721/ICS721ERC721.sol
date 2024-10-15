@@ -38,9 +38,4 @@ contract ICS721ERC721 is ERC721, Ownable {
     function tokenOriginId(uint256 tokenId) public view returns (string memory) {
         return tokenOriginIds[tokenId];
     }
-
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override {
-        transferFrom(from, to, tokenId);
-        ERC721Utils.checkOnERC721Received(_msgSender(), from, to, tokenId, data);
-    }
 }

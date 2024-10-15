@@ -8,8 +8,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 )
 
 // feeDeductionGasAmount is a estimated gas amount of fee payment
@@ -23,12 +21,12 @@ type GasFreeFeeDecorator struct {
 	inner ante.DeductFeeDecorator
 
 	// ek is used to get the fee denom from the x/evm params.
-	ek *evmkeeper.Keeper
+	ek EVMKeeper
 }
 
 func NewGasFreeFeeDecorator(
 	ak ante.AccountKeeper, bk types.BankKeeper,
-	fk ante.FeegrantKeeper, ek *evmkeeper.Keeper,
+	fk ante.FeegrantKeeper, ek EVMKeeper,
 	tfc ante.TxFeeChecker) GasFreeFeeDecorator {
 	return GasFreeFeeDecorator{
 		inner: ante.NewDeductFeeDecorator(ak, bk, fk, tfc),

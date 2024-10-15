@@ -88,10 +88,10 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	bz, err := abi.Pack(precompiles.METHOD_REGISTER)
 	require.NoError(t, err)
 
-	// out of gas panic
-	require.Panics(t, func() {
-		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS-1, false)
-	})
+	// out of gas error
+	_, gasUsed, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS-1, false)
+	require.NoError(t, err)
+	require.Equal(t, gasUsed, uint64(precompiles.REGISTER_GAS))
 
 	// non read only method fail
 	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS+uint64(len(bz)), true)
@@ -106,10 +106,10 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	bz, err = abi.Pack(precompiles.METHOD_REGISTER_FROM_FACTORY, erc20Addr2)
 	require.NoError(t, err)
 
-	// out of gas panic
-	require.Panics(t, func() {
-		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS-1, false)
-	})
+	// out of gas error
+	_, gasUsed, err = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS-1, false)
+	require.NoError(t, err)
+	require.Equal(t, gasUsed, uint64(precompiles.REGISTER_FROM_FACTORY_GAS))
 
 	// non read only method fail
 	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS+uint64(len(bz)), true)
@@ -139,10 +139,10 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	bz, err = abi.Pack(precompiles.METHOD_REGISTER_STORE, accountAddr)
 	require.NoError(t, err)
 
-	// out of gas panic
-	require.Panics(t, func() {
-		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS-1, false)
-	})
+	// out of gas error
+	_, gasUsed, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS-1, false)
+	require.NoError(t, err)
+	require.Equal(t, gasUsed, uint64(precompiles.REGISTER_STORE_GAS))
 
 	// non read only method fail
 	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS+uint64(len(bz)), true)
@@ -158,9 +158,9 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas panic
-	require.Panics(t, func() {
-		_, _, _ = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS-1, true)
-	})
+	_, gasUsed, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS-1, true)
+	require.NoError(t, err)
+	require.Equal(t, gasUsed, uint64(precompiles.IS_STORE_REGISTERED_GAS))
 
 	resBz, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS+uint64(len(bz)), true)
 	require.NoError(t, err)

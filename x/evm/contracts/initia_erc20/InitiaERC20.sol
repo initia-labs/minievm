@@ -97,10 +97,18 @@ contract InitiaERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
     }
 
     function burn(
+        uint256 amount
+    ) external burnable(msg.sender) {
+        _burn(msg.sender, amount);
+    }
+
+    function burnFrom(
         address from,
         uint256 amount
-    ) external burnable(from) onlyOwner {
+    ) external burnable(from) returns (bool) {
+        allowance[from][msg.sender] -= amount;
         _burn(from, amount);
+        return true;
     }
 
     function sudoTransfer(

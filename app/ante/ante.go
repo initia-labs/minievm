@@ -30,7 +30,7 @@ type HandlerOptions struct {
 	IBCkeeper     *ibckeeper.Keeper
 	OPChildKeeper opchildtypes.AnteKeeper
 	AuctionKeeper auctionkeeper.Keeper
-	EVMKeeper     *evmkeeper.Keeper
+	EVMKeeper     EVMKeeper
 
 	TxEncoder sdk.TxEncoder
 	MevLane   auctionante.MEVLane

@@ -6,8 +6,8 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "minievm/evm/v1/types.proto";
 
-option go_package                      = "github.com/initia-labs/minievm/x/evm/types";
-option (gogoproto.equal_all)           = false;
+option go_package = "github.com/initia-labs/minievm/x/evm/types";
+option (gogoproto.equal_all) = false;
 option (gogoproto.goproto_getters_all) = false;
 
 // Query provides defines the gRPC querier service
@@ -62,7 +62,7 @@ message QueryCodeRequest {
 // method
 message QueryCodeResponse {
   option (gogoproto.equal) = true;
-  string code              = 1;
+  string code = 1;
 }
 
 // QueryStateRequest is the request type for the Query/State RPC
@@ -119,7 +119,7 @@ message QueryDenomRequest {
 // method
 message QueryDenomResponse {
   option (gogoproto.equal) = true;
-  string denom             = 1;
+  string denom = 1;
 }
 
 // QueryCallRequest is the request type for the Query/Call RPC
@@ -132,8 +132,11 @@ message QueryCallRequest {
   // hex encoded call input
   string input = 3;
   // Value is the amount of fee denom token to transfer to the contract.
-  string value = 4
-      [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string value = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // whether to trace the call
   // `nil` means no trace
   TraceOptions trace_options = 5;
@@ -155,11 +158,14 @@ message TraceOptions {
 // method
 message QueryCallResponse {
   // hex encoded response bytes.
-  string       response     = 1;
-  uint64       used_gas     = 2;
-  repeated Log logs         = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
-  string       trace_output = 4;
-  string       error        = 5;
+  string response = 1;
+  uint64 used_gas = 2;
+  repeated Log logs = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string trace_output = 4;
+  string error = 5;
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
