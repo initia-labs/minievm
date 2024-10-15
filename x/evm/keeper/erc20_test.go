@@ -5,7 +5,9 @@ import (
 
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/sha3"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -17,6 +19,23 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
+func getStorageKey(address common.Address, slot uint64) common.Hash {
+	addressBytes := address.Bytes()
+	paddedAddress := make([]byte, 32)
+	copy(paddedAddress[32-len(addressBytes):], addressBytes)
+
+	slotBytes := make([]byte, 32)
+	slotBytes[31] = byte(slot)
+
+	key := make([]byte, 0, 32)
+	key = append(key, paddedAddress...)
+	key = append(key, slotBytes...)
+
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(key)
+	return common.BytesToHash(hash.Sum(nil))
+}
+
 func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, denom string) common.Address {
 	abi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
 	require.NoError(t, err)
@@ -27,7 +46,7 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 	factoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
 	require.NoError(t, err)
 
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, factoryAddr, inputBz, nil)
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, factoryAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	return common.BytesToAddress(ret[12:])
@@ -49,7 +68,7 @@ func burnERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, from co
 	inputBz, err = abi.Pack("burnFrom", from, amount.Amount.BigInt())
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -67,7 +86,7 @@ func mintERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipie
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -85,7 +104,7 @@ func transferERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, rec
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -104,7 +123,7 @@ func approveERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, spen
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -122,7 +141,35 @@ func transferFromERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller,
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
+	if expectErr {
+		require.Error(t, err)
+	} else {
+		require.NoError(t, err)
+	}
+}
+
+func transferFromERC20WithAccessList(t *testing.T, ctx sdk.Context, input TestKeepers, caller, from, to common.Address, amount sdk.Coin, expectErr bool) {
+	abi, err := erc20.Erc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("transferFrom", from, to, amount.Amount.BigInt())
+	require.NoError(t, err)
+
+	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
+	require.NoError(t, err)
+	balanceSlot := uint64(0)
+	fromStorageKey := getStorageKey(from, balanceSlot)
+	toStorageKey := getStorageKey(from, balanceSlot)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, ethtypes.AccessList{
+		ethtypes.AccessTuple{
+			Address: erc20ContractAddr,
+			StorageKeys: []common.Hash{
+				fromStorageKey, toStorageKey,
+			},
+		},
+	})
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -502,4 +549,41 @@ func Test_Approve(t *testing.T) {
 
 	// should fail to transferFrom more than approved
 	transferFromERC20(t, ctx, input, evmAddr2, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), true)
+}
+
+func Test_ApproveWithAccessList(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	_, _, addr2 := keyPubAddr()
+
+	evmAddr := common.BytesToAddress(addr.Bytes())
+	evmAddr2 := common.BytesToAddress(addr2.Bytes())
+
+	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
+	require.NoError(t, err)
+
+	// deploy erc20 contract
+	fooContractAddr := deployERC20(t, ctx, input, evmAddr, "foo")
+	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
+
+	// mint erc20
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
+
+	// approve erc20
+	approveERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
+
+	// transferFrom erc20
+	transferFromERC20WithAccessList(t, ctx, input, evmAddr2, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
+
+	amount, err := erc20Keeper.GetBalance(ctx, addr, fooDenom)
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(50), amount)
+	amount, err = erc20Keeper.GetBalance(ctx, addr2, fooDenom)
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(50), amount)
+
+	// should fail to transferFrom more than approved
+	transferFromERC20WithAccessList(t, ctx, input, evmAddr2, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), true)
 }

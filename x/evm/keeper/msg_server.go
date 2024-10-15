@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
 
 	"cosmossdk.io/collections"
@@ -47,7 +49,25 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
-
+	var accessList coretypes.AccessList
+	if len(msg.AccessList) > 0 {
+		accessList = func() coretypes.AccessList {
+			var als coretypes.AccessList
+			for _, al := range msg.AccessList {
+				als = append(als, coretypes.AccessTuple{
+					Address: common.HexToAddress(al.Address),
+					StorageKeys: func() []common.Hash {
+						storageKeys := make([]common.Hash, len(al.StorageKeys))
+						for _, sk := range al.StorageKeys {
+							storageKeys = append(storageKeys, common.HexToHash(sk))
+						}
+						return storageKeys
+					}(),
+				})
+			}
+			return als
+		}()
+	}
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
 	if err != nil {
@@ -71,7 +91,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value)
+	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -113,6 +133,20 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 		return nil, err
 	}
 
+	var accessList coretypes.AccessList
+	if len(msg.AccessList) > 0 {
+		accessList = make(coretypes.AccessList, len(msg.AccessList))
+		for i, al := range msg.AccessList {
+			storageKeys := make([]common.Hash, len(al.StorageKeys))
+			for j, sk := range al.StorageKeys {
+				storageKeys[j] = common.HexToHash(sk)
+			}
+			accessList[i] = coretypes.AccessTuple{
+				Address:     common.HexToAddress(al.Address),
+				StorageKeys: storageKeys,
+			}
+		}
+	}
 	// assert deploy authorization
 	if len(params.AllowedPublishers) != 0 {
 		allowed := false
@@ -130,7 +164,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt)
+	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -188,7 +222,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
 
-	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, nil)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}

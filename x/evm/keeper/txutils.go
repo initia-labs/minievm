@@ -94,11 +94,24 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
-
+	var accessList []types.AccessTuple
 	sigBytes := make([]byte, 65)
 	switch ethTx.Type() {
 	case coretypes.LegacyTxType:
 		sigBytes[64] = byte(new(big.Int).Sub(v, new(big.Int).Add(new(big.Int).Add(ethChainID, ethChainID), big.NewInt(35))).Uint64())
+	case coretypes.AccessListTxType:
+		sigBytes[64] = byte(v.Uint64())
+		accessList = make([]types.AccessTuple, len(ethTx.AccessList()))
+		for i, al := range ethTx.AccessList() {
+			storageKeys := make([]string, len(al.StorageKeys))
+			for j, s := range al.StorageKeys {
+				storageKeys[j] = s.String()
+			}
+			accessList[i] = types.AccessTuple{
+				Address:     al.Address.String(),
+				StorageKeys: storageKeys,
+			}
+		}
 	case coretypes.DynamicFeeTxType:
 		sigBytes[64] = byte(v.Uint64())
 	default:
@@ -139,11 +152,15 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	}
 
 	sdkMsgs := []sdk.Msg{}
+	if len(accessList) == 0 {
+		accessList = nil
+	}
 	if ethTx.To() == nil {
 		sdkMsgs = append(sdkMsgs, &types.MsgCreate{
-			Sender: sender,
-			Code:   hexutil.Encode(ethTx.Data()),
-			Value:  math.NewIntFromBigInt(value),
+			Sender:     sender,
+			Code:       hexutil.Encode(ethTx.Data()),
+			Value:      math.NewIntFromBigInt(value),
+			AccessList: accessList,
 		})
 	} else {
 		sdkMsgs = append(sdkMsgs, &types.MsgCall{
@@ -151,6 +168,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 			ContractAddr: ethTx.To().String(),
 			Input:        hexutil.Encode(ethTx.Data()),
 			Value:        math.NewIntFromBigInt(value),
+			AccessList:   accessList,
 		})
 	}
 
@@ -271,6 +289,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	var to *common.Address
 	var input []byte
 	var value *big.Int
+	var accessList []types.AccessTuple
 	switch typeUrl {
 	case "/minievm.evm.v1.MsgCall":
 		callMsg := msg.(*types.MsgCall)
@@ -290,6 +309,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// the value is converted to cosmos fee unit from wei.
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
 		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
+		accessList = callMsg.AccessList
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
 		data, err := hexutil.Decode(createMsg.Code)
@@ -301,6 +321,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		input = data
 		// Same as above (MsgCall)
 		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
+		accessList = createMsg.AccessList
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
@@ -323,6 +344,34 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 			S:        new(big.Int).SetBytes(s),
 			V:        new(big.Int).Add(new(big.Int).SetBytes(v), new(big.Int).SetUint64(35+ethChainID.Uint64()*2)),
 		}
+	case coretypes.AccessListTxType:
+		txData = &coretypes.AccessListTx{
+			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
+			Nonce:      sig.Sequence,
+			GasPrice:   gasFeeCap,
+			Gas:        gas,
+			Value:      value,
+			To:         to,
+			Data:       input,
+			AccessList: func() coretypes.AccessList {
+				al := make(coretypes.AccessList, len(accessList))
+				for i, a := range accessList {
+					storageKeys := make([]common.Hash, len(a.StorageKeys))
+					for j, s := range a.StorageKeys {
+						storageKeys[j] = common.HexToHash(s)
+					}
+					al[i] = coretypes.AccessTuple{
+						Address:     common.HexToAddress(a.Address),
+						StorageKeys: storageKeys,
+					}
+				}
+				return al
+			}(),
+			R:          new(big.Int).SetBytes(r),
+			S:          new(big.Int).SetBytes(s),
+			V:          new(big.Int).SetBytes(v),
+		}
+
 	case coretypes.DynamicFeeTxType:
 		txData = &coretypes.DynamicFeeTx{
 			ChainID:   types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
@@ -337,6 +386,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 			S:         new(big.Int).SetBytes(s),
 			V:         new(big.Int).SetBytes(v),
 		}
+
 	default:
 		return nil, nil, fmt.Errorf("unsupported tx type: %d", md.Type)
 	}

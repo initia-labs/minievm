@@ -27,7 +27,7 @@ func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) erro
 		return err
 	}
 
-	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20FactorySalt)
+	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20FactorySalt, nil)
 	if err != nil {
 		return err
 	}

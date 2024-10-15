@@ -59,3 +59,12 @@ message Log {
   // supplied by the contract, usually ABI-encoded
   string data = 3;
 }
+
+message AccessTuple {
+  // Address of the contract that will be accessed during the transaction execution.
+  string address = 1;
+
+  // A list of storage keys that the transaction will interact with within the specified contract.
+  // These keys represent specific storage slots in the contract's storage that are accessed or modified.
+  repeated string storage_keys = 2;
+}
