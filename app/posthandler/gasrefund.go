@@ -31,7 +31,7 @@ func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, 
 	if success && ctx.ExecMode() == sdk.ExecModeFinalize {
 		// Conduct gas refund only for the successful EVM transactions
 		if ok, err := erd.ek.TxUtils().IsEthereumTx(ctx, tx); err != nil || !ok {
-			return ctx, nil
+			return next(ctx, tx, simulate, success)
 		}
 
 		feeTx, ok := tx.(sdk.FeeTx)
@@ -41,7 +41,7 @@ func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, 
 
 		value := ctx.Value(evmante.ContextKeyGasPrices)
 		if value == nil {
-			return ctx, nil
+			return next(ctx, tx, simulate, success)
 		}
 		gasRefundRatio, err := erd.ek.GasRefundRatio(ctx)
 		if err != nil {
@@ -55,7 +55,7 @@ func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, 
 		// gas used for refund operation
 		coinsRefund, _ := gasPrices.MulDec(math.LegacyNewDecFromInt(math.NewIntFromUint64(gasRefund))).TruncateDecimal()
 		if coinsRefund.Empty() || coinsRefund.IsZero() {
-			return ctx, nil
+			return next(ctx, tx, simulate, success)
 		}
 
 		feePayer := feeTx.FeePayer()
