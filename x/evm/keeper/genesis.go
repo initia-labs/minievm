@@ -73,6 +73,12 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
+	for _, erc20 := range genState.ERC20s {
+		if err := k.ERC20s.Set(ctx, erc20); err != nil {
+			return err
+		}
+	}
+
 	for _, stores := range genState.Erc20Stores {
 		for _, store := range stores.Stores {
 			if err := k.ERC20Stores.Set(ctx, collections.Join(stores.Address, store)); err != nil {
@@ -81,12 +87,32 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
-	for _, denomAddress := range genState.DenomAddresses {
-		if err := k.ERC20ContractAddrsByDenom.Set(ctx, denomAddress.Denom, denomAddress.ContractAddress); err != nil {
+	for _, denomTrace := range genState.DenomTraces {
+		if err := k.ERC20ContractAddrsByDenom.Set(ctx, denomTrace.Denom, denomTrace.ContractAddress); err != nil {
 			return err
 		}
 
-		if err := k.ERC20DenomsByContractAddr.Set(ctx, denomAddress.ContractAddress, denomAddress.Denom); err != nil {
+		if err := k.ERC20DenomsByContractAddr.Set(ctx, denomTrace.ContractAddress, denomTrace.Denom); err != nil {
+			return err
+		}
+	}
+
+	for _, classTrace := range genState.ClassTraces {
+		if err := k.ERC721ContractAddrsByClassId.Set(ctx, classTrace.ClassId, classTrace.ContractAddress); err != nil {
+			return err
+		}
+
+		if err := k.ERC721ClassIdsByContractAddr.Set(ctx, classTrace.ContractAddress, classTrace.ClassId); err != nil {
+			return err
+		}
+
+		if err := k.ERC721ClassURIs.Set(ctx, classTrace.ContractAddress, classTrace.Uri); err != nil {
+			return err
+		}
+	}
+
+	for _, blockHash := range genState.EVMBlockHashes {
+		if err := k.EVMBlockHashes.Set(ctx, blockHash.Height, blockHash.Hash); err != nil {
 			return err
 		}
 	}
@@ -103,6 +129,15 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 	kvs := []types.GenesisKeyValue{}
 	err = k.VMStore.Walk(ctx, nil, func(key, value []byte) (stop bool, err error) {
 		kvs = append(kvs, types.GenesisKeyValue{Key: key, Value: value})
+		return false, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	erc20s := [][]byte{}
+	err = k.ERC20s.Walk(ctx, nil, func(erc20 []byte) (stop bool, err error) {
+		erc20s = append(erc20s, erc20)
 		return false, nil
 	})
 	if err != nil {
@@ -129,11 +164,43 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		panic(err)
 	}
 
-	denomAddresses := []types.GenesisDenomAddress{}
+	denomTraces := []types.GenesisDenomTrace{}
 	err = k.ERC20ContractAddrsByDenom.Walk(ctx, nil, func(denom string, contractAddr []byte) (stop bool, err error) {
-		denomAddresses = append(denomAddresses, types.GenesisDenomAddress{
+		denomTraces = append(denomTraces, types.GenesisDenomTrace{
 			Denom:           denom,
 			ContractAddress: contractAddr,
+		})
+
+		return false, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	classTraces := []types.GenesisClassTrace{}
+	err = k.ERC721ContractAddrsByClassId.Walk(ctx, nil, func(classId string, contractAddr []byte) (stop bool, err error) {
+		uri, err := k.ERC721ClassURIs.Get(ctx, contractAddr)
+		if err != nil {
+			panic(err)
+		}
+
+		classTraces = append(classTraces, types.GenesisClassTrace{
+			ClassId:         classId,
+			ContractAddress: contractAddr,
+			Uri:             uri,
+		})
+
+		return false, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	evmBlockHashes := []types.GenesisEVMBlockHash{}
+	err = k.EVMBlockHashes.Walk(ctx, nil, func(height uint64, hash []byte) (stop bool, err error) {
+		evmBlockHashes = append(evmBlockHashes, types.GenesisEVMBlockHash{
+			Height: height,
+			Hash:   hash,
 		})
 
 		return false, nil
@@ -150,8 +217,11 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 	return &types.GenesisState{
 		Params:         params,
 		KeyValues:      kvs,
+		ERC20s:         erc20s,
 		Erc20Stores:    erc20Stores,
-		DenomAddresses: denomAddresses,
+		DenomTraces:    denomTraces,
+		ClassTraces:    classTraces,
 		Erc20Factory:   factoryAddr,
+		EVMBlockHashes: evmBlockHashes,
 	}
 }
