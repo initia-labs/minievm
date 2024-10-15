@@ -383,10 +383,9 @@ func (u *TxUtils) IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error) 
 		return false, nil
 	}
 
-	fmt.Println("SIBONG2")
 	msg := msgs[0]
 	typeUrl := sdk.MsgTypeURL(msg)
-	if typeUrl != "/minievm.evm.v1.MsgCall" && typeUrl == "/minievm.evm.v1.MsgCreate" {
+	if typeUrl != "/minievm.evm.v1.MsgCall" && typeUrl != "/minievm.evm.v1.MsgCreate" {
 		return false, nil
 	}
 

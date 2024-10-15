@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -307,7 +306,6 @@ func Test_IsEthereumTx(t *testing.T) {
 	require.NoError(t, err)
 	tx = txBuilder.GetTx()
 
-	fmt.Println("SIBONG1")
 	ok, err = input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
 	require.NoError(t, err)
 	require.True(t, ok)
