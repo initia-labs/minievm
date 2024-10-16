@@ -94,7 +94,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
-	var accessList []types.AccessTuple
+	var accessList []types.AccessTuple = nil
 	sigBytes := make([]byte, 65)
 	switch ethTx.Type() {
 	case coretypes.LegacyTxType:
@@ -152,9 +152,6 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	}
 
 	sdkMsgs := []sdk.Msg{}
-	if len(accessList) == 0 {
-		accessList = nil
-	}
 	if ethTx.To() == nil {
 		sdkMsgs = append(sdkMsgs, &types.MsgCreate{
 			Sender:     sender,
@@ -346,13 +343,13 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		}
 	case coretypes.AccessListTxType:
 		txData = &coretypes.AccessListTx{
-			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
-			Nonce:      sig.Sequence,
-			GasPrice:   gasFeeCap,
-			Gas:        gas,
-			Value:      value,
-			To:         to,
-			Data:       input,
+			ChainID:  types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
+			Nonce:    sig.Sequence,
+			GasPrice: gasFeeCap,
+			Gas:      gas,
+			Value:    value,
+			To:       to,
+			Data:     input,
 			AccessList: func() coretypes.AccessList {
 				al := make(coretypes.AccessList, len(accessList))
 				for i, a := range accessList {
@@ -367,9 +364,9 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 				}
 				return al
 			}(),
-			R:          new(big.Int).SetBytes(r),
-			S:          new(big.Int).SetBytes(s),
-			V:          new(big.Int).SetBytes(v),
+			R: new(big.Int).SetBytes(r),
+			S: new(big.Int).SetBytes(s),
+			V: new(big.Int).SetBytes(v),
 		}
 
 	case coretypes.DynamicFeeTxType:

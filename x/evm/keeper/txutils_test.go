@@ -150,17 +150,16 @@ func Test_AccessTxConversion(t *testing.T) {
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
 
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
+	// 1. Test with non AccessList but type is AccessListTx
 	ethTx := coretypes.NewTx(&coretypes.AccessListTx{
-		ChainID:  types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID()),
-		Nonce:    100,
-		GasPrice: gasFeeCap,
-		Gas:      gasLimit,
-		To:       &ethFactoryAddr,
-		Data:     inputBz,
-		Value:    value,
-		AccessList: coretypes.AccessList{
-			coretypes.AccessTuple{Address: ethFactoryAddr, StorageKeys: []common.Hash{common.HexToHash("0x0")}},
-		},
+		ChainID:    types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID()),
+		Nonce:      100,
+		GasPrice:   gasFeeCap,
+		Gas:        gasLimit,
+		To:         &ethFactoryAddr,
+		Data:       inputBz,
+		Value:      value,
+		AccessList: coretypes.AccessList{},
 	})
 
 	signer := coretypes.LatestSignerForChainID(ethChainID)
@@ -193,12 +192,7 @@ func Test_AccessTxConversion(t *testing.T) {
 		ContractAddr: ethFactoryAddr.Hex(),
 		Input:        hexutil.Encode(inputBz),
 		Value:        math.NewInt(100),
-		AccessList: []types.AccessTuple{
-			{
-				Address:     ethFactoryAddr.String(),
-				StorageKeys: []string{common.HexToHash("0x0").Hex()},
-			},
-		},
+		AccessList:   []types.AccessTuple{},
 	})
 
 	authTx := sdkTx.(authsigning.Tx)
@@ -227,7 +221,85 @@ func Test_AccessTxConversion(t *testing.T) {
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
 	EqualEthTransaction(t, signedTx, ethTx2)
+
+	// 2. Test Normal Case
+	ethTx = coretypes.NewTx(&coretypes.AccessListTx{
+		ChainID:  types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID()),
+		Nonce:    100,
+		GasPrice: gasFeeCap,
+		Gas:      gasLimit,
+		To:       &ethFactoryAddr,
+		Data:     inputBz,
+		Value:    value,
+		AccessList: coretypes.AccessList{
+			coretypes.AccessTuple{Address: ethFactoryAddr, StorageKeys: []common.Hash{common.HexToHash("0x0"),common.HexToHash("0x1"),common.HexToHash("0x2")}},
+		},
+	})
+
+	randBytes = make([]byte, 64)
+	_, err = rand.Read(randBytes)
+	require.NoError(t, err)
+	reader = bytes.NewReader(randBytes)
+
+	privKey, err = ecdsa.GenerateKey(crypto.S256(), reader)
+	require.NoError(t, err)
+	signedTx, err = coretypes.SignTx(ethTx, signer, privKey)
+	require.NoError(t, err)
+
+	cosmosKey = ethsecp256k1.PrivKey{
+		Key: crypto.FromECDSA(privKey),
+	}
+	addrBz = cosmosKey.PubKey().Address()
+
+	// Convert to cosmos tx
+	sdkTx, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertEthereumTxToCosmosTx(ctx, signedTx)
+	require.NoError(t, err)
+
+	msgs = sdkTx.GetMsgs()
+	require.Len(t, msgs, 1)
+	msg, ok = msgs[0].(*types.MsgCall)
+	require.True(t, ok)
+	require.Equal(t, msg, &types.MsgCall{
+		Sender:       sdk.AccAddress(addrBz).String(),
+		ContractAddr: ethFactoryAddr.Hex(),
+		Input:        hexutil.Encode(inputBz),
+		Value:        math.NewInt(100),
+		AccessList: []types.AccessTuple{
+			{
+				Address:     ethFactoryAddr.String(),
+				StorageKeys: []string{common.HexToHash("0x0").Hex(),common.HexToHash("0x1").Hex(),common.HexToHash("0x2").Hex()},
+			},
+		},
+	})
+
+	authTx = sdkTx.(authsigning.Tx)
+	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1))))
+
+	sigs, err = authTx.GetSignaturesV2()
+	require.NoError(t, err)
+	require.Len(t, sigs, 1)
+
+	sig = sigs[0]
+	require.Equal(t, sig.PubKey, cosmosKey.PubKey())
+	require.Equal(t, sig.Sequence, uint64(100))
+
+	v, r, s = signedTx.RawSignatureValues()
+	sigData = sig.Data.(*signing.SingleSignatureData)
+	require.Equal(t, sigData.SignMode, keeper.SignMode_SIGN_MODE_ETHEREUM)
+
+	sigBytes = make([]byte, 65)
+	copy(sigBytes[32-len(r.Bytes()):32], r.Bytes())
+	copy(sigBytes[64-len(s.Bytes()):64], s.Bytes())
+	sigBytes[64] = byte(v.Uint64())
+
+	require.Equal(t, sigData.Signature, sigBytes)
+
+	// Convert back to ethereum tx
+	ethTx2, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
+	require.NoError(t, err)
+	EqualEthTransaction(t, signedTx, ethTx2)
 }
+
 func Test_LegacyTxConversion(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 
