@@ -39,7 +39,13 @@ func NewRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNu
 	from, _ := coretypes.Sender(signer, tx)
 	v, r, s := tx.RawSignatureValues()
 	al := tx.AccessList()
-	yparity := hexutil.Uint64(v.Sign())
+	var yparity *hexutil.Uint64 = new(hexutil.Uint64)
+	switch tx.Type() {
+	case coretypes.LegacyTxType:
+		yparity = nil
+	default: // Dynamic and Access List use yParity
+		*yparity = hexutil.Uint64(v.Sign())
+	}
 
 	result := &RPCTransaction{
 		Type:      hexutil.Uint64(tx.Type()),
@@ -58,7 +64,7 @@ func NewRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNu
 		S:         (*hexutil.Big)(s),
 		ChainID:   (*hexutil.Big)(chainID),
 		Accesses:  &al,
-		YParity:   &yparity,
+		YParity:   yparity,
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash

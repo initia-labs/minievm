@@ -62,6 +62,14 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 		To:        &ethFactoryAddr,
 		Data:      inputBz,
 		Value:     value,
+		AccessList: coretypes.AccessList{
+			coretypes.AccessTuple{Address: ethFactoryAddr,
+				StorageKeys: []common.Hash{
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000002"),
+				}},
+		},
 	})
 
 	randBytes := make([]byte, 64)
@@ -92,6 +100,15 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 		ContractAddr: ethFactoryAddr.Hex(),
 		Input:        hexutil.Encode(inputBz),
 		Value:        math.NewInt(100),
+		AccessList: []types.AccessTuple{
+			{
+				Address: ethFactoryAddr.String(),
+				StorageKeys: []string{
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000").Hex(),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001").Hex(),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000002").Hex()},
+			},
+		},
 	})
 
 	authTx := sdkTx.(authsigning.Tx)
@@ -232,7 +249,12 @@ func Test_AccessTxConversion(t *testing.T) {
 		Data:     inputBz,
 		Value:    value,
 		AccessList: coretypes.AccessList{
-			coretypes.AccessTuple{Address: ethFactoryAddr, StorageKeys: []common.Hash{common.HexToHash("0x0"),common.HexToHash("0x1"),common.HexToHash("0x2")}},
+			coretypes.AccessTuple{Address: ethFactoryAddr,
+				StorageKeys: []common.Hash{
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000002"),
+				}},
 		},
 	})
 
@@ -266,8 +288,11 @@ func Test_AccessTxConversion(t *testing.T) {
 		Value:        math.NewInt(100),
 		AccessList: []types.AccessTuple{
 			{
-				Address:     ethFactoryAddr.String(),
-				StorageKeys: []string{common.HexToHash("0x0").Hex(),common.HexToHash("0x1").Hex(),common.HexToHash("0x2").Hex()},
+				Address: ethFactoryAddr.String(),
+				StorageKeys: []string{
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000").Hex(),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001").Hex(),
+					common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000002").Hex()},
 			},
 		},
 	})

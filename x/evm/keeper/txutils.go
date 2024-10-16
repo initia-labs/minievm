@@ -91,10 +91,10 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	if err != nil {
 		return nil, err
 	}
+	var accessList []types.AccessTuple
 
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
-	var accessList []types.AccessTuple = nil
 	sigBytes := make([]byte, 65)
 	switch ethTx.Type() {
 	case coretypes.LegacyTxType:
@@ -114,6 +114,17 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 		}
 	case coretypes.DynamicFeeTxType:
 		sigBytes[64] = byte(v.Uint64())
+		accessList = make([]types.AccessTuple, len(ethTx.AccessList()))
+		for i, al := range ethTx.AccessList() {
+			storageKeys := make([]string, len(al.StorageKeys))
+			for j, s := range al.StorageKeys {
+				storageKeys[j] = s.String()
+			}
+			accessList[i] = types.AccessTuple{
+				Address:     al.Address.String(),
+				StorageKeys: storageKeys,
+			}
+		}
 	default:
 		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("unsupported tx type: %d", ethTx.Type())
 	}
@@ -199,6 +210,7 @@ type metadata struct {
 	GasTipCap string `json:"gas_tip_cap"`
 }
 
+// func
 // ConvertCosmosTxToEthereumTx converts a Cosmos SDK transaction to an Ethereum transaction.
 // It returns nil if the transaction is not an EVM transaction.
 func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx) (*coretypes.Transaction, *common.Address, error) {
@@ -286,7 +298,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	var to *common.Address
 	var input []byte
 	var value *big.Int
-	var accessList []types.AccessTuple
+	var accessList coretypes.AccessList
 	switch typeUrl {
 	case "/minievm.evm.v1.MsgCall":
 		callMsg := msg.(*types.MsgCall)
@@ -306,7 +318,18 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// the value is converted to cosmos fee unit from wei.
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
 		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
-		accessList = callMsg.AccessList
+		accessList = make(coretypes.AccessList, len(callMsg.AccessList))
+		for i, a := range callMsg.AccessList {
+			storageKeys := make([]common.Hash, len(a.StorageKeys))
+			for j, s := range a.StorageKeys {
+				storageKeys[j] = common.HexToHash(s)
+			}
+			accessList[i] = coretypes.AccessTuple{
+				Address:     common.HexToAddress(a.Address),
+				StorageKeys: storageKeys,
+			}
+		}
+
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
 		data, err := hexutil.Decode(createMsg.Code)
@@ -318,7 +341,17 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		input = data
 		// Same as above (MsgCall)
 		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
-		accessList = createMsg.AccessList
+		accessList = make(coretypes.AccessList, len(createMsg.AccessList))
+		for i, a := range createMsg.AccessList {
+			storageKeys := make([]common.Hash, len(a.StorageKeys))
+			for j, s := range a.StorageKeys {
+				storageKeys[j] = common.HexToHash(s)
+			}
+			accessList[i] = coretypes.AccessTuple{
+				Address:     common.HexToAddress(a.Address),
+				StorageKeys: storageKeys,
+			}
+		}
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
@@ -343,45 +376,34 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		}
 	case coretypes.AccessListTxType:
 		txData = &coretypes.AccessListTx{
-			ChainID:  types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
-			Nonce:    sig.Sequence,
-			GasPrice: gasFeeCap,
-			Gas:      gas,
-			Value:    value,
-			To:       to,
-			Data:     input,
-			AccessList: func() coretypes.AccessList {
-				al := make(coretypes.AccessList, len(accessList))
-				for i, a := range accessList {
-					storageKeys := make([]common.Hash, len(a.StorageKeys))
-					for j, s := range a.StorageKeys {
-						storageKeys[j] = common.HexToHash(s)
-					}
-					al[i] = coretypes.AccessTuple{
-						Address:     common.HexToAddress(a.Address),
-						StorageKeys: storageKeys,
-					}
-				}
-				return al
-			}(),
-			R: new(big.Int).SetBytes(r),
-			S: new(big.Int).SetBytes(s),
-			V: new(big.Int).SetBytes(v),
+			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
+			Nonce:      sig.Sequence,
+			GasPrice:   gasFeeCap,
+			Gas:        gas,
+			Value:      value,
+			To:         to,
+			Data:       input,
+			AccessList: accessList,
+			R:          new(big.Int).SetBytes(r),
+			S:          new(big.Int).SetBytes(s),
+			V:          new(big.Int).SetBytes(v),
 		}
 
 	case coretypes.DynamicFeeTxType:
+
 		txData = &coretypes.DynamicFeeTx{
-			ChainID:   types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
-			Nonce:     sig.Sequence,
-			GasTipCap: gasTipCap,
-			GasFeeCap: gasFeeCap,
-			Gas:       gas,
-			To:        to,
-			Data:      input,
-			Value:     value,
-			R:         new(big.Int).SetBytes(r),
-			S:         new(big.Int).SetBytes(s),
-			V:         new(big.Int).SetBytes(v),
+			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
+			Nonce:      sig.Sequence,
+			GasTipCap:  gasTipCap,
+			GasFeeCap:  gasFeeCap,
+			Gas:        gas,
+			To:         to,
+			Data:       input,
+			Value:      value,
+			AccessList: accessList,
+			R:          new(big.Int).SetBytes(r),
+			S:          new(big.Int).SetBytes(s),
+			V:          new(big.Int).SetBytes(v),
 		}
 
 	default:
