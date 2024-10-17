@@ -91,8 +91,20 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	if err != nil {
 		return nil, err
 	}
-	var accessList []types.AccessTuple
-
+	var accessList []types.AccessTuple = nil
+	if len(ethTx.AccessList()) > 0 {
+		accessList = make([]types.AccessTuple, len(ethTx.AccessList()))
+	}
+	for i, al := range ethTx.AccessList() {
+		storageKeys := make([]string, len(al.StorageKeys))
+		for j, s := range al.StorageKeys {
+			storageKeys[j] = s.String()
+		}
+		accessList[i] = types.AccessTuple{
+			Address:     al.Address.String(),
+			StorageKeys: storageKeys,
+		}
+	}
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
 	sigBytes := make([]byte, 65)
@@ -101,30 +113,8 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 		sigBytes[64] = byte(new(big.Int).Sub(v, new(big.Int).Add(new(big.Int).Add(ethChainID, ethChainID), big.NewInt(35))).Uint64())
 	case coretypes.AccessListTxType:
 		sigBytes[64] = byte(v.Uint64())
-		accessList = make([]types.AccessTuple, len(ethTx.AccessList()))
-		for i, al := range ethTx.AccessList() {
-			storageKeys := make([]string, len(al.StorageKeys))
-			for j, s := range al.StorageKeys {
-				storageKeys[j] = s.String()
-			}
-			accessList[i] = types.AccessTuple{
-				Address:     al.Address.String(),
-				StorageKeys: storageKeys,
-			}
-		}
 	case coretypes.DynamicFeeTxType:
 		sigBytes[64] = byte(v.Uint64())
-		accessList = make([]types.AccessTuple, len(ethTx.AccessList()))
-		for i, al := range ethTx.AccessList() {
-			storageKeys := make([]string, len(al.StorageKeys))
-			for j, s := range al.StorageKeys {
-				storageKeys[j] = s.String()
-			}
-			accessList[i] = types.AccessTuple{
-				Address:     al.Address.String(),
-				StorageKeys: storageKeys,
-			}
-		}
 	default:
 		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("unsupported tx type: %d", ethTx.Type())
 	}

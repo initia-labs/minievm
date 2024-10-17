@@ -176,7 +176,7 @@ func Test_AccessTxConversion(t *testing.T) {
 		To:         &ethFactoryAddr,
 		Data:       inputBz,
 		Value:      value,
-		AccessList: coretypes.AccessList{},
+		AccessList: nil,
 	})
 
 	signer := coretypes.LatestSignerForChainID(ethChainID)
@@ -209,7 +209,7 @@ func Test_AccessTxConversion(t *testing.T) {
 		ContractAddr: ethFactoryAddr.Hex(),
 		Input:        hexutil.Encode(inputBz),
 		Value:        math.NewInt(100),
-		AccessList:   []types.AccessTuple{},
+		AccessList:   nil,
 	})
 
 	authTx := sdkTx.(authsigning.Tx)
