@@ -129,7 +129,7 @@ func matchTx(signedTx *coretypes.Transaction, ethTx *coretypes.Transaction) erro
 		return fmt.Errorf("Expected gas %v, got %v", signedTx.Gas(), ethTx.Gas())
 	}
 
-	if signedTx.GasFeeCapCmp(ethTx) != 0 {
+	if signedTx.GasPrice().Cmp(ethTx.GasPrice()) != 0 {
 		return fmt.Errorf("Expected gas price %v, got %v", signedTx.GasPrice(), ethTx.GasPrice())
 	}
 
@@ -148,17 +148,17 @@ func matchTx(signedTx *coretypes.Transaction, ethTx *coretypes.Transaction) erro
 	if signedTx.To() == nil || ethTx.To() == nil || *signedTx.To() != *ethTx.To() {
 		return fmt.Errorf("Expected to address %v, got %v", signedTx.To(), ethTx.To())
 	}
-	signedTxAccesList := signedTx.AccessList()
+	signedTxAccessList := signedTx.AccessList()
 	ethTxAccessList := ethTx.AccessList()
-	if len(signedTxAccesList) != len(ethTxAccessList) {
-		return fmt.Errorf("Expected access list length %v, got %v", len(signedTxAccesList), len(ethTxAccessList))
+	if len(signedTxAccessList) != len(ethTxAccessList) {
+		return fmt.Errorf("Expected access list length %v, got %v", len(signedTxAccessList), len(ethTxAccessList))
 	}
-	for i := range signedTxAccesList {
-		if signedTxAccesList[i].Address != ethTxAccessList[i].Address || len(signedTxAccesList[i].StorageKeys) != len(ethTxAccessList[i].StorageKeys) {
+	for i := range signedTxAccessList {
+		if signedTxAccessList[i].Address != ethTxAccessList[i].Address || len(signedTxAccessList[i].StorageKeys) != len(ethTxAccessList[i].StorageKeys) {
 			return fmt.Errorf("Expected access list %v, got %v", signedTx.AccessList(), ethTxAccessList)
 		}
-		for j := range signedTxAccesList[i].StorageKeys {
-			if signedTxAccesList[i].StorageKeys[j] != ethTxAccessList[i].StorageKeys[j] {
+		for j := range signedTxAccessList[i].StorageKeys {
+			if signedTxAccessList[i].StorageKeys[j] != ethTxAccessList[i].StorageKeys[j] {
 				return fmt.Errorf("Expected access list %v, got %v", signedTx.AccessList(), ethTxAccessList)
 			}
 		}
