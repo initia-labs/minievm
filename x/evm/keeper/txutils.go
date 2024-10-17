@@ -91,20 +91,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	if err != nil {
 		return nil, err
 	}
-	var accessList []types.AccessTuple = nil
-	if len(ethTx.AccessList()) > 0 {
-		accessList = make([]types.AccessTuple, len(ethTx.AccessList()))
-	}
-	for i, al := range ethTx.AccessList() {
-		storageKeys := make([]string, len(al.StorageKeys))
-		for j, s := range al.StorageKeys {
-			storageKeys[j] = s.String()
-		}
-		accessList[i] = types.AccessTuple{
-			Address:     al.Address.String(),
-			StorageKeys: storageKeys,
-		}
-	}
+	accessList := getAccessListFromTransaction(ethTx)
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
 	sigBytes := make([]byte, 65)
@@ -308,17 +295,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// the value is converted to cosmos fee unit from wei.
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
 		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
-		accessList = make(coretypes.AccessList, len(callMsg.AccessList))
-		for i, a := range callMsg.AccessList {
-			storageKeys := make([]common.Hash, len(a.StorageKeys))
-			for j, s := range a.StorageKeys {
-				storageKeys[j] = common.HexToHash(s)
-			}
-			accessList[i] = coretypes.AccessTuple{
-				Address:     common.HexToAddress(a.Address),
-				StorageKeys: storageKeys,
-			}
-		}
+		accessList = getAccessListFromMsg(callMsg)
 
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
@@ -331,17 +308,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		input = data
 		// Same as above (MsgCall)
 		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
-		accessList = make(coretypes.AccessList, len(createMsg.AccessList))
-		for i, a := range createMsg.AccessList {
-			storageKeys := make([]common.Hash, len(a.StorageKeys))
-			for j, s := range a.StorageKeys {
-				storageKeys[j] = common.HexToHash(s)
-			}
-			accessList[i] = coretypes.AccessTuple{
-				Address:     common.HexToAddress(a.Address),
-				StorageKeys: storageKeys,
-			}
-		}
+		accessList = getAccessListFromMsg(createMsg)
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
@@ -465,4 +432,50 @@ func (u *TxUtils) IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error) 
 	}
 
 	return true, nil
+}
+
+func getAccessListFromMsg(msg interface{}) coretypes.AccessList {
+	var accessList []types.AccessTuple
+	switch m := msg.(type) {
+	case *types.MsgCall:
+		accessList = m.AccessList
+	case *types.MsgCreate:
+		accessList = m.AccessList
+	default:
+		return nil
+	}
+	if len(accessList) == 0 {
+		return nil
+	}
+	coreAccessList := make(coretypes.AccessList, len(accessList))
+	for i, a := range accessList {
+		storageKeys := make([]common.Hash, len(a.StorageKeys))
+		for j, s := range a.StorageKeys {
+			storageKeys[j] = common.HexToHash(s)
+		}
+		coreAccessList[i] = coretypes.AccessTuple{
+			Address:     common.HexToAddress(a.Address),
+			StorageKeys: storageKeys,
+		}
+	}
+	return coreAccessList
+}
+
+func getAccessListFromTransaction(ethTx *coretypes.Transaction) []types.AccessTuple {
+	if len(ethTx.AccessList()) == 0 {
+		return nil
+	}
+	accessList := make([]types.AccessTuple, len(ethTx.AccessList()))
+
+	for i, al := range ethTx.AccessList() {
+		storageKeys := make([]string, len(al.StorageKeys))
+		for j, s := range al.StorageKeys {
+			storageKeys[j] = s.String()
+		}
+		accessList[i] = types.AccessTuple{
+			Address:     al.Address.String(),
+			StorageKeys: storageKeys,
+		}
+	}
+	return accessList
 }

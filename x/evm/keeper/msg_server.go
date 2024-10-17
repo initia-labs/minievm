@@ -51,22 +51,17 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 	var accessList coretypes.AccessList
 	if len(msg.AccessList) > 0 {
-		accessList = func() coretypes.AccessList {
-			var als coretypes.AccessList
-			for _, al := range msg.AccessList {
-				als = append(als, coretypes.AccessTuple{
-					Address: common.HexToAddress(al.Address),
-					StorageKeys: func() []common.Hash {
-						storageKeys := make([]common.Hash, len(al.StorageKeys))
-						for _, sk := range al.StorageKeys {
-							storageKeys = append(storageKeys, common.HexToHash(sk))
-						}
-						return storageKeys
-					}(),
-				})
+		accessList = make(coretypes.AccessList, len(msg.AccessList))
+		for i, al := range msg.AccessList {
+			storageKeys := make([]common.Hash, len(al.StorageKeys))
+			for j, sk := range al.StorageKeys {
+				storageKeys[j] = common.HexToHash(sk)
 			}
-			return als
-		}()
+			accessList[i] = coretypes.AccessTuple{
+				Address:     common.HexToAddress(al.Address),
+				StorageKeys: storageKeys,
+			}
+		}
 	}
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)

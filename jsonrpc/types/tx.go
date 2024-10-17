@@ -75,12 +75,23 @@ func NewRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNu
 }
 
 func (rpcTx RPCTransaction) ToTransaction() *coretypes.Transaction {
-
+	gasPrice := func() *big.Int {
+		if rpcTx.GasPrice != nil {
+			return rpcTx.GasPrice.ToInt()
+		}
+		return big.NewInt(0)
+	}()
+	accessList := func() coretypes.AccessList {
+		if rpcTx.Accesses != nil {
+			return *rpcTx.Accesses
+		}
+		return nil
+	}()
 	switch rpcTx.Type {
 	case coretypes.LegacyTxType:
 		return coretypes.NewTx(&coretypes.LegacyTx{
 			Nonce:    uint64(rpcTx.Nonce),
-			GasPrice: rpcTx.GasPrice.ToInt(),
+			GasPrice: gasPrice,
 			Gas:      uint64(rpcTx.Gas),
 			To:       rpcTx.To,
 			Value:    rpcTx.Value.ToInt(),
@@ -98,7 +109,7 @@ func (rpcTx RPCTransaction) ToTransaction() *coretypes.Transaction {
 			To:         rpcTx.To,
 			Value:      rpcTx.Value.ToInt(),
 			Data:       rpcTx.Input,
-			AccessList: *rpcTx.Accesses,
+			AccessList: accessList,
 			V:          rpcTx.V.ToInt(),
 			R:          rpcTx.R.ToInt(),
 			S:          rpcTx.S.ToInt(),
@@ -113,7 +124,7 @@ func (rpcTx RPCTransaction) ToTransaction() *coretypes.Transaction {
 			To:         rpcTx.To,
 			Value:      rpcTx.Value.ToInt(),
 			Data:       rpcTx.Input,
-			AccessList: *rpcTx.Accesses,
+			AccessList: accessList,
 			V:          rpcTx.V.ToInt(),
 			R:          rpcTx.R.ToInt(),
 			S:          rpcTx.S.ToInt(),
