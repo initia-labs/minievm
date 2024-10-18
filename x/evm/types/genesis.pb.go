@@ -37,7 +37,9 @@ type GenesisState struct {
 	ClassTraces    []GenesisClassTrace   `protobuf:"bytes,6,rep,name=class_traces,json=classTraces,proto3" json:"class_traces" yaml:"class_traces"`
 	EVMBlockHashes []GenesisEVMBlockHash `protobuf:"bytes,7,rep,name=evm_block_hashes,json=evmBlockHashes,proto3" json:"evm_block_hashes" yaml:"evm_block_hashes"`
 	// erc20 factory contract address
-	Erc20Factory []byte `protobuf:"bytes,8,opt,name=erc20_factory,json=erc20Factory,proto3" json:"erc20_factory,omitempty"`
+	Erc20Factory []byte `protobuf:"bytes,5,opt,name=erc20_factory,json=erc20Factory,proto3" json:"erc20_factory,omitempty"`
+	// erc20 wrapper contract address
+	Erc20Wrapper []byte `protobuf:"bytes,6,opt,name=erc20_wrapper,json=erc20Wrapper,proto3" json:"erc20_wrapper,omitempty"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -125,6 +127,13 @@ func (m *GenesisState) GetEVMBlockHashes() []GenesisEVMBlockHash {
 func (m *GenesisState) GetErc20Factory() []byte {
 	if m != nil {
 		return m.Erc20Factory
+	}
+	return nil
+}
+
+func (m *GenesisState) GetErc20Wrapper() []byte {
+	if m != nil {
+		return m.Erc20Wrapper
 	}
 	return nil
 }
@@ -475,6 +484,13 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Erc20Wrapper) > 0 {
+		i -= len(m.Erc20Wrapper)
+		copy(dAtA[i:], m.Erc20Wrapper)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Erc20Wrapper)))
+		i--
+		dAtA[i] = 0x32
+	}
 	if len(m.Erc20Factory) > 0 {
 		i -= len(m.Erc20Factory)
 		copy(dAtA[i:], m.Erc20Factory)
@@ -822,6 +838,10 @@ func (m *GenesisState) Size() (n int) {
 		}
 	}
 	l = len(m.Erc20Factory)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = len(m.Erc20Wrapper)
 	if l > 0 {
 		n += 1 + l + sovGenesis(uint64(l))
 	}
@@ -1220,6 +1240,40 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			m.Erc20Factory = append(m.Erc20Factory[:0], dAtA[iNdEx:postIndex]...)
 			if m.Erc20Factory == nil {
 				m.Erc20Factory = []byte{}
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Erc20Wrapper", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Erc20Wrapper = append(m.Erc20Wrapper[:0], dAtA[iNdEx:postIndex]...)
+			if m.Erc20Wrapper == nil {
+				m.Erc20Wrapper = []byte{}
 			}
 			iNdEx = postIndex
 		default:

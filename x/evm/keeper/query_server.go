@@ -156,6 +156,18 @@ func (qs *queryServerImpl) ERC20Factory(ctx context.Context, req *types.QueryERC
 	}, nil
 }
 
+// ERC20Wrapper implements types.QueryServer.
+func (qs *queryServerImpl) ERC20Wrapper(ctx context.Context, req *types.QueryERC20WrapperRequest) (*types.QueryERC20WrapperResponse, error) {
+	wrapper, err := qs.Keeper.GetERC20WrapperAddr(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryERC20WrapperResponse{
+		Address: wrapper.Hex(),
+	}, nil
+}
+
 // ContractAddrByDenom implements types.QueryServer.
 func (qs *queryServerImpl) ContractAddrByDenom(ctx context.Context, req *types.QueryContractAddrByDenomRequest) (*types.QueryContractAddrByDenomResponse, error) {
 	contractAddr, err := types.DenomToContractAddr(ctx, qs, req.Denom)

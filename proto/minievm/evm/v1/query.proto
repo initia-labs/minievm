@@ -27,6 +27,11 @@ service Query {
     option (google.api.http).get = "/minievm/evm/v1/contracts/erc20_factory";
   }
 
+  // ERC20Wrapper gets the ERC20Wrapper contract address.
+  rpc ERC20Wrapper(QueryERC20WrapperRequest) returns (QueryERC20WrapperResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/contracts/erc20_wrapper";
+  }
+
   // ContractAddrByDenom gets the contract address by denom.
   rpc ContractAddrByDenom(QueryContractAddrByDenomRequest) returns (QueryContractAddrByDenomResponse) {
     option (google.api.http).get = "/minievm/evm/v1/contracts/by_denom";
@@ -89,6 +94,18 @@ message QueryERC20FactoryRequest {}
 // QueryERC20FactoryResponse is the response type for the Query/ERC20Factory RPC
 // method
 message QueryERC20FactoryResponse {
+  option (gogoproto.equal) = true;
+  // 0x prefixed hex address
+  string address = 1;
+}
+
+// QueryERC20WrapperRequest is the request type for the Query/ERC20Wrapper RPC
+// method
+message QueryERC20WrapperRequest {}
+
+// QueryERC20WrapperResponse is the response type for the Query/ERC20Wrapper RPC
+// method
+message QueryERC20WrapperResponse {
   option (gogoproto.equal) = true;
   // 0x prefixed hex address
   string address = 1;
