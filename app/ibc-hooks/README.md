@@ -2,7 +2,7 @@
 
 This module is copied from [osmosis](https://github.com/osmosis-labs/osmosis) and changed to execute evm contract with ICS-20 token transfer calls.
 
-## Move Hooks
+## EVM Hooks
 
 The evm hook is an IBC middleware which is used to allow ICS-20 token transfers to initiate contract calls.
 This allows cross-chain contract calls, that involve token movement.
@@ -12,7 +12,7 @@ One of primary importance is cross-chain swaps, which is an extremely powerful p
 The mechanism enabling this is a `memo` field on every ICS20 and ICS721 transfer packet as of [IBC v3.4.0](https://medium.com/the-interchain-foundation/moving-beyond-simple-token-transfers-d42b2b1dc29b).
 Move hooks is an IBC middleware that parses an ICS20 transfer, and if the `memo` field is of a particular form, executes a evm contract call. We now detail the `memo` format for `evm` contract calls, and the execution guarantees provided.
 
-### Move Contract Execution Format
+### EVM Contract Execution Format
 
 Before we dive into the IBC metadata format, we show the hook data format, so the reader has a sense of what are the fields we need to be setting in.
 The evm `MsgCall` is defined [here](../../x/evm/types/tx.pb.go) and other types are defined [here](./message.go) as the following type:
@@ -48,6 +48,9 @@ type MsgCall struct {
  ContractAddr string `protobuf:"bytes,2,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
  // Hex encoded execution input bytes.
  Input string `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
+ // Value is the amount of fee denom token to transfer to the contract.
+Value string `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
+
 }
 ```
 
@@ -71,6 +74,8 @@ msg := MsgCall{
  ContractAddr: packet.data.memo["evm"]["message"]["contract_addr"],
  // Hex encoded execution input bytes.
  Input: packet.data.memo["evm"]["message"]["input"],
+
+ Value: packet.data.memo["evm"]["message"]["value"]
 }
 ```
 
@@ -93,6 +98,7 @@ ICS20 is JSON native, so we use JSON for the memo format.
         "message": {
           "contract_addr": "0x1",
           "input": "hex encoded byte string",
+          "value": "0"
         },
         // optional field to get async callback (ack and timeout)
         "async_callback": {
@@ -103,7 +109,6 @@ ICS20 is JSON native, so we use JSON for the memo format.
     }
   }
 }
-
 ```
 
 An ICS20 packet is formatted correctly for evmhooks iff the following all hold:
@@ -111,7 +116,7 @@ An ICS20 packet is formatted correctly for evmhooks iff the following all hold:
 - `memo` is not blank
 - `memo` is valid JSON
 - `memo` has at least one key, with value `"evm"`
-- `memo["evm"]["message"]` has exactly five entries, `"contract_addr"` and `"input"`
+- `memo["evm"]["message"]` has exactly 3 entries, `"contract_addr"`, `"input"`, `"value"`
 - `receiver` == "" || `receiver` == "module_address::module_name::function_name"
 
 We consider an ICS20 packet as directed towards evmhooks iff all of the following hold:
@@ -160,5 +165,38 @@ interface IIBCAsyncCallback {
 
 Also when a contract make IBC transfer request, it should provide async callback data through memo field.
 
-- `memo['evm']['async_callback']['id']`:  the async callback id is assigned from the contract. so later it will be passed as argument of `ibc_ack` and `ibc_timeout`.
-- `memo['evm']['async_callback']['contract_addr']`: The address of module which defines the callback function.
+- `memo['evm']['async_callback']['id']`: the async callback id is assigned from the contract. so later it will be passed as argument of `ibc_ack` and `ibc_timeout`.
+- `memo['evm']['async_callback']['contract_addr']`: The address of contract which defines the callback function.
+
+### IBC Transfer using ERC20Wrapper
+
+`src -> dst`: use the ERC20Wrapper contract to wrap and do ibc-transfer
+
+`dst -> src`: unwrapped the wrapped token by execute hook
+- data example
+```json
+{
+  //... other ibc fields that we don't care about
+  "data": {
+    "denom": "wrapped token denom", // will be transformed to the local denom (ibc/...)
+    "amount": "1000",
+    "sender": "addr on counterparty chain", // will be transformed
+    "receiver": "ModuleAddr::ModuleName::FunctionName",
+    "memo": {
+      "evm": {
+        // execute message on receive packet
+        "message": {
+          "contract_addr": "...", // should query erc20 wrapper contract addr
+          "input": "...", // function selector(fc078758) + abiCoder.encode([string,address,address],denom,amount) ref)https://docs.ethers.org/v6/api/abi/abi-coder/#AbiCoder-encode
+          "value": "0"
+        },
+        // optional field to get async callback (ack and timeout)
+        "async_callback": {
+          "id": 1,
+          "contract_addr": "0x1"
+        }
+      }
+    }
+  }
+}
+```

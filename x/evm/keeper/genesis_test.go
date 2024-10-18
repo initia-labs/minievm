@@ -16,6 +16,7 @@ func Test_Genesis(t *testing.T) {
 		{1, 2, 3},
 		{4, 5, 6},
 	}
+	genState.Erc20Wrapper = []byte{5, 6, 7, 8}
 	genState.Erc20Stores = []types.GenesisERC20Stores{
 		{
 			Address: []byte{1, 2, 3},

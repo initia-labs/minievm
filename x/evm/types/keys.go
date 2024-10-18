@@ -42,6 +42,7 @@ var (
 
 	ParamsKey           = []byte{0x51} // key of parameters for module x/evm
 	ERC20FactoryAddrKey = []byte{0x61} // key of erc20 factory contract address
+	ERC20WrapperAddrKey = []byte{0x62} // key of erc20 wrapper contract address
 )
 
 // ContextKey type for context key

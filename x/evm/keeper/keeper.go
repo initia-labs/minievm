@@ -60,6 +60,7 @@ type Keeper struct {
 
 	// erc20 stores of users
 	ERC20FactoryAddr          collections.Item[[]byte]
+	ERC20WrapperAddr          collections.Item[[]byte]
 	ERC20s                    collections.KeySet[[]byte]
 	ERC20Stores               collections.KeySet[collections.Pair[[]byte, []byte]]
 	ERC20DenomsByContractAddr collections.Map[[]byte, string]
@@ -129,6 +130,7 @@ func NewKeeper(
 		TransientAccessList:   collections.NewKeySet(tsb, types.TransientAccessListPrefix, "transient_access_list", collections.PairKeyCodec(collections.Uint64Key, collections.BytesKey)),
 		TransientRefund:       collections.NewMap(tsb, types.TransientRefundPrefix, "transient_refund", collections.Uint64Key, collections.Uint64Value),
 
+		ERC20WrapperAddr:          collections.NewItem(sb, types.ERC20WrapperAddrKey, "erc20_wrapper_addr", collections.BytesValue),
 		ERC20FactoryAddr:          collections.NewItem(sb, types.ERC20FactoryAddrKey, "erc20_factory_addr", collections.BytesValue),
 		ERC20s:                    collections.NewKeySet(sb, types.ERC20sPrefix, "erc20s", collections.BytesKey),
 		ERC20Stores:               collections.NewKeySet(sb, types.ERC20StoresPrefix, "erc20_stores", collections.PairKeyCodec(collections.BytesKey, collections.BytesKey)),
@@ -251,6 +253,15 @@ func (k Keeper) GetERC20FactoryAddr(ctx context.Context) (common.Address, error)
 	}
 
 	return common.BytesToAddress(factoryAddr), nil
+}
+
+func (k Keeper) GetERC20WrapperAddr(ctx context.Context) (common.Address, error) {
+	wrapperAddr, err := k.ERC20WrapperAddr.Get(ctx)
+	if err != nil {
+		return common.Address{}, types.ErrFailedToGetERC20WrapperAddr.Wrap(err.Error())
+	}
+
+	return common.BytesToAddress(wrapperAddr), nil
 }
 
 // keep track recent 256 block hashes
