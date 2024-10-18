@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
 
 	"cosmossdk.io/collections"
@@ -49,20 +47,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
-	var accessList coretypes.AccessList
-	if len(msg.AccessList) > 0 {
-		accessList = make(coretypes.AccessList, len(msg.AccessList))
-		for i, al := range msg.AccessList {
-			storageKeys := make([]common.Hash, len(al.StorageKeys))
-			for j, sk := range al.StorageKeys {
-				storageKeys[j] = common.HexToHash(sk)
-			}
-			accessList[i] = coretypes.AccessTuple{
-				Address:     common.HexToAddress(al.Address),
-				StorageKeys: storageKeys,
-			}
-		}
-	}
+	accessList := ConvertCosmosAccessListToEth(msg.AccessList)
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
 	if err != nil {
@@ -121,27 +106,13 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
-
+	accessList := ConvertCosmosAccessListToEth(msg.AccessList)
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var accessList coretypes.AccessList
-	if len(msg.AccessList) > 0 {
-		accessList = make(coretypes.AccessList, len(msg.AccessList))
-		for i, al := range msg.AccessList {
-			storageKeys := make([]common.Hash, len(al.StorageKeys))
-			for j, sk := range al.StorageKeys {
-				storageKeys[j] = common.HexToHash(sk)
-			}
-			accessList[i] = coretypes.AccessTuple{
-				Address:     common.HexToAddress(al.Address),
-				StorageKeys: storageKeys,
-			}
-		}
-	}
 	// assert deploy authorization
 	if len(params.AllowedPublishers) != 0 {
 		allowed := false

@@ -91,7 +91,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	if err != nil {
 		return nil, err
 	}
-	accessList := getAccessListFromTransaction(ethTx)
+	accessList := ConvertEthAccessListToCosmos(ethTx.AccessList())
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
 	sigBytes := make([]byte, 65)
@@ -185,7 +185,6 @@ type metadata struct {
 	GasTipCap string `json:"gas_tip_cap"`
 }
 
-// func
 // ConvertCosmosTxToEthereumTx converts a Cosmos SDK transaction to an Ethereum transaction.
 // It returns nil if the transaction is not an EVM transaction.
 func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx) (*coretypes.Transaction, *common.Address, error) {
@@ -293,7 +292,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// the value is converted to cosmos fee unit from wei.
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
 		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
-		accessList = getAccessListFromMsg(callMsg)
+		accessList = ConvertCosmosAccessListToEth(callMsg.AccessList)
 
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
@@ -306,7 +305,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		input = data
 		// Same as above (MsgCall)
 		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
-		accessList = getAccessListFromMsg(createMsg)
+		accessList = ConvertCosmosAccessListToEth(createMsg.AccessList)
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
@@ -331,7 +330,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		}
 	case coretypes.AccessListTxType:
 		txData = &coretypes.AccessListTx{
-			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
+			ChainID:    ethChainID,
 			Nonce:      sig.Sequence,
 			GasPrice:   gasFeeCap,
 			Gas:        gas,
@@ -347,7 +346,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	case coretypes.DynamicFeeTxType:
 
 		txData = &coretypes.DynamicFeeTx{
-			ChainID:    types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
+			ChainID:    ethChainID,
 			Nonce:      sig.Sequence,
 			GasTipCap:  gasTipCap,
 			GasFeeCap:  gasFeeCap,
@@ -432,21 +431,12 @@ func (u *TxUtils) IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error) 
 	return true, nil
 }
 
-func getAccessListFromMsg(msg interface{}) coretypes.AccessList {
-	var accessList []types.AccessTuple
-	switch m := msg.(type) {
-	case *types.MsgCall:
-		accessList = m.AccessList
-	case *types.MsgCreate:
-		accessList = m.AccessList
-	default:
+func ConvertCosmosAccessListToEth(cosmosAccessList []types.AccessTuple) coretypes.AccessList {
+	if len(cosmosAccessList) == 0 {
 		return nil
 	}
-	if len(accessList) == 0 {
-		return nil
-	}
-	coreAccessList := make(coretypes.AccessList, len(accessList))
-	for i, a := range accessList {
+	coreAccessList := make(coretypes.AccessList, len(cosmosAccessList))
+	for i, a := range cosmosAccessList {
 		storageKeys := make([]common.Hash, len(a.StorageKeys))
 		for j, s := range a.StorageKeys {
 			storageKeys[j] = common.HexToHash(s)
@@ -459,13 +449,12 @@ func getAccessListFromMsg(msg interface{}) coretypes.AccessList {
 	return coreAccessList
 }
 
-func getAccessListFromTransaction(ethTx *coretypes.Transaction) []types.AccessTuple {
-	if len(ethTx.AccessList()) == 0 {
+func ConvertEthAccessListToCosmos(ethAccessList coretypes.AccessList) []types.AccessTuple {
+	if len(ethAccessList) == 0 {
 		return nil
 	}
-	accessList := make([]types.AccessTuple, len(ethTx.AccessList()))
-
-	for i, al := range ethTx.AccessList() {
+	accessList := make([]types.AccessTuple, len(ethAccessList))
+	for i, al := range ethAccessList {
 		storageKeys := make([]string, len(al.StorageKeys))
 		for j, s := range al.StorageKeys {
 			storageKeys[j] = s.String()
