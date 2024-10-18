@@ -27,7 +27,7 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 	factoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
 	require.NoError(t, err)
 
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, factoryAddr, inputBz, nil)
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, factoryAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	return common.BytesToAddress(ret[12:])
@@ -43,13 +43,13 @@ func burnERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, from co
 	inputBz, err := abi.Pack("approve", caller, amount.Amount.BigInt())
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, from, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, from, erc20ContractAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	inputBz, err = abi.Pack("burnFrom", from, amount.Amount.BigInt())
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -67,7 +67,7 @@ func mintERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, recipie
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -85,7 +85,7 @@ func transferERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, rec
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -104,7 +104,7 @@ func approveERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller, spen
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {
@@ -122,7 +122,7 @@ func transferFromERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller,
 	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, amount.Denom)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
 	if expectErr {
 		require.Error(t, err)
 	} else {

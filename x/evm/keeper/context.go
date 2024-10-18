@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/tracing"
+	coretype "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/trie/utils"
@@ -198,12 +199,12 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 }
 
 // EVMStaticCall executes an EVM call with the given input data in static mode.
-func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte) ([]byte, error) {
-	return k.EVMStaticCallWithTracer(ctx, caller, contractAddr, inputBz, nil)
+func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList) ([]byte, error) {
+	return k.EVMStaticCallWithTracer(ctx, caller, contractAddr, inputBz, accessList, nil)
 }
 
 // EVMStaticCallWithTracer executes an EVM call with the given input data and tracer in static mode.
-func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, tracer *tracing.Hooks) ([]byte, error) {
+func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, err
@@ -211,9 +212,8 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
-
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), nil)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), accessList)
 
 	retBz, gasRemaining, err := evm.StaticCall(
 		vm.AccountRef(caller),
@@ -233,12 +233,12 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 }
 
 // EVMCall executes an EVM call with the given input data.
-func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int) ([]byte, types.Logs, error) {
-	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, nil)
+func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, accessList coretype.AccessList) ([]byte, types.Logs, error) {
+	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, accessList, nil)
 }
 
 // EVMCallWithTracer executes an EVM call with the given input data and tracer.
-func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
+func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, nil, err
@@ -251,7 +251,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), nil)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), accessList)
 
 	retBz, gasRemaining, err := evm.Call(
 		vm.AccountRef(caller),
@@ -313,19 +313,19 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 }
 
 // EVMCreate creates a new contract with the given code.
-func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int) ([]byte, common.Address, types.Logs, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, nil)
+func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
+	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, accessList, nil)
 }
 
 // EVMCreate creates a new contract with the given code.
-func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt uint64) ([]byte, common.Address, types.Logs, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, &salt, nil)
+func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt uint64, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
+	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, &salt, accessList, nil)
 }
 
 // EVMCreateWithTracer creates a new contract with the given code and tracer.
 // if salt is nil, it will create a contract with the CREATE opcode.
 // if salt is not nil, it will create a contract with the CREATE2 opcode.
-func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint64, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
+func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint64, accessList coretype.AccessList, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, common.Address{}, nil, err
@@ -338,7 +338,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), nil)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), accessList)
 
 	var gasRemaining uint64
 	if salt == nil {

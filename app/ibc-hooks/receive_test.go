@@ -52,7 +52,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil, nil)
 	require.NoError(t, err)
 
 	abi, err := counter.CounterMetaData.GetAbi()
@@ -105,7 +105,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state
-	queryRes, err := input.EVMKeeper.EVMStaticCall(ctx, evmAddr, contractAddr, queryInputBz)
+	queryRes, err := input.EVMKeeper.EVMStaticCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 
@@ -114,7 +114,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	require.NoError(t, err)
 	queryInputBz, err = input.EVMKeeper.ERC20Keeper().GetERC20ABI().Pack("allowance", common.BytesToAddress(intermediateSender.Bytes()), contractAddr)
 	require.NoError(t, err)
-	queryRes, err = input.EVMKeeper.EVMStaticCall(ctx, evmtypes.StdAddress, erc20Addr, queryInputBz)
+	queryRes, err = input.EVMKeeper.EVMStaticCall(ctx, evmtypes.StdAddress, erc20Addr, queryInputBz, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(10000).Bytes32(), [32]byte(queryRes))
 }
@@ -155,7 +155,7 @@ func Test_onReceivePacket_memo_ICS721(t *testing.T) {
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil, nil)
 	require.NoError(t, err)
 
 	abi, err := counter.CounterMetaData.GetAbi()
@@ -222,7 +222,7 @@ func Test_onReceivePacket_memo_ICS721(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -234,7 +234,7 @@ func Test_onReceivePacket_memo_ICS721(t *testing.T) {
 	require.NoError(t, err)
 	queryInputBz, err = input.EVMKeeper.ERC721Keeper().GetERC721ABI().Pack("getApproved", tokenId)
 	require.NoError(t, err)
-	queryRes, err = input.EVMKeeper.EVMStaticCall(ctx, evmtypes.StdAddress, erc721Addr, queryInputBz)
+	queryRes, err = input.EVMKeeper.EVMStaticCall(ctx, evmtypes.StdAddress, erc721Addr, queryInputBz, nil)
 	require.NoError(t, err)
 	require.Equal(t, contractAddr.Bytes(), common.HexToAddress(hexutil.Encode(queryRes)).Bytes())
 }
@@ -248,7 +248,7 @@ func Test_onReceivePacket_memo_ICS721_Wasm(t *testing.T) {
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil, nil)
 	require.NoError(t, err)
 
 	abi, err := counter.CounterMetaData.GetAbi()
@@ -316,7 +316,7 @@ func Test_onReceivePacket_memo_ICS721_Wasm(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -328,7 +328,7 @@ func Test_onReceivePacket_memo_ICS721_Wasm(t *testing.T) {
 	require.NoError(t, err)
 	queryInputBz, err = input.EVMKeeper.ERC721Keeper().GetERC721ABI().Pack("getApproved", tokenId)
 	require.NoError(t, err)
-	queryRes, err = input.EVMKeeper.EVMStaticCall(ctx, evmtypes.StdAddress, erc721Addr, queryInputBz)
+	queryRes, err = input.EVMKeeper.EVMStaticCall(ctx, evmtypes.StdAddress, erc721Addr, queryInputBz, nil)
 	require.NoError(t, err)
 	require.Equal(t, contractAddr.Bytes(), common.HexToAddress(hexutil.Encode(queryRes)).Bytes())
 }

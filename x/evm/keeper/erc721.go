@@ -59,7 +59,7 @@ func (k ERC721Keeper) CreateOrUpdateClass(ctx context.Context, classId, classUri
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
 
-		ret, contractAddr, _, err := k.EVMCreate(ctx, types.StdAddress, append(k.ERC721Bin, inputBz...), nil)
+		ret, contractAddr, _, err := k.EVMCreate(ctx, types.StdAddress, append(k.ERC721Bin, inputBz...), nil, nil)
 		if err != nil {
 			return err
 		}
@@ -123,7 +123,7 @@ func (k ERC721Keeper) Transfers(ctx context.Context, sender, receiver sdk.AccAdd
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, senderAddr, contractAddr, inputBz, nil)
+		_, _, err = k.EVMCall(ctx, senderAddr, contractAddr, inputBz, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (k ERC721Keeper) Burn(
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	_, _, err = k.EVMCall(ctx, owner, contractAddr, inputBz, nil)
+	_, _, err = k.EVMCall(ctx, owner, contractAddr, inputBz, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func (k ERC721Keeper) Mint(
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil)
+	_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func (k ERC721Keeper) balanceOf(ctx context.Context, addr, contractAddr common.A
 		return math.ZeroInt(), types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return math.ZeroInt(), err
 	}
@@ -326,7 +326,7 @@ func (k ERC721Keeper) ownerOf(ctx context.Context, tokenId *big.Int, contractAdd
 		return types.NullAddress, types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return types.NullAddress, err
 	}
@@ -364,7 +364,7 @@ func (k ERC721Keeper) name(ctx context.Context, contractAddr common.Address) (st
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return "", err
 	}
@@ -388,7 +388,7 @@ func (k ERC721Keeper) tokenURI(ctx context.Context, tokenId *big.Int, contractAd
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return "", err
 	}

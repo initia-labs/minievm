@@ -42,6 +42,8 @@ message MsgCreate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. can be none
+  repeated AccessTuple access_list = 4 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
 // MsgCreateResponse defines the Msg/Create response type.
@@ -79,6 +81,9 @@ message MsgCreate2 {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+
+  // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. can be none
+  repeated AccessTuple access_list = 5 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
 // MsgCreate2Response defines the Msg/Create2 response type.
@@ -117,6 +122,9 @@ message MsgCall {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+
+  // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. can be none
+  repeated AccessTuple access_list = 5 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
 // MsgCallResponse defines the Msg/Call response type.

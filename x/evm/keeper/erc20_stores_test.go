@@ -25,7 +25,7 @@ func deployCustomERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller 
 	inputBz, err := abi.Pack("", denom, denom, uint8(6))
 	require.NoError(t, err)
 
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, append(bin, inputBz...), uint256.NewInt(0))
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, append(bin, inputBz...), uint256.NewInt(0), nil)
 	if success {
 		require.NoError(t, err)
 	} else {
