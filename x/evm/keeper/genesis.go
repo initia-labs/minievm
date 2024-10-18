@@ -12,16 +12,17 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-// Initialize initializes the EVM state at genesis
-// 1. deploy and store erc20 factory contract
-// 2. deploy fee denom erc20 coins at genesis bootstrapping with 18 decimals
+// Initialize initializes the EVM state at genesis by performing the following steps:
+// 1. Deploy and store the ERC20 factory contract.
+// 2. Deploy fee denom ERC20 coins at genesis bootstrapping with 18 decimals.
+// 3. Deploy and store the wrapper ERC20 factory contract for IBC transfers to the destination chain (not compatible due to 18 decimals).
 func (k Keeper) Initialize(ctx context.Context) error {
 	return k.InitializeWithDecimals(ctx, types.EtherDecimals)
 }
 
 // InitializeWithDecimals initializes the EVM state at genesis with the given decimals
 func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) error {
-	// 1. deploy and store erc20 factory contract
+	// 1. Deploy and store the ERC20 factory contract.
 	code, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
 	if err != nil {
 		return err
@@ -42,8 +43,19 @@ func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) erro
 		return err
 	}
 
-	// 2. deploy fee denom erc20 coins at genesis bootstrapping
+	// 2. Deploy fee denom ERC20 coins at genesis bootstrapping with decimals.
 	err = k.erc20Keeper.CreateERC20(ctx, params.FeeDenom, decimals)
+	if err != nil {
+		return err
+	}
+
+	// 3. Deploy and store the wrapper ERC20 factory contract for IBC transfers to the destination chain (not compatible due to 18 decimals).
+	_, wrapperAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20WrapperSalt)
+	if err != nil {
+		return err
+	}
+
+	err = k.ERC20WrapperAddr.Set(ctx, wrapperAddr.Bytes())
 	if err != nil {
 		return err
 	}
@@ -63,6 +75,9 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	} else {
 		if err := k.ERC20FactoryAddr.Set(ctx, genState.Erc20Factory); err != nil {
+			return err
+		}
+		if err := k.ERC20WrapperAddr.Set(ctx, genState.Erc20Wrapper); err != nil {
 			return err
 		}
 	}
@@ -214,6 +229,11 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		panic(err)
 	}
 
+	wrapperAddr, err := k.ERC20WrapperAddr.Get(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	return &types.GenesisState{
 		Params:         params,
 		KeyValues:      kvs,
@@ -222,6 +242,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		DenomTraces:    denomTraces,
 		ClassTraces:    classTraces,
 		Erc20Factory:   factoryAddr,
+		Erc20Wrapper:   wrapperAddr,
 		EVMBlockHashes: evmBlockHashes,
 	}
 }

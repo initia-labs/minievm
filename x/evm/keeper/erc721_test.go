@@ -20,7 +20,7 @@ func Test_CreateCollection(t *testing.T) {
 	classId := "test-class-id"
 	classUri := "test-class-uri"
 
-	contractAddr := crypto.CreateAddress(types.StdAddress, 1)
+	contractAddr := crypto.CreateAddress(types.StdAddress, 2)
 
 	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, "")
 	require.NoError(t, err)

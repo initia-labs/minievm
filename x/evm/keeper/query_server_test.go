@@ -64,3 +64,17 @@ func Test_Query_ERC20Factory(t *testing.T) {
 
 	require.Equal(t, factoryAddr.Hex(), res.Address)
 }
+
+func Test_Query_ERC20Wrapper(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	wrapperAddr, err := input.EVMKeeper.GetERC20WrapperAddr(ctx)
+	require.NoError(t, err)
+
+	qs := keeper.NewQueryServer(&input.EVMKeeper)
+	res, err := qs.ERC20Wrapper(ctx, &types.QueryERC20WrapperRequest{})
+	require.NoError(t, err)
+
+	require.Equal(t, wrapperAddr.Hex(), res.Address)
+}
+
