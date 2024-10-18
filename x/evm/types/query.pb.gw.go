@@ -742,7 +742,7 @@ var (
 
 	pattern_Query_ERC20Factory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"minievm", "evm", "v1", "contracts", "erc20_factory"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ERC20Wrapper_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"minievm", "evm", "v1", "contracts", "erc20_factory"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_ERC20Wrapper_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"minievm", "evm", "v1", "contracts", "erc20_wrapper"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_Query_ContractAddrByDenom_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"minievm", "evm", "v1", "contracts", "by_denom"}, "", runtime.AssumeColonVerbOpt(false)))
 
