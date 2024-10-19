@@ -29,7 +29,8 @@ var (
 	_ module.HasConsensusVersion = AppModule{}
 	_ module.HasName             = AppModule{}
 
-	_ appmodule.AppModule = AppModule{}
+	_ appmodule.AppModule     = AppModule{}
+	_ appmodule.HasEndBlocker = AppModule{}
 )
 
 // ----------------------------------------------------------------------------
@@ -157,3 +158,10 @@ func (am AppModule) IsAppModule() {}
 func (am AppModule) IsOnePerModuleType() {}
 
 // ___________________________________________________________________________
+
+// EndBlock returns the end blocker for the evm module. It returns no validator
+// updates.
+func (am AppModule) EndBlock(ctx context.Context) error {
+	c := sdk.UnwrapSDKContext(ctx)
+	return EndBlocker(c, am.keeper)
+}
