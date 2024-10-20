@@ -30,7 +30,7 @@ var (
 	_ module.HasName             = AppModule{}
 
 	_ appmodule.AppModule     = AppModule{}
-	_ appmodule.HasEndBlocker = AppModule{}
+	_ appmodule.HasPreBlocker = AppModule{}
 )
 
 // ----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ func (am AppModule) IsOnePerModuleType() {}
 
 // EndBlock returns the end blocker for the evm module. It returns no validator
 // updates.
-func (am AppModule) EndBlock(ctx context.Context) error {
+func (am AppModule) PreBlock(ctx context.Context) (appmodule.ResponsePreBlock, error) {
 	c := sdk.UnwrapSDKContext(ctx)
-	return EndBlocker(c, am.keeper)
+	return PreBlock(c, am.keeper)
 }

@@ -10,8 +10,8 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-// EndBlocker track latest 256 block hashes
-func EndBlocker(ctx sdk.Context, k *keeper.Keeper) error {
+// PreBlock track latest 256 block hashes
+func PreBlock(ctx sdk.Context, k *keeper.Keeper) (sdk.ResponsePreBlock, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
-	return k.TrackBlockHash(ctx, uint64(ctx.BlockHeight()), common.BytesToHash(ctx.HeaderHash()))
+	return sdk.ResponsePreBlock{}, k.TrackBlockHash(ctx, uint64(ctx.BlockHeight()-1), common.BytesToHash(ctx.HeaderHash()))
 }
