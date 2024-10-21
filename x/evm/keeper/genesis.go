@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_wrapper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -23,12 +24,12 @@ func (k Keeper) Initialize(ctx context.Context) error {
 // InitializeWithDecimals initializes the EVM state at genesis with the given decimals
 func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) error {
 	// 1. Deploy and store the ERC20 factory contract.
-	code, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
+	factoryCode, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
 	if err != nil {
 		return err
 	}
 
-	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20FactorySalt, nil)
+	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, factoryCode, nil, types.ERC20FactorySalt, nil)
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,17 @@ func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) erro
 	}
 
 	// 3. Deploy and store the wrapper ERC20 factory contract for IBC transfers to the destination chain (not compatible due to 18 decimals).
-	_, wrapperAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20WrapperSalt, nil)
+	wrapperCode, err := hexutil.Decode(erc20_wrapper.Erc20WrapperBin)
+	if err != nil {
+		return err
+	}
+	abi, _ := erc20_wrapper.Erc20WrapperMetaData.GetAbi()
+	wrapperConstructorArg, err := abi.Constructor.Inputs.Pack(factoryAddr)
+	if err != nil {
+		return err
+	}
+
+	_, wrapperAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, append(wrapperCode, wrapperConstructorArg...), nil, types.ERC20WrapperSalt, nil)
 	if err != nil {
 		return err
 	}

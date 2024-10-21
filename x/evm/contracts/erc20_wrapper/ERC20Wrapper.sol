@@ -27,9 +27,14 @@ contract ERC20Wrapper is
     string constant NAME_PREFIX = "Wrapped";
     string constant SYMBOL_PREFIX = "W";
     uint64 callBackId = 0;
+    ERC20Factory public immutable factory;
     mapping(address => address) public wrappedTokens; // origin -> wrapped
     mapping(address => address) public originTokens; // wrapped -> origin
     mapping(uint64 => IbcCallBack) private ibcCallBack; // id -> CallBackInfo
+
+    constructor(address erc20Factory) {
+        factory = ERC20Factory(erc20Factory);
+    }
 
     /**
      * @notice This function wraps the tokens and transfer the tokens by ibc transfer
@@ -125,23 +130,9 @@ contract ERC20Wrapper is
         );
     }
 
-    function _createERC20(
-        string memory name,
-        string memory symbol,
-        uint8 decimals
-    ) internal returns (address) {
-        ERC20 erc20 = new ERC20(name, symbol, decimals);
-
-        // register the ERC20 contract with the ERC20 registry
-        ERC20_REGISTRY_CONTRACT.register_erc20_from_factory(address(erc20));
-
-        emit ERC20Created(address(erc20), address(this));
-        return address(erc20);
-    }
-
     function _ensureWrappedTokenExists(address token) internal {
         if (wrappedTokens[token] == address(0)) {
-            address wrappedToken = _createERC20(
+            address wrappedToken = factory.createERC20(
                 string.concat(NAME_PREFIX, IERC20(token).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(token).symbol()),
                 WRAPPED_DECIMAL

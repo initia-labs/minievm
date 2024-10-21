@@ -50,6 +50,8 @@ type MsgCall struct {
  Input string `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
  // Value is the amount of fee denom token to transfer to the contract.
  Value string `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
+ // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. can be none
+ AccessList []AccessTuple `protobuf:"bytes,5,rep,name=access_list,json=accessList,proto3" json:"access_list"`
 }
 ```
 
@@ -75,6 +77,8 @@ msg := MsgCall{
  Input: packet.data.memo["evm"]["message"]["input"],
  // Value is the amount of fee denom token to transfer to the contract.
  Value: packet.data.memo["evm"]["message"]["value"]
+ // Value is the amount of fee denom token to transfer to the contract.
+ AccessList: packet.data.memo["evm"]["message"]["access_list"]
 }
 ```
 
@@ -188,8 +192,12 @@ Also when a contract make IBC transfer request, it should provide async callback
         // execute message on receive packet
         "message": {
           "contract_addr": "0xerc20_wrapper_contract", // should query erc20 wrapper contract addr
-          "input": "pack(unwrap, denom, recipient, amount)", // function selector(fc078758) + abiCoder.encode([string,address,address],denom,amount) ref) https://docs.ethers.org/v6/api/abi/abi-coder/#AbiCoder-encode
-          "value": "0"
+          "input": "pack(unwrap, denom, recipient, amount)", // function selector(fc078758) + abiCoder.encode([string,address,address],denom,recipient,amount) ref) https://docs.ethers.org/v6/api/abi/abi-coder/#AbiCoder-encode
+          "value": "0",
+          "access_list": {
+            "address" : "...", // contract address
+            "storage_keys":  ["...","..."] // storage keys of contract
+          }
         }
       }
     }
