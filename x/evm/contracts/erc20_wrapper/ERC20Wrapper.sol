@@ -53,6 +53,12 @@ contract ERC20Wrapper is
         ERC20(wrappedTokens[token]).mint(address(this), wrappedAmt);
 
         callBackId += 1;
+        // store the callback data
+        ibcCallBack[callBackId] = IbcCallBack({
+            sender: msg.sender,
+            wrappedTokenDenom: COSMOS_CONTRACT.to_denom(wrappedTokens[token]),
+            wrappedAmt: wrappedAmt
+        });
         // do ibc transfer wrapped token
         COSMOS_CONTRACT.execute_cosmos(
             _ibc_transfer(
@@ -74,9 +80,7 @@ contract ERC20Wrapper is
         address receiver,
         uint wrappedAmt
     ) public {
-        address wrappedToken = address(
-            COSMOS_CONTRACT.to_erc20(wrappedTokenDenom)
-        );
+        address wrappedToken = COSMOS_CONTRACT.to_erc20(wrappedTokenDenom);
         require(
             originTokens[wrappedToken] != address(0),
             "origin token doesn't exist"
