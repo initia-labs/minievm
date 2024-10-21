@@ -33,6 +33,7 @@ contract ERC20Wrapper is
 
     /**
      * @notice This function wraps the tokens and transfer the tokens by ibc transfer
+     * @dev A sender requires sender approve to this contract to transfer the tokens.
      */
     function wrap(
         string memory channel,
@@ -42,6 +43,7 @@ contract ERC20Wrapper is
         uint timeout
     ) public {
         _ensureWrappedTokenExists(token);
+
         // lock origin token
         IERC20(token).transferFrom(msg.sender, address(this), amount);
         uint wrappedAmt = _convertDecimal(
@@ -53,12 +55,14 @@ contract ERC20Wrapper is
         ERC20(wrappedTokens[token]).mint(address(this), wrappedAmt);
 
         callBackId += 1;
+
         // store the callback data
         ibcCallBack[callBackId] = IbcCallBack({
             sender: msg.sender,
             wrappedTokenDenom: COSMOS_CONTRACT.to_denom(wrappedTokens[token]),
             wrappedAmt: wrappedAmt
         });
+
         // do ibc transfer wrapped token
         COSMOS_CONTRACT.execute_cosmos(
             _ibc_transfer(
@@ -85,8 +89,10 @@ contract ERC20Wrapper is
             originTokens[wrappedToken] != address(0),
             "origin token doesn't exist"
         );
+
         // burn wrapped token
         ERC20(wrappedToken).burnFrom(msg.sender, wrappedAmt);
+
         // unlock origin token and transfer to receiver
         uint amount = _convertDecimal(
             wrappedAmt,
@@ -108,7 +114,8 @@ contract ERC20Wrapper is
         _handleFailedIbcTransfer(callback_id);
     }
 
-    // internal function //
+    // internal functions //
+
     function _handleFailedIbcTransfer(uint64 callback_id) internal {
         IbcCallBack memory callback = ibcCallBack[callback_id];
         unwrap(

@@ -50,7 +50,7 @@ func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) erro
 	}
 
 	// 3. Deploy and store the wrapper ERC20 factory contract for IBC transfers to the destination chain (not compatible due to 18 decimals).
-	_, wrapperAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20WrapperSalt)
+	_, wrapperAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, code, nil, types.ERC20WrapperSalt, nil)
 	if err != nil {
 		return err
 	}

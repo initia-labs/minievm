@@ -49,8 +49,7 @@ type MsgCall struct {
  // Hex encoded execution input bytes.
  Input string `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
  // Value is the amount of fee denom token to transfer to the contract.
-Value string `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
-
+ Value string `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
 }
 ```
 
@@ -74,7 +73,7 @@ msg := MsgCall{
  ContractAddr: packet.data.memo["evm"]["message"]["contract_addr"],
  // Hex encoded execution input bytes.
  Input: packet.data.memo["evm"]["message"]["input"],
-
+ // Value is the amount of fee denom token to transfer to the contract.
  Value: packet.data.memo["evm"]["message"]["value"]
 }
 ```
@@ -170,10 +169,12 @@ Also when a contract make IBC transfer request, it should provide async callback
 
 ### IBC Transfer using ERC20Wrapper
 
-`src -> dst`: use the ERC20Wrapper contract to wrap and do ibc-transfer
+`src -> dst`: Execute the ERC20Wrapper contract to wrap and do ibc-transfer
 
-`dst -> src`: unwrapped the wrapped token by execute hook
+`dst -> src`: ibc-trasfer and execute the ERC20Wrapper contract via ibc-hook
+
 - data example
+
 ```json
 {
   //... other ibc fields that we don't care about
@@ -181,19 +182,14 @@ Also when a contract make IBC transfer request, it should provide async callback
     "denom": "wrapped token denom", // will be transformed to the local denom (ibc/...)
     "amount": "1000",
     "sender": "addr on counterparty chain", // will be transformed
-    "receiver": "ModuleAddr::ModuleName::FunctionName",
+    "receiver": "0xcontractaddr",
     "memo": {
       "evm": {
         // execute message on receive packet
         "message": {
-          "contract_addr": "...", // should query erc20 wrapper contract addr
-          "input": "...", // function selector(fc078758) + abiCoder.encode([string,address,address],denom,amount) ref)https://docs.ethers.org/v6/api/abi/abi-coder/#AbiCoder-encode
+          "contract_addr": "0xerc20_wrapper_contract", // should query erc20 wrapper contract addr
+          "input": "pack(unwrap, denom, recipient, amount)", // function selector(fc078758) + abiCoder.encode([string,address,address],denom,amount) ref) https://docs.ethers.org/v6/api/abi/abi-coder/#AbiCoder-encode
           "value": "0"
-        },
-        // optional field to get async callback (ack and timeout)
-        "async_callback": {
-          "id": 1,
-          "contract_addr": "0x1"
         }
       }
     }
