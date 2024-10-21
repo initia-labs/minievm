@@ -201,12 +201,14 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		}
 	}
 
-	// TODO - is this part of the indexer? can we move this to the evm module?
-	err = e.evmKeeper.TrackBlockHash(sdkCtx, uint64(blockHeight), blockHash)
-	if err != nil {
-		e.logger.Error("failed to track block hash", "err", err)
-		return err
-	}
+	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm endblocker.
+	// - https://github.com/cosmos/cosmos-sdk/issues/22246
+	//
+	// err = e.evmKeeper.TrackBlockHash(sdkCtx, uint64(blockHeight), blockHash)
+	// if err != nil {
+	// 	e.logger.Error("failed to track block hash", "err", err)
+	// 	return err
+	// }
 
 	return nil
 }

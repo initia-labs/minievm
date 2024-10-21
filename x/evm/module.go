@@ -29,7 +29,8 @@ var (
 	_ module.HasConsensusVersion = AppModule{}
 	_ module.HasName             = AppModule{}
 
-	_ appmodule.AppModule = AppModule{}
+	_ appmodule.AppModule     = AppModule{}
+	_ appmodule.HasPreBlocker = AppModule{}
 )
 
 // ----------------------------------------------------------------------------
@@ -157,3 +158,9 @@ func (am AppModule) IsAppModule() {}
 func (am AppModule) IsOnePerModuleType() {}
 
 // ___________________________________________________________________________
+
+// PreBlock returns the pre-blocker for the evm module.
+func (am AppModule) PreBlock(ctx context.Context) (appmodule.ResponsePreBlock, error) {
+	c := sdk.UnwrapSDKContext(ctx)
+	return PreBlock(c, am.keeper)
+}

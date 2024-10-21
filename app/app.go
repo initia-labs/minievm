@@ -67,6 +67,7 @@ import (
 	"github.com/initia-labs/minievm/app/posthandler"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	// kvindexer
 	kvindexermodule "github.com/initia-labs/kvindexer/x/kvindexer"
@@ -228,6 +229,7 @@ func NewMinitiaApp(
 	// NOTE: upgrade module is required to be prioritized
 	app.ModuleManager.SetOrderPreBlockers(
 		upgradetypes.ModuleName,
+		evmtypes.ModuleName,
 	)
 
 	// set order of module operations
