@@ -91,15 +91,13 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	if err != nil {
 		return nil, err
 	}
-
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
-
 	sigBytes := make([]byte, 65)
 	switch ethTx.Type() {
 	case coretypes.LegacyTxType:
 		sigBytes[64] = byte(new(big.Int).Sub(v, new(big.Int).Add(new(big.Int).Add(ethChainID, ethChainID), big.NewInt(35))).Uint64())
-	case coretypes.DynamicFeeTxType:
+	case coretypes.AccessListTxType, coretypes.DynamicFeeTxType:
 		sigBytes[64] = byte(v.Uint64())
 	default:
 		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("unsupported tx type: %d", ethTx.Type())
@@ -138,12 +136,16 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 		return nil, err
 	}
 
+	// convert access list
+	accessList := types.ConvertEthAccessListToCosmos(ethTx.AccessList())
+
 	sdkMsgs := []sdk.Msg{}
 	if ethTx.To() == nil {
 		sdkMsgs = append(sdkMsgs, &types.MsgCreate{
-			Sender: sender,
-			Code:   hexutil.Encode(ethTx.Data()),
-			Value:  math.NewIntFromBigInt(value),
+			Sender:     sender,
+			Code:       hexutil.Encode(ethTx.Data()),
+			Value:      math.NewIntFromBigInt(value),
+			AccessList: accessList,
 		})
 	} else {
 		sdkMsgs = append(sdkMsgs, &types.MsgCall{
@@ -151,6 +153,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 			ContractAddr: ethTx.To().String(),
 			Input:        hexutil.Encode(ethTx.Data()),
 			Value:        math.NewIntFromBigInt(value),
+			AccessList:   accessList,
 		})
 	}
 
@@ -271,6 +274,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	var to *common.Address
 	var input []byte
 	var value *big.Int
+	var accessList coretypes.AccessList
 	switch typeUrl {
 	case "/minievm.evm.v1.MsgCall":
 		callMsg := msg.(*types.MsgCall)
@@ -290,6 +294,8 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// the value is converted to cosmos fee unit from wei.
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
 		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
+		accessList = types.ConvertCosmosAccessListToEth(callMsg.AccessList)
+
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
 		data, err := hexutil.Decode(createMsg.Code)
@@ -301,6 +307,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		input = data
 		// Same as above (MsgCall)
 		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
+		accessList = types.ConvertCosmosAccessListToEth(createMsg.AccessList)
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
@@ -323,20 +330,37 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 			S:        new(big.Int).SetBytes(s),
 			V:        new(big.Int).Add(new(big.Int).SetBytes(v), new(big.Int).SetUint64(35+ethChainID.Uint64()*2)),
 		}
+	case coretypes.AccessListTxType:
+		txData = &coretypes.AccessListTx{
+			ChainID:    ethChainID,
+			Nonce:      sig.Sequence,
+			GasPrice:   gasFeeCap,
+			Gas:        gas,
+			Value:      value,
+			To:         to,
+			Data:       input,
+			AccessList: accessList,
+			R:          new(big.Int).SetBytes(r),
+			S:          new(big.Int).SetBytes(s),
+			V:          new(big.Int).SetBytes(v),
+		}
+
 	case coretypes.DynamicFeeTxType:
 		txData = &coretypes.DynamicFeeTx{
-			ChainID:   types.ConvertCosmosChainIDToEthereumChainID(sdk.UnwrapSDKContext(ctx).ChainID()),
-			Nonce:     sig.Sequence,
-			GasTipCap: gasTipCap,
-			GasFeeCap: gasFeeCap,
-			Gas:       gas,
-			To:        to,
-			Data:      input,
-			Value:     value,
-			R:         new(big.Int).SetBytes(r),
-			S:         new(big.Int).SetBytes(s),
-			V:         new(big.Int).SetBytes(v),
+			ChainID:    ethChainID,
+			Nonce:      sig.Sequence,
+			GasTipCap:  gasTipCap,
+			GasFeeCap:  gasFeeCap,
+			Gas:        gas,
+			To:         to,
+			Data:       input,
+			Value:      value,
+			AccessList: accessList,
+			R:          new(big.Int).SetBytes(r),
+			S:          new(big.Int).SetBytes(s),
+			V:          new(big.Int).SetBytes(v),
 		}
+
 	default:
 		return nil, nil, fmt.Errorf("unsupported tx type: %d", md.Type)
 	}

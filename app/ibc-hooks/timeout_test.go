@@ -48,7 +48,7 @@ func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil, nil)
 	require.NoError(t, err)
 
 	abi, err := counter.CounterMetaData.GetAbi()
@@ -81,7 +81,7 @@ func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 	// check the contract state
 	queryInputBz, err := abi.Pack("count")
 	require.NoError(t, err)
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(0).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -96,7 +96,7 @@ func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state; increased by 99
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(99).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -136,7 +136,7 @@ func Test_onTimeoutPacket_memo_ICS721(t *testing.T) {
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, codeBz, nil, nil)
 	require.NoError(t, err)
 
 	abi, err := counter.CounterMetaData.GetAbi()
@@ -169,7 +169,7 @@ func Test_onTimeoutPacket_memo_ICS721(t *testing.T) {
 	// check the contract state
 	queryInputBz, err := abi.Pack("count")
 	require.NoError(t, err)
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(0).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -184,7 +184,7 @@ func Test_onTimeoutPacket_memo_ICS721(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state; increased by 99
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(99).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)

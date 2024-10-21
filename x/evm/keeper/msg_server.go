@@ -47,7 +47,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
-
+	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
 	if err != nil {
@@ -71,7 +71,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value)
+	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -106,7 +106,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
-
+	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
 	if err != nil {
@@ -130,7 +130,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt)
+	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -188,7 +188,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
 
-	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, nil)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}

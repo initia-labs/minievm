@@ -85,7 +85,7 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil)
+		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -317,7 +317,7 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil)
+		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -338,7 +338,7 @@ func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string, decimals uin
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	ret, _, err := k.EVMCall(ctx, types.StdAddress, factoryAddr, inputBz, nil)
+	ret, _, err := k.EVMCall(ctx, types.StdAddress, factoryAddr, inputBz, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -392,7 +392,7 @@ func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toA
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil)
+		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -407,7 +407,7 @@ func (k ERC20Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Ad
 		return math.ZeroInt(), types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return math.ZeroInt(), err
 	}
@@ -431,7 +431,7 @@ func (k ERC20Keeper) totalSupply(ctx context.Context, contractAddr common.Addres
 		return math.ZeroInt(), types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return math.ZeroInt(), err
 	}
@@ -455,7 +455,7 @@ func (k ERC20Keeper) name(ctx context.Context, contractAddr common.Address) (str
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return "", err
 	}
@@ -479,7 +479,7 @@ func (k ERC20Keeper) symbol(ctx context.Context, contractAddr common.Address) (s
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz)
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return "", err
 	}
@@ -515,7 +515,7 @@ func (k ERC20Keeper) Decimals(ctx context.Context, contractAddr common.Address) 
 	retBz, err := k.EVMStaticCall(
 		// set the context value to prevent infinite loop
 		sdk.UnwrapSDKContext(ctx).WithValue(types.ContextKeyLoadDecimals, true),
-		types.NullAddress, contractAddr, inputBz)
+		types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return 0, err
 	}

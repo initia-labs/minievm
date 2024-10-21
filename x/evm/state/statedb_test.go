@@ -171,10 +171,10 @@ func Test_SelfDestruct(t *testing.T) {
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(sdkCtx, caller, counterBz, nil)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(sdkCtx, caller, counterBz, nil, nil)
 	require.NoError(t, err)
 
-	_, contractAddr2, _, err := input.EVMKeeper.EVMCreate(sdkCtx, caller, counterBz, nil)
+	_, contractAddr2, _, err := input.EVMKeeper.EVMCreate(sdkCtx, caller, counterBz, nil, nil)
 	require.NoError(t, err)
 
 	// increase counter
@@ -185,12 +185,12 @@ func Test_SelfDestruct(t *testing.T) {
 	require.NoError(t, err)
 
 	// call with value
-	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100))
+	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100), nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.NotEmpty(t, logs)
 
-	res, logs, err = input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr2, inputBz, uint256.NewInt(100))
+	res, logs, err = input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr2, inputBz, uint256.NewInt(100), nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.NotEmpty(t, logs)
@@ -236,7 +236,7 @@ func Test_Selfdestruct6780_InDifferentTx(t *testing.T) {
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())
-	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(sdkCtx, caller, counterBz, nil)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(sdkCtx, caller, counterBz, nil, nil)
 	require.NoError(t, err)
 
 	// increase counter
@@ -247,7 +247,7 @@ func Test_Selfdestruct6780_InDifferentTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// call with value
-	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100))
+	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100), nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.NotEmpty(t, logs)
@@ -388,7 +388,7 @@ func Test_ContractAddrConfilct_DueToCosmosAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())
-	_, _, _, err = input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil)
+	_, _, _, err = input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
 	require.ErrorContains(t, err, vm.ErrContractAddressCollision.Error())
 }
 
@@ -408,7 +408,7 @@ func Test_CreateContract_OverrideEmptyAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())
-	_, _, _, err = input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil)
+	_, _, _, err = input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
 	require.NoError(t, err)
 
 	contractAcc := input.AccountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))

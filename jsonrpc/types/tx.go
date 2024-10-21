@@ -39,8 +39,6 @@ func NewRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNu
 	from, _ := coretypes.Sender(signer, tx)
 	v, r, s := tx.RawSignatureValues()
 	al := tx.AccessList()
-	yparity := hexutil.Uint64(v.Sign())
-
 	result := &RPCTransaction{
 		Type:      hexutil.Uint64(tx.Type()),
 		From:      from,
@@ -58,27 +56,80 @@ func NewRPCTransaction(tx *coretypes.Transaction, blockHash common.Hash, blockNu
 		S:         (*hexutil.Big)(s),
 		ChainID:   (*hexutil.Big)(chainID),
 		Accesses:  &al,
-		YParity:   &yparity,
 	}
+
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
 		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
 		result.TransactionIndex = (*hexutil.Uint64)(&index)
 	}
 
+	switch tx.Type() {
+	case coretypes.LegacyTxType: // Legacy type returns nil on yparity
+	default: // Dynamic and Access List type returns yParity
+		yParityValue := (v.Uint64())
+		result.YParity = (*hexutil.Uint64)(&yParityValue)
+	}
+
 	return result
 }
 
 func (rpcTx RPCTransaction) ToTransaction() *coretypes.Transaction {
-	return coretypes.NewTx(&coretypes.LegacyTx{
-		Nonce:    uint64(rpcTx.Nonce),
-		GasPrice: rpcTx.GasPrice.ToInt(),
-		Gas:      uint64(rpcTx.Gas),
-		To:       rpcTx.To,
-		Value:    rpcTx.Value.ToInt(),
-		Data:     rpcTx.Input,
-		V:        rpcTx.V.ToInt(),
-		R:        rpcTx.R.ToInt(),
-		S:        rpcTx.S.ToInt(),
-	})
+	gasPrice := func() *big.Int {
+		if rpcTx.GasPrice != nil {
+			return rpcTx.GasPrice.ToInt()
+		}
+		return big.NewInt(0)
+	}()
+	accessList := func() coretypes.AccessList {
+		if rpcTx.Accesses != nil {
+			return *rpcTx.Accesses
+		}
+		return nil
+	}()
+	switch rpcTx.Type {
+	case coretypes.LegacyTxType:
+		return coretypes.NewTx(&coretypes.LegacyTx{
+			Nonce:    uint64(rpcTx.Nonce),
+			GasPrice: gasPrice,
+			Gas:      uint64(rpcTx.Gas),
+			To:       rpcTx.To,
+			Value:    rpcTx.Value.ToInt(),
+			Data:     rpcTx.Input,
+			V:        rpcTx.V.ToInt(),
+			R:        rpcTx.R.ToInt(),
+			S:        rpcTx.S.ToInt(),
+		})
+	case coretypes.AccessListTxType:
+		return coretypes.NewTx(&coretypes.AccessListTx{
+			ChainID:    rpcTx.ChainID.ToInt(),
+			Nonce:      uint64(rpcTx.Nonce),
+			GasPrice:   rpcTx.GasPrice.ToInt(),
+			Gas:        uint64(rpcTx.Gas),
+			To:         rpcTx.To,
+			Value:      rpcTx.Value.ToInt(),
+			Data:       rpcTx.Input,
+			AccessList: accessList,
+			V:          rpcTx.V.ToInt(),
+			R:          rpcTx.R.ToInt(),
+			S:          rpcTx.S.ToInt(),
+		})
+	case coretypes.DynamicFeeTxType:
+		return coretypes.NewTx((&coretypes.DynamicFeeTx{
+			ChainID:    rpcTx.ChainID.ToInt(),
+			Nonce:      uint64(rpcTx.Nonce),
+			GasTipCap:  rpcTx.GasTipCap.ToInt(),
+			GasFeeCap:  rpcTx.GasFeeCap.ToInt(),
+			Gas:        uint64(rpcTx.Gas),
+			To:         rpcTx.To,
+			Value:      rpcTx.Value.ToInt(),
+			Data:       rpcTx.Input,
+			AccessList: accessList,
+			V:          rpcTx.V.ToInt(),
+			R:          rpcTx.R.ToInt(),
+			S:          rpcTx.S.ToInt(),
+		}))
+	default:
+		return nil
+	}
 }
