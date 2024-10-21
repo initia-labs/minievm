@@ -201,8 +201,9 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		}
 	}
 
-	// TODO - currently state changes are not supported in abci listener
-	// so we track cosmos block hash at x/evm endblocker.
+	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm endblocker.
+	// - https://github.com/cosmos/cosmos-sdk/issues/22246
+	//
 	// err = e.evmKeeper.TrackBlockHash(sdkCtx, uint64(blockHeight), blockHash)
 	// if err != nil {
 	// 	e.logger.Error("failed to track block hash", "err", err)
