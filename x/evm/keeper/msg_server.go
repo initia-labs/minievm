@@ -47,7 +47,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
-	accessList := ConvertCosmosAccessListToEth(msg.AccessList)
+	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
 	if err != nil {
@@ -106,7 +106,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
-	accessList := ConvertCosmosAccessListToEth(msg.AccessList)
+	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
 	// check the sender is allowed publisher
 	params, err := ms.Params.Get(ctx)
 	if err != nil {

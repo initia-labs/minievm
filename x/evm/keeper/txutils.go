@@ -91,7 +91,6 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	if err != nil {
 		return nil, err
 	}
-	accessList := ConvertEthAccessListToCosmos(ethTx.AccessList())
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
 	sigBytes := make([]byte, 65)
@@ -136,6 +135,9 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	if err != nil {
 		return nil, err
 	}
+
+	// convert access list
+	accessList := types.ConvertEthAccessListToCosmos(ethTx.AccessList())
 
 	sdkMsgs := []sdk.Msg{}
 	if ethTx.To() == nil {
@@ -292,7 +294,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// the value is converted to cosmos fee unit from wei.
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
 		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
-		accessList = ConvertCosmosAccessListToEth(callMsg.AccessList)
+		accessList = types.ConvertCosmosAccessListToEth(callMsg.AccessList)
 
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*types.MsgCreate)
@@ -305,7 +307,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		input = data
 		// Same as above (MsgCall)
 		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
-		accessList = ConvertCosmosAccessListToEth(createMsg.AccessList)
+		accessList = types.ConvertCosmosAccessListToEth(createMsg.AccessList)
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
 		return nil, nil, nil
@@ -344,7 +346,6 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		}
 
 	case coretypes.DynamicFeeTxType:
-
 		txData = &coretypes.DynamicFeeTx{
 			ChainID:    ethChainID,
 			Nonce:      sig.Sequence,
@@ -429,40 +430,4 @@ func (u *TxUtils) IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error) 
 	}
 
 	return true, nil
-}
-
-func ConvertCosmosAccessListToEth(cosmosAccessList []types.AccessTuple) coretypes.AccessList {
-	if len(cosmosAccessList) == 0 {
-		return nil
-	}
-	coreAccessList := make(coretypes.AccessList, len(cosmosAccessList))
-	for i, a := range cosmosAccessList {
-		storageKeys := make([]common.Hash, len(a.StorageKeys))
-		for j, s := range a.StorageKeys {
-			storageKeys[j] = common.HexToHash(s)
-		}
-		coreAccessList[i] = coretypes.AccessTuple{
-			Address:     common.HexToAddress(a.Address),
-			StorageKeys: storageKeys,
-		}
-	}
-	return coreAccessList
-}
-
-func ConvertEthAccessListToCosmos(ethAccessList coretypes.AccessList) []types.AccessTuple {
-	if len(ethAccessList) == 0 {
-		return nil
-	}
-	accessList := make([]types.AccessTuple, len(ethAccessList))
-	for i, al := range ethAccessList {
-		storageKeys := make([]string, len(al.StorageKeys))
-		for j, s := range al.StorageKeys {
-			storageKeys[j] = s.String()
-		}
-		accessList[i] = types.AccessTuple{
-			Address:     al.Address.String(),
-			StorageKeys: storageKeys,
-		}
-	}
-	return accessList
 }
