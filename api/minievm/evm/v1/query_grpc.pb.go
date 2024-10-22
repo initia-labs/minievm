@@ -22,6 +22,7 @@ const (
 	Query_Code_FullMethodName                = "/minievm.evm.v1.Query/Code"
 	Query_State_FullMethodName               = "/minievm.evm.v1.Query/State"
 	Query_ERC20Factory_FullMethodName        = "/minievm.evm.v1.Query/ERC20Factory"
+	Query_ERC20Wrapper_FullMethodName        = "/minievm.evm.v1.Query/ERC20Wrapper"
 	Query_ContractAddrByDenom_FullMethodName = "/minievm.evm.v1.Query/ContractAddrByDenom"
 	Query_Denom_FullMethodName               = "/minievm.evm.v1.Query/Denom"
 	Query_Call_FullMethodName                = "/minievm.evm.v1.Query/Call"
@@ -38,6 +39,8 @@ type QueryClient interface {
 	State(ctx context.Context, in *QueryStateRequest, opts ...grpc.CallOption) (*QueryStateResponse, error)
 	// ERC20Factory gets the ERC20Factory contract address.
 	ERC20Factory(ctx context.Context, in *QueryERC20FactoryRequest, opts ...grpc.CallOption) (*QueryERC20FactoryResponse, error)
+	// ERC20Wrapper gets the ERC20Wrapper contract address.
+	ERC20Wrapper(ctx context.Context, in *QueryERC20WrapperRequest, opts ...grpc.CallOption) (*QueryERC20WrapperResponse, error)
 	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(ctx context.Context, in *QueryContractAddrByDenomRequest, opts ...grpc.CallOption) (*QueryContractAddrByDenomResponse, error)
 	// Denom gets the denom of the given contract address.
@@ -77,6 +80,15 @@ func (c *queryClient) State(ctx context.Context, in *QueryStateRequest, opts ...
 func (c *queryClient) ERC20Factory(ctx context.Context, in *QueryERC20FactoryRequest, opts ...grpc.CallOption) (*QueryERC20FactoryResponse, error) {
 	out := new(QueryERC20FactoryResponse)
 	err := c.cc.Invoke(ctx, Query_ERC20Factory_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ERC20Wrapper(ctx context.Context, in *QueryERC20WrapperRequest, opts ...grpc.CallOption) (*QueryERC20WrapperResponse, error) {
+	out := new(QueryERC20WrapperResponse)
+	err := c.cc.Invoke(ctx, Query_ERC20Wrapper_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +141,8 @@ type QueryServer interface {
 	State(context.Context, *QueryStateRequest) (*QueryStateResponse, error)
 	// ERC20Factory gets the ERC20Factory contract address.
 	ERC20Factory(context.Context, *QueryERC20FactoryRequest) (*QueryERC20FactoryResponse, error)
+	// ERC20Wrapper gets the ERC20Wrapper contract address.
+	ERC20Wrapper(context.Context, *QueryERC20WrapperRequest) (*QueryERC20WrapperResponse, error)
 	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error)
 	// Denom gets the denom of the given contract address.
@@ -152,6 +166,9 @@ func (UnimplementedQueryServer) State(context.Context, *QueryStateRequest) (*Que
 }
 func (UnimplementedQueryServer) ERC20Factory(context.Context, *QueryERC20FactoryRequest) (*QueryERC20FactoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ERC20Factory not implemented")
+}
+func (UnimplementedQueryServer) ERC20Wrapper(context.Context, *QueryERC20WrapperRequest) (*QueryERC20WrapperResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ERC20Wrapper not implemented")
 }
 func (UnimplementedQueryServer) ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContractAddrByDenom not implemented")
@@ -228,6 +245,24 @@ func _Query_ERC20Factory_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).ERC20Factory(ctx, req.(*QueryERC20FactoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ERC20Wrapper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryERC20WrapperRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ERC20Wrapper(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ERC20Wrapper_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ERC20Wrapper(ctx, req.(*QueryERC20WrapperRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -322,6 +357,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ERC20Factory",
 			Handler:    _Query_ERC20Factory_Handler,
+		},
+		{
+			MethodName: "ERC20Wrapper",
+			Handler:    _Query_ERC20Wrapper_Handler,
 		},
 		{
 			MethodName: "ContractAddrByDenom",
