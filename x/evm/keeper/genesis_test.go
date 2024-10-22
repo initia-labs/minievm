@@ -3,6 +3,8 @@ package keeper_test
 import (
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_wrapper"
 	"github.com/initia-labs/minievm/x/evm/types"
 	"github.com/stretchr/testify/require"
 )
@@ -16,6 +18,7 @@ func Test_Genesis(t *testing.T) {
 		{1, 2, 3},
 		{4, 5, 6},
 	}
+	genState.Erc20Wrapper = []byte{5, 6, 7, 8}
 	genState.Erc20Stores = []types.GenesisERC20Stores{
 		{
 			Address: []byte{1, 2, 3},
@@ -77,4 +80,26 @@ func Test_Genesis(t *testing.T) {
 
 	_genState := input.EVMKeeper.ExportGenesis(ctx)
 	require.Equal(t, genState, _genState)
+}
+
+func Test_Initialize(t *testing.T) {
+	ctx, input := createTestInput(t, false, true)
+	wrapperAddr, err := input.EVMKeeper.GetERC20WrapperAddr(ctx)
+	require.NoError(t, err)
+
+	caller := common.HexToAddress("0x0")
+	abi, err := erc20_wrapper.Erc20WrapperMetaData.GetAbi()
+	require.NoError(t, err)
+
+	viewArg, err := abi.Pack("factory")
+	require.NoError(t, err)
+
+	factoryAddrBytes, err := input.EVMKeeper.EVMStaticCall(ctx, caller, wrapperAddr, viewArg, nil)
+	require.NoError(t, err)
+
+	factoryAddr := common.BytesToAddress(factoryAddrBytes)
+	expectedFactoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
+
+	require.Equal(t, expectedFactoryAddr, factoryAddr)
 }

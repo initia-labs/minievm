@@ -47,6 +47,9 @@ message GenesisState {
 
   // erc20 factory contract address
   bytes erc20_factory = 8;
+
+  // erc20 wrapper contract address
+  bytes erc20_wrapper = 9;
 }
 
 // GenesisKeyValue defines store KV values.
