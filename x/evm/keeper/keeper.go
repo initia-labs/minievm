@@ -191,6 +191,11 @@ func (k *Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", "x/"+types.ModuleName)
 }
 
+// StoreService returns the KVStoreService.
+func (k Keeper) StoreService() corestoretypes.KVStoreService {
+	return k.storeService
+}
+
 // Config returns the x/evm configuration.
 func (k Keeper) Config() evmconfig.EVMConfig {
 	return k.config
