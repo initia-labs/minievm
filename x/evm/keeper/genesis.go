@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/collections"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
@@ -16,7 +17,7 @@ import (
 // Initialize initializes the EVM state at genesis by performing the following steps:
 // 1. Deploy and store the ERC20 factory contract.
 // 2. Deploy fee denom ERC20 coins at genesis bootstrapping with 18 decimals.
-// 3. Deploy and store the wrapper ERC20 factory contract for IBC transfers to the destination chain (not compatible due to 18 decimals).
+// 3. Deploy and store the wrapper ERC20 factory contract for IBC transfers.
 func (k Keeper) Initialize(ctx context.Context) error {
 	return k.InitializeWithDecimals(ctx, types.EtherDecimals)
 }
@@ -24,17 +25,7 @@ func (k Keeper) Initialize(ctx context.Context) error {
 // InitializeWithDecimals initializes the EVM state at genesis with the given decimals
 func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) error {
 	// 1. Deploy and store the ERC20 factory contract.
-	factoryCode, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
-	if err != nil {
-		return err
-	}
-
-	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, factoryCode, nil, types.ERC20FactorySalt, nil)
-	if err != nil {
-		return err
-	}
-
-	err = k.ERC20FactoryAddr.Set(ctx, factoryAddr.Bytes())
+	err := k.DeployERC20Factory(ctx)
 	if err != nil {
 		return err
 	}
@@ -50,13 +41,43 @@ func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) erro
 		return err
 	}
 
-	// 3. Deploy and store the wrapper ERC20 factory contract for IBC transfers to the destination chain (not compatible due to 18 decimals).
+	// 3. Deploy and store the ERC20 wrapper factory contract for IBC transfers.
+	err = k.DeployERC20Wrapper(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeployERC20Factory deploys the ERC20 factory contract and stores the address in the keeper.
+func (k Keeper) DeployERC20Factory(ctx context.Context) error {
+	factoryCode, err := hexutil.Decode(erc20_factory.Erc20FactoryBin)
+	if err != nil {
+		return err
+	}
+
+	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, factoryCode, nil, types.ERC20FactorySalt, nil)
+	if err != nil {
+		return err
+	}
+
+	return k.ERC20FactoryAddr.Set(ctx, factoryAddr.Bytes())
+}
+
+// DeployERC20Wrapper deploys the ERC20 wrapper contract and stores the address in the keeper.
+func (k Keeper) DeployERC20Wrapper(ctx context.Context) error {
+	factoryAddr, err := k.ERC20FactoryAddr.Get(ctx)
+	if err != nil {
+		return err
+	}
+
 	wrapperCode, err := hexutil.Decode(erc20_wrapper.Erc20WrapperBin)
 	if err != nil {
 		return err
 	}
 	abi, _ := erc20_wrapper.Erc20WrapperMetaData.GetAbi()
-	wrapperConstructorArg, err := abi.Constructor.Inputs.Pack(factoryAddr)
+	wrapperConstructorArg, err := abi.Constructor.Inputs.Pack(common.BytesToAddress(factoryAddr))
 	if err != nil {
 		return err
 	}
@@ -66,12 +87,7 @@ func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) erro
 		return err
 	}
 
-	err = k.ERC20WrapperAddr.Set(ctx, wrapperAddr.Bytes())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return k.ERC20WrapperAddr.Set(ctx, wrapperAddr.Bytes())
 }
 
 func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) error {

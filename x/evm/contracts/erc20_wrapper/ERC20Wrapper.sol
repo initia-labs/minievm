@@ -38,7 +38,7 @@ contract ERC20Wrapper is
 
     /**
      * @notice This function wraps the tokens and transfer the tokens by ibc transfer
-     * @dev A sender requires sender approve to this contract to transfer the tokens.
+     * @dev This function requires sender approve to this contract to transfer the tokens.
      */
     function wrap(
         string memory channel,

@@ -41,6 +41,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Alias:     []string{"factory"},
 				},
 				{
+					RpcMethod: "ERC20Wrapper",
+					Use:       "erc20-wrapper",
+					Short:     "Query erc20-wrapper contract address",
+					Alias:     []string{"wrapper"},
+				},
+				{
 					RpcMethod: "ContractAddrByDenom",
 					Use:       "contract-addr-by-denom [denom]",
 					Short:     "Query corresponding contract address by denom",

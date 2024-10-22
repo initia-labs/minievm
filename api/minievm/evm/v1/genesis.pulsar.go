@@ -13,10 +13,61 @@ import (
 	sync "sync"
 )
 
+var _ protoreflect.List = (*_GenesisState_2_list)(nil)
+
+type _GenesisState_2_list struct {
+	list *[]*GenesisKeyValue
+}
+
+func (x *_GenesisState_2_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_GenesisState_2_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_GenesisState_2_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*GenesisKeyValue)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_GenesisState_2_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*GenesisKeyValue)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_GenesisState_2_list) AppendMutable() protoreflect.Value {
+	v := new(GenesisKeyValue)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_2_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_GenesisState_2_list) NewElement() protoreflect.Value {
+	v := new(GenesisKeyValue)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_2_list) IsValid() bool {
+	return x.list != nil
+}
+
 var _ protoreflect.List = (*_GenesisState_3_list)(nil)
 
 type _GenesisState_3_list struct {
-	list *[]*GenesisKeyValue
+	list *[][]byte
 }
 
 func (x *_GenesisState_3_list) Len() int {
@@ -27,37 +78,32 @@ func (x *_GenesisState_3_list) Len() int {
 }
 
 func (x *_GenesisState_3_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+	return protoreflect.ValueOfBytes((*x.list)[i])
 }
 
 func (x *_GenesisState_3_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*GenesisKeyValue)
+	valueUnwrapped := value.Bytes()
+	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_3_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*GenesisKeyValue)
+	valueUnwrapped := value.Bytes()
+	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_3_list) AppendMutable() protoreflect.Value {
-	v := new(GenesisKeyValue)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
+	panic(fmt.Errorf("AppendMutable can not be called on message GenesisState at list field Erc20S as it is not of Message kind"))
 }
 
 func (x *_GenesisState_3_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
 	*x.list = (*x.list)[:n]
 }
 
 func (x *_GenesisState_3_list) NewElement() protoreflect.Value {
-	v := new(GenesisKeyValue)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
+	var v []byte
+	return protoreflect.ValueOfBytes(v)
 }
 
 func (x *_GenesisState_3_list) IsValid() bool {
@@ -118,7 +164,7 @@ func (x *_GenesisState_4_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_5_list)(nil)
 
 type _GenesisState_5_list struct {
-	list *[]*GenesisDenomAddress
+	list *[]*GenesisDenomTrace
 }
 
 func (x *_GenesisState_5_list) Len() int {
@@ -134,18 +180,18 @@ func (x *_GenesisState_5_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_5_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*GenesisDenomAddress)
+	concreteValue := valueUnwrapped.Interface().(*GenesisDenomTrace)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_5_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*GenesisDenomAddress)
+	concreteValue := valueUnwrapped.Interface().(*GenesisDenomTrace)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_5_list) AppendMutable() protoreflect.Value {
-	v := new(GenesisDenomAddress)
+	v := new(GenesisDenomTrace)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -158,7 +204,7 @@ func (x *_GenesisState_5_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_5_list) NewElement() protoreflect.Value {
-	v := new(GenesisDenomAddress)
+	v := new(GenesisDenomTrace)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -166,25 +212,133 @@ func (x *_GenesisState_5_list) IsValid() bool {
 	return x.list != nil
 }
 
+var _ protoreflect.List = (*_GenesisState_6_list)(nil)
+
+type _GenesisState_6_list struct {
+	list *[]*GenesisClassTrace
+}
+
+func (x *_GenesisState_6_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_GenesisState_6_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_GenesisState_6_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*GenesisClassTrace)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_GenesisState_6_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*GenesisClassTrace)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_GenesisState_6_list) AppendMutable() protoreflect.Value {
+	v := new(GenesisClassTrace)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_6_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_GenesisState_6_list) NewElement() protoreflect.Value {
+	v := new(GenesisClassTrace)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_6_list) IsValid() bool {
+	return x.list != nil
+}
+
+var _ protoreflect.List = (*_GenesisState_7_list)(nil)
+
+type _GenesisState_7_list struct {
+	list *[]*GenesisEVMBlockHash
+}
+
+func (x *_GenesisState_7_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_GenesisState_7_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_GenesisState_7_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*GenesisEVMBlockHash)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_GenesisState_7_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*GenesisEVMBlockHash)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_GenesisState_7_list) AppendMutable() protoreflect.Value {
+	v := new(GenesisEVMBlockHash)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_7_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_GenesisState_7_list) NewElement() protoreflect.Value {
+	v := new(GenesisEVMBlockHash)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_7_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_GenesisState                 protoreflect.MessageDescriptor
-	fd_GenesisState_params          protoreflect.FieldDescriptor
-	fd_GenesisState_state_root      protoreflect.FieldDescriptor
-	fd_GenesisState_key_values      protoreflect.FieldDescriptor
-	fd_GenesisState_erc20_stores    protoreflect.FieldDescriptor
-	fd_GenesisState_denom_addresses protoreflect.FieldDescriptor
-	fd_GenesisState_erc20_factory   protoreflect.FieldDescriptor
+	md_GenesisState                  protoreflect.MessageDescriptor
+	fd_GenesisState_params           protoreflect.FieldDescriptor
+	fd_GenesisState_key_values       protoreflect.FieldDescriptor
+	fd_GenesisState_erc20s           protoreflect.FieldDescriptor
+	fd_GenesisState_erc20_stores     protoreflect.FieldDescriptor
+	fd_GenesisState_denom_traces     protoreflect.FieldDescriptor
+	fd_GenesisState_class_traces     protoreflect.FieldDescriptor
+	fd_GenesisState_evm_block_hashes protoreflect.FieldDescriptor
+	fd_GenesisState_erc20_factory    protoreflect.FieldDescriptor
+	fd_GenesisState_erc20_wrapper    protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_minievm_evm_v1_genesis_proto_init()
 	md_GenesisState = File_minievm_evm_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
-	fd_GenesisState_state_root = md_GenesisState.Fields().ByName("state_root")
 	fd_GenesisState_key_values = md_GenesisState.Fields().ByName("key_values")
+	fd_GenesisState_erc20s = md_GenesisState.Fields().ByName("erc20s")
 	fd_GenesisState_erc20_stores = md_GenesisState.Fields().ByName("erc20_stores")
-	fd_GenesisState_denom_addresses = md_GenesisState.Fields().ByName("denom_addresses")
+	fd_GenesisState_denom_traces = md_GenesisState.Fields().ByName("denom_traces")
+	fd_GenesisState_class_traces = md_GenesisState.Fields().ByName("class_traces")
+	fd_GenesisState_evm_block_hashes = md_GenesisState.Fields().ByName("evm_block_hashes")
 	fd_GenesisState_erc20_factory = md_GenesisState.Fields().ByName("erc20_factory")
+	fd_GenesisState_erc20_wrapper = md_GenesisState.Fields().ByName("erc20_wrapper")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -258,15 +412,15 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.StateRoot) != 0 {
-		value := protoreflect.ValueOfBytes(x.StateRoot)
-		if !f(fd_GenesisState_state_root, value) {
+	if len(x.KeyValues) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_2_list{list: &x.KeyValues})
+		if !f(fd_GenesisState_key_values, value) {
 			return
 		}
 	}
-	if len(x.KeyValues) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.KeyValues})
-		if !f(fd_GenesisState_key_values, value) {
+	if len(x.Erc20S) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.Erc20S})
+		if !f(fd_GenesisState_erc20s, value) {
 			return
 		}
 	}
@@ -276,15 +430,33 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.DenomAddresses) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.DenomAddresses})
-		if !f(fd_GenesisState_denom_addresses, value) {
+	if len(x.DenomTraces) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.DenomTraces})
+		if !f(fd_GenesisState_denom_traces, value) {
+			return
+		}
+	}
+	if len(x.ClassTraces) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_6_list{list: &x.ClassTraces})
+		if !f(fd_GenesisState_class_traces, value) {
+			return
+		}
+	}
+	if len(x.EvmBlockHashes) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_7_list{list: &x.EvmBlockHashes})
+		if !f(fd_GenesisState_evm_block_hashes, value) {
 			return
 		}
 	}
 	if len(x.Erc20Factory) != 0 {
 		value := protoreflect.ValueOfBytes(x.Erc20Factory)
 		if !f(fd_GenesisState_erc20_factory, value) {
+			return
+		}
+	}
+	if len(x.Erc20Wrapper) != 0 {
+		value := protoreflect.ValueOfBytes(x.Erc20Wrapper)
+		if !f(fd_GenesisState_erc20_wrapper, value) {
 			return
 		}
 	}
@@ -305,16 +477,22 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 	switch fd.FullName() {
 	case "minievm.evm.v1.GenesisState.params":
 		return x.Params != nil
-	case "minievm.evm.v1.GenesisState.state_root":
-		return len(x.StateRoot) != 0
 	case "minievm.evm.v1.GenesisState.key_values":
 		return len(x.KeyValues) != 0
+	case "minievm.evm.v1.GenesisState.erc20s":
+		return len(x.Erc20S) != 0
 	case "minievm.evm.v1.GenesisState.erc20_stores":
 		return len(x.Erc20Stores) != 0
-	case "minievm.evm.v1.GenesisState.denom_addresses":
-		return len(x.DenomAddresses) != 0
+	case "minievm.evm.v1.GenesisState.denom_traces":
+		return len(x.DenomTraces) != 0
+	case "minievm.evm.v1.GenesisState.class_traces":
+		return len(x.ClassTraces) != 0
+	case "minievm.evm.v1.GenesisState.evm_block_hashes":
+		return len(x.EvmBlockHashes) != 0
 	case "minievm.evm.v1.GenesisState.erc20_factory":
 		return len(x.Erc20Factory) != 0
+	case "minievm.evm.v1.GenesisState.erc20_wrapper":
+		return len(x.Erc20Wrapper) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisState"))
@@ -333,16 +511,22 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "minievm.evm.v1.GenesisState.params":
 		x.Params = nil
-	case "minievm.evm.v1.GenesisState.state_root":
-		x.StateRoot = nil
 	case "minievm.evm.v1.GenesisState.key_values":
 		x.KeyValues = nil
+	case "minievm.evm.v1.GenesisState.erc20s":
+		x.Erc20S = nil
 	case "minievm.evm.v1.GenesisState.erc20_stores":
 		x.Erc20Stores = nil
-	case "minievm.evm.v1.GenesisState.denom_addresses":
-		x.DenomAddresses = nil
+	case "minievm.evm.v1.GenesisState.denom_traces":
+		x.DenomTraces = nil
+	case "minievm.evm.v1.GenesisState.class_traces":
+		x.ClassTraces = nil
+	case "minievm.evm.v1.GenesisState.evm_block_hashes":
+		x.EvmBlockHashes = nil
 	case "minievm.evm.v1.GenesisState.erc20_factory":
 		x.Erc20Factory = nil
+	case "minievm.evm.v1.GenesisState.erc20_wrapper":
+		x.Erc20Wrapper = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisState"))
@@ -362,14 +546,17 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "minievm.evm.v1.GenesisState.params":
 		value := x.Params
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "minievm.evm.v1.GenesisState.state_root":
-		value := x.StateRoot
-		return protoreflect.ValueOfBytes(value)
 	case "minievm.evm.v1.GenesisState.key_values":
 		if len(x.KeyValues) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_2_list{})
+		}
+		listValue := &_GenesisState_2_list{list: &x.KeyValues}
+		return protoreflect.ValueOfList(listValue)
+	case "minievm.evm.v1.GenesisState.erc20s":
+		if len(x.Erc20S) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_3_list{})
 		}
-		listValue := &_GenesisState_3_list{list: &x.KeyValues}
+		listValue := &_GenesisState_3_list{list: &x.Erc20S}
 		return protoreflect.ValueOfList(listValue)
 	case "minievm.evm.v1.GenesisState.erc20_stores":
 		if len(x.Erc20Stores) == 0 {
@@ -377,14 +564,29 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 		}
 		listValue := &_GenesisState_4_list{list: &x.Erc20Stores}
 		return protoreflect.ValueOfList(listValue)
-	case "minievm.evm.v1.GenesisState.denom_addresses":
-		if len(x.DenomAddresses) == 0 {
+	case "minievm.evm.v1.GenesisState.denom_traces":
+		if len(x.DenomTraces) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_5_list{})
 		}
-		listValue := &_GenesisState_5_list{list: &x.DenomAddresses}
+		listValue := &_GenesisState_5_list{list: &x.DenomTraces}
+		return protoreflect.ValueOfList(listValue)
+	case "minievm.evm.v1.GenesisState.class_traces":
+		if len(x.ClassTraces) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_6_list{})
+		}
+		listValue := &_GenesisState_6_list{list: &x.ClassTraces}
+		return protoreflect.ValueOfList(listValue)
+	case "minievm.evm.v1.GenesisState.evm_block_hashes":
+		if len(x.EvmBlockHashes) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_7_list{})
+		}
+		listValue := &_GenesisState_7_list{list: &x.EvmBlockHashes}
 		return protoreflect.ValueOfList(listValue)
 	case "minievm.evm.v1.GenesisState.erc20_factory":
 		value := x.Erc20Factory
+		return protoreflect.ValueOfBytes(value)
+	case "minievm.evm.v1.GenesisState.erc20_wrapper":
+		value := x.Erc20Wrapper
 		return protoreflect.ValueOfBytes(value)
 	default:
 		if descriptor.IsExtension() {
@@ -408,22 +610,34 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 	switch fd.FullName() {
 	case "minievm.evm.v1.GenesisState.params":
 		x.Params = value.Message().Interface().(*Params)
-	case "minievm.evm.v1.GenesisState.state_root":
-		x.StateRoot = value.Bytes()
 	case "minievm.evm.v1.GenesisState.key_values":
 		lv := value.List()
-		clv := lv.(*_GenesisState_3_list)
+		clv := lv.(*_GenesisState_2_list)
 		x.KeyValues = *clv.list
+	case "minievm.evm.v1.GenesisState.erc20s":
+		lv := value.List()
+		clv := lv.(*_GenesisState_3_list)
+		x.Erc20S = *clv.list
 	case "minievm.evm.v1.GenesisState.erc20_stores":
 		lv := value.List()
 		clv := lv.(*_GenesisState_4_list)
 		x.Erc20Stores = *clv.list
-	case "minievm.evm.v1.GenesisState.denom_addresses":
+	case "minievm.evm.v1.GenesisState.denom_traces":
 		lv := value.List()
 		clv := lv.(*_GenesisState_5_list)
-		x.DenomAddresses = *clv.list
+		x.DenomTraces = *clv.list
+	case "minievm.evm.v1.GenesisState.class_traces":
+		lv := value.List()
+		clv := lv.(*_GenesisState_6_list)
+		x.ClassTraces = *clv.list
+	case "minievm.evm.v1.GenesisState.evm_block_hashes":
+		lv := value.List()
+		clv := lv.(*_GenesisState_7_list)
+		x.EvmBlockHashes = *clv.list
 	case "minievm.evm.v1.GenesisState.erc20_factory":
 		x.Erc20Factory = value.Bytes()
+	case "minievm.evm.v1.GenesisState.erc20_wrapper":
+		x.Erc20Wrapper = value.Bytes()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisState"))
@@ -453,7 +667,13 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		if x.KeyValues == nil {
 			x.KeyValues = []*GenesisKeyValue{}
 		}
-		value := &_GenesisState_3_list{list: &x.KeyValues}
+		value := &_GenesisState_2_list{list: &x.KeyValues}
+		return protoreflect.ValueOfList(value)
+	case "minievm.evm.v1.GenesisState.erc20s":
+		if x.Erc20S == nil {
+			x.Erc20S = [][]byte{}
+		}
+		value := &_GenesisState_3_list{list: &x.Erc20S}
 		return protoreflect.ValueOfList(value)
 	case "minievm.evm.v1.GenesisState.erc20_stores":
 		if x.Erc20Stores == nil {
@@ -461,16 +681,28 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		}
 		value := &_GenesisState_4_list{list: &x.Erc20Stores}
 		return protoreflect.ValueOfList(value)
-	case "minievm.evm.v1.GenesisState.denom_addresses":
-		if x.DenomAddresses == nil {
-			x.DenomAddresses = []*GenesisDenomAddress{}
+	case "minievm.evm.v1.GenesisState.denom_traces":
+		if x.DenomTraces == nil {
+			x.DenomTraces = []*GenesisDenomTrace{}
 		}
-		value := &_GenesisState_5_list{list: &x.DenomAddresses}
+		value := &_GenesisState_5_list{list: &x.DenomTraces}
 		return protoreflect.ValueOfList(value)
-	case "minievm.evm.v1.GenesisState.state_root":
-		panic(fmt.Errorf("field state_root of message minievm.evm.v1.GenesisState is not mutable"))
+	case "minievm.evm.v1.GenesisState.class_traces":
+		if x.ClassTraces == nil {
+			x.ClassTraces = []*GenesisClassTrace{}
+		}
+		value := &_GenesisState_6_list{list: &x.ClassTraces}
+		return protoreflect.ValueOfList(value)
+	case "minievm.evm.v1.GenesisState.evm_block_hashes":
+		if x.EvmBlockHashes == nil {
+			x.EvmBlockHashes = []*GenesisEVMBlockHash{}
+		}
+		value := &_GenesisState_7_list{list: &x.EvmBlockHashes}
+		return protoreflect.ValueOfList(value)
 	case "minievm.evm.v1.GenesisState.erc20_factory":
 		panic(fmt.Errorf("field erc20_factory of message minievm.evm.v1.GenesisState is not mutable"))
+	case "minievm.evm.v1.GenesisState.erc20_wrapper":
+		panic(fmt.Errorf("field erc20_wrapper of message minievm.evm.v1.GenesisState is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisState"))
@@ -487,18 +719,27 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "minievm.evm.v1.GenesisState.params":
 		m := new(Params)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "minievm.evm.v1.GenesisState.state_root":
-		return protoreflect.ValueOfBytes(nil)
 	case "minievm.evm.v1.GenesisState.key_values":
 		list := []*GenesisKeyValue{}
+		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
+	case "minievm.evm.v1.GenesisState.erc20s":
+		list := [][]byte{}
 		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
 	case "minievm.evm.v1.GenesisState.erc20_stores":
 		list := []*GenesisERC20Stores{}
 		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
-	case "minievm.evm.v1.GenesisState.denom_addresses":
-		list := []*GenesisDenomAddress{}
+	case "minievm.evm.v1.GenesisState.denom_traces":
+		list := []*GenesisDenomTrace{}
 		return protoreflect.ValueOfList(&_GenesisState_5_list{list: &list})
+	case "minievm.evm.v1.GenesisState.class_traces":
+		list := []*GenesisClassTrace{}
+		return protoreflect.ValueOfList(&_GenesisState_6_list{list: &list})
+	case "minievm.evm.v1.GenesisState.evm_block_hashes":
+		list := []*GenesisEVMBlockHash{}
+		return protoreflect.ValueOfList(&_GenesisState_7_list{list: &list})
 	case "minievm.evm.v1.GenesisState.erc20_factory":
+		return protoreflect.ValueOfBytes(nil)
+	case "minievm.evm.v1.GenesisState.erc20_wrapper":
 		return protoreflect.ValueOfBytes(nil)
 	default:
 		if fd.IsExtension() {
@@ -573,13 +814,15 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Params)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.StateRoot)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		if len(x.KeyValues) > 0 {
 			for _, e := range x.KeyValues {
 				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if len(x.Erc20S) > 0 {
+			for _, b := range x.Erc20S {
+				l = len(b)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
@@ -589,13 +832,29 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.DenomAddresses) > 0 {
-			for _, e := range x.DenomAddresses {
+		if len(x.DenomTraces) > 0 {
+			for _, e := range x.DenomTraces {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if len(x.ClassTraces) > 0 {
+			for _, e := range x.ClassTraces {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if len(x.EvmBlockHashes) > 0 {
+			for _, e := range x.EvmBlockHashes {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
 		l = len(x.Erc20Factory)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Erc20Wrapper)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -628,16 +887,55 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if len(x.Erc20Wrapper) > 0 {
+			i -= len(x.Erc20Wrapper)
+			copy(dAtA[i:], x.Erc20Wrapper)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Erc20Wrapper)))
+			i--
+			dAtA[i] = 0x4a
+		}
 		if len(x.Erc20Factory) > 0 {
 			i -= len(x.Erc20Factory)
 			copy(dAtA[i:], x.Erc20Factory)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Erc20Factory)))
 			i--
-			dAtA[i] = 0x32
+			dAtA[i] = 0x42
 		}
-		if len(x.DenomAddresses) > 0 {
-			for iNdEx := len(x.DenomAddresses) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.DenomAddresses[iNdEx])
+		if len(x.EvmBlockHashes) > 0 {
+			for iNdEx := len(x.EvmBlockHashes) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.EvmBlockHashes[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x3a
+			}
+		}
+		if len(x.ClassTraces) > 0 {
+			for iNdEx := len(x.ClassTraces) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.ClassTraces[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x32
+			}
+		}
+		if len(x.DenomTraces) > 0 {
+			for iNdEx := len(x.DenomTraces) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.DenomTraces[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -667,6 +965,15 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x22
 			}
 		}
+		if len(x.Erc20S) > 0 {
+			for iNdEx := len(x.Erc20S) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.Erc20S[iNdEx])
+				copy(dAtA[i:], x.Erc20S[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Erc20S[iNdEx])))
+				i--
+				dAtA[i] = 0x1a
+			}
+		}
 		if len(x.KeyValues) > 0 {
 			for iNdEx := len(x.KeyValues) - 1; iNdEx >= 0; iNdEx-- {
 				encoded, err := options.Marshal(x.KeyValues[iNdEx])
@@ -680,15 +987,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], encoded)
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 				i--
-				dAtA[i] = 0x1a
+				dAtA[i] = 0x12
 			}
-		}
-		if len(x.StateRoot) > 0 {
-			i -= len(x.StateRoot)
-			copy(dAtA[i:], x.StateRoot)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.StateRoot)))
-			i--
-			dAtA[i] = 0x12
 		}
 		if x.Params != nil {
 			encoded, err := options.Marshal(x.Params)
@@ -791,40 +1091,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field StateRoot", wireType)
-				}
-				var byteLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					byteLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if byteLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + byteLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.StateRoot = append(x.StateRoot[:0], dAtA[iNdEx:postIndex]...)
-				if x.StateRoot == nil {
-					x.StateRoot = []byte{}
-				}
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field KeyValues", wireType)
 				}
 				var msglen int
@@ -856,6 +1122,38 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.KeyValues[len(x.KeyValues)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Erc20S", wireType)
+				}
+				var byteLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					byteLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if byteLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + byteLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Erc20S = append(x.Erc20S, make([]byte, postIndex-iNdEx))
+				copy(x.Erc20S[len(x.Erc20S)-1], dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
@@ -893,7 +1191,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 5:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DenomAddresses", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DenomTraces", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -920,12 +1218,80 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.DenomAddresses = append(x.DenomAddresses, &GenesisDenomAddress{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.DenomAddresses[len(x.DenomAddresses)-1]); err != nil {
+				x.DenomTraces = append(x.DenomTraces, &GenesisDenomTrace{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.DenomTraces[len(x.DenomTraces)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
 			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClassTraces", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ClassTraces = append(x.ClassTraces, &GenesisClassTrace{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClassTraces[len(x.ClassTraces)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 7:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EvmBlockHashes", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.EvmBlockHashes = append(x.EvmBlockHashes, &GenesisEVMBlockHash{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EvmBlockHashes[len(x.EvmBlockHashes)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 8:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Erc20Factory", wireType)
 				}
@@ -957,6 +1323,40 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				x.Erc20Factory = append(x.Erc20Factory[:0], dAtA[iNdEx:postIndex]...)
 				if x.Erc20Factory == nil {
 					x.Erc20Factory = []byte{}
+				}
+				iNdEx = postIndex
+			case 9:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Erc20Wrapper", wireType)
+				}
+				var byteLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					byteLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if byteLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + byteLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Erc20Wrapper = append(x.Erc20Wrapper[:0], dAtA[iNdEx:postIndex]...)
+				if x.Erc20Wrapper == nil {
+					x.Erc20Wrapper = []byte{}
 				}
 				iNdEx = postIndex
 			default:
@@ -2029,27 +2429,27 @@ func (x *fastReflection_GenesisERC20Stores) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_GenesisDenomAddress                  protoreflect.MessageDescriptor
-	fd_GenesisDenomAddress_denom            protoreflect.FieldDescriptor
-	fd_GenesisDenomAddress_contract_address protoreflect.FieldDescriptor
+	md_GenesisDenomTrace                  protoreflect.MessageDescriptor
+	fd_GenesisDenomTrace_denom            protoreflect.FieldDescriptor
+	fd_GenesisDenomTrace_contract_address protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_minievm_evm_v1_genesis_proto_init()
-	md_GenesisDenomAddress = File_minievm_evm_v1_genesis_proto.Messages().ByName("GenesisDenomAddress")
-	fd_GenesisDenomAddress_denom = md_GenesisDenomAddress.Fields().ByName("denom")
-	fd_GenesisDenomAddress_contract_address = md_GenesisDenomAddress.Fields().ByName("contract_address")
+	md_GenesisDenomTrace = File_minievm_evm_v1_genesis_proto.Messages().ByName("GenesisDenomTrace")
+	fd_GenesisDenomTrace_denom = md_GenesisDenomTrace.Fields().ByName("denom")
+	fd_GenesisDenomTrace_contract_address = md_GenesisDenomTrace.Fields().ByName("contract_address")
 }
 
-var _ protoreflect.Message = (*fastReflection_GenesisDenomAddress)(nil)
+var _ protoreflect.Message = (*fastReflection_GenesisDenomTrace)(nil)
 
-type fastReflection_GenesisDenomAddress GenesisDenomAddress
+type fastReflection_GenesisDenomTrace GenesisDenomTrace
 
-func (x *GenesisDenomAddress) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_GenesisDenomAddress)(x)
+func (x *GenesisDenomTrace) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_GenesisDenomTrace)(x)
 }
 
-func (x *GenesisDenomAddress) slowProtoReflect() protoreflect.Message {
+func (x *GenesisDenomTrace) slowProtoReflect() protoreflect.Message {
 	mi := &file_minievm_evm_v1_genesis_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2061,43 +2461,43 @@ func (x *GenesisDenomAddress) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_GenesisDenomAddress_messageType fastReflection_GenesisDenomAddress_messageType
-var _ protoreflect.MessageType = fastReflection_GenesisDenomAddress_messageType{}
+var _fastReflection_GenesisDenomTrace_messageType fastReflection_GenesisDenomTrace_messageType
+var _ protoreflect.MessageType = fastReflection_GenesisDenomTrace_messageType{}
 
-type fastReflection_GenesisDenomAddress_messageType struct{}
+type fastReflection_GenesisDenomTrace_messageType struct{}
 
-func (x fastReflection_GenesisDenomAddress_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_GenesisDenomAddress)(nil)
+func (x fastReflection_GenesisDenomTrace_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_GenesisDenomTrace)(nil)
 }
-func (x fastReflection_GenesisDenomAddress_messageType) New() protoreflect.Message {
-	return new(fastReflection_GenesisDenomAddress)
+func (x fastReflection_GenesisDenomTrace_messageType) New() protoreflect.Message {
+	return new(fastReflection_GenesisDenomTrace)
 }
-func (x fastReflection_GenesisDenomAddress_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_GenesisDenomAddress
+func (x fastReflection_GenesisDenomTrace_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_GenesisDenomTrace
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_GenesisDenomAddress) Descriptor() protoreflect.MessageDescriptor {
-	return md_GenesisDenomAddress
+func (x *fastReflection_GenesisDenomTrace) Descriptor() protoreflect.MessageDescriptor {
+	return md_GenesisDenomTrace
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_GenesisDenomAddress) Type() protoreflect.MessageType {
-	return _fastReflection_GenesisDenomAddress_messageType
+func (x *fastReflection_GenesisDenomTrace) Type() protoreflect.MessageType {
+	return _fastReflection_GenesisDenomTrace_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_GenesisDenomAddress) New() protoreflect.Message {
-	return new(fastReflection_GenesisDenomAddress)
+func (x *fastReflection_GenesisDenomTrace) New() protoreflect.Message {
+	return new(fastReflection_GenesisDenomTrace)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_GenesisDenomAddress) Interface() protoreflect.ProtoMessage {
-	return (*GenesisDenomAddress)(x)
+func (x *fastReflection_GenesisDenomTrace) Interface() protoreflect.ProtoMessage {
+	return (*GenesisDenomTrace)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2105,16 +2505,16 @@ func (x *fastReflection_GenesisDenomAddress) Interface() protoreflect.ProtoMessa
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_GenesisDenomAddress) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_GenesisDenomTrace) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Denom != "" {
 		value := protoreflect.ValueOfString(x.Denom)
-		if !f(fd_GenesisDenomAddress_denom, value) {
+		if !f(fd_GenesisDenomTrace_denom, value) {
 			return
 		}
 	}
 	if len(x.ContractAddress) != 0 {
 		value := protoreflect.ValueOfBytes(x.ContractAddress)
-		if !f(fd_GenesisDenomAddress_contract_address, value) {
+		if !f(fd_GenesisDenomTrace_contract_address, value) {
 			return
 		}
 	}
@@ -2131,17 +2531,17 @@ func (x *fastReflection_GenesisDenomAddress) Range(f func(protoreflect.FieldDesc
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_GenesisDenomAddress) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_GenesisDenomTrace) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "minievm.evm.v1.GenesisDenomAddress.denom":
+	case "minievm.evm.v1.GenesisDenomTrace.denom":
 		return x.Denom != ""
-	case "minievm.evm.v1.GenesisDenomAddress.contract_address":
+	case "minievm.evm.v1.GenesisDenomTrace.contract_address":
 		return len(x.ContractAddress) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomAddress"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomTrace"))
 		}
-		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomAddress does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomTrace does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2151,17 +2551,17 @@ func (x *fastReflection_GenesisDenomAddress) Has(fd protoreflect.FieldDescriptor
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_GenesisDenomAddress) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_GenesisDenomTrace) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "minievm.evm.v1.GenesisDenomAddress.denom":
+	case "minievm.evm.v1.GenesisDenomTrace.denom":
 		x.Denom = ""
-	case "minievm.evm.v1.GenesisDenomAddress.contract_address":
+	case "minievm.evm.v1.GenesisDenomTrace.contract_address":
 		x.ContractAddress = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomAddress"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomTrace"))
 		}
-		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomAddress does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomTrace does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2171,19 +2571,19 @@ func (x *fastReflection_GenesisDenomAddress) Clear(fd protoreflect.FieldDescript
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_GenesisDenomAddress) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_GenesisDenomTrace) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "minievm.evm.v1.GenesisDenomAddress.denom":
+	case "minievm.evm.v1.GenesisDenomTrace.denom":
 		value := x.Denom
 		return protoreflect.ValueOfString(value)
-	case "minievm.evm.v1.GenesisDenomAddress.contract_address":
+	case "minievm.evm.v1.GenesisDenomTrace.contract_address":
 		value := x.ContractAddress
 		return protoreflect.ValueOfBytes(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomAddress"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomTrace"))
 		}
-		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomAddress does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomTrace does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2197,17 +2597,17 @@ func (x *fastReflection_GenesisDenomAddress) Get(descriptor protoreflect.FieldDe
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_GenesisDenomAddress) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_GenesisDenomTrace) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "minievm.evm.v1.GenesisDenomAddress.denom":
+	case "minievm.evm.v1.GenesisDenomTrace.denom":
 		x.Denom = value.Interface().(string)
-	case "minievm.evm.v1.GenesisDenomAddress.contract_address":
+	case "minievm.evm.v1.GenesisDenomTrace.contract_address":
 		x.ContractAddress = value.Bytes()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomAddress"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomTrace"))
 		}
-		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomAddress does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomTrace does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2221,44 +2621,44 @@ func (x *fastReflection_GenesisDenomAddress) Set(fd protoreflect.FieldDescriptor
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_GenesisDenomAddress) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_GenesisDenomTrace) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "minievm.evm.v1.GenesisDenomAddress.denom":
-		panic(fmt.Errorf("field denom of message minievm.evm.v1.GenesisDenomAddress is not mutable"))
-	case "minievm.evm.v1.GenesisDenomAddress.contract_address":
-		panic(fmt.Errorf("field contract_address of message minievm.evm.v1.GenesisDenomAddress is not mutable"))
+	case "minievm.evm.v1.GenesisDenomTrace.denom":
+		panic(fmt.Errorf("field denom of message minievm.evm.v1.GenesisDenomTrace is not mutable"))
+	case "minievm.evm.v1.GenesisDenomTrace.contract_address":
+		panic(fmt.Errorf("field contract_address of message minievm.evm.v1.GenesisDenomTrace is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomAddress"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomTrace"))
 		}
-		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomAddress does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomTrace does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_GenesisDenomAddress) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_GenesisDenomTrace) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "minievm.evm.v1.GenesisDenomAddress.denom":
+	case "minievm.evm.v1.GenesisDenomTrace.denom":
 		return protoreflect.ValueOfString("")
-	case "minievm.evm.v1.GenesisDenomAddress.contract_address":
+	case "minievm.evm.v1.GenesisDenomTrace.contract_address":
 		return protoreflect.ValueOfBytes(nil)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomAddress"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisDenomTrace"))
 		}
-		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomAddress does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisDenomTrace does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_GenesisDenomAddress) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_GenesisDenomTrace) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.GenesisDenomAddress", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.GenesisDenomTrace", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2266,7 +2666,7 @@ func (x *fastReflection_GenesisDenomAddress) WhichOneof(d protoreflect.OneofDesc
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_GenesisDenomAddress) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_GenesisDenomTrace) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2277,7 +2677,7 @@ func (x *fastReflection_GenesisDenomAddress) GetUnknown() protoreflect.RawFields
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_GenesisDenomAddress) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_GenesisDenomTrace) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2289,7 +2689,7 @@ func (x *fastReflection_GenesisDenomAddress) SetUnknown(fields protoreflect.RawF
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_GenesisDenomAddress) IsValid() bool {
+func (x *fastReflection_GenesisDenomTrace) IsValid() bool {
 	return x != nil
 }
 
@@ -2299,9 +2699,9 @@ func (x *fastReflection_GenesisDenomAddress) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_GenesisDenomAddress) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_GenesisDenomTrace) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*GenesisDenomAddress)
+		x := input.Message.Interface().(*GenesisDenomTrace)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2331,7 +2731,7 @@ func (x *fastReflection_GenesisDenomAddress) ProtoMethods() *protoiface.Methods 
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*GenesisDenomAddress)
+		x := input.Message.Interface().(*GenesisDenomTrace)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2375,7 +2775,7 @@ func (x *fastReflection_GenesisDenomAddress) ProtoMethods() *protoiface.Methods 
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*GenesisDenomAddress)
+		x := input.Message.Interface().(*GenesisDenomTrace)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2407,10 +2807,10 @@ func (x *fastReflection_GenesisDenomAddress) ProtoMethods() *protoiface.Methods 
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisDenomAddress: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisDenomTrace: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisDenomAddress: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisDenomTrace: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2514,6 +2914,1026 @@ func (x *fastReflection_GenesisDenomAddress) ProtoMethods() *protoiface.Methods 
 	}
 }
 
+var (
+	md_GenesisClassTrace                  protoreflect.MessageDescriptor
+	fd_GenesisClassTrace_class_id         protoreflect.FieldDescriptor
+	fd_GenesisClassTrace_contract_address protoreflect.FieldDescriptor
+	fd_GenesisClassTrace_uri              protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_genesis_proto_init()
+	md_GenesisClassTrace = File_minievm_evm_v1_genesis_proto.Messages().ByName("GenesisClassTrace")
+	fd_GenesisClassTrace_class_id = md_GenesisClassTrace.Fields().ByName("class_id")
+	fd_GenesisClassTrace_contract_address = md_GenesisClassTrace.Fields().ByName("contract_address")
+	fd_GenesisClassTrace_uri = md_GenesisClassTrace.Fields().ByName("uri")
+}
+
+var _ protoreflect.Message = (*fastReflection_GenesisClassTrace)(nil)
+
+type fastReflection_GenesisClassTrace GenesisClassTrace
+
+func (x *GenesisClassTrace) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_GenesisClassTrace)(x)
+}
+
+func (x *GenesisClassTrace) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_genesis_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_GenesisClassTrace_messageType fastReflection_GenesisClassTrace_messageType
+var _ protoreflect.MessageType = fastReflection_GenesisClassTrace_messageType{}
+
+type fastReflection_GenesisClassTrace_messageType struct{}
+
+func (x fastReflection_GenesisClassTrace_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_GenesisClassTrace)(nil)
+}
+func (x fastReflection_GenesisClassTrace_messageType) New() protoreflect.Message {
+	return new(fastReflection_GenesisClassTrace)
+}
+func (x fastReflection_GenesisClassTrace_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_GenesisClassTrace
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_GenesisClassTrace) Descriptor() protoreflect.MessageDescriptor {
+	return md_GenesisClassTrace
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_GenesisClassTrace) Type() protoreflect.MessageType {
+	return _fastReflection_GenesisClassTrace_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_GenesisClassTrace) New() protoreflect.Message {
+	return new(fastReflection_GenesisClassTrace)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_GenesisClassTrace) Interface() protoreflect.ProtoMessage {
+	return (*GenesisClassTrace)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_GenesisClassTrace) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ClassId != "" {
+		value := protoreflect.ValueOfString(x.ClassId)
+		if !f(fd_GenesisClassTrace_class_id, value) {
+			return
+		}
+	}
+	if len(x.ContractAddress) != 0 {
+		value := protoreflect.ValueOfBytes(x.ContractAddress)
+		if !f(fd_GenesisClassTrace_contract_address, value) {
+			return
+		}
+	}
+	if x.Uri != "" {
+		value := protoreflect.ValueOfString(x.Uri)
+		if !f(fd_GenesisClassTrace_uri, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_GenesisClassTrace) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisClassTrace.class_id":
+		return x.ClassId != ""
+	case "minievm.evm.v1.GenesisClassTrace.contract_address":
+		return len(x.ContractAddress) != 0
+	case "minievm.evm.v1.GenesisClassTrace.uri":
+		return x.Uri != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisClassTrace"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisClassTrace does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisClassTrace) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisClassTrace.class_id":
+		x.ClassId = ""
+	case "minievm.evm.v1.GenesisClassTrace.contract_address":
+		x.ContractAddress = nil
+	case "minievm.evm.v1.GenesisClassTrace.uri":
+		x.Uri = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisClassTrace"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisClassTrace does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_GenesisClassTrace) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.GenesisClassTrace.class_id":
+		value := x.ClassId
+		return protoreflect.ValueOfString(value)
+	case "minievm.evm.v1.GenesisClassTrace.contract_address":
+		value := x.ContractAddress
+		return protoreflect.ValueOfBytes(value)
+	case "minievm.evm.v1.GenesisClassTrace.uri":
+		value := x.Uri
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisClassTrace"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisClassTrace does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisClassTrace) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisClassTrace.class_id":
+		x.ClassId = value.Interface().(string)
+	case "minievm.evm.v1.GenesisClassTrace.contract_address":
+		x.ContractAddress = value.Bytes()
+	case "minievm.evm.v1.GenesisClassTrace.uri":
+		x.Uri = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisClassTrace"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisClassTrace does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisClassTrace) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisClassTrace.class_id":
+		panic(fmt.Errorf("field class_id of message minievm.evm.v1.GenesisClassTrace is not mutable"))
+	case "minievm.evm.v1.GenesisClassTrace.contract_address":
+		panic(fmt.Errorf("field contract_address of message minievm.evm.v1.GenesisClassTrace is not mutable"))
+	case "minievm.evm.v1.GenesisClassTrace.uri":
+		panic(fmt.Errorf("field uri of message minievm.evm.v1.GenesisClassTrace is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisClassTrace"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisClassTrace does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_GenesisClassTrace) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisClassTrace.class_id":
+		return protoreflect.ValueOfString("")
+	case "minievm.evm.v1.GenesisClassTrace.contract_address":
+		return protoreflect.ValueOfBytes(nil)
+	case "minievm.evm.v1.GenesisClassTrace.uri":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisClassTrace"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisClassTrace does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_GenesisClassTrace) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.GenesisClassTrace", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_GenesisClassTrace) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisClassTrace) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_GenesisClassTrace) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_GenesisClassTrace) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*GenesisClassTrace)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.ClassId)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.ContractAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Uri)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*GenesisClassTrace)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.Uri) > 0 {
+			i -= len(x.Uri)
+			copy(dAtA[i:], x.Uri)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Uri)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.ContractAddress) > 0 {
+			i -= len(x.ContractAddress)
+			copy(dAtA[i:], x.ContractAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ContractAddress)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.ClassId) > 0 {
+			i -= len(x.ClassId)
+			copy(dAtA[i:], x.ClassId)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ClassId)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*GenesisClassTrace)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisClassTrace: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisClassTrace: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClassId", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ClassId = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ContractAddress", wireType)
+				}
+				var byteLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					byteLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if byteLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + byteLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ContractAddress = append(x.ContractAddress[:0], dAtA[iNdEx:postIndex]...)
+				if x.ContractAddress == nil {
+					x.ContractAddress = []byte{}
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Uri", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Uri = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_GenesisEVMBlockHash        protoreflect.MessageDescriptor
+	fd_GenesisEVMBlockHash_hash   protoreflect.FieldDescriptor
+	fd_GenesisEVMBlockHash_height protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_genesis_proto_init()
+	md_GenesisEVMBlockHash = File_minievm_evm_v1_genesis_proto.Messages().ByName("GenesisEVMBlockHash")
+	fd_GenesisEVMBlockHash_hash = md_GenesisEVMBlockHash.Fields().ByName("hash")
+	fd_GenesisEVMBlockHash_height = md_GenesisEVMBlockHash.Fields().ByName("height")
+}
+
+var _ protoreflect.Message = (*fastReflection_GenesisEVMBlockHash)(nil)
+
+type fastReflection_GenesisEVMBlockHash GenesisEVMBlockHash
+
+func (x *GenesisEVMBlockHash) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_GenesisEVMBlockHash)(x)
+}
+
+func (x *GenesisEVMBlockHash) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_genesis_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_GenesisEVMBlockHash_messageType fastReflection_GenesisEVMBlockHash_messageType
+var _ protoreflect.MessageType = fastReflection_GenesisEVMBlockHash_messageType{}
+
+type fastReflection_GenesisEVMBlockHash_messageType struct{}
+
+func (x fastReflection_GenesisEVMBlockHash_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_GenesisEVMBlockHash)(nil)
+}
+func (x fastReflection_GenesisEVMBlockHash_messageType) New() protoreflect.Message {
+	return new(fastReflection_GenesisEVMBlockHash)
+}
+func (x fastReflection_GenesisEVMBlockHash_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_GenesisEVMBlockHash
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_GenesisEVMBlockHash) Descriptor() protoreflect.MessageDescriptor {
+	return md_GenesisEVMBlockHash
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_GenesisEVMBlockHash) Type() protoreflect.MessageType {
+	return _fastReflection_GenesisEVMBlockHash_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_GenesisEVMBlockHash) New() protoreflect.Message {
+	return new(fastReflection_GenesisEVMBlockHash)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_GenesisEVMBlockHash) Interface() protoreflect.ProtoMessage {
+	return (*GenesisEVMBlockHash)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_GenesisEVMBlockHash) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.Hash) != 0 {
+		value := protoreflect.ValueOfBytes(x.Hash)
+		if !f(fd_GenesisEVMBlockHash_hash, value) {
+			return
+		}
+	}
+	if x.Height != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Height)
+		if !f(fd_GenesisEVMBlockHash_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_GenesisEVMBlockHash) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisEVMBlockHash.hash":
+		return len(x.Hash) != 0
+	case "minievm.evm.v1.GenesisEVMBlockHash.height":
+		return x.Height != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisEVMBlockHash"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisEVMBlockHash does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisEVMBlockHash) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisEVMBlockHash.hash":
+		x.Hash = nil
+	case "minievm.evm.v1.GenesisEVMBlockHash.height":
+		x.Height = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisEVMBlockHash"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisEVMBlockHash does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_GenesisEVMBlockHash) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.GenesisEVMBlockHash.hash":
+		value := x.Hash
+		return protoreflect.ValueOfBytes(value)
+	case "minievm.evm.v1.GenesisEVMBlockHash.height":
+		value := x.Height
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisEVMBlockHash"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisEVMBlockHash does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisEVMBlockHash) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisEVMBlockHash.hash":
+		x.Hash = value.Bytes()
+	case "minievm.evm.v1.GenesisEVMBlockHash.height":
+		x.Height = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisEVMBlockHash"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisEVMBlockHash does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisEVMBlockHash) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisEVMBlockHash.hash":
+		panic(fmt.Errorf("field hash of message minievm.evm.v1.GenesisEVMBlockHash is not mutable"))
+	case "minievm.evm.v1.GenesisEVMBlockHash.height":
+		panic(fmt.Errorf("field height of message minievm.evm.v1.GenesisEVMBlockHash is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisEVMBlockHash"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisEVMBlockHash does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_GenesisEVMBlockHash) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.GenesisEVMBlockHash.hash":
+		return protoreflect.ValueOfBytes(nil)
+	case "minievm.evm.v1.GenesisEVMBlockHash.height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.GenesisEVMBlockHash"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.GenesisEVMBlockHash does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_GenesisEVMBlockHash) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.GenesisEVMBlockHash", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_GenesisEVMBlockHash) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_GenesisEVMBlockHash) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_GenesisEVMBlockHash) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_GenesisEVMBlockHash) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*GenesisEVMBlockHash)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Hash)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Height != 0 {
+			n += 1 + runtime.Sov(uint64(x.Height))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*GenesisEVMBlockHash)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Height != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Height))
+			i--
+			dAtA[i] = 0x10
+		}
+		if len(x.Hash) > 0 {
+			i -= len(x.Hash)
+			copy(dAtA[i:], x.Hash)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Hash)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*GenesisEVMBlockHash)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisEVMBlockHash: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: GenesisEVMBlockHash: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Hash", wireType)
+				}
+				var byteLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					byteLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if byteLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + byteLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Hash = append(x.Hash[:0], dAtA[iNdEx:postIndex]...)
+				if x.Hash == nil {
+					x.Hash = []byte{}
+				}
+				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+				}
+				x.Height = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Height |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -2535,15 +3955,19 @@ type GenesisState struct {
 
 	// params defines the parameters of the module.
 	Params *Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	// state root
-	StateRoot []byte `protobuf:"bytes,2,opt,name=state_root,json=stateRoot,proto3" json:"state_root,omitempty"`
 	// vm kv store
-	KeyValues []*GenesisKeyValue `protobuf:"bytes,3,rep,name=key_values,json=keyValues,proto3" json:"key_values,omitempty"`
+	KeyValues []*GenesisKeyValue `protobuf:"bytes,2,rep,name=key_values,json=keyValues,proto3" json:"key_values,omitempty"`
+	// erc20 contracts
+	Erc20S [][]byte `protobuf:"bytes,3,rep,name=erc20s,proto3" json:"erc20s,omitempty"`
 	// erc20 stores
 	Erc20Stores    []*GenesisERC20Stores  `protobuf:"bytes,4,rep,name=erc20_stores,json=erc20Stores,proto3" json:"erc20_stores,omitempty"`
-	DenomAddresses []*GenesisDenomAddress `protobuf:"bytes,5,rep,name=denom_addresses,json=denomAddresses,proto3" json:"denom_addresses,omitempty"`
+	DenomTraces    []*GenesisDenomTrace   `protobuf:"bytes,5,rep,name=denom_traces,json=denomTraces,proto3" json:"denom_traces,omitempty"`
+	ClassTraces    []*GenesisClassTrace   `protobuf:"bytes,6,rep,name=class_traces,json=classTraces,proto3" json:"class_traces,omitempty"`
+	EvmBlockHashes []*GenesisEVMBlockHash `protobuf:"bytes,7,rep,name=evm_block_hashes,json=evmBlockHashes,proto3" json:"evm_block_hashes,omitempty"`
 	// erc20 factory contract address
-	Erc20Factory []byte `protobuf:"bytes,6,opt,name=erc20_factory,json=erc20Factory,proto3" json:"erc20_factory,omitempty"`
+	Erc20Factory []byte `protobuf:"bytes,8,opt,name=erc20_factory,json=erc20Factory,proto3" json:"erc20_factory,omitempty"`
+	// erc20 wrapper contract address
+	Erc20Wrapper []byte `protobuf:"bytes,9,opt,name=erc20_wrapper,json=erc20Wrapper,proto3" json:"erc20_wrapper,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -2573,16 +3997,16 @@ func (x *GenesisState) GetParams() *Params {
 	return nil
 }
 
-func (x *GenesisState) GetStateRoot() []byte {
+func (x *GenesisState) GetKeyValues() []*GenesisKeyValue {
 	if x != nil {
-		return x.StateRoot
+		return x.KeyValues
 	}
 	return nil
 }
 
-func (x *GenesisState) GetKeyValues() []*GenesisKeyValue {
+func (x *GenesisState) GetErc20S() [][]byte {
 	if x != nil {
-		return x.KeyValues
+		return x.Erc20S
 	}
 	return nil
 }
@@ -2594,9 +4018,23 @@ func (x *GenesisState) GetErc20Stores() []*GenesisERC20Stores {
 	return nil
 }
 
-func (x *GenesisState) GetDenomAddresses() []*GenesisDenomAddress {
+func (x *GenesisState) GetDenomTraces() []*GenesisDenomTrace {
 	if x != nil {
-		return x.DenomAddresses
+		return x.DenomTraces
+	}
+	return nil
+}
+
+func (x *GenesisState) GetClassTraces() []*GenesisClassTrace {
+	if x != nil {
+		return x.ClassTraces
+	}
+	return nil
+}
+
+func (x *GenesisState) GetEvmBlockHashes() []*GenesisEVMBlockHash {
+	if x != nil {
+		return x.EvmBlockHashes
 	}
 	return nil
 }
@@ -2604,6 +4042,13 @@ func (x *GenesisState) GetDenomAddresses() []*GenesisDenomAddress {
 func (x *GenesisState) GetErc20Factory() []byte {
 	if x != nil {
 		return x.Erc20Factory
+	}
+	return nil
+}
+
+func (x *GenesisState) GetErc20Wrapper() []byte {
+	if x != nil {
+		return x.Erc20Wrapper
 	}
 	return nil
 }
@@ -2696,8 +4141,8 @@ func (x *GenesisERC20Stores) GetStores() [][]byte {
 	return nil
 }
 
-// GenesisDenomAddress defines erc20 contract address of denom.
-type GenesisDenomAddress struct {
+// GenesisDenomTrace defines erc20 contract address of denom.
+type GenesisDenomTrace struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -2706,8 +4151,8 @@ type GenesisDenomAddress struct {
 	ContractAddress []byte `protobuf:"bytes,2,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
 }
 
-func (x *GenesisDenomAddress) Reset() {
-	*x = GenesisDenomAddress{}
+func (x *GenesisDenomTrace) Reset() {
+	*x = GenesisDenomTrace{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_minievm_evm_v1_genesis_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2715,29 +4160,123 @@ func (x *GenesisDenomAddress) Reset() {
 	}
 }
 
-func (x *GenesisDenomAddress) String() string {
+func (x *GenesisDenomTrace) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GenesisDenomAddress) ProtoMessage() {}
+func (*GenesisDenomTrace) ProtoMessage() {}
 
-// Deprecated: Use GenesisDenomAddress.ProtoReflect.Descriptor instead.
-func (*GenesisDenomAddress) Descriptor() ([]byte, []int) {
+// Deprecated: Use GenesisDenomTrace.ProtoReflect.Descriptor instead.
+func (*GenesisDenomTrace) Descriptor() ([]byte, []int) {
 	return file_minievm_evm_v1_genesis_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GenesisDenomAddress) GetDenom() string {
+func (x *GenesisDenomTrace) GetDenom() string {
 	if x != nil {
 		return x.Denom
 	}
 	return ""
 }
 
-func (x *GenesisDenomAddress) GetContractAddress() []byte {
+func (x *GenesisDenomTrace) GetContractAddress() []byte {
 	if x != nil {
 		return x.ContractAddress
 	}
 	return nil
+}
+
+type GenesisClassTrace struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ClassId         string `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	ContractAddress []byte `protobuf:"bytes,2,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
+	Uri             string `protobuf:"bytes,3,opt,name=uri,proto3" json:"uri,omitempty"`
+}
+
+func (x *GenesisClassTrace) Reset() {
+	*x = GenesisClassTrace{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_genesis_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GenesisClassTrace) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenesisClassTrace) ProtoMessage() {}
+
+// Deprecated: Use GenesisClassTrace.ProtoReflect.Descriptor instead.
+func (*GenesisClassTrace) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_genesis_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GenesisClassTrace) GetClassId() string {
+	if x != nil {
+		return x.ClassId
+	}
+	return ""
+}
+
+func (x *GenesisClassTrace) GetContractAddress() []byte {
+	if x != nil {
+		return x.ContractAddress
+	}
+	return nil
+}
+
+func (x *GenesisClassTrace) GetUri() string {
+	if x != nil {
+		return x.Uri
+	}
+	return ""
+}
+
+type GenesisEVMBlockHash struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Hash   []byte `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Height uint64 `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
+}
+
+func (x *GenesisEVMBlockHash) Reset() {
+	*x = GenesisEVMBlockHash{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_genesis_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GenesisEVMBlockHash) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenesisEVMBlockHash) ProtoMessage() {}
+
+// Deprecated: Use GenesisEVMBlockHash.ProtoReflect.Descriptor instead.
+func (*GenesisEVMBlockHash) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_genesis_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GenesisEVMBlockHash) GetHash() []byte {
+	if x != nil {
+		return x.Hash
+	}
+	return nil
+}
+
+func (x *GenesisEVMBlockHash) GetHeight() uint64 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
 }
 
 var File_minievm_evm_v1_genesis_proto protoreflect.FileDescriptor
@@ -2749,59 +4288,87 @@ var file_minievm_evm_v1_genesis_proto_rawDesc = []byte{
 	0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1a, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76,
 	0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x22, 0xb5, 0x03, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74,
+	0x22, 0xcb, 0x05, 0x0a, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74,
 	0x65, 0x12, 0x34, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x16, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e,
 	0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52,
-	0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x65,
-	0x5f, 0x72, 0x6f, 0x6f, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x73, 0x74, 0x61,
-	0x74, 0x65, 0x52, 0x6f, 0x6f, 0x74, 0x12, 0x59, 0x0a, 0x0a, 0x6b, 0x65, 0x79, 0x5f, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65,
-	0x73, 0x69, 0x73, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x42, 0x19, 0xc8, 0xde, 0x1f,
-	0x00, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6b, 0x65, 0x79, 0x5f, 0x76,
-	0x61, 0x6c, 0x75, 0x65, 0x73, 0x22, 0x52, 0x09, 0x6b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65,
-	0x73, 0x12, 0x62, 0x0a, 0x0c, 0x65, 0x72, 0x63, 0x32, 0x30, 0x5f, 0x73, 0x74, 0x6f, 0x72, 0x65,
-	0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76,
-	0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73,
-	0x45, 0x52, 0x43, 0x32, 0x30, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x42, 0x1b, 0xc8, 0xde, 0x1f,
-	0x00, 0xf2, 0xde, 0x1f, 0x13, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x65, 0x72, 0x63, 0x32, 0x30,
-	0x5f, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x22, 0x52, 0x0b, 0x65, 0x72, 0x63, 0x32, 0x30, 0x53,
-	0x74, 0x6f, 0x72, 0x65, 0x73, 0x12, 0x6c, 0x0a, 0x0f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x5f, 0x61,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23,
-	0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e,
-	0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x42, 0x1e, 0xc8, 0xde, 0x1f, 0x00, 0xf2, 0xde, 0x1f, 0x16, 0x79, 0x61, 0x6d,
-	0x6c, 0x3a, 0x22, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x65, 0x73, 0x22, 0x52, 0x0e, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x65, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x65, 0x72, 0x63, 0x32, 0x30, 0x5f, 0x66, 0x61, 0x63,
-	0x74, 0x6f, 0x72, 0x79, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0c, 0x65, 0x72, 0x63, 0x32,
-	0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x22, 0x39, 0x0a, 0x0f, 0x47, 0x65, 0x6e, 0x65,
-	0x73, 0x69, 0x73, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x6b,
-	0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a,
-	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x22, 0x46, 0x0a, 0x12, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x45, 0x52,
-	0x43, 0x32, 0x30, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x18, 0x02, 0x20,
-	0x03, 0x28, 0x0c, 0x52, 0x06, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x22, 0x56, 0x0a, 0x13, 0x47,
-	0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x29, 0x0a, 0x10, 0x63, 0x6f, 0x6e, 0x74,
-	0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0c, 0x52, 0x0f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x42, 0xa3, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6d, 0x69, 0x6e, 0x69,
-	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65,
-	0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x3b, 0x65, 0x76, 0x6d, 0x76,
-	0x31, 0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa, 0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76,
-	0x6d, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65,
-	0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a, 0x4d, 0x69, 0x6e, 0x69,
-	0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d,
-	0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x59, 0x0a, 0x0a, 0x6b, 0x65, 0x79, 0x5f, 0x76,
+	0x61, 0x6c, 0x75, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x6d, 0x69,
+	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e,
+	0x65, 0x73, 0x69, 0x73, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x42, 0x19, 0xc8, 0xde,
+	0x1f, 0x00, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6b, 0x65, 0x79, 0x5f,
+	0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x22, 0x52, 0x09, 0x6b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x73, 0x12, 0x33, 0x0a, 0x06, 0x65, 0x72, 0x63, 0x32, 0x30, 0x73, 0x18, 0x03, 0x20, 0x03,
+	0x28, 0x0c, 0x42, 0x1b, 0xe2, 0xde, 0x1f, 0x06, 0x45, 0x52, 0x43, 0x32, 0x30, 0x73, 0xf2, 0xde,
+	0x1f, 0x0d, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x65, 0x72, 0x63, 0x32, 0x30, 0x73, 0x22, 0x52,
+	0x06, 0x65, 0x72, 0x63, 0x32, 0x30, 0x73, 0x12, 0x62, 0x0a, 0x0c, 0x65, 0x72, 0x63, 0x32, 0x30,
+	0x5f, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e,
+	0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x47,
+	0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x45, 0x52, 0x43, 0x32, 0x30, 0x53, 0x74, 0x6f, 0x72, 0x65,
+	0x73, 0x42, 0x1b, 0xc8, 0xde, 0x1f, 0x00, 0xf2, 0xde, 0x1f, 0x13, 0x79, 0x61, 0x6d, 0x6c, 0x3a,
+	0x22, 0x65, 0x72, 0x63, 0x32, 0x30, 0x5f, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x22, 0x52, 0x0b,
+	0x65, 0x72, 0x63, 0x32, 0x30, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x12, 0x61, 0x0a, 0x0c, 0x64,
+	0x65, 0x6e, 0x6f, 0x6d, 0x5f, 0x74, 0x72, 0x61, 0x63, 0x65, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x21, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e,
+	0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x54,
+	0x72, 0x61, 0x63, 0x65, 0x42, 0x1b, 0xc8, 0xde, 0x1f, 0x00, 0xf2, 0xde, 0x1f, 0x13, 0x79, 0x61,
+	0x6d, 0x6c, 0x3a, 0x22, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x5f, 0x74, 0x72, 0x61, 0x63, 0x65, 0x73,
+	0x22, 0x52, 0x0b, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x54, 0x72, 0x61, 0x63, 0x65, 0x73, 0x12, 0x61,
+	0x0a, 0x0c, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x5f, 0x74, 0x72, 0x61, 0x63, 0x65, 0x73, 0x18, 0x06,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65,
+	0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x43, 0x6c, 0x61,
+	0x73, 0x73, 0x54, 0x72, 0x61, 0x63, 0x65, 0x42, 0x1b, 0xc8, 0xde, 0x1f, 0x00, 0xf2, 0xde, 0x1f,
+	0x13, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x5f, 0x74, 0x72, 0x61,
+	0x63, 0x65, 0x73, 0x22, 0x52, 0x0b, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x54, 0x72, 0x61, 0x63, 0x65,
+	0x73, 0x12, 0x80, 0x01, 0x0a, 0x10, 0x65, 0x76, 0x6d, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f,
+	0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x6d,
+	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65,
+	0x6e, 0x65, 0x73, 0x69, 0x73, 0x45, 0x56, 0x4d, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73,
+	0x68, 0x42, 0x31, 0xc8, 0xde, 0x1f, 0x00, 0xe2, 0xde, 0x1f, 0x0e, 0x45, 0x56, 0x4d, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0xf2, 0xde, 0x1f, 0x17, 0x79, 0x61, 0x6d,
+	0x6c, 0x3a, 0x22, 0x65, 0x76, 0x6d, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x61, 0x73,
+	0x68, 0x65, 0x73, 0x22, 0x52, 0x0e, 0x65, 0x76, 0x6d, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61,
+	0x73, 0x68, 0x65, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x65, 0x72, 0x63, 0x32, 0x30, 0x5f, 0x66, 0x61,
+	0x63, 0x74, 0x6f, 0x72, 0x79, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0c, 0x65, 0x72, 0x63,
+	0x32, 0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x23, 0x0a, 0x0d, 0x65, 0x72, 0x63,
+	0x32, 0x30, 0x5f, 0x77, 0x72, 0x61, 0x70, 0x70, 0x65, 0x72, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x0c, 0x65, 0x72, 0x63, 0x32, 0x30, 0x57, 0x72, 0x61, 0x70, 0x70, 0x65, 0x72, 0x22, 0x39,
+	0x0a, 0x0f, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03,
+	0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x46, 0x0a, 0x12, 0x47, 0x65, 0x6e,
+	0x65, 0x73, 0x69, 0x73, 0x45, 0x52, 0x43, 0x32, 0x30, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x12,
+	0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x6f,
+	0x72, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x06, 0x73, 0x74, 0x6f, 0x72, 0x65,
+	0x73, 0x22, 0x54, 0x0a, 0x11, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x44, 0x65, 0x6e, 0x6f,
+	0x6d, 0x54, 0x72, 0x61, 0x63, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x29, 0x0a, 0x10,
+	0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x6b, 0x0a, 0x11, 0x47, 0x65, 0x6e, 0x65, 0x73,
+	0x69, 0x73, 0x43, 0x6c, 0x61, 0x73, 0x73, 0x54, 0x72, 0x61, 0x63, 0x65, 0x12, 0x19, 0x0a, 0x08,
+	0x63, 0x6c, 0x61, 0x73, 0x73, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
+	0x63, 0x6c, 0x61, 0x73, 0x73, 0x49, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x63, 0x6f, 0x6e, 0x74, 0x72,
+	0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0c, 0x52, 0x0f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x69, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x03, 0x75, 0x72, 0x69, 0x22, 0x41, 0x0a, 0x13, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x45,
+	0x56, 0x4d, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x68,
+	0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12,
+	0x16, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0xa3, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e,
+	0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x42, 0x0c,
+	0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69,
+	0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x3b,
+	0x65, 0x76, 0x6d, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa, 0x02, 0x0e, 0x4d, 0x69,
+	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4d,
+	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a,
+	0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0x5c, 0x47,
+	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4d, 0x69, 0x6e,
+	0x69, 0x65, 0x76, 0x6d, 0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2816,24 +4383,28 @@ func file_minievm_evm_v1_genesis_proto_rawDescGZIP() []byte {
 	return file_minievm_evm_v1_genesis_proto_rawDescData
 }
 
-var file_minievm_evm_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_minievm_evm_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_minievm_evm_v1_genesis_proto_goTypes = []interface{}{
 	(*GenesisState)(nil),        // 0: minievm.evm.v1.GenesisState
 	(*GenesisKeyValue)(nil),     // 1: minievm.evm.v1.GenesisKeyValue
 	(*GenesisERC20Stores)(nil),  // 2: minievm.evm.v1.GenesisERC20Stores
-	(*GenesisDenomAddress)(nil), // 3: minievm.evm.v1.GenesisDenomAddress
-	(*Params)(nil),              // 4: minievm.evm.v1.Params
+	(*GenesisDenomTrace)(nil),   // 3: minievm.evm.v1.GenesisDenomTrace
+	(*GenesisClassTrace)(nil),   // 4: minievm.evm.v1.GenesisClassTrace
+	(*GenesisEVMBlockHash)(nil), // 5: minievm.evm.v1.GenesisEVMBlockHash
+	(*Params)(nil),              // 6: minievm.evm.v1.Params
 }
 var file_minievm_evm_v1_genesis_proto_depIdxs = []int32{
-	4, // 0: minievm.evm.v1.GenesisState.params:type_name -> minievm.evm.v1.Params
+	6, // 0: minievm.evm.v1.GenesisState.params:type_name -> minievm.evm.v1.Params
 	1, // 1: minievm.evm.v1.GenesisState.key_values:type_name -> minievm.evm.v1.GenesisKeyValue
 	2, // 2: minievm.evm.v1.GenesisState.erc20_stores:type_name -> minievm.evm.v1.GenesisERC20Stores
-	3, // 3: minievm.evm.v1.GenesisState.denom_addresses:type_name -> minievm.evm.v1.GenesisDenomAddress
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 3: minievm.evm.v1.GenesisState.denom_traces:type_name -> minievm.evm.v1.GenesisDenomTrace
+	4, // 4: minievm.evm.v1.GenesisState.class_traces:type_name -> minievm.evm.v1.GenesisClassTrace
+	5, // 5: minievm.evm.v1.GenesisState.evm_block_hashes:type_name -> minievm.evm.v1.GenesisEVMBlockHash
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_minievm_evm_v1_genesis_proto_init() }
@@ -2880,7 +4451,31 @@ func file_minievm_evm_v1_genesis_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_genesis_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GenesisDenomAddress); i {
+			switch v := v.(*GenesisDenomTrace); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_genesis_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GenesisClassTrace); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_genesis_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GenesisEVMBlockHash); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2898,7 +4493,7 @@ func file_minievm_evm_v1_genesis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_minievm_evm_v1_genesis_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

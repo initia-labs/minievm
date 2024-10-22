@@ -10,9 +10,10 @@ import (
 
 func DefaultParams() Params {
 	return Params{
-		AllowCustomERC20: true,
-		FeeDenom:         sdk.DefaultBondDenom,
-		GasRefundRatio:   math.LegacyNewDecWithPrec(5, 1),
+		AllowCustomERC20:     true,
+		FeeDenom:             sdk.DefaultBondDenom,
+		GasRefundRatio:       math.LegacyNewDecWithPrec(5, 1),
+		NumRetainBlockHashes: 256,
 	}
 }
 
@@ -41,6 +42,10 @@ func (p Params) Validate(ac address.Codec) error {
 
 	if p.GasRefundRatio.IsNegative() || p.GasRefundRatio.GT(math.LegacyOneDec()) {
 		return ErrInvalidGasRefundRatio
+	}
+
+	if p.NumRetainBlockHashes != 0 && p.NumRetainBlockHashes < 256 {
+		return ErrInvalidNumRetainBlockHashes
 	}
 
 	return nil

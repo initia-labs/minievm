@@ -57,6 +57,34 @@ func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpct
 		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainID)
 	}
 
+	// load queued txs
+	b.mut.Lock()
+	queuedTxs := b.queuedTxs.Values()
+	b.mut.Unlock()
+
+	for _, tx := range queuedTxs {
+		cosmosTx, err := b.app.TxDecode(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		ethTx, account, err := txUtils.ConvertCosmosTxToEthereumTx(ctx, cosmosTx)
+		if err != nil {
+			return nil, err
+		}
+		if ethTx == nil {
+			continue
+		}
+
+		dump, ok := content["queued"][account.Hex()]
+		if !ok {
+			dump = make(map[string]*rpctypes.RPCTransaction)
+			content["queued"][account.Hex()] = dump
+		}
+
+		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainID)
+	}
+
 	return content, nil
 }
 
@@ -66,24 +94,27 @@ func (b *JSONRPCBackend) TxPoolContentFrom(addr common.Address) (map[string]map[
 		return nil, err
 	}
 
-	dump := content["pending"][addr.Hex()]
 	accountContent := make(map[string]map[string]*rpctypes.RPCTransaction, 2)
-	accountContent["pending"] = dump
-	accountContent["queued"] = make(map[string]*rpctypes.RPCTransaction)
+	accountContent["pending"] = content["pending"][addr.Hex()]
+	accountContent["queued"] = content["queued"][addr.Hex()]
 
 	return accountContent, nil
 }
 
 // Status returns the number of pending and queued transaction in the pool.
 func (b *JSONRPCBackend) TxPoolStatus() (map[string]hexutil.Uint, error) {
-	numUnconfirmedTxs, err := b.clientCtx.Client.(rpcclient.MempoolClient).NumUnconfirmedTxs(b.ctx)
+	numPendingTxs, err := b.clientCtx.Client.(rpcclient.MempoolClient).NumUnconfirmedTxs(b.ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	b.mut.Lock()
+	numQueuedTxs := b.queuedTxs.Len()
+	b.mut.Unlock()
+
 	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(numUnconfirmedTxs.Count),
-		"queued":  hexutil.Uint(0),
+		"pending": hexutil.Uint(numPendingTxs.Count),
+		"queued":  hexutil.Uint(numQueuedTxs),
 	}, nil
 }
 
@@ -114,6 +145,13 @@ func (b *JSONRPCBackend) TxPoolInspect() (map[string]map[string]map[string]strin
 			dump[fmt.Sprintf("%d", tx.Nonce)] = format(tx)
 		}
 		inspectContent["pending"][account] = dump
+	}
+	for account, txs := range content["queued"] {
+		dump := make(map[string]string)
+		for _, tx := range txs {
+			dump[fmt.Sprintf("%d", tx.Nonce)] = format(tx)
+		}
+		inspectContent["queued"][account] = dump
 	}
 	return inspectContent, nil
 }

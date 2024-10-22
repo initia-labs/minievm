@@ -37,3 +37,12 @@ func (k Keeper) GasRefundRatio(ctx context.Context) (math.LegacyDec, error) {
 
 	return params.GasRefundRatio, nil
 }
+
+func (k Keeper) NumRetainBlockHashes(ctx context.Context) (uint64, error) {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return params.NumRetainBlockHashes, nil
+}
