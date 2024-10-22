@@ -269,11 +269,17 @@ func (k Keeper) GetERC20WrapperAddr(ctx context.Context) (common.Address, error)
 	return common.BytesToAddress(wrapperAddr), nil
 }
 
-// keep track recent 256 block hashes
-// - https://www.ethervm.io/#40
+// keep track recent `NumRetainBlockHashes` block hashes
+// - https://www.ethervm.io/#40 (default action is keep `256“ block hashes)
 func (k Keeper) TrackBlockHash(ctx context.Context, blockHeight uint64, hash common.Hash) error {
-	if blockHeight > 256 {
-		err := k.EVMBlockHashes.Remove(ctx, blockHeight-256)
+	num, err := k.NumRetainBlockHashes(ctx)
+	if err != nil {
+		return err
+	}
+
+	// keep all block hashes if `NumRetainBlockHashes` is 0
+	if num != 0 && blockHeight > num {
+		err := k.EVMBlockHashes.Remove(ctx, blockHeight-num)
 		if err != nil {
 			return err
 		}
