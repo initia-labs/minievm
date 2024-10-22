@@ -298,6 +298,9 @@ func NewMinitiaApp(
 	}
 
 	// override base-app's mempool
+	if app.evmIndexer != nil {
+		mempool = app.evmIndexer.MempoolWrapper(mempool)
+	}
 	app.SetMempool(mempool)
 
 	// override base-app's ante handler

@@ -53,3 +53,6 @@ dependency-graph.png
 
 # Go Workspace
 go.work.sum
+
+# testing
+test-scripts
