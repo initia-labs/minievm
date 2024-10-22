@@ -47,7 +47,8 @@ type FilterAPI struct {
 
 	logger log.Logger
 
-	filtersMu     sync.Mutex
+	filtersMut sync.Mutex
+
 	filters       map[rpc.ID]*filter
 	subscriptions map[rpc.ID]*subscription
 
@@ -84,13 +85,13 @@ func (api *FilterAPI) clearUnusedFilters() {
 
 	for {
 		time.Sleep(timeout)
-		api.filtersMu.Lock()
+		api.filtersMut.Lock()
 		for id, f := range api.filters {
 			if time.Since(f.lastUsed) > 5*time.Minute {
 				delete(api.filters, id)
 			}
 		}
-		api.filtersMu.Unlock()
+		api.filtersMut.Unlock()
 	}
 }
 
@@ -98,7 +99,7 @@ func (api *FilterAPI) subscribeEvents() {
 	for {
 		select {
 		case block := <-api.blockChan:
-			api.filtersMu.Lock()
+			api.filtersMut.Lock()
 			for _, f := range api.filters {
 				if f.ty == ethfilters.BlocksSubscription {
 					f.hashes = append(f.hashes, block.Hash())
@@ -109,9 +110,13 @@ func (api *FilterAPI) subscribeEvents() {
 					s.headerChan <- block
 				}
 			}
-			api.filtersMu.Unlock()
+			api.filtersMut.Unlock()
 		case logs := <-api.logsChan:
-			api.filtersMu.Lock()
+			if len(logs) == 0 {
+				continue
+			}
+
+			api.filtersMut.Lock()
 			for _, f := range api.filters {
 				if f.ty == ethfilters.LogsSubscription {
 					logs = filterLogs(logs, f.crit.FromBlock, f.crit.ToBlock, f.crit.Addresses, f.crit.Topics)
@@ -125,9 +130,9 @@ func (api *FilterAPI) subscribeEvents() {
 					s.logsChan <- logs
 				}
 			}
-			api.filtersMu.Unlock()
+			api.filtersMut.Unlock()
 		case tx := <-api.pendingChan:
-			api.filtersMu.Lock()
+			api.filtersMut.Lock()
 			for _, f := range api.filters {
 				if f.ty == ethfilters.PendingTransactionsSubscription {
 					if f.fullTx {
@@ -146,7 +151,7 @@ func (api *FilterAPI) subscribeEvents() {
 					}
 				}
 			}
-			api.filtersMu.Unlock()
+			api.filtersMut.Unlock()
 		}
 	}
 }
@@ -162,14 +167,14 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) 
 	}
 
 	id := rpc.NewID()
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	api.filters[id] = &filter{
 		ty:     ethfilters.PendingTransactionsSubscription,
 		fullTx: fullTx != nil && *fullTx,
 		txs:    make([]*rpctypes.RPCTransaction, 0),
 		hashes: make([]common.Hash, 0),
 	}
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 
 	return id, nil
 }
@@ -182,12 +187,12 @@ func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
 	}
 
 	id := rpc.NewID()
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	api.filters[id] = &filter{
 		ty:     ethfilters.BlocksSubscription,
 		hashes: make([]common.Hash, 0),
 	}
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 
 	return id, nil
 }
@@ -228,13 +233,13 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 	}
 
 	id := rpc.NewID()
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	api.filters[id] = &filter{
 		ty:   ethfilters.LogsSubscription,
 		crit: crit, lastUsed: time.Now(),
 		logs: make([]*coretypes.Log, 0),
 	}
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 
 	return id, nil
 }
@@ -275,19 +280,19 @@ func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteri
 
 // UninstallFilter removes the filter with the given filter id.
 func (api *FilterAPI) UninstallFilter(id rpc.ID) bool {
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	_, found := api.filters[id]
 	delete(api.filters, id)
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 	return found
 }
 
 // GetFilterLogs returns the logs for the filter with the given id.
 // If the filter could not be found an empty array of logs is returned.
 func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretypes.Log, error) {
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	f, found := api.filters[id]
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 
 	if !found || f.ty != ethfilters.LogsSubscription {
 		return nil, errFilterNotFound
@@ -326,8 +331,8 @@ func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretype
 // For pending transaction and block filters the result is []common.Hash.
 // (pending)Log filters return []Log.
 func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
-	api.filtersMu.Lock()
-	defer api.filtersMu.Unlock()
+	api.filtersMut.Lock()
+	defer api.filtersMut.Unlock()
 
 	f, ok := api.filters[id]
 	if !ok {

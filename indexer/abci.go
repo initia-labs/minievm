@@ -167,7 +167,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			return err
 		}
 
-		if len(e.logsChans) > 0 {
+		if len(e.logsChans) > 0 && len(receipt.Logs) > 0 {
 			for idx, log := range receipt.Logs {
 				// fill in missing fields before emitting
 				log.Index = uint(idx)
@@ -181,6 +181,14 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			for _, logsChan := range e.logsChans {
 				logsChan <- receipt.Logs
 			}
+		}
+	}
+
+	// emit empty logs event to confirm all logs are emitted and consumed, so the logs are
+	// available for querying.
+	if len(e.logsChans) > 0 {
+		for _, logsChan := range e.logsChans {
+			logsChan <- []*coretypes.Log{}
 		}
 	}
 

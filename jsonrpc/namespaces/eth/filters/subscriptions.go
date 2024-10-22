@@ -35,12 +35,12 @@ func (api *FilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 	)
 
 	id := rpc.NewID()
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	api.subscriptions[id] = &subscription{
 		ty:         ethfilters.BlocksSubscription,
 		headerChan: headerChan,
 	}
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 
 	go func() {
 		defer api.clearSubscription(id)
@@ -93,14 +93,14 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 	}
 
 	id := rpc.NewID()
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	api.subscriptions[id] = &subscription{
 		ty:   ethfilters.LogsSubscription,
 		crit: crit,
 
 		logsChan: logsChan,
 	}
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 
 	go func() {
 		defer api.clearSubscription(id)
@@ -136,14 +136,14 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 	)
 
 	id := rpc.NewID()
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	api.subscriptions[id] = &subscription{
 		ty:       ethfilters.PendingTransactionsSubscription,
 		fullTx:   fullTx != nil && *fullTx,
 		txChan:   txChan,
 		hashChan: hashChan,
 	}
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 
 	go func() {
 		defer api.clearSubscription(id)
@@ -164,7 +164,7 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 }
 
 func (api *FilterAPI) clearSubscription(id rpc.ID) {
-	api.filtersMu.Lock()
+	api.filtersMut.Lock()
 	delete(api.subscriptions, id)
-	api.filtersMu.Unlock()
+	api.filtersMut.Unlock()
 }
