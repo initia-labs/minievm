@@ -53,6 +53,14 @@ type MsgCall struct {
  // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. can be none
  AccessList []AccessTuple `protobuf:"bytes,5,rep,name=access_list,json=accessList,proto3" json:"access_list"`
 }
+
+type AccessTuple struct {
+ // Address of the contract that will be accessed during the transaction execution.
+ Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+ // A list of storage keys that the transaction will interact with within the specified contract.
+ // These keys represent specific storage slots in the contract's storage that are accessed or modified.
+ StorageKeys []string `protobuf:"bytes,2,rep,name=storage_keys,json=storageKeys,proto3" json:"storage_keys,omitempty"`
+}
 ```
 
 So we detail where we want to get each of these fields from:
@@ -101,7 +109,11 @@ ICS20 is JSON native, so we use JSON for the memo format.
         "message": {
           "contract_addr": "0x1",
           "input": "hex encoded byte string",
-          "value": "0"
+          "value": "0",
+          "access_list": {
+            "address" : "0x1", // contract address
+            "storage_keys":  ["0xabc","0xdef"] // storage keys of contract
+          }
         },
         // optional field to get async callback (ack and timeout)
         "async_callback": {
@@ -119,7 +131,7 @@ An ICS20 packet is formatted correctly for evmhooks iff the following all hold:
 - `memo` is not blank
 - `memo` is valid JSON
 - `memo` has at least one key, with value `"evm"`
-- `memo["evm"]["message"]` has exactly 3 entries, `"contract_addr"`, `"input"`, `"value"`
+- `memo["evm"]["message"]` has exactly 4 entries, `"contract_addr"`, `"input"`, `"value"`, `"access_list"`
 - `receiver` == "" || `receiver` == "module_address::module_name::function_name"
 
 We consider an ICS20 packet as directed towards evmhooks iff all of the following hold:
