@@ -119,7 +119,7 @@ func (api *FilterAPI) subscribeEvents() {
 			api.filtersMut.Lock()
 			for _, f := range api.filters {
 				if f.ty == ethfilters.LogsSubscription {
-					logs = filterLogs(logs, f.crit.FromBlock, f.crit.ToBlock, f.crit.Addresses, f.crit.Topics)
+					logs := filterLogs(logs, f.crit.FromBlock, f.crit.ToBlock, f.crit.Addresses, f.crit.Topics)
 					if len(logs) > 0 {
 						f.logs = append(f.logs, logs...)
 					}
@@ -127,7 +127,10 @@ func (api *FilterAPI) subscribeEvents() {
 			}
 			for _, s := range api.subscriptions {
 				if s.ty == ethfilters.LogsSubscription {
-					s.logsChan <- logs
+					logs := filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
+					if len(logs) > 0 {
+						s.logsChan <- logs
+					}
 				}
 			}
 			api.filtersMut.Unlock()
