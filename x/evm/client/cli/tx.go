@@ -47,7 +47,7 @@ func readContractBinFile(binFile string) ([]byte, error) {
 
 	contractBz, err = hex.DecodeString(string(contractBz))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read contract file")
+		return nil, errors.Wrap(err, "failed to read contract file: expect hex string")
 	}
 
 	return contractBz, nil
