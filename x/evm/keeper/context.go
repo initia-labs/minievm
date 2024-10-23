@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/holiman/uint256"
@@ -42,7 +41,6 @@ func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
 		gasLimit = k.config.ContractSimulationGasLimit
 	}
 
-	fmt.Println("gasLimit", gasLimit)
 	return gasLimit
 }
 
