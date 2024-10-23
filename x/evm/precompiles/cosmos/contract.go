@@ -139,7 +139,7 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_IS_MODULE_ADDRESS:
-		ctx.GasMeter().ConsumeGas(IS_MODULE_ADDRESS_GAS, "is_blocked_address")
+		ctx.GasMeter().ConsumeGas(IS_MODULE_ADDRESS_GAS, "is_module_address")
 
 		var isModuleAddressArguments IsModuleAddressArguments
 		if err := method.Inputs.Copy(&isModuleAddressArguments, args); err != nil {

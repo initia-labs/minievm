@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
@@ -38,6 +39,20 @@ func GetTxCmd(ac address.Codec) *cobra.Command {
 	return txCmd
 }
 
+func readContractBinFile(binFile string) ([]byte, error) {
+	contractBz, err := os.ReadFile(binFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read contract file")
+	}
+
+	contractBz, err = hex.DecodeString(string(contractBz))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read contract file")
+	}
+
+	return contractBz, nil
+}
+
 func CreateCmd(ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create [bin-file] --input [input-hex-string] --value [value]",
@@ -64,9 +79,9 @@ $ %s tx evm create ERC20.bin --input 0x1234 --value 100 --from mykey
 				return err
 			}
 
-			contractBz, err := os.ReadFile(args[0])
+			contractBz, err := readContractBinFile(args[0])
 			if err != nil {
-				return errors.Wrap(err, "failed to read contract file")
+				return err
 			}
 
 			input, err := cmd.Flags().GetString(FlagInput)
@@ -133,9 +148,9 @@ $ %s tx evm create2 100 ERC20.bin --input 0x1234 --value 100 --from mykey
 			if err != nil {
 				return errors.Wrap(err, "failed to parse salt")
 			}
-			contractBz, err := os.ReadFile(args[1])
+			contractBz, err := readContractBinFile(args[1])
 			if err != nil {
-				return errors.Wrap(err, "failed to read contract file")
+				return err
 			}
 
 			input, err := cmd.Flags().GetString(FlagInput)

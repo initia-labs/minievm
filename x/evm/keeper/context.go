@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/big"
 
 	"github.com/holiman/uint256"
@@ -41,6 +42,7 @@ func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
 		gasLimit = k.config.ContractSimulationGasLimit
 	}
 
+	fmt.Println("gasLimit", gasLimit)
 	return gasLimit
 }
 
@@ -261,6 +263,11 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		value,
 	)
 
+	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
+	if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+		return nil, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+	}
+
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	sdkCtx.GasMeter().ConsumeGas(gasUsed, "EVM gas consumption")
@@ -356,6 +363,11 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 			value,
 			uint256.NewInt(*salt),
 		)
+	}
+
+	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
+	if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+		return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
 	}
 
 	// London enforced
