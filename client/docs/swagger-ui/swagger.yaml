@@ -39576,6 +39576,48 @@ paths:
                       format: byte
       tags:
         - Query
+  /minievm/evm/v1/contracts/erc20_wrapper:
+    get:
+      summary: ERC20Wrapper gets the ERC20Wrapper contract address.
+      operationId: ERC20Wrapper
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              address:
+                type: string
+                title: 0x prefixed hex address
+            title: >-
+              QueryERC20WrapperResponse is the response type for the
+              Query/ERC20Wrapper RPC
+
+              method
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   /minievm/evm/v1/denoms/{contract_addr}:
     get:
       summary: Denom gets the denom of the given contract address.
@@ -39665,6 +39707,24 @@ paths:
                   fee_denom:
                     type: string
                     title: fee_denom defines the fee denom for the evm transactions
+                  gas_refund_ratio:
+                    type: string
+                    description: >-
+                      gas_refund_ratio defines the gas refund ratio for the evm
+                      transactions
+
+                      If the gas refund ratio is 0, the gas refund is disabled.
+                  num_retain_block_hashes:
+                    type: string
+                    format: uint64
+                    description: >-
+                      num_retain_block_hashes defines the number of block hashes
+                      to retain
+
+                      for the evm opcode `BLOCKHASH`.
+
+
+                      minimum is 256 and 0 means no limit.
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -68345,6 +68405,19 @@ definitions:
       fee_denom:
         type: string
         title: fee_denom defines the fee denom for the evm transactions
+      gas_refund_ratio:
+        type: string
+        description: |-
+          gas_refund_ratio defines the gas refund ratio for the evm transactions
+          If the gas refund ratio is 0, the gas refund is disabled.
+      num_retain_block_hashes:
+        type: string
+        format: uint64
+        description: |-
+          num_retain_block_hashes defines the number of block hashes to retain
+          for the evm opcode `BLOCKHASH`.
+
+          minimum is 256 and 0 means no limit.
     description: Params defines the set of move parameters.
   minievm.evm.v1.QueryCallRequest:
     type: object
@@ -68455,6 +68528,17 @@ definitions:
       RPC
 
       method
+  minievm.evm.v1.QueryERC20WrapperResponse:
+    type: object
+    properties:
+      address:
+        type: string
+        title: 0x prefixed hex address
+    title: >-
+      QueryERC20WrapperResponse is the response type for the Query/ERC20Wrapper
+      RPC
+
+      method
   minievm.evm.v1.QueryParamsResponse:
     type: object
     properties:
@@ -68489,6 +68573,24 @@ definitions:
           fee_denom:
             type: string
             title: fee_denom defines the fee denom for the evm transactions
+          gas_refund_ratio:
+            type: string
+            description: >-
+              gas_refund_ratio defines the gas refund ratio for the evm
+              transactions
+
+              If the gas refund ratio is 0, the gas refund is disabled.
+          num_retain_block_hashes:
+            type: string
+            format: uint64
+            description: >-
+              num_retain_block_hashes defines the number of block hashes to
+              retain
+
+              for the evm opcode `BLOCKHASH`.
+
+
+              minimum is 256 and 0 means no limit.
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
   minievm.evm.v1.QueryStateResponse:
     type: object
