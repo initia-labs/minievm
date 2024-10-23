@@ -50,6 +50,9 @@ func (args *TransactionArgs) CallDefaults() {
 	if args.Value == nil {
 		args.Value = new(hexutil.Big)
 	}
+	if args.From == nil {
+		args.From = new(common.Address)
+	}
 }
 
 // String returns the struct in a string format.

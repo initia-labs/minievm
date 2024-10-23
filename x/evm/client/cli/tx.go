@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
@@ -64,32 +65,14 @@ $ %s tx evm create ERC20.bin --input 0x1234 --value 100 --from mykey
 				return err
 			}
 
-			contractBz, err := os.ReadFile(args[0])
+			codeBz, val, err := prepareContractCreation(cmd, args[0])
 			if err != nil {
-				return errors.Wrap(err, "failed to read contract file")
-			}
-
-			input, err := cmd.Flags().GetString(FlagInput)
-			if err != nil {
-				return errors.Wrap(err, "failed to get input")
-			}
-			inputBz, err := hexutil.Decode(input)
-			if err != nil {
-				return errors.Wrap(err, "failed to decode input")
-			}
-
-			value, err := cmd.Flags().GetString(FlagValue)
-			if err != nil {
-				return errors.Wrap(err, "failed to get value")
-			}
-			val, ok := new(big.Int).SetString(value, 10)
-			if !ok {
-				return fmt.Errorf("invalid value: %s", value)
+				return err
 			}
 
 			msg := &types.MsgCreate{
 				Sender: sender,
-				Code:   hexutil.Encode(append(contractBz, inputBz...)),
+				Code:   hexutil.Encode(codeBz),
 				Value:  math.NewIntFromBigInt(val),
 			}
 
@@ -105,7 +88,7 @@ $ %s tx evm create ERC20.bin --input 0x1234 --value 100 --from mykey
 
 func Create2Cmd(ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create2 [salt] [bin file]  --input [input-hex-string] --value [value]",
+		Use:   "create2 [salt] [bin file] --input [input-hex-string] --value [value]",
 		Short: "Deploy evm contracts with CREATE2 opcode",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`
@@ -133,33 +116,16 @@ $ %s tx evm create2 100 ERC20.bin --input 0x1234 --value 100 --from mykey
 			if err != nil {
 				return errors.Wrap(err, "failed to parse salt")
 			}
-			contractBz, err := os.ReadFile(args[1])
-			if err != nil {
-				return errors.Wrap(err, "failed to read contract file")
-			}
 
-			input, err := cmd.Flags().GetString(FlagInput)
+			codeBz, val, err := prepareContractCreation(cmd, args[1])
 			if err != nil {
-				return errors.Wrap(err, "failed to get input")
-			}
-			inputBz, err := hexutil.Decode(input)
-			if err != nil {
-				return errors.Wrap(err, "failed to decode input")
-			}
-
-			value, err := cmd.Flags().GetString(FlagValue)
-			if err != nil {
-				return errors.Wrap(err, "failed to get value")
-			}
-			val, ok := new(big.Int).SetString(value, 10)
-			if !ok {
-				return fmt.Errorf("invalid value: %s", value)
+				return err
 			}
 
 			msg := &types.MsgCreate2{
 				Sender: sender,
 				Salt:   salt,
-				Code:   hexutil.Encode(append(contractBz, inputBz...)),
+				Code:   hexutil.Encode(codeBz),
 				Value:  math.NewIntFromBigInt(val),
 			}
 
@@ -232,4 +198,45 @@ $ %s tx evm call 0x1 0x123456 --from mykey
 	flags.AddTxFlagsToCmd(cmd)
 	cmd.Flags().String(FlagValue, "0", "value")
 	return cmd
+}
+
+func readContractBinFile(binFile string) ([]byte, error) {
+	contractBz, err := os.ReadFile(binFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read contract file")
+	}
+
+	contractBz, err = hex.DecodeString(string(contractBz))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read contract file: expect hex string")
+	}
+
+	return contractBz, nil
+}
+
+func prepareContractCreation(cmd *cobra.Command, contractFile string) ([]byte, *big.Int, error) {
+	contractBz, err := readContractBinFile(contractFile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	input, err := cmd.Flags().GetString(FlagInput)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get input")
+	}
+	inputBz, err := hexutil.Decode(input)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to decode input")
+	}
+
+	value, err := cmd.Flags().GetString(FlagValue)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get value")
+	}
+	val, ok := new(big.Int).SetString(value, 10)
+	if !ok {
+		return nil, nil, fmt.Errorf("invalid value: %s", value)
+	}
+
+	return append(contractBz, inputBz...), val, nil
 }
