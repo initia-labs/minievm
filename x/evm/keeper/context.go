@@ -263,7 +263,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 
 	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
 	if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
-		return nil, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+		return nil, nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
 
 	// London enforced
