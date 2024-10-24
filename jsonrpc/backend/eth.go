@@ -47,7 +47,7 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 	}
 
 	// if blockNrOrHash is nil, use the latest block
-	if blockNrOrHash != nil {
+	if blockNrOrHash == nil {
 		latest := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
 		blockNrOrHash = &latest
 	}
