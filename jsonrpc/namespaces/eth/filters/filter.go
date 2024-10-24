@@ -70,7 +70,7 @@ func newFilter(
 
 // Logs searches the blockchain for matching log entries, returning all from the
 // first block that contains matches, updating the start of the filter accordingly.
-func (f *Filter) Logs(ctx context.Context, blockLimit int64) ([]*coretypes.Log, error) {
+func (f *Filter) Logs(ctx context.Context) ([]*coretypes.Log, error) {
 	var err error
 
 	// If we're doing singleton block filtering, execute and return
@@ -110,9 +110,6 @@ func (f *Filter) Logs(ctx context.Context, blockLimit int64) ([]*coretypes.Log, 
 	}
 	if f.end < f.begin {
 		return nil, fmt.Errorf("invalid range [%d, %d]", f.begin, f.end)
-	}
-	if f.end-f.begin > blockLimit {
-		return nil, fmt.Errorf("maximum [begin, end] blocks distance: %d", blockLimit)
 	}
 
 	// check bounds

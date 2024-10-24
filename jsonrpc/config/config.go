@@ -44,6 +44,8 @@ const (
 	DefaultFeeHistoryMaxHeaders = 1024
 	// DefaultFeeHistoryMaxBlocks is the default maximum number of blocks, which can be used to lookup the fee history.
 	DefaultFeeHistoryMaxBlocks = 1024
+	// DefaultFilterTimeout is the default filter timeout, how long filters stay active.
+	DefaultFilterTimeout = 5 * time.Minute
 )
 
 var (
@@ -59,8 +61,6 @@ const (
 	flagJSONRPCEnableUnsafeCORS     = "json-rpc.enable-unsafe-cors"
 	flagJSONRPCAPIs                 = "json-rpc.apis"
 	flagJSONRPCLogsCap              = "json-rpc.logs-cap"
-	flagJSONRPCFilterCap            = "json-rpc.filter-cap"
-	flagJSONRPCBlockRangeCap        = "json-rpc.block-range-cap"
 	flagJSONRPCHTTPTimeout          = "json-rpc.http-timeout"
 	flagJSONRPCHTTPIdleTimeout      = "json-rpc.http-idle-timeout"
 	flagJSONRPCMaxOpenConnections   = "json-rpc.max-open-connections"
@@ -70,6 +70,7 @@ const (
 	flagJSONRPCQueuedTransactionTTL = "json-rpc.queued-transaction-ttl"
 	flagJSONRPCFeeHistoryMaxHeaders = "json-rpc.fee-history-max-headers"
 	flagJSONRPCFeeHistoryMaxBlocks  = "json-rpc.fee-history-max-blocks"
+	flagJSONRPCFilterTimeout        = "json-rpc.filter-timeout"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -86,10 +87,6 @@ type JSONRPCConfig struct {
 	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
 	// API defines a list of JSON-RPC namespaces that should be enabled
 	APIs []string `mapstructure:"apis"`
-	// FilterCap is the global cap for total number of filters that can be created.
-	FilterCap int32 `mapstructure:"filter-cap"`
-	// BlockRangeCap defines the max block range allowed for `eth_getLogs` query.
-	BlockRangeCap int32 `mapstructure:"block-range-cap"`
 	// HTTPTimeout is the read/write timeout of http json-rpc server.
 	HTTPTimeout time.Duration `mapstructure:"http-timeout"`
 	// HTTPIdleTimeout is the idle timeout of http json-rpc server.
@@ -107,6 +104,8 @@ type JSONRPCConfig struct {
 	FeeHistoryMaxHeaders int `mapstructure:"fee-history-max-headers"`
 	// FeeHistoryMaxBlocks is the maximum number of blocks, which can be used to lookup the fee history.
 	FeeHistoryMaxBlocks int `mapstructure:"fee-history-max-blocks"`
+	// FilterTimeout is a duration how long filters stay active (default: 5min)
+	FilterTimeout time.Duration `mapstructure:"filter-timeout"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -120,9 +119,6 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 
 		APIs: DefaultAPIs,
 
-		FilterCap:     DefaultFilterCap,
-		BlockRangeCap: DefaultBlockRangeCap,
-
 		HTTPTimeout:        DefaultHTTPTimeout,
 		HTTPIdleTimeout:    DefaultHTTPIdleTimeout,
 		MaxOpenConnections: DefaultMaxOpenConnections,
@@ -134,6 +130,8 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 
 		FeeHistoryMaxHeaders: DefaultFeeHistoryMaxHeaders,
 		FeeHistoryMaxBlocks:  DefaultFeeHistoryMaxBlocks,
+
+		FilterTimeout: DefaultFilterTimeout,
 	}
 }
 
@@ -145,8 +143,6 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().String(flagJSONRPCAddressWS, DefaultAddressWS, "Address to listen on for the WebSocket server")
 	startCmd.Flags().Bool(flagJSONRPCEnableUnsafeCORS, DefaultEnableUnsafeCORS, "Enable unsafe CORS")
 	startCmd.Flags().StringSlice(flagJSONRPCAPIs, DefaultAPIs, "List of JSON-RPC namespaces that should be enabled")
-	startCmd.Flags().Int32(flagJSONRPCFilterCap, DefaultFilterCap, "Sets the global cap for total number of filters that can be created")
-	startCmd.Flags().Int32(flagJSONRPCBlockRangeCap, DefaultBlockRangeCap, "Max block range allowed for 'eth_getLogs' query")
 	startCmd.Flags().Duration(flagJSONRPCHTTPTimeout, DefaultHTTPTimeout, "Read/write timeout of http json-rpc server")
 	startCmd.Flags().Duration(flagJSONRPCHTTPIdleTimeout, DefaultHTTPIdleTimeout, "Idle timeout of http json-rpc server")
 	startCmd.Flags().Int(flagJSONRPCMaxOpenConnections, DefaultMaxOpenConnections, "Maximum number of simultaneous connections for the server listener")
@@ -155,6 +151,7 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCQueuedTransactionCap, DefaultQueuedTransactionCap, "Maximum number of queued transactions that can be in the transaction pool")
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxHeaders, DefaultFeeHistoryMaxHeaders, "Maximum number of headers used to lookup the fee history")
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxBlocks, DefaultFeeHistoryMaxBlocks, "Maximum number of blocks used to lookup the fee history")
+	startCmd.Flags().Duration(flagJSONRPCFilterTimeout, DefaultFilterTimeout, "Duration how long filters stay active")
 }
 
 // GetConfig load config values from the app options
@@ -166,8 +163,6 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		AddressWS:            cast.ToString(appOpts.Get(flagJSONRPCAddressWS)),
 		EnableUnsafeCORS:     cast.ToBool(appOpts.Get(flagJSONRPCEnableUnsafeCORS)),
 		APIs:                 strings.Split(cast.ToString(appOpts.Get(flagJSONRPCAPIs)), ","),
-		FilterCap:            cast.ToInt32(appOpts.Get(flagJSONRPCFilterCap)),
-		BlockRangeCap:        cast.ToInt32(appOpts.Get(flagJSONRPCBlockRangeCap)),
 		HTTPTimeout:          cast.ToDuration(appOpts.Get(flagJSONRPCHTTPTimeout)),
 		HTTPIdleTimeout:      cast.ToDuration(appOpts.Get(flagJSONRPCHTTPIdleTimeout)),
 		MaxOpenConnections:   cast.ToInt(appOpts.Get(flagJSONRPCMaxOpenConnections)),
@@ -176,6 +171,7 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		QueuedTransactionCap: cast.ToInt(appOpts.Get(flagJSONRPCQueuedTransactionCap)),
 		FeeHistoryMaxHeaders: cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxHeaders)),
 		FeeHistoryMaxBlocks:  cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxBlocks)),
+		FilterTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCFilterTimeout)),
 	}
 }
 
@@ -206,12 +202,6 @@ enable-unsafe-cors = {{ .JSONRPCConfig.EnableUnsafeCORS }}
 # Example: "eth,txpool,personal,net,debug,web3"
 apis = "{{range $index, $elmt := .JSONRPCConfig.APIs}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
 
-# FilterCap is the global cap for total number of filters that can be created.
-filter-cap = {{ .JSONRPCConfig.FilterCap }}
-
-# BlockRangeCap defines the max block range allowed for 'eth_getLogs' query.
-block-range-cap = {{ .JSONRPCConfig.BlockRangeCap }}
-
 # HTTPTimeout is the read/write timeout of http json-rpc server.
 http-timeout = "{{ .JSONRPCConfig.HTTPTimeout }}"
 
@@ -237,4 +227,7 @@ fee-history-max-headers = {{ .JSONRPCConfig.FeeHistoryMaxHeaders }}
 
 # FeeHistoryMaxBlocks is the maximum number of blocks, which can be used to lookup the fee history.
 fee-history-max-blocks = {{ .JSONRPCConfig.FeeHistoryMaxBlocks }}
+
+# FilterTimeout is a duration how long filters stay active (default: 5min)
+filter-timeout = "{{ .JSONRPCConfig.FilterTimeout }}"
 `

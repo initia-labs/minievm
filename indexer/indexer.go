@@ -138,3 +138,29 @@ func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.
 	e.pendingChans = append(e.pendingChans, pendingChan)
 	return blockChan, logsChan, pendingChan
 }
+
+// blockEvents is a struct to emit block events.
+type blockEvents struct {
+	header *coretypes.Header
+	logs   [][]*coretypes.Log
+}
+
+// blockEventsEmitter emits block events to subscribers.
+func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan struct{}) {
+	if blockEvents == nil {
+		return
+	}
+	for _, logs := range blockEvents.logs {
+		for _, logsChan := range e.logsChans {
+			logsChan <- logs
+		}
+	}
+	for _, logsChan := range e.logsChans {
+		logsChan <- []*coretypes.Log{}
+	}
+	for _, blockChan := range e.blockChans {
+		blockChan <- blockEvents.header
+	}
+
+	close(done)
+}

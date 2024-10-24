@@ -18,12 +18,13 @@ type subscription struct {
 	crit   ethfilters.FilterCriteria
 	fullTx bool
 
+	// for listening
 	headerChan chan *coretypes.Header
 	logsChan   chan []*coretypes.Log
 	txChan     chan *rpctypes.RPCTransaction
 	hashChan   chan common.Hash
 
-	// Channels to signal the subscription is installed or uninstalled
+	// for lifecycle
 	installed chan struct{} // closed when the subscription is installed
 	err       chan error    // closed when the subscription is uninstalled
 	unsubOnce sync.Once
@@ -43,18 +44,21 @@ func (api *FilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 
 	id := rpc.NewID()
 	s := &subscription{
-		id:         id,
-		ty:         ethfilters.BlocksSubscription,
+		id: id,
+		ty: ethfilters.BlocksSubscription,
+
+		// for listening
 		headerChan: headerChan,
 
+		// for lifecycle
 		installed: make(chan struct{}),
 		err:       make(chan error),
 	}
-	api.install <- s
-	<-s.installed
+
+	api.installSubscription(s)
 
 	go func() {
-		defer api.clearSubscription(s)
+		defer api.uninstallSubscription(s)
 
 		for {
 			select {
@@ -109,19 +113,22 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 		ty:   ethfilters.LogsSubscription,
 		crit: crit,
 
+		// for listening
 		logsChan: logsChan,
 
+		// for lifecycle
 		installed: make(chan struct{}),
 		err:       make(chan error),
 	}
-	api.install <- s
-	<-s.installed
+
+	api.installSubscription(s)
 
 	go func() {
-		defer api.clearSubscription(s)
+		defer api.uninstallSubscription(s)
 		for {
 			select {
 			case logs := <-logsChan:
+				logs = filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
 				for _, log := range logs {
 					log := log
 					_ = notifier.Notify(rpcSub.ID, &log)
@@ -152,20 +159,23 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 
 	id := rpc.NewID()
 	s := &subscription{
-		id:       id,
-		ty:       ethfilters.PendingTransactionsSubscription,
-		fullTx:   fullTx != nil && *fullTx,
+		id:     id,
+		ty:     ethfilters.PendingTransactionsSubscription,
+		fullTx: fullTx != nil && *fullTx,
+
+		// for listening
 		txChan:   txChan,
 		hashChan: hashChan,
 
+		// for lifecycle
 		installed: make(chan struct{}),
 		err:       make(chan error),
 	}
-	api.install <- s
-	<-s.installed
+
+	api.installSubscription(s)
 
 	go func() {
-		defer api.clearSubscription(s)
+		defer api.uninstallSubscription(s)
 
 		for {
 			select {
@@ -182,7 +192,12 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 	return rpcSub, nil
 }
 
-func (api *FilterAPI) clearSubscription(s *subscription) {
+func (api *FilterAPI) installSubscription(s *subscription) {
+	api.install <- s
+	<-s.installed
+}
+
+func (api *FilterAPI) uninstallSubscription(s *subscription) {
 	s.unsubOnce.Do(func() {
 	uninstallLoop:
 		for {
