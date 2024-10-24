@@ -47,13 +47,3 @@ func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error
 
 	return blockLogs, nil
 }
-
-// RPCFilterCap is the limit for total number of filters that can be created
-func (b *JSONRPCBackend) RPCFilterCap() int32 {
-	return b.cfg.FilterCap
-}
-
-// RPCFilterCap is the limit for total number of filters that can be created
-func (b *JSONRPCBackend) RPCBlockRangeCap() int32 {
-	return b.cfg.BlockRangeCap
-}

@@ -22,7 +22,6 @@ var (
 	errFilterNotFound    = errors.New("filter not found")
 	errInvalidBlockRange = errors.New("invalid block range params")
 	errExceedMaxTopics   = errors.New("exceed max topics")
-	errExceedFilterCap   = errors.New("exceed filter cap")
 )
 
 // The maximum number of topic criteria allowed, vm.LOG4 - vm.LOG0
@@ -38,6 +37,9 @@ type filter struct {
 
 	// lastUsed is the time the filter was last used
 	lastUsed time.Time
+
+	// subscription lifecycle
+	s *subscription
 }
 
 // FilterAPI is the eth_ filter namespace API
@@ -89,16 +91,28 @@ func NewFilterAPI(app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger l
 // clearUnusedFilters removes filters that have not been used for 5 minutes
 func (api *FilterAPI) clearUnusedFilters() {
 	const timeout = 5 * time.Minute
+	ticker := time.NewTicker(timeout)
+	defer ticker.Stop()
 
+	var toUninstall []*subscription
 	for {
-		time.Sleep(timeout)
+		<-ticker.C
 		api.filtersMut.Lock()
 		for id, f := range api.filters {
-			if time.Since(f.lastUsed) > 5*time.Minute {
+			if time.Since(f.lastUsed) > timeout {
+				toUninstall = append(toUninstall, f.s)
 				delete(api.filters, id)
 			}
 		}
 		api.filtersMut.Unlock()
+
+		// Unsubscribes are processed outside the lock to avoid the following scenario:
+		// event loop attempts broadcasting events to still active filters while
+		// Unsubscribe is waiting for it to process the uninstall request.
+		for _, s := range toUninstall {
+			api.uninstallSubscription(s)
+		}
+		toUninstall = nil
 	}
 }
 
@@ -106,14 +120,6 @@ func (api *FilterAPI) eventLoop() {
 	for {
 		select {
 		case block := <-api.blockChan:
-			api.filtersMut.Lock()
-			for _, f := range api.filters {
-				if f.ty == ethfilters.BlocksSubscription {
-					f.hashes = append(f.hashes, block.Hash())
-				}
-			}
-			api.filtersMut.Unlock()
-
 			for _, s := range api.subscriptions {
 				if s.ty == ethfilters.BlocksSubscription {
 					s.headerChan <- block
@@ -124,38 +130,13 @@ func (api *FilterAPI) eventLoop() {
 				continue
 			}
 
-			api.filtersMut.Lock()
-			for _, f := range api.filters {
-				if f.ty == ethfilters.LogsSubscription {
-					logs := filterLogs(logs, f.crit.FromBlock, f.crit.ToBlock, f.crit.Addresses, f.crit.Topics)
-					if len(logs) > 0 {
-						f.logs = append(f.logs, logs...)
-					}
-				}
-			}
-			api.filtersMut.Unlock()
-
 			for _, s := range api.subscriptions {
 				if s.ty == ethfilters.LogsSubscription {
-					logs := filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
-					if len(logs) > 0 {
-						s.logsChan <- logs
-					}
+					// logs will be filtered in the subscription in the goroutine
+					s.logsChan <- logs
 				}
 			}
 		case tx := <-api.pendingChan:
-			api.filtersMut.Lock()
-			for _, f := range api.filters {
-				if f.ty == ethfilters.PendingTransactionsSubscription {
-					if f.fullTx {
-						f.txs = append(f.txs, tx)
-					} else {
-						f.hashes = append(f.hashes, tx.Hash)
-					}
-				}
-			}
-			api.filtersMut.Unlock()
-
 			for _, s := range api.subscriptions {
 				if s.ty == ethfilters.PendingTransactionsSubscription {
 					if s.fullTx {
@@ -182,19 +163,55 @@ func (api *FilterAPI) eventLoop() {
 // It is part of the filter package because this filter can be used through the
 // `eth_getFilterChanges` polling method that is also used for log filters.
 func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) {
-	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
-		return "", errExceedFilterCap
-	}
+	var (
+		txChan   = make(chan *rpctypes.RPCTransaction)
+		hashChan = make(chan common.Hash)
+	)
 
 	id := rpc.NewID()
+	s := &subscription{
+		id:     id,
+		ty:     ethfilters.PendingTransactionsSubscription,
+		fullTx: fullTx != nil && *fullTx,
+
+		// for listening
+		txChan:   txChan,
+		hashChan: hashChan,
+
+		// for lifecycle
+		installed: make(chan struct{}),
+		err:       make(chan error),
+	}
+	api.installSubscription(s)
+
 	api.filtersMut.Lock()
 	api.filters[id] = &filter{
 		ty:     ethfilters.PendingTransactionsSubscription,
 		fullTx: fullTx != nil && *fullTx,
 		txs:    make([]*rpctypes.RPCTransaction, 0),
 		hashes: make([]common.Hash, 0),
+		s:      s,
 	}
 	api.filtersMut.Unlock()
+
+	go func() {
+		for {
+			select {
+			case rpcTx := <-txChan:
+				api.filtersMut.Lock()
+				if f, found := api.filters[id]; found {
+					f.txs = append(f.txs, rpcTx)
+				}
+				api.filtersMut.Unlock()
+			case hash := <-hashChan:
+				if f, found := api.filters[id]; found {
+					f.hashes = append(f.hashes, hash)
+				}
+			case <-s.err: // subsciprtion is uninstalled
+				return
+			}
+		}
+	}()
 
 	return id, nil
 }
@@ -202,17 +219,46 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) 
 // NewBlockFilter creates a filter that fetches blocks that are imported into the chain.
 // It is part of the filter package since polling goes with eth_getFilterChanges.
 func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
-	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
-		return "", errExceedFilterCap
-	}
+	var (
+		headerChan = make(chan *coretypes.Header)
+	)
 
 	id := rpc.NewID()
+	s := &subscription{
+		id: id,
+		ty: ethfilters.BlocksSubscription,
+
+		// for listening
+		headerChan: headerChan,
+
+		// for lifecycle
+		installed: make(chan struct{}),
+		err:       make(chan error),
+	}
+	api.installSubscription(s)
+
 	api.filtersMut.Lock()
 	api.filters[id] = &filter{
 		ty:     ethfilters.BlocksSubscription,
 		hashes: make([]common.Hash, 0),
+		s:      s,
 	}
 	api.filtersMut.Unlock()
+
+	go func() {
+		for {
+			select {
+			case header := <-headerChan:
+				api.filtersMut.Lock()
+				if f, found := api.filters[id]; found {
+					f.hashes = append(f.hashes, header.Hash())
+				}
+				api.filtersMut.Unlock()
+			case <-s.err: // subsciprtion is uninstalled
+				return
+			}
+		}
+	}()
 
 	return id, nil
 }
@@ -228,9 +274,6 @@ func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
 func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) {
 	if len(crit.Topics) > maxTopics {
 		return "", errExceedMaxTopics
-	}
-	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
-		return "", errExceedFilterCap
 	}
 
 	var from, to rpc.BlockNumber
@@ -252,14 +295,49 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 		return "", errInvalidBlockRange
 	}
 
+	var (
+		logsChan = make(chan []*coretypes.Log)
+	)
+
 	id := rpc.NewID()
+	s := &subscription{
+		id:   id,
+		ty:   ethfilters.LogsSubscription,
+		crit: crit,
+
+		// for listening
+		logsChan: logsChan,
+
+		// for lifecycle
+		installed: make(chan struct{}),
+		err:       make(chan error),
+	}
+	api.installSubscription(s)
+
 	api.filtersMut.Lock()
 	api.filters[id] = &filter{
 		ty:   ethfilters.LogsSubscription,
 		crit: crit, lastUsed: time.Now(),
 		logs: make([]*coretypes.Log, 0),
+		s:    s,
 	}
 	api.filtersMut.Unlock()
+
+	go func() {
+		for {
+			select {
+			case logs := <-logsChan:
+				logs = filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
+				api.filtersMut.Lock()
+				if f, found := api.filters[id]; found {
+					f.logs = append(f.logs, logs...)
+				}
+				api.filtersMut.Unlock()
+			case <-s.err: // subsciprtion is uninstalled
+				return
+			}
+		}
+	}()
 
 	return id, nil
 }
@@ -291,7 +369,7 @@ func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteri
 	}
 
 	// Run the filter and return all the logs
-	logs, err := filter.Logs(ctx, int64(api.backend.RPCBlockRangeCap()))
+	logs, err := filter.Logs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -301,11 +379,15 @@ func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteri
 // UninstallFilter removes the filter with the given filter id.
 func (api *FilterAPI) UninstallFilter(id rpc.ID) bool {
 	api.filtersMut.Lock()
-	_, found := api.filters[id]
+	f, found := api.filters[id]
 	if found {
 		delete(api.filters, id)
 	}
 	api.filtersMut.Unlock()
+	if found {
+		api.uninstallSubscription(f.s)
+	}
+
 	return found
 }
 
@@ -339,7 +421,7 @@ func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretype
 	}
 
 	// Run the filter and return all the logs
-	logs, err := bloomFilter.Logs(ctx, int64(api.backend.RPCBlockRangeCap()))
+	logs, err := bloomFilter.Logs(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -146,6 +146,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	}
 
 	blockHash := blockHeader.Hash()
+	blockLogs := make([][]*coretypes.Log, 0, len(ethTxs))
 	for txIndex, ethTx := range ethTxs {
 		txHash := ethTx.Hash()
 		receipt := receipts[txIndex]
@@ -177,18 +178,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 				log.TxIndex = uint(txIndex)
 			}
 
-			// emit logs event
-			for _, logsChan := range e.logsChans {
-				logsChan <- receipt.Logs
-			}
-		}
-	}
-
-	// emit empty logs event to confirm all logs are emitted and consumed, so the logs are
-	// available for querying.
-	if len(e.logsChans) > 0 {
-		for _, logsChan := range e.logsChans {
-			logsChan <- []*coretypes.Log{}
+			blockLogs = append(blockLogs, receipt.Logs)
 		}
 	}
 
@@ -202,12 +192,8 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		return err
 	}
 
-	// emit new block events
-	if len(e.blockChans) > 0 {
-		for _, blockChan := range e.blockChans {
-			blockChan <- &blockHeader
-		}
-	}
+	// emit block event in a goroutine
+	go e.blockEventsEmitter(&blockEvents{header: &blockHeader, logs: blockLogs})
 
 	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm preblocker.
 	// - https://github.com/cosmos/cosmos-sdk/issues/22246

@@ -116,6 +116,15 @@ func (b *JSONRPCBackend) getQueryCtx() (context.Context, error) {
 }
 
 func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, error) {
+	// check whether the given height is bigger than the latest block height
+	num, err := b.BlockNumber()
+	if err != nil {
+		return nil, err
+	}
+	if height >= uint64(num) {
+		height = 0
+	}
+
 	return b.app.CreateQueryContext(int64(height), false)
 }
 
@@ -171,7 +180,7 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 		}
 
 		var err error
-		queryCtx, err = b.app.CreateQueryContext(blockNumber.Int64(), false)
+		queryCtx, err = b.getQueryCtxWithHeight(uint64(blockNumber.Int64()))
 		if err != nil {
 			return nil, err
 		}

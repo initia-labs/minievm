@@ -59,8 +59,6 @@ const (
 	flagJSONRPCEnableUnsafeCORS     = "json-rpc.enable-unsafe-cors"
 	flagJSONRPCAPIs                 = "json-rpc.apis"
 	flagJSONRPCLogsCap              = "json-rpc.logs-cap"
-	flagJSONRPCFilterCap            = "json-rpc.filter-cap"
-	flagJSONRPCBlockRangeCap        = "json-rpc.block-range-cap"
 	flagJSONRPCHTTPTimeout          = "json-rpc.http-timeout"
 	flagJSONRPCHTTPIdleTimeout      = "json-rpc.http-idle-timeout"
 	flagJSONRPCMaxOpenConnections   = "json-rpc.max-open-connections"
@@ -86,10 +84,6 @@ type JSONRPCConfig struct {
 	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
 	// API defines a list of JSON-RPC namespaces that should be enabled
 	APIs []string `mapstructure:"apis"`
-	// FilterCap is the global cap for total number of filters that can be created.
-	FilterCap int32 `mapstructure:"filter-cap"`
-	// BlockRangeCap defines the max block range allowed for `eth_getLogs` query.
-	BlockRangeCap int32 `mapstructure:"block-range-cap"`
 	// HTTPTimeout is the read/write timeout of http json-rpc server.
 	HTTPTimeout time.Duration `mapstructure:"http-timeout"`
 	// HTTPIdleTimeout is the idle timeout of http json-rpc server.
@@ -120,9 +114,6 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 
 		APIs: DefaultAPIs,
 
-		FilterCap:     DefaultFilterCap,
-		BlockRangeCap: DefaultBlockRangeCap,
-
 		HTTPTimeout:        DefaultHTTPTimeout,
 		HTTPIdleTimeout:    DefaultHTTPIdleTimeout,
 		MaxOpenConnections: DefaultMaxOpenConnections,
@@ -145,8 +136,6 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().String(flagJSONRPCAddressWS, DefaultAddressWS, "Address to listen on for the WebSocket server")
 	startCmd.Flags().Bool(flagJSONRPCEnableUnsafeCORS, DefaultEnableUnsafeCORS, "Enable unsafe CORS")
 	startCmd.Flags().StringSlice(flagJSONRPCAPIs, DefaultAPIs, "List of JSON-RPC namespaces that should be enabled")
-	startCmd.Flags().Int32(flagJSONRPCFilterCap, DefaultFilterCap, "Sets the global cap for total number of filters that can be created")
-	startCmd.Flags().Int32(flagJSONRPCBlockRangeCap, DefaultBlockRangeCap, "Max block range allowed for 'eth_getLogs' query")
 	startCmd.Flags().Duration(flagJSONRPCHTTPTimeout, DefaultHTTPTimeout, "Read/write timeout of http json-rpc server")
 	startCmd.Flags().Duration(flagJSONRPCHTTPIdleTimeout, DefaultHTTPIdleTimeout, "Idle timeout of http json-rpc server")
 	startCmd.Flags().Int(flagJSONRPCMaxOpenConnections, DefaultMaxOpenConnections, "Maximum number of simultaneous connections for the server listener")
@@ -166,8 +155,6 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		AddressWS:            cast.ToString(appOpts.Get(flagJSONRPCAddressWS)),
 		EnableUnsafeCORS:     cast.ToBool(appOpts.Get(flagJSONRPCEnableUnsafeCORS)),
 		APIs:                 strings.Split(cast.ToString(appOpts.Get(flagJSONRPCAPIs)), ","),
-		FilterCap:            cast.ToInt32(appOpts.Get(flagJSONRPCFilterCap)),
-		BlockRangeCap:        cast.ToInt32(appOpts.Get(flagJSONRPCBlockRangeCap)),
 		HTTPTimeout:          cast.ToDuration(appOpts.Get(flagJSONRPCHTTPTimeout)),
 		HTTPIdleTimeout:      cast.ToDuration(appOpts.Get(flagJSONRPCHTTPIdleTimeout)),
 		MaxOpenConnections:   cast.ToInt(appOpts.Get(flagJSONRPCMaxOpenConnections)),
@@ -205,12 +192,6 @@ enable-unsafe-cors = {{ .JSONRPCConfig.EnableUnsafeCORS }}
 # API defines a list of JSON-RPC namespaces that should be enabled
 # Example: "eth,txpool,personal,net,debug,web3"
 apis = "{{range $index, $elmt := .JSONRPCConfig.APIs}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
-
-# FilterCap is the global cap for total number of filters that can be created.
-filter-cap = {{ .JSONRPCConfig.FilterCap }}
-
-# BlockRangeCap defines the max block range allowed for 'eth_getLogs' query.
-block-range-cap = {{ .JSONRPCConfig.BlockRangeCap }}
 
 # HTTPTimeout is the read/write timeout of http json-rpc server.
 http-timeout = "{{ .JSONRPCConfig.HTTPTimeout }}"
