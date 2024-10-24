@@ -171,8 +171,8 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 		installed: make(chan struct{}),
 		err:       make(chan error),
 	}
-	api.install <- s
-	<-s.installed
+
+	api.installSubscription(s)
 
 	go func() {
 		defer api.uninstallSubscription(s)
