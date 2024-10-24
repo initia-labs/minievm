@@ -204,9 +204,11 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) 
 				}
 				api.filtersMut.Unlock()
 			case hash := <-hashChan:
+				api.filtersMut.Lock()
 				if f, found := api.filters[id]; found {
 					f.hashes = append(f.hashes, hash)
 				}
+				api.filtersMut.Unlock()
 			case <-s.err: // subsciprtion is uninstalled
 				return
 			}
