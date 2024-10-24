@@ -44,6 +44,8 @@ const (
 	DefaultFeeHistoryMaxHeaders = 1024
 	// DefaultFeeHistoryMaxBlocks is the default maximum number of blocks, which can be used to lookup the fee history.
 	DefaultFeeHistoryMaxBlocks = 1024
+	// DefaultFilterTimeout is the default filter timeout, how long filters stay active.
+	DefaultFilterTimeout = 5 * time.Minute
 )
 
 var (
@@ -68,6 +70,7 @@ const (
 	flagJSONRPCQueuedTransactionTTL = "json-rpc.queued-transaction-ttl"
 	flagJSONRPCFeeHistoryMaxHeaders = "json-rpc.fee-history-max-headers"
 	flagJSONRPCFeeHistoryMaxBlocks  = "json-rpc.fee-history-max-blocks"
+	flagJSONRPCFilterTimeout        = "json-rpc.filter-timeout"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -101,6 +104,8 @@ type JSONRPCConfig struct {
 	FeeHistoryMaxHeaders int `mapstructure:"fee-history-max-headers"`
 	// FeeHistoryMaxBlocks is the maximum number of blocks, which can be used to lookup the fee history.
 	FeeHistoryMaxBlocks int `mapstructure:"fee-history-max-blocks"`
+	// FilterTimeout is a duration how long filters stay active (default: 5min)
+	FilterTimeout time.Duration `mapstructure:"filter-timeout"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -125,6 +130,8 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 
 		FeeHistoryMaxHeaders: DefaultFeeHistoryMaxHeaders,
 		FeeHistoryMaxBlocks:  DefaultFeeHistoryMaxBlocks,
+
+		FilterTimeout: DefaultFilterTimeout,
 	}
 }
 
@@ -144,6 +151,7 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCQueuedTransactionCap, DefaultQueuedTransactionCap, "Maximum number of queued transactions that can be in the transaction pool")
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxHeaders, DefaultFeeHistoryMaxHeaders, "Maximum number of headers used to lookup the fee history")
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxBlocks, DefaultFeeHistoryMaxBlocks, "Maximum number of blocks used to lookup the fee history")
+	startCmd.Flags().Duration(flagJSONRPCFilterTimeout, DefaultFilterTimeout, "Duration how long filters stay active")
 }
 
 // GetConfig load config values from the app options
@@ -163,6 +171,7 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		QueuedTransactionCap: cast.ToInt(appOpts.Get(flagJSONRPCQueuedTransactionCap)),
 		FeeHistoryMaxHeaders: cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxHeaders)),
 		FeeHistoryMaxBlocks:  cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxBlocks)),
+		FilterTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCFilterTimeout)),
 	}
 }
 
@@ -218,4 +227,7 @@ fee-history-max-headers = {{ .JSONRPCConfig.FeeHistoryMaxHeaders }}
 
 # FeeHistoryMaxBlocks is the maximum number of blocks, which can be used to lookup the fee history.
 fee-history-max-blocks = {{ .JSONRPCConfig.FeeHistoryMaxBlocks }}
+
+# FilterTimeout is a duration how long filters stay active (default: 5min)
+filter-timeout = "{{ .JSONRPCConfig.FilterTimeout }}"
 `

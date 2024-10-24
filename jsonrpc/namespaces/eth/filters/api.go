@@ -88,7 +88,7 @@ func NewFilterAPI(app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger l
 
 // clearUnusedFilters removes filters that have not been used for 5 minutes
 func (api *FilterAPI) clearUnusedFilters() {
-	const timeout = 5 * time.Minute
+	timeout := api.backend.FilterTimeout()
 	ticker := time.NewTicker(timeout)
 	defer ticker.Stop()
 

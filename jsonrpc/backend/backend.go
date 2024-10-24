@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"sync"
+	"time"
 
 	lrucache "github.com/hashicorp/golang-lru/v2"
 
@@ -102,4 +103,8 @@ func (b *JSONRPCBackend) releaseAccMut(senderHex string) {
 	}
 	b.mut.Unlock()
 	// critical section end
+}
+
+func (b *JSONRPCBackend) FilterTimeout() time.Duration {
+	return b.cfg.FilterTimeout
 }
