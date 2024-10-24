@@ -146,7 +146,7 @@ type blockEvents struct {
 }
 
 // blockEventsEmitter emits block events to subscribers.
-func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents) {
+func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan struct{}) {
 	if blockEvents == nil {
 		return
 	}
@@ -161,4 +161,6 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents) {
 	for _, blockChan := range e.blockChans {
 		blockChan <- blockEvents.header
 	}
+
+	close(done)
 }

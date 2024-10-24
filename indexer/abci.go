@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"math/big"
+	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	comettypes "github.com/cometbft/cometbft/types"
@@ -193,7 +194,15 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	}
 
 	// emit block event in a goroutine
-	go e.blockEventsEmitter(&blockEvents{header: &blockHeader, logs: blockLogs})
+	done := make(chan struct{})
+	go e.blockEventsEmitter(&blockEvents{header: &blockHeader, logs: blockLogs}, done)
+	go func() {
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			e.logger.Error("block event emitter timed out")
+		}
+	}()
 
 	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm preblocker.
 	// - https://github.com/cosmos/cosmos-sdk/issues/22246
