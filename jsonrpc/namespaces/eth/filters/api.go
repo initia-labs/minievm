@@ -52,6 +52,10 @@ type FilterAPI struct {
 	filters       map[rpc.ID]*filter
 	subscriptions map[rpc.ID]*subscription
 
+	// Channels for subscription registeration
+	install   chan *subscription // install filter for event notification
+	uninstall chan *subscription // remove filter for event notification
+
 	// channels for block and log events
 	blockChan   chan *coretypes.Header
 	logsChan    chan []*coretypes.Log
@@ -67,6 +71,9 @@ func NewFilterAPI(app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger l
 
 		logger: logger,
 
+		install:   make(chan *subscription),
+		uninstall: make(chan *subscription),
+
 		filters:       make(map[rpc.ID]*filter),
 		subscriptions: make(map[rpc.ID]*subscription),
 	}
@@ -74,7 +81,7 @@ func NewFilterAPI(app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger l
 	go api.clearUnusedFilters()
 
 	api.blockChan, api.logsChan, api.pendingChan = app.EVMIndexer().Subscribe()
-	go api.subscribeEvents()
+	go api.eventLoop()
 
 	return api
 }
@@ -95,7 +102,7 @@ func (api *FilterAPI) clearUnusedFilters() {
 	}
 }
 
-func (api *FilterAPI) subscribeEvents() {
+func (api *FilterAPI) eventLoop() {
 	for {
 		select {
 		case block := <-api.blockChan:
@@ -105,12 +112,13 @@ func (api *FilterAPI) subscribeEvents() {
 					f.hashes = append(f.hashes, block.Hash())
 				}
 			}
+			api.filtersMut.Unlock()
+
 			for _, s := range api.subscriptions {
 				if s.ty == ethfilters.BlocksSubscription {
 					s.headerChan <- block
 				}
 			}
-			api.filtersMut.Unlock()
 		case logs := <-api.logsChan:
 			if len(logs) == 0 {
 				continue
@@ -125,6 +133,8 @@ func (api *FilterAPI) subscribeEvents() {
 					}
 				}
 			}
+			api.filtersMut.Unlock()
+
 			for _, s := range api.subscriptions {
 				if s.ty == ethfilters.LogsSubscription {
 					logs := filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
@@ -133,7 +143,6 @@ func (api *FilterAPI) subscribeEvents() {
 					}
 				}
 			}
-			api.filtersMut.Unlock()
 		case tx := <-api.pendingChan:
 			api.filtersMut.Lock()
 			for _, f := range api.filters {
@@ -145,6 +154,8 @@ func (api *FilterAPI) subscribeEvents() {
 					}
 				}
 			}
+			api.filtersMut.Unlock()
+
 			for _, s := range api.subscriptions {
 				if s.ty == ethfilters.PendingTransactionsSubscription {
 					if s.fullTx {
@@ -154,7 +165,13 @@ func (api *FilterAPI) subscribeEvents() {
 					}
 				}
 			}
-			api.filtersMut.Unlock()
+		// subscription managements
+		case s := <-api.install:
+			api.subscriptions[s.id] = s
+			close(s.installed)
+		case s := <-api.uninstall:
+			delete(api.subscriptions, s.id)
+			close(s.err)
 		}
 	}
 }
@@ -285,7 +302,9 @@ func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteri
 func (api *FilterAPI) UninstallFilter(id rpc.ID) bool {
 	api.filtersMut.Lock()
 	_, found := api.filters[id]
-	delete(api.filters, id)
+	if found {
+		delete(api.filters, id)
+	}
 	api.filtersMut.Unlock()
 	return found
 }
@@ -295,7 +314,7 @@ func (api *FilterAPI) UninstallFilter(id rpc.ID) bool {
 func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretypes.Log, error) {
 	api.filtersMut.Lock()
 	f, found := api.filters[id]
-	api.filtersMut.Lock()
+	api.filtersMut.Unlock()
 
 	if !found || f.ty != ethfilters.LogsSubscription {
 		return nil, errFilterNotFound
