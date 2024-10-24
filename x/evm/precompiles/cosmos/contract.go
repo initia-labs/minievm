@@ -297,7 +297,7 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		denom, err := e.edk.GetDenomByContractAddr(ctx, toDenomArguments.ERC20Address)
+		denom, err := types.ContractAddrToDenom(ctx, e.edk, toDenomArguments.ERC20Address)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
@@ -315,7 +315,7 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		contractAddr, err := e.edk.GetContractAddrByDenom(ctx, toERC20Arguments.Denom)
+		contractAddr, err := types.DenomToContractAddr(ctx, e.edk, toERC20Arguments.Denom)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}

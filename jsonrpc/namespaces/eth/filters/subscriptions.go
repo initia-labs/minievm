@@ -2,6 +2,7 @@ package filters
 
 import (
 	"context"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -12,6 +13,7 @@ import (
 )
 
 type subscription struct {
+	id     rpc.ID
 	ty     ethfilters.Type
 	crit   ethfilters.FilterCriteria
 	fullTx bool
@@ -20,6 +22,11 @@ type subscription struct {
 	logsChan   chan []*coretypes.Log
 	txChan     chan *rpctypes.RPCTransaction
 	hashChan   chan common.Hash
+
+	// Channels to signal the subscription is installed or uninstalled
+	installed chan struct{} // closed when the subscription is installed
+	err       chan error    // closed when the subscription is uninstalled
+	unsubOnce sync.Once
 }
 
 // NewHeads send a notification each time a new (header) block is appended to the chain.
@@ -35,15 +42,19 @@ func (api *FilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 	)
 
 	id := rpc.NewID()
-	api.filtersMut.Lock()
-	api.subscriptions[id] = &subscription{
+	s := &subscription{
+		id:         id,
 		ty:         ethfilters.BlocksSubscription,
 		headerChan: headerChan,
+
+		installed: make(chan struct{}),
+		err:       make(chan error),
 	}
-	api.filtersMut.Unlock()
+	api.install <- s
+	<-s.installed
 
 	go func() {
-		defer api.clearSubscription(id)
+		defer api.clearSubscription(s)
 
 		for {
 			select {
@@ -93,17 +104,21 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 	}
 
 	id := rpc.NewID()
-	api.filtersMut.Lock()
-	api.subscriptions[id] = &subscription{
+	s := &subscription{
+		id:   id,
 		ty:   ethfilters.LogsSubscription,
 		crit: crit,
 
 		logsChan: logsChan,
+
+		installed: make(chan struct{}),
+		err:       make(chan error),
 	}
-	api.filtersMut.Unlock()
+	api.install <- s
+	<-s.installed
 
 	go func() {
-		defer api.clearSubscription(id)
+		defer api.clearSubscription(s)
 		for {
 			select {
 			case logs := <-logsChan:
@@ -136,17 +151,21 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 	)
 
 	id := rpc.NewID()
-	api.filtersMut.Lock()
-	api.subscriptions[id] = &subscription{
+	s := &subscription{
+		id:       id,
 		ty:       ethfilters.PendingTransactionsSubscription,
 		fullTx:   fullTx != nil && *fullTx,
 		txChan:   txChan,
 		hashChan: hashChan,
+
+		installed: make(chan struct{}),
+		err:       make(chan error),
 	}
-	api.filtersMut.Unlock()
+	api.install <- s
+	<-s.installed
 
 	go func() {
-		defer api.clearSubscription(id)
+		defer api.clearSubscription(s)
 
 		for {
 			select {
@@ -163,8 +182,27 @@ func (api *FilterAPI) NewPendingTransactions(ctx context.Context, fullTx *bool) 
 	return rpcSub, nil
 }
 
-func (api *FilterAPI) clearSubscription(id rpc.ID) {
-	api.filtersMut.Lock()
-	delete(api.subscriptions, id)
-	api.filtersMut.Unlock()
+func (api *FilterAPI) clearSubscription(s *subscription) {
+	s.unsubOnce.Do(func() {
+	uninstallLoop:
+		for {
+			// write uninstall request and consume logs/hashes. This prevents
+			// the eventLoop broadcast method to deadlock when writing to the
+			// filter event channel while the subscription loop is waiting for
+			// this method to return (and thus not reading these events).
+			select {
+			case api.uninstall <- s:
+				break uninstallLoop
+			case <-s.logsChan:
+			case <-s.txChan:
+			case <-s.hashChan:
+			case <-s.headerChan:
+			}
+		}
+
+		// wait for filter to be uninstalled in work loop before returning
+		// this ensures that the manager won't use the event channel which
+		// will probably be closed by the client asap after this method returns.
+		<-s.err
+	})
 }
