@@ -28,9 +28,7 @@ var (
 const maxTopics = 4
 
 type filter struct {
-	ty     ethfilters.Type
 	hashes []common.Hash
-	fullTx bool
 	txs    []*rpctypes.RPCTransaction
 	crit   ethfilters.FilterCriteria
 	logs   []*coretypes.Log
@@ -186,8 +184,6 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) 
 
 	api.filtersMut.Lock()
 	api.filters[id] = &filter{
-		ty:     ethfilters.PendingTransactionsSubscription,
-		fullTx: fullTx != nil && *fullTx,
 		txs:    make([]*rpctypes.RPCTransaction, 0),
 		hashes: make([]common.Hash, 0),
 		s:      s,
@@ -241,7 +237,6 @@ func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
 
 	api.filtersMut.Lock()
 	api.filters[id] = &filter{
-		ty:     ethfilters.BlocksSubscription,
 		hashes: make([]common.Hash, 0),
 		s:      s,
 	}
@@ -318,7 +313,6 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 
 	api.filtersMut.Lock()
 	api.filters[id] = &filter{
-		ty:   ethfilters.LogsSubscription,
 		crit: crit, lastUsed: time.Now(),
 		logs: make([]*coretypes.Log, 0),
 		s:    s,
@@ -400,7 +394,7 @@ func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretype
 	f, found := api.filters[id]
 	api.filtersMut.Unlock()
 
-	if !found || f.ty != ethfilters.LogsSubscription {
+	if !found || f.s.ty != ethfilters.LogsSubscription {
 		return nil, errFilterNotFound
 	}
 
@@ -447,7 +441,7 @@ func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
 
 	f.lastUsed = time.Now()
 
-	switch f.ty {
+	switch f.s.ty {
 	case ethfilters.BlocksSubscription:
 		hashes := f.hashes
 		f.hashes = nil
@@ -459,7 +453,7 @@ func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
 
 		return returnLogs(logs), nil
 	case ethfilters.PendingTransactionsSubscription:
-		if f.fullTx {
+		if f.s.fullTx {
 			txs := f.txs
 			f.txs = nil
 
