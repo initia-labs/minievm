@@ -52,7 +52,7 @@ type FilterAPI struct {
 	filters       map[rpc.ID]*filter
 	subscriptions map[rpc.ID]*subscription
 
-	// Channels for subscription registeration
+	// Channels for subscription managements
 	install   chan *subscription // install filter for event notification
 	uninstall chan *subscription // remove filter for event notification
 
