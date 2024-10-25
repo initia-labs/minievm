@@ -18,6 +18,7 @@ import (
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 	evm_hooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
+	"github.com/initia-labs/minievm/x/evm/types"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -110,7 +111,7 @@ func Test_onReceiveIcs20Packet_memo(t *testing.T) {
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 
 	// check allowance
-	erc20Addr, err := input.EVMKeeper.GetContractAddrByDenom(ctx, localDenom)
+	erc20Addr, err := types.DenomToContractAddr(ctx, input.EVMKeeper, localDenom)
 	require.NoError(t, err)
 	queryInputBz, err = input.EVMKeeper.ERC20Keeper().GetERC20ABI().Pack("allowance", common.BytesToAddress(intermediateSender.Bytes()), contractAddr)
 	require.NoError(t, err)
