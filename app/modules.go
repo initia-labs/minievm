@@ -187,11 +187,11 @@ can do so safely.
 */
 func orderInitBlockers() []string {
 	return []string{
-		capabilitytypes.ModuleName, authtypes.ModuleName, evmtypes.ModuleName, banktypes.ModuleName,
+		capabilitytypes.ModuleName, authtypes.ModuleName, ibchookstypes.ModuleName, evmtypes.ModuleName, banktypes.ModuleName,
 		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName, crisistypes.ModuleName,
 		upgradetypes.ModuleName, feegrant.ModuleName, consensusparamtypes.ModuleName, ibcexported.ModuleName,
 		ibctransfertypes.ModuleName, ibcnfttransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
 		ibcfeetypes.ModuleName, auctiontypes.ModuleName, oracletypes.ModuleName, marketmaptypes.ModuleName,
-		packetforwardtypes.ModuleName, forwardingtypes.ModuleName, ibchookstypes.ModuleName,
+		packetforwardtypes.ModuleName, forwardingtypes.ModuleName,
 	}
 }

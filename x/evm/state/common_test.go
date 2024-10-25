@@ -255,6 +255,7 @@ func _createTestInput(
 	banktypes.RegisterQueryServer(queryRouter, &bankKeeper)
 
 	communityPoolKeeper := &MockCommunityPoolKeeper{}
+	ibcHookKeeper := &MockIBCHookKeeper{}
 	gasPriceKeeper := &MockGasPriceKeeper{GasPrices: make(map[string]math.LegacyDec)}
 	evmKeeper := evmkeeper.NewKeeper(
 		ac,
@@ -264,6 +265,7 @@ func _createTestInput(
 		accountKeeper,
 		bankKeeper,
 		communityPoolKeeper,
+		ibcHookKeeper,
 		gasPriceKeeper,
 		msgRouter,
 		queryRouter,
@@ -328,4 +330,10 @@ func (k *MockGasPriceKeeper) GasPrice(ctx context.Context, denom string) (math.L
 	}
 
 	return gasPrice, nil
+}
+
+type MockIBCHookKeeper struct{}
+
+func (k *MockIBCHookKeeper) SetAllowed(ctx context.Context, addr sdk.AccAddress, allowed bool) error {
+	return nil
 }

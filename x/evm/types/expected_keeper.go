@@ -102,3 +102,7 @@ type TxUtils interface {
 	ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *coretypes.Transaction) (sdk.Tx, error)
 	IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error)
 }
+
+type IBCHookKeeper interface {
+	SetAllowed(ctx context.Context, addr sdk.AccAddress, allowed bool) error
+}
