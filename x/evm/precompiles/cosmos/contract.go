@@ -93,8 +93,8 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			switch r.(type) {
 			case storetypes.ErrorOutOfGas:
 				// convert cosmos out of gas error to EVM out of gas error
-				usedGas = suppliedGas + 1
-				err = nil
+				usedGas = suppliedGas
+				err = vm.ErrOutOfGas
 			default:
 				panic(r)
 			}
