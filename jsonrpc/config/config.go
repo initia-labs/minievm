@@ -24,12 +24,6 @@ const (
 	// DefaultMaxOpenConnections is the default maximum number of simultaneous connections
 	// for the server listener.
 	DefaultMaxOpenConnections = 100
-	// DefaultLogsCap is the default max number of results can be returned from single `eth_getLogs` query.
-	DefaultLogsCap int32 = 100
-	// DefaultFilterCap is the default global cap for total number of filters that can be created.
-	DefaultFilterCap int32 = 200
-	// DefaultBlockRangeCap is the default max block range allowed for `eth_getLogs` query.
-	DefaultBlockRangeCap int32 = 100
 	// DefaultAddress defines the default HTTP server to listen on.
 	DefaultAddress = "127.0.0.1:8545"
 	// DefaultAddressWS defines the default WebSocket server address to bind to.
