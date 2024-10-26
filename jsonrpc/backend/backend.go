@@ -32,7 +32,7 @@ type JSONRPCBackend struct {
 	blockHashCache     *lru.Cache[common.Hash, uint64]
 
 	txLookupCache *lru.Cache[common.Hash, *rpctypes.RPCTransaction]
-	receiptsCache *lru.Cache[common.Hash, *coretypes.Receipt]
+	receiptCache  *lru.Cache[common.Hash, *coretypes.Receipt]
 	logsCache     *lru.Cache[uint64, []*coretypes.Log]
 
 	mut     sync.Mutex // mutex for accMuts
@@ -48,7 +48,6 @@ type JSONRPCBackend struct {
 const (
 	feeHistoryCacheSize = 2048
 	blockCacheLimit     = 256
-	receiptsCacheLimit  = 32
 	txLookupCacheLimit  = 1024
 )
 
@@ -80,14 +79,16 @@ func NewJSONRPCBackend(
 		queuedTxs:    queuedTxs,
 		historyCache: lru.NewCache[cacheKey, processedFees](feeHistoryCacheSize),
 
+		// per block caches
 		headerCache:        lru.NewCache[uint64, *coretypes.Header](blockCacheLimit),
 		blockTxsCache:      lru.NewCache[uint64, []*rpctypes.RPCTransaction](blockCacheLimit),
 		blockReceiptsCache: lru.NewCache[uint64, []*coretypes.Receipt](blockCacheLimit),
 		blockHashCache:     lru.NewCache[common.Hash, uint64](blockCacheLimit),
+		logsCache:          lru.NewCache[uint64, []*coretypes.Log](cfg.LogCacheSize),
 
+		// per tx caches
 		txLookupCache: lru.NewCache[common.Hash, *rpctypes.RPCTransaction](txLookupCacheLimit),
-		receiptsCache: lru.NewCache[common.Hash, *coretypes.Receipt](receiptsCacheLimit),
-		logsCache:     lru.NewCache[uint64, []*coretypes.Log](cfg.LogCacheSize),
+		receiptCache:  lru.NewCache[common.Hash, *coretypes.Receipt](txLookupCacheLimit),
 
 		accMuts: make(map[string]*AccMut),
 

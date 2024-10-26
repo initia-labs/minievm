@@ -408,7 +408,7 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 }
 
 func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error) {
-	if receipt, ok := b.receiptsCache.Get(hash); ok {
+	if receipt, ok := b.receiptCache.Get(hash); ok {
 		return receipt, nil
 	}
 
@@ -425,7 +425,7 @@ func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error
 		return nil, NewTxIndexingError()
 	}
 
-	_ = b.receiptsCache.Add(hash, receipt)
+	_ = b.receiptCache.Add(hash, receipt)
 	return receipt, nil
 }
 
