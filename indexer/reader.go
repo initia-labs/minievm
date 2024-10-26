@@ -9,16 +9,6 @@ import (
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 )
 
-// BlockHeaderByHash implements EVMIndexer.
-func (e *EVMIndexerImpl) BlockHeaderByHash(ctx context.Context, hash common.Hash) (*coretypes.Header, error) {
-	blockNumber, err := e.BlockHashToNumberMap.Get(ctx, hash.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	return e.BlockHeaderByNumber(ctx, blockNumber)
-}
-
 // BlockHeaderByNumber implements EVMIndexer.
 func (e *EVMIndexerImpl) BlockHeaderByNumber(ctx context.Context, blockNumber uint64) (*coretypes.Header, error) {
 	blockHeader, err := e.BlockHeaderMap.Get(ctx, blockNumber)
@@ -29,15 +19,14 @@ func (e *EVMIndexerImpl) BlockHeaderByNumber(ctx context.Context, blockNumber ui
 	return &blockHeader, nil
 }
 
-// TxByBlockAndIndex implements EVMIndexer.
-func (e *EVMIndexerImpl) TxByBlockAndIndex(ctx context.Context, blockHeight uint64, index uint64) (*rpctypes.RPCTransaction, error) {
+// TxHashByBlockAndIndex implements EVMIndexer.
+func (e *EVMIndexerImpl) TxHashByBlockAndIndex(ctx context.Context, blockHeight uint64, index uint64) (common.Hash, error) {
 	txHashBz, err := e.BlockAndIndexToTxHashMap.Get(ctx, collections.Join(blockHeight, index))
 	if err != nil {
-		return nil, err
+		return common.Hash{}, err
 	}
 
-	txHash := common.BytesToHash(txHashBz)
-	return e.TxByHash(ctx, txHash)
+	return common.BytesToHash(txHashBz), nil
 }
 
 // TxByHash implements EVMIndexer.
