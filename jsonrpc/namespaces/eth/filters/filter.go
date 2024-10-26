@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 
 	"cosmossdk.io/log"
 
@@ -126,11 +127,7 @@ func (f *Filter) Logs(ctx context.Context) ([]*coretypes.Log, error) {
 		case log := <-logChan:
 			logs = append(logs, log)
 		case err := <-errChan:
-			if err != nil {
-				// if an error occurs during extraction, we do return the extracted data
-				return logs, err
-			}
-			return logs, nil
+			return logs, err
 		}
 	}
 }
@@ -213,7 +210,7 @@ func filterLogs(logs []*coretypes.Log, fromBlock, toBlock *big.Int, addresses []
 		if toBlock != nil && toBlock.Int64() >= 0 && toBlock.Uint64() < log.BlockNumber {
 			return false
 		}
-		if len(addresses) > 0 && !includes(addresses, log.Address) {
+		if len(addresses) > 0 && !slices.Contains(addresses, log.Address) {
 			return false
 		}
 		// If the to filtered topics is greater than the amount of topics in logs, skip.
@@ -224,7 +221,7 @@ func filterLogs(logs []*coretypes.Log, fromBlock, toBlock *big.Int, addresses []
 			if len(sub) == 0 {
 				continue // empty rule set == wildcard
 			}
-			if !includes(sub, log.Topics[i]) {
+			if !slices.Contains(sub, log.Topics[i]) {
 				return false
 			}
 		}
@@ -237,16 +234,6 @@ func filterLogs(logs []*coretypes.Log, fromBlock, toBlock *big.Int, addresses []
 		}
 	}
 	return ret
-}
-
-// includes returns true if the element is present in the list.
-func includes[T comparable](things []T, element T) bool {
-	for _, thing := range things {
-		if thing == element {
-			return true
-		}
-	}
-	return false
 }
 
 func bloomFilter(bloom coretypes.Bloom, addresses []common.Address, topics [][]common.Hash) bool {

@@ -2,38 +2,37 @@ package backend
 
 import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
-
-	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // GetLogsByHeight returns all the logs from all the ethereum transactions in a block.
 func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error) {
+	if blockLogs, ok := b.logsCache.Get(height); ok {
+		return blockLogs, nil
+	}
+
+	blockHeader, err := b.GetHeaderByNumber(rpc.BlockNumber(height))
+	if err != nil {
+		return nil, err
+	} else if blockHeader == nil {
+		return nil, nil
+	}
+
+	txs, err := b.getBlockTransactions(height)
+	if err != nil {
+		return nil, err
+	}
+	receipts, err := b.getBlockReceipts(height)
+	if err != nil {
+		return nil, err
+	}
+	if len(txs) != len(receipts) {
+		return nil, NewInternalError("number of transactions and receipts do not match")
+	}
+
 	blockLogs := []*coretypes.Log{}
-
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	blockHeader, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, height)
-	if err != nil {
-		return nil, err
-	}
-
-	txs := []*rpctypes.RPCTransaction{}
-	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, height, func(tx *rpctypes.RPCTransaction) (bool, error) {
-		txs = append(txs, tx)
-		return false, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, tx := range txs {
-		receipt, err := b.app.EVMIndexer().TxReceiptByHash(queryCtx, tx.Hash)
-		if err != nil {
-			return nil, err
-		}
+	for i, tx := range txs {
+		receipt := receipts[i]
 		logs := receipt.Logs
 		for idx, log := range logs {
 			log.BlockHash = blockHeader.Hash()
@@ -45,5 +44,7 @@ func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error
 		blockLogs = append(blockLogs, logs...)
 	}
 
+	// cache the logs
+	_ = b.logsCache.Add(height, blockLogs)
 	return blockLogs, nil
 }

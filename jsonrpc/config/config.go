@@ -28,8 +28,6 @@ const (
 	DefaultLogsCap int32 = 100
 	// DefaultFilterCap is the default global cap for total number of filters that can be created.
 	DefaultFilterCap int32 = 200
-	// DefaultBlockRangeCap is the default max block range allowed for `eth_getLogs` query.
-	DefaultBlockRangeCap int32 = 100
 	// DefaultAddress defines the default HTTP server to listen on.
 	DefaultAddress = "127.0.0.1:8545"
 	// DefaultAddressWS defines the default WebSocket server address to bind to.
@@ -46,6 +44,8 @@ const (
 	DefaultFeeHistoryMaxBlocks = 1024
 	// DefaultFilterTimeout is the default filter timeout, how long filters stay active.
 	DefaultFilterTimeout = 5 * time.Minute
+	// DefaultLogCacheSize is the maximum number of cached blocks.
+	DefaultLogCacheSize = 32
 )
 
 var (
@@ -71,6 +71,7 @@ const (
 	flagJSONRPCFeeHistoryMaxHeaders = "json-rpc.fee-history-max-headers"
 	flagJSONRPCFeeHistoryMaxBlocks  = "json-rpc.fee-history-max-blocks"
 	flagJSONRPCFilterTimeout        = "json-rpc.filter-timeout"
+	flagJSONRPCLogCacheSize         = "json-rpc.log-cache-size"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -106,6 +107,8 @@ type JSONRPCConfig struct {
 	FeeHistoryMaxBlocks int `mapstructure:"fee-history-max-blocks"`
 	// FilterTimeout is a duration how long filters stay active (default: 5min)
 	FilterTimeout time.Duration `mapstructure:"filter-timeout"`
+	// LogCacheSize is the maximum number of cached blocks.
+	LogCacheSize int `mapstructure:"log-cache-size"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -132,6 +135,8 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 		FeeHistoryMaxBlocks:  DefaultFeeHistoryMaxBlocks,
 
 		FilterTimeout: DefaultFilterTimeout,
+
+		LogCacheSize: DefaultLogCacheSize,
 	}
 }
 
@@ -152,6 +157,7 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxHeaders, DefaultFeeHistoryMaxHeaders, "Maximum number of headers used to lookup the fee history")
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxBlocks, DefaultFeeHistoryMaxBlocks, "Maximum number of blocks used to lookup the fee history")
 	startCmd.Flags().Duration(flagJSONRPCFilterTimeout, DefaultFilterTimeout, "Duration how long filters stay active")
+	startCmd.Flags().Int(flagJSONRPCLogCacheSize, DefaultLogCacheSize, "Maximum number of cached blocks for the log filter")
 }
 
 // GetConfig load config values from the app options
@@ -172,6 +178,7 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		FeeHistoryMaxHeaders: cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxHeaders)),
 		FeeHistoryMaxBlocks:  cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxBlocks)),
 		FilterTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCFilterTimeout)),
+		LogCacheSize:         cast.ToInt(appOpts.Get(flagJSONRPCLogCacheSize)),
 	}
 }
 
@@ -230,4 +237,7 @@ fee-history-max-blocks = {{ .JSONRPCConfig.FeeHistoryMaxBlocks }}
 
 # FilterTimeout is a duration how long filters stay active (default: 5min)
 filter-timeout = "{{ .JSONRPCConfig.FilterTimeout }}"
+
+# LogCacheSize is the maximum number of cached blocks for the log filter.
+log-cache-size = {{ .JSONRPCConfig.LogCacheSize }}
 `

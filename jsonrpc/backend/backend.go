@@ -5,6 +5,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/lru"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 	lrucache "github.com/hashicorp/golang-lru/v2"
 
 	"cosmossdk.io/log"
@@ -13,6 +16,7 @@ import (
 
 	"github.com/initia-labs/minievm/app"
 	"github.com/initia-labs/minievm/jsonrpc/config"
+	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 )
 
 type JSONRPCBackend struct {
@@ -20,7 +24,16 @@ type JSONRPCBackend struct {
 	logger log.Logger
 
 	queuedTxs    *lrucache.Cache[string, []byte]
-	historyCache *lrucache.Cache[cacheKey, processedFees]
+	historyCache *lru.Cache[cacheKey, processedFees]
+
+	headerCache       *lru.Cache[uint64, *coretypes.Header]
+	blockTxsCache     *lru.Cache[uint64, []*rpctypes.RPCTransaction]
+	blockRceiptsCache *lru.Cache[uint64, []*coretypes.Receipt]
+	blockHashCache    *lru.Cache[common.Hash, uint64]
+
+	txLookupCache *lru.Cache[common.Hash, *rpctypes.RPCTransaction]
+	receiptsCache *lru.Cache[common.Hash, *coretypes.Receipt]
+	logsCache     *lru.Cache[uint64, []*coretypes.Log]
 
 	mut     sync.Mutex // mutex for accMuts
 	accMuts map[string]*AccMut
@@ -32,6 +45,13 @@ type JSONRPCBackend struct {
 	cfg config.JSONRPCConfig
 }
 
+const (
+	feeHistoryCacheSize = 2048
+	blockCacheLimit     = 256
+	receiptsCacheLimit  = 32
+	txLookupCacheLimit  = 1024
+)
+
 // NewJSONRPCBackend creates a new JSONRPCBackend instance
 func NewJSONRPCBackend(
 	app *app.MinitiaApp,
@@ -40,11 +60,14 @@ func NewJSONRPCBackend(
 	clientCtx client.Context,
 	cfg config.JSONRPCConfig,
 ) (*JSONRPCBackend, error) {
-	queuedTxs, err := lrucache.New[string, []byte](cfg.QueuedTransactionCap)
-	if err != nil {
-		return nil, err
+	if cfg.QueuedTransactionCap == 0 {
+		cfg.QueuedTransactionCap = config.DefaultQueuedTransactionCap
 	}
-	historyCache, err := lrucache.New[cacheKey, processedFees](2048)
+	if cfg.LogCacheSize == 0 {
+		cfg.LogCacheSize = config.DefaultLogCacheSize
+	}
+
+	queuedTxs, err := lrucache.New[string, []byte](cfg.QueuedTransactionCap)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +78,16 @@ func NewJSONRPCBackend(
 		logger: logger,
 
 		queuedTxs:    queuedTxs,
-		historyCache: historyCache,
+		historyCache: lru.NewCache[cacheKey, processedFees](feeHistoryCacheSize),
+
+		headerCache:       lru.NewCache[uint64, *coretypes.Header](blockCacheLimit),
+		blockTxsCache:     lru.NewCache[uint64, []*rpctypes.RPCTransaction](blockCacheLimit),
+		blockRceiptsCache: lru.NewCache[uint64, []*coretypes.Receipt](blockCacheLimit),
+		blockHashCache:    lru.NewCache[common.Hash, uint64](blockCacheLimit),
+
+		txLookupCache: lru.NewCache[common.Hash, *rpctypes.RPCTransaction](txLookupCacheLimit),
+		receiptsCache: lru.NewCache[common.Hash, *coretypes.Receipt](receiptsCacheLimit),
+		logsCache:     lru.NewCache[uint64, []*coretypes.Log](cfg.LogCacheSize),
 
 		accMuts: make(map[string]*AccMut),
 
