@@ -26,14 +26,16 @@ type JSONRPCBackend struct {
 	queuedTxs    *lrucache.Cache[string, []byte]
 	historyCache *lru.Cache[cacheKey, processedFees]
 
+	// per block caches
 	headerCache        *lru.Cache[uint64, *coretypes.Header]
 	blockTxsCache      *lru.Cache[uint64, []*rpctypes.RPCTransaction]
 	blockReceiptsCache *lru.Cache[uint64, []*coretypes.Receipt]
 	blockHashCache     *lru.Cache[common.Hash, uint64]
+	logsCache          *lru.Cache[uint64, []*coretypes.Log]
 
+	// per tx caches
 	txLookupCache *lru.Cache[common.Hash, *rpctypes.RPCTransaction]
 	receiptCache  *lru.Cache[common.Hash, *coretypes.Receipt]
-	logsCache     *lru.Cache[uint64, []*coretypes.Log]
 
 	mut     sync.Mutex // mutex for accMuts
 	accMuts map[string]*AccMut
