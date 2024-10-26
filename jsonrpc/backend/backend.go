@@ -26,10 +26,10 @@ type JSONRPCBackend struct {
 	queuedTxs    *lrucache.Cache[string, []byte]
 	historyCache *lru.Cache[cacheKey, processedFees]
 
-	headerCache       *lru.Cache[uint64, *coretypes.Header]
-	blockTxsCache     *lru.Cache[uint64, []*rpctypes.RPCTransaction]
-	blockRceiptsCache *lru.Cache[uint64, []*coretypes.Receipt]
-	blockHashCache    *lru.Cache[common.Hash, uint64]
+	headerCache        *lru.Cache[uint64, *coretypes.Header]
+	blockTxsCache      *lru.Cache[uint64, []*rpctypes.RPCTransaction]
+	blockReceiptsCache *lru.Cache[uint64, []*coretypes.Receipt]
+	blockHashCache     *lru.Cache[common.Hash, uint64]
 
 	txLookupCache *lru.Cache[common.Hash, *rpctypes.RPCTransaction]
 	receiptsCache *lru.Cache[common.Hash, *coretypes.Receipt]
@@ -80,10 +80,10 @@ func NewJSONRPCBackend(
 		queuedTxs:    queuedTxs,
 		historyCache: lru.NewCache[cacheKey, processedFees](feeHistoryCacheSize),
 
-		headerCache:       lru.NewCache[uint64, *coretypes.Header](blockCacheLimit),
-		blockTxsCache:     lru.NewCache[uint64, []*rpctypes.RPCTransaction](blockCacheLimit),
-		blockRceiptsCache: lru.NewCache[uint64, []*coretypes.Receipt](blockCacheLimit),
-		blockHashCache:    lru.NewCache[common.Hash, uint64](blockCacheLimit),
+		headerCache:        lru.NewCache[uint64, *coretypes.Header](blockCacheLimit),
+		blockTxsCache:      lru.NewCache[uint64, []*rpctypes.RPCTransaction](blockCacheLimit),
+		blockReceiptsCache: lru.NewCache[uint64, []*coretypes.Receipt](blockCacheLimit),
+		blockHashCache:     lru.NewCache[common.Hash, uint64](blockCacheLimit),
 
 		txLookupCache: lru.NewCache[common.Hash, *rpctypes.RPCTransaction](txLookupCacheLimit),
 		receiptsCache: lru.NewCache[common.Hash, *coretypes.Receipt](receiptsCacheLimit),

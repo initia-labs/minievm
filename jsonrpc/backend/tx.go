@@ -454,7 +454,7 @@ func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.R
 }
 
 func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Receipt, error) {
-	if recepts, ok := b.blockRceiptsCache.Get(blockNumber); ok {
+	if recepts, ok := b.blockReceiptsCache.Get(blockNumber); ok {
 		return recepts, nil
 	}
 
@@ -473,7 +473,7 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 	}
 
 	// cache the receipts
-	_ = b.blockRceiptsCache.Add(blockNumber, recepts)
+	_ = b.blockReceiptsCache.Add(blockNumber, recepts)
 	return recepts, nil
 }
 
