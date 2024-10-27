@@ -6,20 +6,14 @@ import "../i_cosmos/ICosmos.sol";
 import "../erc20_factory/ERC20Factory.sol";
 import "../i_erc20/IERC20.sol";
 import "../ownable/Ownable.sol";
-import "../erc20_registry/ERC20Registry.sol";
 import "../erc20_acl/ERC20ACL.sol";
+import "../i_ibc_async_callback/IIBCAsyncCallback.sol";
 import {ERC165, IERC165} from "../erc165/ERC165.sol";
 
-contract ERC20Wrapper is
-    Ownable,
-    ERC20Registry,
-    ERC165,
-    ERC20ACL,
-    ERC20Factory
-{
+contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
     struct IbcCallBack {
         address sender;
-        string wrappedTokenDenom;
+        address originToken;
         uint wrappedAmt;
     }
 
@@ -29,11 +23,18 @@ contract ERC20Wrapper is
     uint64 callBackId = 0;
     ERC20Factory public immutable factory;
     mapping(address => address) public wrappedTokens; // origin -> wrapped
-    mapping(address => address) public originTokens; // wrapped -> origin
     mapping(uint64 => IbcCallBack) private ibcCallBack; // id -> CallBackInfo
 
     constructor(address erc20Factory) {
         factory = ERC20Factory(erc20Factory);
+    }
+
+    modifier onlyContract() {
+        require(
+            msg.sender == address(this),
+            "Only the contract can call this function"
+        );
+        _;
     }
 
     /**
@@ -64,20 +65,19 @@ contract ERC20Wrapper is
         // store the callback data
         ibcCallBack[callBackId] = IbcCallBack({
             sender: msg.sender,
-            wrappedTokenDenom: COSMOS_CONTRACT.to_denom(wrappedTokens[token]),
+            originToken: token,
             wrappedAmt: wrappedAmt
         });
-
-        // do ibc transfer wrapped token
-        COSMOS_CONTRACT.execute_cosmos(
-            _ibc_transfer(
-                channel,
-                wrappedTokens[token],
-                wrappedAmt,
-                timeout,
-                receiver
-            )
+        // require(false, COSMOS_CONTRACT.to_cosmos_address(address(this)));
+        string memory message = _ibc_transfer(
+            channel,
+            wrappedTokens[token],
+            wrappedAmt,
+            timeout,
+            receiver
         );
+        // do ibc transfer wrapped token
+        COSMOS_CONTRACT.execute_cosmos(message);
     }
 
     /**
@@ -85,16 +85,12 @@ contract ERC20Wrapper is
      * @dev This function is used by a hook and requires sender approve to this contract to burn wrapped tokens.
      */
     function unwrap(
-        string memory wrappedTokenDenom,
+        address originToken,
         address receiver,
         uint wrappedAmt
     ) public {
-        address wrappedToken = COSMOS_CONTRACT.to_erc20(wrappedTokenDenom);
-        require(
-            originTokens[wrappedToken] != address(0),
-            "origin token doesn't exist"
-        );
-
+        address wrappedToken = wrappedTokens[originToken];
+        require(wrappedToken != address(0), "wrapped token doesn't exist");
         // burn wrapped token
         ERC20(wrappedToken).burnFrom(msg.sender, wrappedAmt);
 
@@ -102,20 +98,20 @@ contract ERC20Wrapper is
         uint amount = _convertDecimal(
             wrappedAmt,
             WRAPPED_DECIMAL,
-            IERC20(originTokens[wrappedToken]).decimals()
+            IERC20(originToken).decimals()
         );
 
-        ERC20(originTokens[wrappedToken]).transfer(receiver, amount);
+        ERC20(originToken).transfer(receiver, amount);
     }
 
-    function ibc_ack(uint64 callback_id, bool success) external {
+    function ibc_ack(uint64 callback_id, bool success) external onlyContract {
         if (success) {
             return;
         }
         _handleFailedIbcTransfer(callback_id);
     }
 
-    function ibc_timeout(uint64 callback_id) external {
+    function ibc_timeout(uint64 callback_id) external onlyContract {
         _handleFailedIbcTransfer(callback_id);
     }
 
@@ -123,11 +119,7 @@ contract ERC20Wrapper is
 
     function _handleFailedIbcTransfer(uint64 callback_id) internal {
         IbcCallBack memory callback = ibcCallBack[callback_id];
-        unwrap(
-            callback.wrappedTokenDenom,
-            callback.sender,
-            callback.wrappedAmt
-        );
+        unwrap(callback.originToken, callback.sender, callback.wrappedAmt);
     }
 
     function _ensureWrappedTokenExists(address token) internal {
@@ -138,7 +130,6 @@ contract ERC20Wrapper is
                 WRAPPED_DECIMAL
             );
             wrappedTokens[token] = wrappedToken;
-            originTokens[wrappedToken] = token;
         }
     }
 
@@ -190,13 +181,11 @@ contract ERC20Wrapper is
                 '"timeout_timestamp": "',
                 Strings.toString(timeout),
                 '",',
-                '"memo": "",',
-                '"async_callback": {"id": "',
+                '"memo": "{\\"evm\\": {\\"async_callback\\": {\\"id\\": ',
                 Strings.toString(callBackId),
-                '",',
-                '"contract_address": "',
+                ',\\"contract_address\\":\\"',
                 Strings.toHexString(address(this)),
-                '"}}'
+                '\\"}}}"}'
             )
         );
     }
