@@ -116,10 +116,21 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
     }
 
     // internal functions //
-
     function _handleFailedIbcTransfer(uint64 callback_id) internal {
         IbcCallBack memory callback = ibcCallBack[callback_id];
-        unwrap(callback.originToken, callback.sender, callback.wrappedAmt);
+        address wrappedToken = wrappedTokens[callback.originToken];
+        require(wrappedToken != address(0), "wrapped token doesn't exist");
+        // The wrapped token has already been sent, burn it
+        ERC20(wrappedToken).burn(callback.wrappedAmt);
+
+        // unlock origin token and transfer to receiver
+        uint amount = _convertDecimal(
+            callback.wrappedAmt,
+            WRAPPED_DECIMAL,
+            IERC20(callback.originToken).decimals()
+        );
+
+        ERC20(callback.originToken).transfer(callback.sender, amount);
     }
 
     function _ensureWrappedTokenExists(address token) internal {
