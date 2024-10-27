@@ -8,9 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// MAX_RECURSIVE_DEPTH is the maximum depth of recursive calls allowed in x/evm.
-const MAX_RECURSIVE_DEPTH = 16
-
 func DefaultParams() Params {
 	return Params{
 		AllowCustomERC20:     true,
