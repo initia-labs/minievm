@@ -179,8 +179,12 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		ExtraEips: extraEIPs,
 	}
 
-	// set cosmos messages to context
-	ctx = sdk.UnwrapSDKContext(ctx).WithValue(types.CONTEXT_KEY_COSMOS_MESSAGES, &[]sdk.Msg{})
+	// prepare SDK context for EVM execution
+	ctx, err = prepareSDKContext(sdk.UnwrapSDKContext(ctx))
+	if err != nil {
+		return ctx, nil, err
+	}
+
 	*evm = *vm.NewEVMWithPrecompiles(
 		blockContext,
 		txContext,
@@ -196,6 +200,24 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	}
 
 	return ctx, evm, nil
+}
+
+// prepare SDK context for EVM execution
+// 1. set cosmos messages to context
+// 2. check recursive depth and increment it (the maximum depth is 16)
+func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
+	ctx = ctx.WithValue(types.CONTEXT_KEY_COSMOS_MESSAGES, &[]sdk.Msg{})
+	if depth := ctx.Value(types.CONTEXT_KEY_RECURSIVE_DEPTH); depth != nil {
+		*depth.(*int)++
+		if *depth.(*int) > types.MAX_RECURSIVE_DEPTH {
+			return ctx, types.ErrExceedMaxRecursiveDepth
+		}
+	} else {
+		depth := 0
+		ctx = ctx.WithValue(types.CONTEXT_KEY_RECURSIVE_DEPTH, &depth)
+	}
+
+	return ctx, nil
 }
 
 // EVMStaticCall executes an EVM call with the given input data in static mode.
