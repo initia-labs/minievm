@@ -8,6 +8,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// MAX_RECURSIVE_DEPTH is the maximum depth of recursive calls allowed in x/evm.
+const MAX_RECURSIVE_DEPTH = 16
+
 func DefaultParams() Params {
 	return Params{
 		AllowCustomERC20:     true,
@@ -49,4 +52,13 @@ func (p Params) Validate(ac address.Codec) error {
 	}
 
 	return nil
+}
+
+func (p Params) ToExtraEIPs() []int {
+	extraEIPs := make([]int, len(p.ExtraEIPs))
+	for i, eip := range p.ExtraEIPs {
+		extraEIPs[i] = int(eip)
+	}
+
+	return extraEIPs
 }

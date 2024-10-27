@@ -36,6 +36,7 @@ var (
 	ErrInvalidGasRefundRatio       = errorsmod.Register(ModuleName, 27, "Invalid gas refund ratio")
 	ErrFailedToGetERC20WrapperAddr = errorsmod.Register(ModuleName, 28, "Failed to get ERC20 wrapper address")
 	ErrInvalidNumRetainBlockHashes = errorsmod.Register(ModuleName, 29, "Invalid num retain block hashes")
+	ErrExceedMaxRecursiveDepth     = errorsmod.Register(ModuleName, 30, "Exceed max recursive depth")
 )
 
 func NewRevertError(revert []byte) error {

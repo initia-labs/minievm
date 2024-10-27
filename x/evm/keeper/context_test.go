@@ -125,6 +125,13 @@ func Test_GetHash(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
+	// change number of retain block hashes to 257
+	params, err := input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	params.NumRetainBlockHashes = 257
+	err = input.EVMKeeper.Params.Set(ctx, params)
+	require.NoError(t, err)
+
 	// fund addr
 	input.Faucet.Fund(ctx, addr, sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000000000))
 
@@ -141,9 +148,11 @@ func Test_GetHash(t *testing.T) {
 	require.NoError(t, err)
 
 	// set block hash
+	hash99 := sha3.Sum256([]byte("block99"))
 	hash100 := sha3.Sum256([]byte("block100"))
 	hash101 := sha3.Sum256([]byte("block101"))
 	hash356 := sha3.Sum256([]byte("block356"))
+	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 356, common.BytesToHash(hash99[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 100, common.BytesToHash(hash100[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 101, common.BytesToHash(hash101[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 356, common.BytesToHash(hash356[:])))
@@ -151,13 +160,22 @@ func Test_GetHash(t *testing.T) {
 	// set current block height
 	ctx = ctx.WithBlockHeight(357)
 
-	// query 100 should return empty bytes because only resent 256 block hashes are stored
-	queryInputBz, err := parsed.Pack("get_blockhash", uint64(100))
+	// query 99 should return empty hash because only resent 257 block hashes are stored
+	queryInputBz, err := parsed.Pack("get_blockhash", uint64(99))
 	require.NoError(t, err)
 
 	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, [32]byte{}, [32]byte(queryRes))
+	require.Empty(t, logs)
+
+	// valid query
+	queryInputBz, err = parsed.Pack("get_blockhash", uint64(100))
+	require.NoError(t, err)
+
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	require.NoError(t, err)
+	require.Equal(t, hash100, [32]byte(queryRes))
 	require.Empty(t, logs)
 
 	// vaild query
