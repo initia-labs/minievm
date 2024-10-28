@@ -30,16 +30,21 @@ library Strings {
     }
 
     // bytes to hex string
-    function toHexString(bytes memory buffer) internal pure returns (string memory) {
-        bytes memory converted = new bytes(buffer.length * 2);
-        bytes memory _base = "0123456789abcdef";
-
-        for (uint256 i = 0; i < buffer.length; i++) {
-            converted[i * 2] = _base[uint8(buffer[i]) / _base.length];
-            converted[i * 2 + 1] = _base[uint8(buffer[i]) % _base.length];
+    function toHexString(
+        bytes memory buffer
+    ) internal pure returns (string memory) {
+        bytes memory converted = new bytes(buffer.length * 2 + 2);
+        converted[0] = "0";
+        converted[1] = "x";
+        unchecked {
+            for (uint256 i = 0; i < buffer.length; i++) {
+                uint8 value = uint8(buffer[i]);
+                converted[i * 2 + 2] = HEX_DIGITS[value >> 4];
+                converted[i * 2 + 1 + 2] = HEX_DIGITS[value & 0xf];
+            }
         }
 
-        return string(abi.encodePacked("0x", converted));
+        return string(converted);
     }
 
     function toHexString(address addr) internal pure returns (string memory) {
