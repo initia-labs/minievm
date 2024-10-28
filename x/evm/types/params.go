@@ -53,3 +53,12 @@ func (p Params) Validate(ac address.Codec) error {
 
 	return nil
 }
+
+func (p Params) ToExtraEIPs() []int {
+	extraEIPs := make([]int, len(p.ExtraEIPs))
+	for i, eip := range p.ExtraEIPs {
+		extraEIPs[i] = int(eip)
+	}
+
+	return extraEIPs
+}

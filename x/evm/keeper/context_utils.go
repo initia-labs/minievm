@@ -15,11 +15,7 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func (k Keeper) LoadFee(ctx context.Context) (types.Fee, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return types.Fee{}, err
-	}
+func (k Keeper) LoadFee(ctx context.Context, params types.Params) (types.Fee, error) {
 	feeContract, err := types.DenomToContractAddr(ctx, k, params.FeeDenom)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return types.Fee{}, err
@@ -78,7 +74,12 @@ func (k Keeper) baseFee(ctx context.Context, fee types.Fee) (*big.Int, error) {
 }
 
 func (k Keeper) BaseFee(ctx context.Context) (*big.Int, error) {
-	fee, err := k.LoadFee(ctx)
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fee, err := k.LoadFee(ctx, params)
 	if err != nil {
 		return nil, err
 	}

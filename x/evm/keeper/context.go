@@ -150,12 +150,13 @@ func (k Keeper) buildTxContext(ctx context.Context, caller common.Address, fee t
 
 // createEVM creates a new EVM instance.
 func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (context.Context, *vm.EVM, error) {
-	extraEIPs, err := k.ExtraEIPs(ctx)
+	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return ctx, nil, err
 	}
 
-	fee, err := k.LoadFee(ctx)
+	extraEIPs := params.ToExtraEIPs()
+	fee, err := k.LoadFee(ctx, params)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -175,8 +176,9 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	}
 
 	vmConfig := vm.Config{
-		Tracer:    tracer,
-		ExtraEips: extraEIPs,
+		Tracer:               tracer,
+		ExtraEips:            extraEIPs,
+		NumRetainBlockHashes: &params.NumRetainBlockHashes,
 	}
 
 	// prepare SDK context for EVM execution

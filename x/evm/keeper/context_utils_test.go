@@ -19,7 +19,10 @@ func Test_GasPrice(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
-	fee, err := input.EVMKeeper.LoadFee(ctx)
+	params, err := input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+
+	fee, err := input.EVMKeeper.LoadFee(ctx, params)
 	require.NoError(t, err)
 
 	gasPriceInEthersUnit := types.ToEthersUint(0, big.NewInt(123))
@@ -37,7 +40,10 @@ func Test_BaseFee(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
-	fee, err := input.EVMKeeper.LoadFee(ctx)
+	params, err := input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+
+	fee, err := input.EVMKeeper.LoadFee(ctx, params)
 	require.NoError(t, err)
 
 	gasPriceInEthersUnit := types.ToEthersUint(0, big.NewInt(123))
