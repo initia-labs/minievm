@@ -152,7 +152,7 @@ func Test_GetHash(t *testing.T) {
 	hash100 := sha3.Sum256([]byte("block100"))
 	hash101 := sha3.Sum256([]byte("block101"))
 	hash356 := sha3.Sum256([]byte("block356"))
-	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 356, common.BytesToHash(hash99[:])))
+	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 99, common.BytesToHash(hash99[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 100, common.BytesToHash(hash100[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 101, common.BytesToHash(hash101[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 356, common.BytesToHash(hash356[:])))
