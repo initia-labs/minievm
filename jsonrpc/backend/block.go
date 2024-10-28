@@ -13,12 +13,7 @@ import (
 )
 
 func (b *JSONRPCBackend) BlockNumber() (hexutil.Uint64, error) {
-	res, err := b.clientCtx.Client.Status(b.ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	return hexutil.Uint64(res.SyncInfo.LatestBlockHeight), nil
+	return hexutil.Uint64(b.app.LastBlockHeight()), nil
 }
 
 func (b *JSONRPCBackend) resolveBlockNrOrHash(blockNrOrHash rpc.BlockNumberOrHash) (uint64, error) {
