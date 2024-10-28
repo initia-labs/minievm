@@ -26,8 +26,6 @@ const (
 	DefaultMaxOpenConnections = 100
 	// DefaultLogsCap is the default max number of results can be returned from single `eth_getLogs` query.
 	DefaultLogsCap int32 = 100
-	// DefaultFilterCap is the default global cap for total number of filters that can be created.
-	DefaultFilterCap int32 = 200
 	// DefaultAddress defines the default HTTP server to listen on.
 	DefaultAddress = "127.0.0.1:8545"
 	// DefaultAddressWS defines the default WebSocket server address to bind to.
