@@ -2,6 +2,9 @@ package indexer
 
 import (
 	"context"
+	"time"
+
+	"github.com/jellydator/ttlcache/v3"
 
 	"cosmossdk.io/collections"
 	corestoretypes "cosmossdk.io/core/store"
@@ -46,7 +49,10 @@ type EVMIndexer interface {
 
 	// event subscription
 	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction)
+
+	// mempool
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
+	TxInMempool(hash common.Hash) bool
 }
 
 // EVMIndexerImpl implements EVMIndexer.
@@ -72,6 +78,9 @@ type EVMIndexerImpl struct {
 	blockChans   []chan *coretypes.Header
 	logsChans    []chan []*coretypes.Log
 	pendingChans []chan *rpctypes.RPCTransaction
+
+	// txPendingMap is a map to store tx hashes in pending state.
+	txPendingMap *ttlcache.Cache[common.Hash, bool]
 }
 
 func NewEVMIndexer(
@@ -115,6 +124,12 @@ func NewEVMIndexer(
 		blockChans:   nil,
 		logsChans:    nil,
 		pendingChans: nil,
+
+		// Use ttlcache to cope with abnormal cases like tx not included in a block
+		txPendingMap: ttlcache.New(
+			// pending tx lifetime is 1 minute in indexer
+			ttlcache.WithTTL[common.Hash, bool](time.Minute),
+		),
 	}
 
 	schema, err := sb.Build()
@@ -122,6 +137,9 @@ func NewEVMIndexer(
 		return nil, err
 	}
 	indexer.schema = schema
+
+	// expire pending tx
+	go indexer.txPendingMap.Start()
 
 	return indexer, nil
 }

@@ -23,7 +23,9 @@ type JSONRPCBackend struct {
 	app    *app.MinitiaApp
 	logger log.Logger
 
-	queuedTxs    *lrucache.Cache[string, []byte]
+	queuedTxs      *lrucache.Cache[string, txQueueItem]
+	queuedTxHashes *sync.Map
+
 	historyCache *lru.Cache[cacheKey, processedFees]
 
 	// per block caches
@@ -47,6 +49,14 @@ type JSONRPCBackend struct {
 	cfg config.JSONRPCConfig
 }
 
+type txQueueItem struct {
+	hash  common.Hash
+	bytes []byte
+
+	sender string
+	body   *coretypes.Transaction
+}
+
 const (
 	feeHistoryCacheSize = 2048
 	blockCacheLimit     = 256
@@ -68,7 +78,10 @@ func NewJSONRPCBackend(
 		cfg.LogCacheSize = config.DefaultLogCacheSize
 	}
 
-	queuedTxs, err := lrucache.New[string, []byte](cfg.QueuedTransactionCap)
+	queuedTxHashes := new(sync.Map)
+	queuedTxs, err := lrucache.NewWithEvict(cfg.QueuedTransactionCap, func(_ string, txCache txQueueItem) {
+		queuedTxHashes.Delete(txCache.hash)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +91,9 @@ func NewJSONRPCBackend(
 		app:    app,
 		logger: logger,
 
-		queuedTxs:    queuedTxs,
+		queuedTxs:      queuedTxs,
+		queuedTxHashes: queuedTxHashes,
+
 		historyCache: lru.NewCache[cacheKey, processedFees](feeHistoryCacheSize),
 
 		// per block caches

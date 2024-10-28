@@ -152,6 +152,7 @@ require (
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
 	github.com/initia-labs/movevm v0.5.0 // indirect
+	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect

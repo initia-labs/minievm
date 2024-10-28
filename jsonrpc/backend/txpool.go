@@ -62,24 +62,14 @@ func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpct
 	queuedTxs := b.queuedTxs.Values()
 	b.mut.Unlock()
 
-	for _, tx := range queuedTxs {
-		cosmosTx, err := b.app.TxDecode(tx)
-		if err != nil {
-			return nil, err
-		}
+	for _, txQueueItem := range queuedTxs {
+		ethTx := txQueueItem.body
+		sender := txQueueItem.sender
 
-		ethTx, account, err := txUtils.ConvertCosmosTxToEthereumTx(ctx, cosmosTx)
-		if err != nil {
-			return nil, err
-		}
-		if ethTx == nil {
-			continue
-		}
-
-		dump, ok := content["queued"][account.Hex()]
+		dump, ok := content["queued"][sender]
 		if !ok {
 			dump = make(map[string]*rpctypes.RPCTransaction)
-			content["queued"][account.Hex()] = dump
+			content["queued"][sender] = dump
 		}
 
 		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainID)
