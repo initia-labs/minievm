@@ -32,7 +32,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
     modifier onlyContract() {
         require(
             msg.sender == address(this),
-            "Only the contract can call this function"
+            "only the contract itself can call this function"
         );
         _;
     }
@@ -68,6 +68,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
             originToken: token,
             wrappedAmt: wrappedAmt
         });
+
         // require(false, COSMOS_CONTRACT.to_cosmos_address(address(this)));
         string memory message = _ibc_transfer(
             channel,
@@ -91,6 +92,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
     ) public {
         address wrappedToken = wrappedTokens[originToken];
         require(wrappedToken != address(0), "wrapped token doesn't exist");
+
         // burn wrapped token
         ERC20(wrappedToken).burnFrom(msg.sender, wrappedAmt);
 
@@ -108,6 +110,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
         if (success) {
             return;
         }
+
         _handleFailedIbcTransfer(callback_id);
     }
 
@@ -120,6 +123,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
         IbcCallBack memory callback = ibcCallBack[callback_id];
         address wrappedToken = wrappedTokens[callback.originToken];
         require(wrappedToken != address(0), "wrapped token doesn't exist");
+
         // The wrapped token has already been sent, burn it
         ERC20(wrappedToken).burn(callback.wrappedAmt);
 
@@ -158,6 +162,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
         } else {
             convertedAmount = amount;
         }
+
         require(convertedAmount != 0, "converted amount is zero");
     }
 
