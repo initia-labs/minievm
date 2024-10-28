@@ -85,16 +85,19 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
 	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
-	_ = b.queuedTxs.Add(cacheKey, txBytes)
+
+	txHash := tx.Hash()
+	b.queuedTxHashes.Store(txHash, true)
+	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
 
 	// check if there are queued txs which can be sent
 	for {
 		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
-		if txBytes, ok := b.queuedTxs.Get(cacheKey); ok {
+		if txQueueItem, ok := b.queuedTxs.Get(cacheKey); ok {
 			_ = b.queuedTxs.Remove(cacheKey)
 
 			b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
-			res, err := b.clientCtx.BroadcastTxSync(txBytes)
+			res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
 			if err != nil {
 				return err
 			}
@@ -130,20 +133,7 @@ func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, 
 
 // GetTransactionByHash returns the transaction with the given hash.
 func (b *JSONRPCBackend) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return nil, nil
-	} else if err != nil {
-		b.logger.Error("failed to get transaction by hash", "err", err)
-		return nil, NewTxIndexingError()
-	}
-
-	return tx, nil
+	return b.getTransaction(hash)
 }
 
 // GetTransactionCount returns the number of transactions at the given block number.
@@ -390,6 +380,15 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 		return tx, nil
 	}
 
+	// check if the transaction is in the queued txs
+	if _, ok := b.queuedTxHashes.Load(hash); ok {
+		return nil, NewTxIndexingError()
+	}
+	// check if the transaction is in the pending txs
+	if ok := b.app.EVMIndexer().TxInMempool(hash); ok {
+		return nil, NewTxIndexingError()
+	}
+
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err
@@ -403,7 +402,6 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 		return nil, NewTxIndexingError()
 	}
 
-	_ = b.txLookupCache.Add(hash, tx)
 	return tx, nil
 }
 
