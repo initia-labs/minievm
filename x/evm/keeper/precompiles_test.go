@@ -182,7 +182,7 @@ func Test_ToERC20(t *testing.T) {
 	))
 	require.NoError(t, err)
 
-	contractAddr, err := input.EVMKeeper.GetContractAddrByDenom(ctx, "bar")
+	contractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, "bar")
 	require.NoError(t, err)
 
 	abi, err := i_cosmos.ICosmosMetaData.GetAbi()

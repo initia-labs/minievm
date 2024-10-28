@@ -557,6 +557,7 @@ func NewAppKeeper(
 		accountKeeper,
 		bankKeeper,
 		communityPoolKeeper,
+		appKeepers.IBCHooksKeeper,
 		gasPriceKeeper,
 		bApp.MsgServiceRouter(),
 		bApp.GRPCQueryRouter(),

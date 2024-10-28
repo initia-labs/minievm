@@ -88,7 +88,7 @@ func (h EVMHooks) approveERC20(ctx sdk.Context, intermediateSender string, contr
 		return nil, err
 	}
 
-	erc20Addr, err := h.evmKeeper.GetContractAddrByDenom(ctx, denom)
+	erc20Addr, err := evmtypes.DenomToContractAddr(ctx, h.evmKeeper, denom)
 	if err != nil {
 		return nil, err
 	}

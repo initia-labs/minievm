@@ -86,8 +86,16 @@ func (k Keeper) DeployERC20Wrapper(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if err = k.ERC20WrapperAddr.Set(ctx, wrapperAddr.Bytes()); err != nil {
+		return err
+	}
 
-	return k.ERC20WrapperAddr.Set(ctx, wrapperAddr.Bytes())
+	// whitelist the wrapper contract for IBC hook
+	if err = k.ibcHookKeeper.SetAllowed(ctx, wrapperAddr.Bytes(), true); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) error {
