@@ -10,6 +10,7 @@ library Strings {
      */
     error StringsInsufficientHexLength(uint256 value, uint256 length);
 
+    // uint256 to hex string
     function toHexString(
         uint256 value,
         uint256 length
@@ -26,6 +27,24 @@ library Strings {
             revert StringsInsufficientHexLength(value, length);
         }
         return string(buffer);
+    }
+
+    // bytes to hex string
+    function toHexString(
+        bytes memory buffer
+    ) internal pure returns (string memory) {
+        bytes memory converted = new bytes(buffer.length * 2 + 2);
+        converted[0] = "0";
+        converted[1] = "x";
+        unchecked {
+            for (uint256 i = 0; i < buffer.length; i++) {
+                uint8 value = uint8(buffer[i]);
+                converted[i * 2 + 2] = HEX_DIGITS[value >> 4];
+                converted[i * 2 + 1 + 2] = HEX_DIGITS[value & 0xf];
+            }
+        }
+
+        return string(converted);
     }
 
     function toHexString(address addr) internal pure returns (string memory) {

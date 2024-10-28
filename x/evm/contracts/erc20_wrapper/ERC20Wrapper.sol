@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../util/Strings.sol";
+import "../strings/Strings.sol";
 import "../i_cosmos/ICosmos.sol";
 import "../erc20_factory/ERC20Factory.sol";
 import "../i_erc20/IERC20.sol";

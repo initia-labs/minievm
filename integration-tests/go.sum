@@ -1400,8 +1400,8 @@ github.com/initia-labs/OPinit/api v0.5.1 h1:zwyJf7HtKJCKvLJ1R9PjVfJO1L+d/jKoeFyT
 github.com/initia-labs/OPinit/api v0.5.1/go.mod h1:gHK6DEWb3/DqQD5LjKirUx9jilAh2UioXanoQdgqVfU=
 github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261 h1:V62KOhe6Em3wAvJsDVP+3is98I3mk/29OKNVs4IxeFQ=
 github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261/go.mod h1:KsQ7Wm/dw9N0l7Ypn3QKGwgUX5XinTlcHGIF0DSjsw4=
-github.com/initia-labs/evm v0.0.0-20240826053041-8320cc435dfd h1:WJGpV8iEm9Z/HcYITduwfHcBcembX32DeIepT843kQU=
-github.com/initia-labs/evm v0.0.0-20240826053041-8320cc435dfd/go.mod h1:Mq0biU2jbdmKSZoqOj29017ygFrMnB5/Rifwp980W4o=
+github.com/initia-labs/evm v0.0.0-20241027024417-b90d6257f9b7 h1:m7ni67mL0+7qQCFXvjNPeEx3s91Oyxcu5UL82INOvMs=
+github.com/initia-labs/evm v0.0.0-20241027024417-b90d6257f9b7/go.mod h1:Mq0biU2jbdmKSZoqOj29017ygFrMnB5/Rifwp980W4o=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d h1:TLq8lB1PtQ0pjGf+bN8YgGVeLMuytZ26SBGMOs1seKY=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d/go.mod h1:zh6x1osR0hNvEcFrC/lhGD08sMfQmr9wHVvZ/mRWMCs=
 github.com/initia-labs/initia v0.5.6 h1:7Um8tVTFHlYkt2kIpOzv5U6O3Z0izVJOZh+UXTmdFPU=

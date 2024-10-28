@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../i_ibc_async_callback/IIBCAsyncCallback.sol";
 import "../i_cosmos/ICosmos.sol";
+import "../strings/Strings.sol";
 
 contract Counter is IIBCAsyncCallback {
     uint256 public count;
@@ -38,5 +39,37 @@ contract Counter is IIBCAsyncCallback {
 
     function get_blockhash(uint64 n) external view returns (bytes32) {
         return blockhash(n);
+    }
+
+    function recursive(uint64 n) public {
+        if (n == 0) {
+            return;
+        }
+
+        COSMOS_CONTRACT.execute_cosmos(_recursive(n));
+
+        // to test branching
+        COSMOS_CONTRACT.execute_cosmos(_recursive(n));
+    }
+
+    function _recursive(uint64 n) internal returns (string memory message) {
+        message = string(
+            abi.encodePacked(
+                '{"@type": "/minievm.evm.v1.MsgCall",',
+                '"sender": "',
+                COSMOS_CONTRACT.to_cosmos_address(address(this)),
+                '",',
+                '"contract_addr": "',
+                Strings.toHexString(address(this)),
+                '",',
+                '"input": "',
+                Strings.toHexString(
+                    abi.encodePacked(this.recursive.selector, abi.encode(n - 1))
+                ),
+                '",',
+                '"value": "0",',
+                '"access_list": []}'
+            )
+        );
     }
 }

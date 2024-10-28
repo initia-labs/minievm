@@ -150,12 +150,13 @@ func (k Keeper) buildTxContext(ctx context.Context, caller common.Address, fee t
 
 // createEVM creates a new EVM instance.
 func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (context.Context, *vm.EVM, error) {
-	extraEIPs, err := k.ExtraEIPs(ctx)
+	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return ctx, nil, err
 	}
 
-	fee, err := k.LoadFee(ctx)
+	extraEIPs := params.ToExtraEIPs()
+	fee, err := k.LoadFee(ctx, params)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -175,12 +176,17 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	}
 
 	vmConfig := vm.Config{
-		Tracer:    tracer,
-		ExtraEips: extraEIPs,
+		Tracer:               tracer,
+		ExtraEips:            extraEIPs,
+		NumRetainBlockHashes: &params.NumRetainBlockHashes,
 	}
 
-	// set cosmos messages to context
-	ctx = sdk.UnwrapSDKContext(ctx).WithValue(types.CONTEXT_KEY_COSMOS_MESSAGES, &[]sdk.Msg{})
+	// prepare SDK context for EVM execution
+	ctx, err = prepareSDKContext(sdk.UnwrapSDKContext(ctx))
+	if err != nil {
+		return ctx, nil, err
+	}
+
 	*evm = *vm.NewEVMWithPrecompiles(
 		blockContext,
 		txContext,
@@ -196,6 +202,25 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	}
 
 	return ctx, evm, nil
+}
+
+// prepare SDK context for EVM execution
+// 1. set cosmos messages to context
+// 2. check recursive depth and increment it (the maximum depth is 16)
+func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
+	// set cosmos messages to context
+	ctx = ctx.WithValue(types.CONTEXT_KEY_COSMOS_MESSAGES, &[]sdk.Msg{})
+
+	depth := 1
+	if val := ctx.Value(types.CONTEXT_KEY_RECURSIVE_DEPTH); val != nil {
+		depth = val.(int) + 1
+		if depth > types.MAX_RECURSIVE_DEPTH {
+			return ctx, types.ErrExceedMaxRecursiveDepth
+		}
+	}
+
+	// set recursive depth to context
+	return ctx.WithValue(types.CONTEXT_KEY_RECURSIVE_DEPTH, depth), nil
 }
 
 // EVMStaticCall executes an EVM call with the given input data in static mode.

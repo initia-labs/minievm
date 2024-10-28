@@ -81,9 +81,8 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS-1, true)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.IS_BLOCKED_ADDRESS_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS-1, true)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
@@ -127,9 +126,8 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS-1, true)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.IS_MODULE_ADDRESS_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS-1, true)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
@@ -173,9 +171,8 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_COSMOS_ADDRESS_GAS-1, true)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.TO_COSMOS_ADDRESS_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_COSMOS_ADDRESS_GAS-1, true)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_COSMOS_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
@@ -204,9 +201,8 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_EVM_ADDRESS_GAS-1, true)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.TO_EVM_ADDRESS_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_EVM_ADDRESS_GAS-1, true)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_EVM_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
@@ -245,9 +241,8 @@ func Test_ExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS-1, false)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.EXECUTE_COSMOS_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS-1, false)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	// cannot call execute in readonly mode
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
@@ -333,9 +328,8 @@ func Test_QueryCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.QUERY_COSMOS_GAS-1, false)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.QUERY_COSMOS_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.QUERY_COSMOS_GAS-1, false)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	// succeed
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.QUERY_COSMOS_GAS+uint64(len(inputBz)), true)
@@ -380,9 +374,8 @@ func Test_ToDenom(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_DENOM_GAS-1, false)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.TO_DENOM_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_DENOM_GAS-1, false)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	// succeed
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_DENOM_GAS+uint64(len(inputBz)), true)
@@ -422,9 +415,8 @@ func Test_ToErc20(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas panic
-	_, gasUsed, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_ERC20_GAS-1, false)
-	require.NoError(t, err)
-	require.Equal(t, precompiles.TO_ERC20_GAS, gasUsed)
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_ERC20_GAS-1, false)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
 
 	// succeed
 	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_ERC20_GAS+uint64(len(inputBz)), true)

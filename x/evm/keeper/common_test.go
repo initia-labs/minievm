@@ -280,6 +280,9 @@ func _createTestInput(
 		},
 	)
 
+	// register evm message service to the router
+	evmtypes.RegisterMsgServer(msgRouter, evmkeeper.NewMsgServerImpl(evmKeeper))
+
 	// set erc20 keeper
 	*erc20Keeper = *evmKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
 	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter)
