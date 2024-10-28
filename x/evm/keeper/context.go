@@ -161,6 +161,12 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		return ctx, nil, err
 	}
 
+	// prepare SDK context for EVM execution
+	ctx, err = prepareSDKContext(sdk.UnwrapSDKContext(ctx))
+	if err != nil {
+		return ctx, nil, err
+	}
+
 	evm := &vm.EVM{}
 	blockContext, err := k.buildBlockContext(ctx, evm, fee)
 	if err != nil {
@@ -181,19 +187,13 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		NumRetainBlockHashes: &params.NumRetainBlockHashes,
 	}
 
-	// prepare SDK context for EVM execution
-	ctx, err = prepareSDKContext(sdk.UnwrapSDKContext(ctx))
-	if err != nil {
-		return ctx, nil, err
-	}
-
 	*evm = *vm.NewEVMWithPrecompiles(
 		blockContext,
 		txContext,
 		stateDB,
 		types.DefaultChainConfig(ctx),
 		vmConfig,
-		k.precompiles.toMap(ctx),
+		k.precompiles.toMap(stateDB),
 	)
 
 	if tracer != nil {

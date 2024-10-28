@@ -85,8 +85,13 @@ type IERC721Keeper interface {
 	GetTokenInfos(ctx context.Context, classId string, tokenIds []string) (tokenUris []string, tokenData []string, err error)
 }
 
-type WithContext interface {
-	WithContext(ctx context.Context) vm.PrecompiledContract
+type StateDB interface {
+	vm.StateDB
+	ContextOfSnapshot(i int) sdk.Context
+}
+
+type WithStateDB interface {
+	WithStateDB(stateDB StateDB) vm.PrecompiledContract
 }
 
 type GRPCRouter interface {

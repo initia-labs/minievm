@@ -1,14 +1,12 @@
 package erc20registryprecompile
 
 import (
-	"context"
 	"errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	storetypes "cosmossdk.io/store/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/i_erc20_registry"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -16,12 +14,12 @@ import (
 
 var _ vm.ExtendedPrecompiledContract = ERC20RegistryPrecompile{}
 var _ vm.PrecompiledContract = ERC20RegistryPrecompile{}
-var _ types.WithContext = ERC20RegistryPrecompile{}
+var _ types.WithStateDB = ERC20RegistryPrecompile{}
 
 type ERC20RegistryPrecompile struct {
 	*abi.ABI
-	ctx context.Context
-	k   types.IERC20StoresKeeper
+	stateDB types.StateDB
+	k       types.IERC20StoresKeeper
 }
 
 func NewERC20RegistryPrecompile(k types.IERC20StoresKeeper) (ERC20RegistryPrecompile, error) {
@@ -33,8 +31,8 @@ func NewERC20RegistryPrecompile(k types.IERC20StoresKeeper) (ERC20RegistryPrecom
 	return ERC20RegistryPrecompile{ABI: abi, k: k}, nil
 }
 
-func (e ERC20RegistryPrecompile) WithContext(ctx context.Context) vm.PrecompiledContract {
-	e.ctx = ctx
+func (e ERC20RegistryPrecompile) WithStateDB(stateDB types.StateDB) vm.PrecompiledContract {
+	e.stateDB = stateDB
 	return e
 }
 
@@ -47,16 +45,23 @@ const (
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
 func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
+	snapshot := e.stateDB.Snapshot()
+	ctx := e.stateDB.ContextOfSnapshot(snapshot).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
+
 	defer func() {
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case storetypes.ErrorOutOfGas:
 				// convert cosmos out of gas error to EVM out of gas error
-				usedGas = suppliedGas + 1
-				err = nil
+				usedGas = suppliedGas
+				err = vm.ErrOutOfGas
 			default:
 				panic(r)
 			}
+		}
+
+		if err != nil {
+			e.stateDB.RevertToSnapshot(snapshot)
 		}
 	}()
 
@@ -70,7 +75,6 @@ func (e ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}
 
-	ctx := sdk.UnwrapSDKContext(e.ctx).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
 	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")
 
 	switch method.Name {

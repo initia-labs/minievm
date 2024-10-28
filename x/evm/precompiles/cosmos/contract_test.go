@@ -1,7 +1,6 @@
 package cosmosprecompile_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -67,7 +66,8 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -112,7 +112,8 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -157,7 +158,8 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -187,7 +189,8 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -217,7 +220,8 @@ func Test_ExecuteCosmos(t *testing.T) {
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -316,7 +320,8 @@ func Test_QueryCosmos(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 
@@ -362,7 +367,8 @@ func Test_ToDenom(t *testing.T) {
 	}, nil, nil)
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 
@@ -403,7 +409,8 @@ func Test_ToErc20(t *testing.T) {
 	}, nil, nil)
 	require.NoError(t, err)
 
-	cosmosPrecompile = cosmosPrecompile.WithContext(ctx).(precompiles.CosmosPrecompile)
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
 
 	evmAddr := common.HexToAddress("0x1")
 
@@ -426,104 +433,4 @@ func Test_ToErc20(t *testing.T) {
 	unpackedRet, err := abi.Methods["to_erc20"].Outputs.Unpack(retBz)
 	require.NoError(t, err)
 	require.Equal(t, erc20Addr, unpackedRet[0].(common.Address))
-}
-
-var _ types.AccountKeeper = &MockAccountKeeper{}
-
-// mock account keeper for testing
-type MockAccountKeeper struct {
-	ac       address.Codec
-	accounts map[string]sdk.AccountI
-}
-
-// GetAccount implements types.AccountKeeper.
-func (k MockAccountKeeper) GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI {
-	str, _ := k.ac.BytesToString(addr.Bytes())
-	return k.accounts[str]
-}
-
-// HasAccount implements types.AccountKeeper.
-func (k MockAccountKeeper) HasAccount(ctx context.Context, addr sdk.AccAddress) bool {
-	str, _ := k.ac.BytesToString(addr.Bytes())
-	_, ok := k.accounts[str]
-	return ok
-}
-
-// NewAccount implements types.AccountKeeper.
-func (k *MockAccountKeeper) NewAccount(ctx context.Context, acc sdk.AccountI) sdk.AccountI {
-	acc.SetAccountNumber(uint64(len(k.accounts)))
-	return acc
-}
-
-// NewAccountWithAddress implements types.AccountKeeper.
-func (k MockAccountKeeper) NewAccountWithAddress(ctx context.Context, addr sdk.AccAddress) sdk.AccountI {
-	return authtypes.NewBaseAccount(addr, nil, uint64(len(k.accounts)), 0)
-}
-
-// NextAccountNumber implements types.AccountKeeper.
-func (k MockAccountKeeper) NextAccountNumber(ctx context.Context) uint64 {
-	return uint64(len(k.accounts))
-}
-
-// SetAccount implements types.AccountKeeper.
-func (k MockAccountKeeper) SetAccount(ctx context.Context, acc sdk.AccountI) {
-	str, _ := k.ac.BytesToString(acc.GetAddress().Bytes())
-	k.accounts[str] = acc
-}
-
-// RemoveAccount implements types.AccountKeeper.
-func (k MockAccountKeeper) RemoveAccount(ctx context.Context, acc sdk.AccountI) {
-	str, _ := k.ac.BytesToString(acc.GetAddress().Bytes())
-	delete(k.accounts, str)
-}
-
-var _ types.BankKeeper = &MockBankKeeper{}
-
-// mock bank keeper for testing
-type MockBankKeeper struct {
-	ac               address.Codec
-	blockedAddresses map[string]bool
-}
-
-// BlockedAddr implements types.BankKeeper.
-func (k MockBankKeeper) BlockedAddr(addr sdk.AccAddress) bool {
-	str, _ := k.ac.BytesToString(addr.Bytes())
-	return k.blockedAddresses[str]
-}
-
-var _ types.GRPCRouter = MockGRPCRouter{}
-
-type MockGRPCRouter struct {
-	routes map[string]baseapp.GRPCQueryHandler
-}
-
-func (router MockGRPCRouter) Route(path string) baseapp.GRPCQueryHandler {
-	return router.routes[path]
-}
-
-var _ types.ERC20DenomKeeper = &MockERC20DenomKeeper{}
-
-type MockERC20DenomKeeper struct {
-	denomMap map[string]common.Address
-	addrMap  map[common.Address]string
-}
-
-// GetContractAddrByDenom implements types.ERC20DenomKeeper.
-func (e *MockERC20DenomKeeper) GetContractAddrByDenom(_ context.Context, denom string) (common.Address, error) {
-	addr, found := e.denomMap[denom]
-	if !found {
-		return common.Address{}, sdkerrors.ErrNotFound
-	}
-
-	return addr, nil
-}
-
-// GetDenomByContractAddr implements types.ERC20DenomKeeper.
-func (e *MockERC20DenomKeeper) GetDenomByContractAddr(_ context.Context, addr common.Address) (string, error) {
-	denom, found := e.addrMap[addr]
-	if !found {
-		return "", sdkerrors.ErrNotFound
-	}
-
-	return denom, nil
 }

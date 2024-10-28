@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"context"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
@@ -55,10 +53,10 @@ func (k *Keeper) loadPrecompiles() error {
 type precompiles []precompile
 
 // toMap converts the precompiles to a map.
-func (ps precompiles) toMap(ctx context.Context) map[common.Address]vm.PrecompiledContract {
+func (ps precompiles) toMap(stateDB types.StateDB) map[common.Address]vm.PrecompiledContract {
 	m := make(map[common.Address]vm.PrecompiledContract)
 	for _, p := range ps {
-		m[p.addr] = p.contract.(types.WithContext).WithContext(ctx)
+		m[p.addr] = p.contract.(types.WithStateDB).WithStateDB(stateDB)
 	}
 
 	return m
