@@ -187,8 +187,9 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	if overflow {
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
+	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
 
-	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, nil)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
