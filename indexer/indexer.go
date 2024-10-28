@@ -126,7 +126,7 @@ func NewEVMIndexer(
 		pendingChans: nil,
 
 		// Use ttlcache to cope with abnormal cases like tx not included in a block
-		txPendingMap: ttlcache.New[common.Hash, bool](
+		txPendingMap: ttlcache.New(
 			// pending tx lifetime is 1 minute in indexer
 			ttlcache.WithTTL[common.Hash, bool](time.Minute),
 		),

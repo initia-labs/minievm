@@ -402,6 +402,7 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 		return nil, NewTxIndexingError()
 	}
 
+	_ = b.txLookupCache.Add(hash, tx)
 	return tx, nil
 }
 
