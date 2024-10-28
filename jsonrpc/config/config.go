@@ -24,8 +24,6 @@ const (
 	// DefaultMaxOpenConnections is the default maximum number of simultaneous connections
 	// for the server listener.
 	DefaultMaxOpenConnections = 100
-	// DefaultLogsCap is the default max number of results can be returned from single `eth_getLogs` query.
-	DefaultLogsCap int32 = 100
 	// DefaultAddress defines the default HTTP server to listen on.
 	DefaultAddress = "127.0.0.1:8545"
 	// DefaultAddressWS defines the default WebSocket server address to bind to.
@@ -58,7 +56,6 @@ const (
 	flagJSONRPCAddressWS            = "json-rpc.address-ws"
 	flagJSONRPCEnableUnsafeCORS     = "json-rpc.enable-unsafe-cors"
 	flagJSONRPCAPIs                 = "json-rpc.apis"
-	flagJSONRPCLogsCap              = "json-rpc.logs-cap"
 	flagJSONRPCHTTPTimeout          = "json-rpc.http-timeout"
 	flagJSONRPCHTTPIdleTimeout      = "json-rpc.http-idle-timeout"
 	flagJSONRPCMaxOpenConnections   = "json-rpc.max-open-connections"
@@ -114,7 +111,7 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 	return JSONRPCConfig{
 		Enable:           DefaultEnable,
 		Address:          DefaultAddress,
-		EnableWS:         DefaultEnable,
+		EnableWS:         DefaultEnableWS,
 		AddressWS:        DefaultAddressWS,
 		EnableUnsafeCORS: DefaultEnableUnsafeCORS,
 
