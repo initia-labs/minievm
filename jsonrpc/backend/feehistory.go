@@ -128,7 +128,7 @@ func (b *JSONRPCBackend) FeeHistory(blocks uint64, unresolvedLastBlock rpc.Block
 				} else {
 					fees.header, fees.err = b.GetHeaderByNumber(rpc.BlockNumber(blockNumber))
 					if len(rewardPercentiles) != 0 && fees.err == nil {
-						fees.receipts, fees.err = b.getBLockReceipts(blockNumber)
+						fees.receipts, fees.err = b.getBlockReceipts(blockNumber)
 						if fees.err == nil {
 							var txs []*rpctypes.RPCTransaction
 							txs, fees.err = b.getBlockTransactions(blockNumber)

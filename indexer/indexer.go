@@ -29,8 +29,8 @@ type EVMIndexer interface {
 
 	// tx
 	TxByHash(ctx context.Context, hash common.Hash) (*rpctypes.RPCTransaction, error)
-	TxByBlockAndIndex(ctx context.Context, blockHeight uint64, index uint64) (*rpctypes.RPCTransaction, error)
 	IterateBlockTxs(ctx context.Context, blockHeight uint64, cb func(tx *rpctypes.RPCTransaction) (bool, error)) error
+	TxHashByBlockAndIndex(ctx context.Context, blockHeight uint64, index uint64) (common.Hash, error)
 
 	// tx receipt
 	TxReceiptByHash(ctx context.Context, hash common.Hash) (*coretypes.Receipt, error)
@@ -38,7 +38,6 @@ type EVMIndexer interface {
 
 	// block
 	BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error)
-	BlockHeaderByHash(ctx context.Context, hash common.Hash) (*coretypes.Header, error)
 	BlockHeaderByNumber(ctx context.Context, number uint64) (*coretypes.Header, error)
 
 	// cosmos tx hash

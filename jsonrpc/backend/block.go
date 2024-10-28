@@ -23,12 +23,7 @@ func (b *JSONRPCBackend) BlockNumber() (hexutil.Uint64, error) {
 
 func (b *JSONRPCBackend) resolveBlockNrOrHash(blockNrOrHash rpc.BlockNumberOrHash) (uint64, error) {
 	if blockHash, ok := blockNrOrHash.Hash(); ok {
-		queryCtx, err := b.getQueryCtx()
-		if err != nil {
-			return 0, err
-		}
-
-		return b.app.EVMIndexer().BlockHashToNumber(queryCtx, blockHash)
+		return b.blockNumberByHash(blockHash)
 	} else if blockNumber, ok := blockNrOrHash.Number(); !ok || blockNumber < 0 {
 		num, err := b.BlockNumber()
 		if err != nil {
@@ -63,6 +58,9 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 	if err != nil {
 		return nil, err
 	}
+	if header, ok := b.headerCache.Get(blockNumber); ok {
+		return header, nil
+	}
 
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
@@ -77,24 +75,21 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 		return nil, err
 	}
 
+	// cache the header
+	_ = b.headerCache.Add(blockNumber, header)
 	return header, nil
 }
 
 func (b *JSONRPCBackend) GetHeaderByHash(hash common.Hash) (*coretypes.Header, error) {
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	header, err := b.app.EVMIndexer().BlockHeaderByHash(queryCtx, hash)
+	blockNumber, err := b.resolveBlockNrOrHash(rpc.BlockNumberOrHash{BlockHash: &hash})
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
-		b.logger.Error("failed to get block header by hash", "err", err)
+		b.logger.Error("failed to get block number by hash", "err", err)
 		return nil, err
 	}
 
-	return header, nil
+	return b.GetHeaderByNumber(rpc.BlockNumber(blockNumber))
 }
 
 func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
@@ -103,17 +98,13 @@ func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bo
 		return nil, err
 	}
 
-	queryCtx, err := b.getQueryCtx()
+	header, err := b.GetHeaderByNumber(ethBlockNum)
 	if err != nil {
-		return nil, err
-	}
-
-	header, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, blockNumber)
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return nil, nil
-	} else if err != nil {
 		b.logger.Error("failed to get block header by number", "err", err)
 		return nil, err
+	}
+	if header == nil {
+		return nil, nil
 	}
 
 	txs, err := b.getBlockTransactions(blockNumber)
@@ -125,17 +116,33 @@ func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bo
 }
 
 func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
+	blockNumber, err := b.resolveBlockNrOrHash(rpc.BlockNumberOrHash{BlockHash: &hash})
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.logger.Error("failed to get block number by hash", "err", err)
+		return nil, err
+	}
+	return b.GetBlockByNumber(rpc.BlockNumber(blockNumber), fullTx)
+}
+
+func (b *JSONRPCBackend) blockNumberByHash(hash common.Hash) (uint64, error) {
+	if number, ok := b.blockHashCache.Get(hash); ok {
+		return number, nil
+	}
+
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	blockNumber, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
+	number, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	return b.GetBlockByNumber(rpc.BlockNumber(blockNumber), fullTx)
+	_ = b.blockHashCache.Add(hash, number)
+	return number, nil
 }
 
 func formatBlock(header *coretypes.Header, txs []*rpctypes.RPCTransaction, fullTx bool) map[string]interface{} {

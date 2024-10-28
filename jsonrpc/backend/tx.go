@@ -152,12 +152,7 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 
 	var blockNumber rpc.BlockNumber
 	if blockHash, ok := blockNrOrHash.Hash(); ok {
-		queryCtx, err := b.getQueryCtx()
-		if err != nil {
-			return nil, err
-		}
-
-		blockNumberU64, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, blockHash)
+		blockNumberU64, err := b.blockNumberByHash(blockHash)
 		if err != nil && errors.Is(err, collections.ErrNotFound) {
 			return nil, nil
 		} else if err != nil {
@@ -196,25 +191,18 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
 func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
-	queryCtx, err := b.getQueryCtx()
+	receipt, err := b.getReceipt(hash)
 	if err != nil {
 		return nil, err
+	} else if receipt == nil {
+		return nil, nil
 	}
 
-	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
+	tx, err := b.getTransaction(hash)
+	if err != nil {
+		return nil, err
+	} else if tx == nil {
 		return nil, nil
-	} else if err != nil {
-		b.logger.Error("failed to get transaction by hash", "err", err)
-		return nil, NewTxIndexingError()
-	}
-
-	receipt, err := b.app.EVMIndexer().TxReceiptByHash(queryCtx, hash)
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return nil, nil
-	} else if err != nil {
-		b.logger.Error("failed to get transaction receipt by hash", "err", err)
-		return nil, NewTxIndexingError()
 	}
 
 	return marshalReceipt(receipt, tx), nil
@@ -222,12 +210,7 @@ func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]int
 
 // GetTransactionByBlockHashAndIndex returns the transaction at the given block hash and index.
 func (b *JSONRPCBackend) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	number, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
+	blockNumber, err := b.resolveBlockNrOrHash(rpc.BlockNumberOrHash{BlockHash: &hash})
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -235,26 +218,25 @@ func (b *JSONRPCBackend) GetTransactionByBlockHashAndIndex(hash common.Hash, idx
 		return nil, err
 	}
 
-	rpcTx, err := b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return nil, nil
-	} else if err != nil {
-		b.logger.Error("failed to get transaction by block and index", "err", err)
-		return nil, err
-	}
-
-	return rpcTx, nil
+	return b.GetTransactionByBlockNumberAndIndex(rpc.BlockNumber(blockNumber), idx)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction at the given block number and index.
 func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	blockNumber, err := b.resolveBlockNr(blockNum)
+	if err != nil {
+		return nil, err
+	}
+	if txs, ok := b.blockTxsCache.Get(blockNumber); ok {
+		return txs[idx], nil
+	}
+
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err
 	}
 
-	number := uint64(blockNum.Int64())
-	rpcTx, err := b.app.EVMIndexer().TxByBlockAndIndex(queryCtx, number, uint64(idx))
+	txhash, err := b.app.EVMIndexer().TxHashByBlockAndIndex(queryCtx, blockNumber, uint64(idx))
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -262,7 +244,7 @@ func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockN
 		return nil, err
 	}
 
-	return rpcTx, nil
+	return b.getTransaction(txhash)
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions in a block from a block matching the given block hash.
@@ -293,6 +275,10 @@ func (b *JSONRPCBackend) GetBlockTransactionCountByNumber(blockNum rpc.BlockNumb
 
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
 func (b *JSONRPCBackend) GetRawTransactionByHash(hash common.Hash) (hexutil.Bytes, error) {
+	if tx, ok := b.txLookupCache.Get(hash); ok {
+		return tx.ToTransaction().MarshalBinary()
+	}
+
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err
@@ -308,6 +294,7 @@ func (b *JSONRPCBackend) GetRawTransactionByHash(hash common.Hash) (hexutil.Byte
 		return nil, nil
 	}
 
+	_ = b.txLookupCache.Add(hash, rpcTx)
 	return rpcTx.ToTransaction().MarshalBinary()
 }
 
@@ -367,45 +354,12 @@ func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, erro
 	return result, nil
 }
 
-func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.RPCTransaction, error) {
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	txs := []*rpctypes.RPCTransaction{}
-	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
-		txs = append(txs, tx)
-		return false, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return txs, nil
-}
-
-func (b *JSONRPCBackend) getBLockReceipts(blockNumber uint64) ([]*coretypes.Receipt, error) {
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	recepts := []*coretypes.Receipt{}
-	err = b.app.EVMIndexer().IterateBlockTxRecepts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
-		recepts = append(recepts, recept)
-		return false, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return recepts, nil
-}
-
 func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
 	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
-	if err != nil {
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.logger.Error("failed to get block number by hash", "err", err)
 		return nil, err
 	}
 
@@ -414,7 +368,7 @@ func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc
 		return nil, err
 	}
 
-	receipts, err := b.getBLockReceipts(blockNumber)
+	receipts, err := b.getBlockReceipts(blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -429,6 +383,98 @@ func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc
 	}
 
 	return result, nil
+}
+
+func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransaction, error) {
+	if tx, ok := b.txLookupCache.Get(hash); ok {
+		return tx, nil
+	}
+
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.logger.Error("failed to get transaction by hash", "err", err)
+		return nil, NewTxIndexingError()
+	}
+
+	_ = b.txLookupCache.Add(hash, tx)
+	return tx, nil
+}
+
+func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error) {
+	if receipt, ok := b.receiptCache.Get(hash); ok {
+		return receipt, nil
+	}
+
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	receipt, err := b.app.EVMIndexer().TxReceiptByHash(queryCtx, hash)
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return nil, nil
+	} else if err != nil {
+		b.logger.Error("failed to get transaction receipt by hash", "err", err)
+		return nil, NewTxIndexingError()
+	}
+
+	_ = b.receiptCache.Add(hash, receipt)
+	return receipt, nil
+}
+
+func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.RPCTransaction, error) {
+	if txs, ok := b.blockTxsCache.Get(blockNumber); ok {
+		return txs, nil
+	}
+
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	txs := []*rpctypes.RPCTransaction{}
+	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+		txs = append(txs, tx)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// cache the transactions
+	_ = b.blockTxsCache.Add(blockNumber, txs)
+	return txs, nil
+}
+
+func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Receipt, error) {
+	if recepts, ok := b.blockReceiptsCache.Get(blockNumber); ok {
+		return recepts, nil
+	}
+
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	recepts := []*coretypes.Receipt{}
+	err = b.app.EVMIndexer().IterateBlockTxRecepts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
+		recepts = append(recepts, recept)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// cache the receipts
+	_ = b.blockReceiptsCache.Add(blockNumber, recepts)
+	return recepts, nil
 }
 
 // marshalReceipt marshals a transaction receipt into a JSON object.
