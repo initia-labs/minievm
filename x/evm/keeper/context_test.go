@@ -187,3 +187,35 @@ func Test_GetHash(t *testing.T) {
 	require.Equal(t, [32]byte{}, [32]byte(queryRes))
 	require.Empty(t, logs)
 }
+
+func Test_RecursiveDepth(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	// deploy counter contract
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	// call recursive function
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := parsed.Pack("recursive", uint64(types.MAX_RECURSIVE_DEPTH-1))
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	// exceed max recursive depth
+	inputBz, err = parsed.Pack("recursive", uint64(types.MAX_RECURSIVE_DEPTH))
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, types.ErrExceedMaxRecursiveDepth.Error())
+}

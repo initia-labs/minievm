@@ -9,7 +9,7 @@ import (
 )
 
 // MAX_RECURSIVE_DEPTH is the maximum depth of the x/evm call stack.
-const MAX_RECURSIVE_DEPTH = 16
+const MAX_RECURSIVE_DEPTH = 8
 
 func DefaultParams() Params {
 	return Params{
