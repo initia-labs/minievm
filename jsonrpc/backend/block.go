@@ -72,7 +72,7 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 		return nil, nil
 	} else if err != nil {
 		b.logger.Error("failed to get block header by number", "err", err)
-		return nil, err
+		return nil, NewInternalError("failed to get block header by number")
 	}
 
 	// cache the header
@@ -138,7 +138,8 @@ func (b *JSONRPCBackend) blockNumberByHash(hash common.Hash) (uint64, error) {
 
 	number, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
 	if err != nil {
-		return 0, err
+		b.logger.Error("failed to get block number by hash", "err", err)
+		return 0, NewInternalError("failed to get block number by hash")
 	}
 
 	_ = b.blockHashCache.Add(hash, number)

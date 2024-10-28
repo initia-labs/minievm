@@ -27,7 +27,7 @@ func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error
 		return nil, err
 	}
 	if len(txs) != len(receipts) {
-		return nil, NewInternalError("number of transactions and receipts do not match")
+		return nil, NewInternalError("mismatched number of transactions and receipts")
 	}
 
 	blockLogs := []*coretypes.Log{}
