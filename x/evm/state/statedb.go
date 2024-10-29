@@ -589,6 +589,14 @@ func (s *StateDB) RevertToSnapshot(i int) {
 	s.snaps = s.snaps[:i]
 }
 
+func (s *StateDB) ContextOfSnapshot(i int) sdk.Context {
+	if i == -1 {
+		return s.initialCtx
+	}
+
+	return s.snaps[i].ctx
+}
+
 // Prepare handles the preparatory steps for executing a state transition with.
 // This method must be invoked before state transition.
 //

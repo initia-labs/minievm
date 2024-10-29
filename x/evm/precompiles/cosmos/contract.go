@@ -24,14 +24,14 @@ import (
 
 var _ vm.ExtendedPrecompiledContract = CosmosPrecompile{}
 var _ vm.PrecompiledContract = CosmosPrecompile{}
-var _ types.WithContext = CosmosPrecompile{}
+var _ types.WithStateDB = CosmosPrecompile{}
 
 type CosmosPrecompile struct {
 	*abi.ABI
 
-	ctx context.Context
-	cdc codec.Codec
-	ac  address.Codec
+	stateDB types.StateDB
+	cdc     codec.Codec
+	ac      address.Codec
 
 	ak         types.AccountKeeper
 	bk         types.BankKeeper
@@ -67,8 +67,8 @@ func NewCosmosPrecompile(
 	}, nil
 }
 
-func (e CosmosPrecompile) WithContext(ctx context.Context) vm.PrecompiledContract {
-	e.ctx = ctx
+func (e CosmosPrecompile) WithStateDB(stateDB types.StateDB) vm.PrecompiledContract {
+	e.stateDB = stateDB
 	return e
 }
 
@@ -88,6 +88,9 @@ func (e CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sdk
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
 func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
+	snapshot := e.stateDB.Snapshot()
+	ctx := e.stateDB.ContextOfSnapshot(snapshot).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
+
 	defer func() {
 		if r := recover(); r != nil {
 			switch r.(type) {
@@ -98,6 +101,10 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			default:
 				panic(r)
 			}
+		}
+
+		if err != nil {
+			e.stateDB.RevertToSnapshot(snapshot)
 		}
 	}()
 
@@ -110,8 +117,6 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}
-
-	ctx := sdk.UnwrapSDKContext(e.ctx).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
 
 	// charge input gas
 	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")

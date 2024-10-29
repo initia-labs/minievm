@@ -23,3 +23,7 @@ func NewSnapshot(ctx context.Context) *Snapshot {
 func (s *Snapshot) Commit() {
 	s.commit()
 }
+
+func (s *Snapshot) Context() sdk.Context {
+	return s.ctx
+}
