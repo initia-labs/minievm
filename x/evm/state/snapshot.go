@@ -24,6 +24,7 @@ func (s *Snapshot) Commit() {
 	s.commit()
 }
 
+// for mock testing
 func (s *Snapshot) Context() sdk.Context {
 	return s.ctx
 }

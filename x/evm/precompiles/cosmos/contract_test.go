@@ -41,7 +41,7 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, type
 	kv := db.NewMemDB()
 	cms := store.NewCommitMultiStore(kv, log.NewNopLogger(), storemetrics.NewNoOpMetrics())
 
-	ctx := sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger()).WithValue(types.CONTEXT_KEY_COSMOS_MESSAGES, &[]sdk.Msg{})
+	ctx := sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger()).WithValue(types.CONTEXT_KEY_EXECUTE_REQUESTS, &[]types.ExecuteRequest{})
 
 	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
 		ProtoFiles: proto.HybridResolver,
@@ -256,12 +256,17 @@ func Test_ExecuteCosmos(t *testing.T) {
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.NoError(t, err)
 
-	messages := ctx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
+	messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
 	require.Len(t, *messages, 1)
-	require.Equal(t, (*messages)[0], &banktypes.MsgSend{
-		FromAddress: cosmosAddr,
-		ToAddress:   "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
-		Amount:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
+	require.Equal(t, (*messages)[0], types.ExecuteRequest{
+		Caller: vm.AccountRef(evmAddr),
+		Msg: &banktypes.MsgSend{
+			FromAddress: cosmosAddr,
+			ToAddress:   "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+			Amount:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
+		},
+		AllowFailure: false,
+		CallbackId:   0,
 	})
 
 	// wrong signer message
@@ -276,6 +281,80 @@ func Test_ExecuteCosmos(t *testing.T) {
 			}
 		]
 	}`, cosmosAddr))
+	require.NoError(t, err)
+
+	// failed with unauthorized error
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.ErrorContains(t, err, sdkerrors.ErrUnauthorized.Error())
+}
+
+func Test_ExecuteCosmosWithOptions(t *testing.T) {
+	ctx, cdc, ac, ak, bk := setup()
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
+
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+
+	evmAddr := common.HexToAddress("0x1")
+	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
+	require.NoError(t, err)
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// execute cosmos message
+	require.NoError(t, err)
+	inputBz, err := abi.Pack(precompiles.METHOD_EXECUTE_COSMOS_WITH_OPTIONS, fmt.Sprintf(`{
+		"@type": "/cosmos.bank.v1beta1.MsgSend",
+		"from_address": "%s",
+		"to_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+		"amount": [
+			{
+				"denom": "stake",
+				"amount": "100"
+			}
+		]
+	}`, cosmosAddr), precompiles.ExecuteOptions{true, 100})
+	require.NoError(t, err)
+
+	// out of gas error
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS-1, false)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
+
+	// cannot call execute in readonly mode
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
+	require.Error(t, err)
+
+	// succeed
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.NoError(t, err)
+
+	messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
+	require.Len(t, *messages, 1)
+	require.Equal(t, (*messages)[0], types.ExecuteRequest{
+		Caller: vm.AccountRef(evmAddr),
+		Msg: &banktypes.MsgSend{
+			FromAddress: cosmosAddr,
+			ToAddress:   "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+			Amount:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
+		},
+		AllowFailure: true,
+		CallbackId:   100,
+	})
+
+	// wrong signer message
+	inputBz, err = abi.Pack(precompiles.METHOD_EXECUTE_COSMOS_WITH_OPTIONS, fmt.Sprintf(`{
+		"@type": "/cosmos.bank.v1beta1.MsgSend",
+		"from_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+		"to_address": "%s",
+		"amount": [
+			{
+				"denom": "stake",
+				"amount": "100"
+			}
+		]
+	}`, cosmosAddr), precompiles.ExecuteOptions{true, 100})
 	require.NoError(t, err)
 
 	// failed with unauthorized error

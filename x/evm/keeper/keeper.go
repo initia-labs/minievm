@@ -10,9 +10,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
+	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos_callback"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -77,6 +79,7 @@ type Keeper struct {
 
 	precompiles          precompiles
 	queryCosmosWhitelist types.QueryCosmosWhitelist
+	cosmosCallbackABI    *abi.ABI
 }
 
 func NewKeeper(
@@ -100,6 +103,11 @@ func NewKeeper(
 
 	if evmConfig.ContractSimulationGasLimit == 0 {
 		evmConfig.ContractSimulationGasLimit = evmconfig.DefaultContractSimulationGasLimit
+	}
+
+	cosmosCallbackABI, err := i_cosmos_callback.ICosmosCallbackMetaData.GetAbi()
+	if err != nil {
+		panic(err)
 	}
 
 	execIndex := uint64(0)
@@ -148,6 +156,7 @@ func NewKeeper(
 
 		precompiles:          []precompile{},
 		queryCosmosWhitelist: queryCosmosWhitelist,
+		cosmosCallbackABI:    cosmosCallbackABI,
 	}
 
 	// setup schema

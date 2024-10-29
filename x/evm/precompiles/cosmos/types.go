@@ -26,9 +26,14 @@ type ToEVMAddressArguments struct {
 	CosmosAddress string `abi:"cosmos_address"`
 }
 
-// ExecuteCosmosArguments is the arguments for the execute_cosmos method.
-type ExecuteCosmosArguments struct {
-	Msg string `abi:"msg"`
+type ExecuteCosmos struct {
+	Msg     string         `abi:"msg"`
+	Options ExecuteOptions `abi:"options"`
+}
+
+type ExecuteOptions struct {
+	AllowFailure bool   `json:"allow_failure"`
+	CallbackId   uint64 `json:"callback_id"`
 }
 
 // QueryCosmosArguments is the arguments for the query_cosmos method.
@@ -57,9 +62,10 @@ const (
 	TO_DENOM_GAS storetypes.Gas = 100
 	TO_ERC20_GAS storetypes.Gas = 100
 
-	EXECUTE_COSMOS_GAS storetypes.Gas = 200
 	QUERY_COSMOS_GAS   storetypes.Gas = 200
-	GAS_PER_BYTE       storetypes.Gas = 1
+	EXECUTE_COSMOS_GAS storetypes.Gas = 200
+
+	GAS_PER_BYTE storetypes.Gas = 1
 )
 
 const (
@@ -69,8 +75,9 @@ const (
 	METHOD_TO_COSMOS_ADDRESS = "to_cosmos_address"
 	METHOD_TO_EVM_ADDRESS    = "to_evm_address"
 
-	METHOD_EXECUTE_COSMOS = "execute_cosmos"
-	METHOD_QUERY_COSMOS   = "query_cosmos"
+	METHOD_QUERY_COSMOS                = "query_cosmos"
+	METHOD_EXECUTE_COSMOS              = "execute_cosmos"
+	METHOD_EXECUTE_COSMOS_WITH_OPTIONS = "execute_cosmos_with_options"
 
 	METHOD_TO_DENOM = "to_denom"
 	METHOD_TO_ERC20 = "to_erc20"

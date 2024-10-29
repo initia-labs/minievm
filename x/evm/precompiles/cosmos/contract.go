@@ -207,14 +207,14 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
-	case METHOD_EXECUTE_COSMOS:
+	case METHOD_EXECUTE_COSMOS, METHOD_EXECUTE_COSMOS_WITH_OPTIONS:
 		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_GAS, "execute_cosmos")
 
 		if readOnly {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
 
-		var executeCosmosArguments ExecuteCosmosArguments
+		var executeCosmosArguments ExecuteCosmos
 		if err := method.Inputs.Copy(&executeCosmosArguments, args); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
@@ -245,8 +245,14 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 			}
 		}
 
-		messages := ctx.Value(types.CONTEXT_KEY_COSMOS_MESSAGES).(*[]sdk.Msg)
-		*messages = append(*messages, sdkMsg)
+		messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
+		*messages = append(*messages, types.ExecuteRequest{
+			Caller: caller,
+			Msg:    sdkMsg,
+
+			AllowFailure: executeCosmosArguments.Options.AllowFailure,
+			CallbackId:   executeCosmosArguments.Options.CallbackId,
+		})
 
 		// abi encode the response
 		resBz, err = method.Outputs.Pack(true)

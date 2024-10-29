@@ -9,10 +9,14 @@ ICosmos constant COSMOS_CONTRACT = ICosmos(COSMOS_ADDRESS);
 
 interface ICosmos {
     // check if an address is blocked in bank module
-    function is_blocked_address(address account) external view returns (bool blocked);
+    function is_blocked_address(
+        address account
+    ) external view returns (bool blocked);
 
     // check if an address is a module account
-    function is_module_address(address account) external view returns (bool module);
+    function is_module_address(
+        address account
+    ) external view returns (bool module);
 
     // convert an EVM address to a Cosmos address
     function to_cosmos_address(
@@ -34,10 +38,10 @@ interface ICosmos {
         string memory denom
     ) external returns (address erc20_address);
 
-    // record a cosmos message to be executed
-    // after the current message execution.
+    // record a cosmos message to be executed after the current message execution.
+    // - if execution fails, whole transaction will be reverted.
     //
-    // msg should be in json string format like:
+    // `msg` format (json string):
     // {
     //    "@type": "/cosmos.bank.v1beta1.MsgSend",
     //    "from_address": "init13vhzmdmzsqlxkdzvygue9zjtpzedz7j87c62q4",
@@ -51,6 +55,36 @@ interface ICosmos {
     // }
     //
     function execute_cosmos(string memory msg) external returns (bool dummy);
+
+    // @args
+    // - `allow_failure`: if `true`, the transaction will not be reverted even if the execution fails.
+    // - `callback_id`: the callback id to be called after the execution. `0` means no callback.
+    struct Options {
+        bool allow_failure;
+        uint64 callback_id;
+    }
+
+    // record a cosmos message to be executed after the current message execution.
+    //
+    // `msg` format (json string):
+    // {
+    //    "@type": "/cosmos.bank.v1beta1.MsgSend",
+    //    "from_address": "init13vhzmdmzsqlxkdzvygue9zjtpzedz7j87c62q4",
+    //    "to_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+    //    "amount": [
+    //        {
+    //            "denom": "stake",
+    //            "amount": "100"
+    //        }
+    //    ]
+    // }
+    //
+    // `callback` function signature in the caller contract (see ICosmosCallback.sol):
+    // - function callback(uint64 callback_id, bool success) external;
+    function execute_cosmos_with_options(
+        string memory msg,
+        Options memory options
+    ) external returns (bool dummy);
 
     // query a whitelisted cosmos querys.
     //
