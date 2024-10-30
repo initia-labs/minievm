@@ -49,7 +49,9 @@ var (
 type ContextKey int
 
 const (
-	// CONTEXT_KEY_EXECUTE_REQUESTS is a context key for cosmos messages
+	// CONTEXT_KEY_EXECUTE_REQUESTS is a context key for execute requests
 	CONTEXT_KEY_EXECUTE_REQUESTS ContextKey = iota
+
+	// CONTEXT_KEY_RECURSIVE_DEPTH is a context key for recursive depth
 	CONTEXT_KEY_RECURSIVE_DEPTH
 )
