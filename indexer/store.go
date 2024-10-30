@@ -4,7 +4,6 @@ import (
 	"context"
 
 	corestoretypes "cosmossdk.io/core/store"
-	"cosmossdk.io/errors"
 	cachekv "cosmossdk.io/store/cachekv"
 	storetypes "cosmossdk.io/store/types"
 
@@ -78,10 +77,9 @@ func (c CacheStore) Set(key, value []byte) error {
 	storetypes.AssertValidKey(key)
 	storetypes.AssertValidValue(value)
 
-	err := c.cache.Set(string(key), value)
-	if err != nil {
-		return errors.Wrap(err, "failed to set cache")
-	}
+	// ignore cache error
+	_ = c.cache.Set(string(key), value)
+
 	c.store.Set(key, value)
 
 	return nil
@@ -91,10 +89,9 @@ func (c CacheStore) Set(key, value []byte) error {
 func (c CacheStore) Delete(key []byte) error {
 	storetypes.AssertValidKey(key)
 
-	err := c.cache.Delete(string(key))
-	if err != nil && errors.IsOf(err, bigcache.ErrEntryNotFound) {
-		return errors.Wrap(err, "failed to delete cache")
-	}
+	// ignore cache error
+	_ = c.cache.Delete(string(key))
+
 	c.store.Delete(key)
 
 	return nil
