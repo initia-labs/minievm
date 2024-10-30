@@ -5,4 +5,5 @@ type contextKey int
 
 const (
 	ContextKeyGasPrices contextKey = iota
+	ContextKeySequenceIncremented
 )
