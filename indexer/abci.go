@@ -138,19 +138,11 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		Extra:           []byte{},
 	}
 
-	// fill parent hash
-	if blockHeight > 1 {
-		parentHeader, err := e.BlockHeaderMap.Get(sdkCtx, uint64(blockHeight-1))
-		if err == nil {
-			blockHeader.ParentHash = parentHeader.Hash()
-		}
-	}
-
 	blockHash := blockHeader.Hash()
 	blockLogs := make([][]*coretypes.Log, 0, len(ethTxs))
-	for txIndex, ethTx := range ethTxs {
+	for idx, ethTx := range ethTxs {
 		txHash := ethTx.Hash()
-		receipt := receipts[txIndex]
+		receipt := receipts[idx]
 
 		// store tx
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), chainId)
@@ -179,7 +171,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 				log.BlockHash = blockHash
 				log.BlockNumber = uint64(blockHeight)
 				log.TxHash = txHash
-				log.TxIndex = uint(txIndex)
+				log.TxIndex = uint(receipt.TransactionIndex)
 			}
 
 			blockLogs = append(blockLogs, receipt.Logs)
