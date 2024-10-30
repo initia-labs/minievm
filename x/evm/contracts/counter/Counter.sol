@@ -9,6 +9,8 @@ contract Counter is IIBCAsyncCallback {
     uint256 public count;
 
     event increased(uint256 oldCount, uint256 newCount);
+    event callback_received(uint64 callback_id, bool success);
+    event recursive_called(uint64 n);
 
     constructor() payable {}
 
@@ -37,10 +39,7 @@ contract Counter is IIBCAsyncCallback {
         return COSMOS_CONTRACT.query_cosmos(path, req);
     }
 
-    function execute_cosmos(
-        string memory exec_msg,
-        bool call_revert
-    ) external {
+    function execute_cosmos(string memory exec_msg, bool call_revert) external {
         COSMOS_CONTRACT.execute_cosmos(exec_msg);
 
         if (call_revert) {
@@ -48,11 +47,28 @@ contract Counter is IIBCAsyncCallback {
         }
     }
 
+    function execute_cosmos_with_options(
+        string memory exec_msg,
+        bool allow_failure,
+        uint64 callback_id
+    ) external {
+        COSMOS_CONTRACT.execute_cosmos_with_options(
+            exec_msg,
+            ICosmos.Options(allow_failure, callback_id)
+        );
+    }
+
+    function callback(uint64 callback_id, bool success) external {
+        emit callback_received(callback_id, success);
+    }
+
     function get_blockhash(uint64 n) external view returns (bytes32) {
         return blockhash(n);
     }
 
     function recursive(uint64 n) public {
+        emit recursive_called(n);
+
         if (n == 0) {
             return;
         }
