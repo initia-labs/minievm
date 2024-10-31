@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
@@ -33,6 +34,24 @@ func Test_Create(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
+}
+
+func Test_Create2(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	caller := common.BytesToAddress(addr.Bytes())
+
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, 1, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	_, _, _, err = input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, 1, nil)
+	require.ErrorContains(t, err, vm.ErrContractAddressCollision.Error())
 }
 
 func Test_CreateWithValue(t *testing.T) {
