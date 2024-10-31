@@ -97,7 +97,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
 		ante.NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
 		NewSigVerificationDecorator(options.AccountKeeper, options.EVMKeeper, options.SignModeHandler),
-		NewIncrementSequenceDecorator(options.AccountKeeper),
+		evmante.NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCkeeper),
 		auctionante.NewAuctionDecorator(options.AuctionKeeper, options.TxEncoder, options.MevLane),
 	}
@@ -111,6 +111,6 @@ func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, ek *evmkeeper.Keeper, sig
 		ante.NewValidateSigCountDecorator(ak),
 		ante.NewSigGasConsumeDecorator(ak, ante.DefaultSigVerificationGasConsumer),
 		NewSigVerificationDecorator(ak, ek, signModeHandler),
-		NewIncrementSequenceDecorator(ak),
+		evmante.NewIncrementSequenceDecorator(ak),
 	)
 }

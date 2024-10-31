@@ -22,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 // SigVerificationDecorator verifies all signatures for a tx and return an error if any are invalid. Note,
@@ -197,88 +196,4 @@ func consumeMultisignatureVerificationGas(
 	}
 
 	return nil
-}
-
-// IncrementSequenceDecorator handles incrementing sequences of all signers.
-// Use the IncrementSequenceDecorator decorator to prevent replay attacks. Note,
-// there is need to execute IncrementSequenceDecorator on RecheckTx since
-// BaseApp.Commit() will set the check state based on the latest header.
-//
-// NOTE: Since CheckTx and DeliverTx state are managed separately, subsequent and
-// sequential txs orginating from the same account cannot be handled correctly in
-// a reliable way unless sequence numbers are managed and tracked manually by a
-// client. It is recommended to instead use multiple messages in a tx.
-//
-// NOTE: When we execute evm messages, it whould handle sequence number increment internally,
-// so we need to decrease sequence number if it is used in EVM.
-type IncrementSequenceDecorator struct {
-	ak authante.AccountKeeper
-}
-
-func NewIncrementSequenceDecorator(ak authante.AccountKeeper) IncrementSequenceDecorator {
-	return IncrementSequenceDecorator{
-		ak: ak,
-	}
-}
-
-func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	sigTx, ok := tx.(authsigning.SigVerifiableTx)
-	if !ok {
-		return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "invalid transaction type")
-	}
-
-	// increment sequence of all signers
-	signers, err := sigTx.GetSigners()
-	if err != nil {
-		return sdk.Context{}, err
-	}
-
-	for _, signer := range signers {
-		acc := isd.ak.GetAccount(ctx, signer)
-		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
-			panic(err)
-		}
-
-		isd.ak.SetAccount(ctx, acc)
-	}
-
-	// decrement sequence of all signers which is used in EVM
-	// when we execute evm messages, it whould handle sequence number increment.
-	//
-	// NOTE: Need to revert it if a tx failed. See ../posthandler/sequence.go
-	if simulate || ctx.ExecMode() == sdk.ExecModeFinalize {
-		signerMap := make(map[string]bool)
-		for _, msg := range tx.GetMsgs() {
-			var caller string
-			switch msg := msg.(type) {
-			case *evmtypes.MsgCreate:
-				caller = msg.Sender
-			case *evmtypes.MsgCreate2:
-				caller = msg.Sender
-			case *evmtypes.MsgCall:
-				caller = msg.Sender
-			default:
-				continue
-			}
-
-			if _, ok := signerMap[caller]; ok {
-				continue
-			}
-			signerMap[caller] = true
-
-			callerAccAddr, err := isd.ak.AddressCodec().StringToBytes(caller)
-			if err != nil {
-				return ctx, err
-			}
-
-			acc := isd.ak.GetAccount(ctx, callerAccAddr)
-			if err := acc.SetSequence(acc.GetSequence() - 1); err != nil {
-				panic(err)
-			}
-
-			isd.ak.SetAccount(ctx, acc)
-		}
-	}
-
-	return next(ctx, tx, simulate)
 }

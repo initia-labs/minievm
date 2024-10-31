@@ -16,7 +16,6 @@ func NewPostHandler(
 	ek EVMKeeper,
 ) sdk.PostHandler {
 	return sdk.ChainPostDecorators(
-		NewSequenceIncrementDecorator(ak),
 		NewGasRefundDecorator(ek),
 	)
 }

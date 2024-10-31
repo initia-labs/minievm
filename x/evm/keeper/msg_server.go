@@ -13,6 +13,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
+	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -27,6 +28,12 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 // Create implements types.MsgServer.
 func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*types.MsgCreateResponse, error) {
 	sender, err := ms.ac.StringToBytes(msg.Sender)
+	if err != nil {
+		return nil, err
+	}
+
+	// handle cosmos<>evm different sequence increment logic
+	ctx, err = ms.handleSequenceIncremented(ctx, sender, true)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +97,12 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 		return nil, err
 	}
 
+	// handle cosmos<>evm different sequence increment logic
+	ctx, err = ms.handleSequenceIncremented(ctx, sender, true)
+	if err != nil {
+		return nil, err
+	}
+
 	// argument validation
 	caller, err := ms.convertToEVMAddress(ctx, sender, true)
 	if err != nil {
@@ -142,19 +155,6 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}, nil
 }
 
-// increaseNonce increases the nonce of the given account.
-func (ms *msgServerImpl) increaseNonce(ctx context.Context, caller sdk.AccAddress) error {
-	senderAcc := ms.accountKeeper.GetAccount(ctx, caller)
-	if senderAcc == nil {
-		senderAcc = ms.accountKeeper.NewAccountWithAddress(ctx, caller)
-	}
-	if err := senderAcc.SetSequence(senderAcc.GetSequence() + 1); err != nil {
-		return err
-	}
-	ms.accountKeeper.SetAccount(ctx, senderAcc)
-	return nil
-}
-
 // Call implements types.MsgServer.
 func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.MsgCallResponse, error) {
 	sender, err := ms.ac.StringToBytes(msg.Sender)
@@ -162,10 +162,9 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, err
 	}
 
-	// increase nonce before execution like evm does
-	//
-	// NOTE: evm only increases nonce at Call not Create, so we should do the same.
-	if err := ms.increaseNonce(ctx, sender); err != nil {
+	// handle cosmos<>evm different sequence increment logic
+	ctx, err = ms.handleSequenceIncremented(ctx, sender, false)
+	if err != nil {
 		return nil, err
 	}
 
@@ -255,4 +254,24 @@ func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) 
 	evm.StateDB.SubBalance(types.StdAddress, uint256.NewInt(1), tracing.BalanceChangeUnspecified)
 
 	return nil
+}
+
+// In the Cosmos SDK, the sequence number is incremented in the ante handler.
+// In the EVM, the sequence number is incremented during the execution of create and create2 messages.
+// However, for call messages, the sequence number is incremented in the ante handler like the Cosmos SDK.
+// To prevent double incrementing the sequence number during EVM execution, we need to decrement it here for create messages.
+func (k *msgServerImpl) handleSequenceIncremented(ctx context.Context, sender sdk.AccAddress, isCreate bool) (context.Context, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// decrement sequence of the sender
+	if isCreate && sdkCtx.Value(evmante.ContextKeySequenceIncremented) != nil {
+		acc := k.accountKeeper.GetAccount(ctx, sender)
+		if err := acc.SetSequence(acc.GetSequence() - 1); err != nil {
+			return ctx, err
+		}
+
+		k.accountKeeper.SetAccount(ctx, acc)
+	}
+
+	return sdkCtx.WithValue(evmante.ContextKeySequenceIncremented, nil), nil
 }
