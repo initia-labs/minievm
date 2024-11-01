@@ -28,11 +28,6 @@ func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpct
 		return nil, err
 	}
 
-	chainID, err := b.ChainID()
-	if err != nil {
-		return nil, err
-	}
-
 	txUtils := keeper.NewTxUtils(b.app.EVMKeeper)
 	for _, tx := range pending.Txs {
 		cosmosTx, err := b.app.TxDecode(tx)
@@ -54,7 +49,7 @@ func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpct
 			content["pending"][account.Hex()] = dump
 		}
 
-		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainID)
+		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
 	}
 
 	// load queued txs
@@ -72,7 +67,7 @@ func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpct
 			content["queued"][sender] = dump
 		}
 
-		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainID)
+		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
 	}
 
 	return content, nil

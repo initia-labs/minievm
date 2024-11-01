@@ -18,7 +18,6 @@ import (
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
-	"github.com/initia-labs/minievm/x/evm/types"
 )
 
 func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseCommit, changeSet []*storetypes.StoreKVPair) error {
@@ -111,7 +110,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		receipts = append(receipts, &receipt)
 	}
 
-	chainId := types.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID())
 	blockGasMeter := sdkCtx.BlockGasMeter()
 	blockHeight := sdkCtx.BlockHeight()
 
@@ -145,7 +143,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		receipt := receipts[idx]
 
 		// store tx
-		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), chainId)
+		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), ethTx.ChainId())
 		if err := e.TxMap.Set(sdkCtx, txHash.Bytes(), *rpcTx); err != nil {
 			e.logger.Error("failed to store rpcTx", "err", err)
 			return err

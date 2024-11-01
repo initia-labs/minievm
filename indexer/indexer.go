@@ -52,7 +52,7 @@ type EVMIndexer interface {
 
 	// mempool
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
-	TxInMempool(hash common.Hash) bool
+	TxInMempool(hash common.Hash) *rpctypes.RPCTransaction
 }
 
 // EVMIndexerImpl implements EVMIndexer.
@@ -80,7 +80,7 @@ type EVMIndexerImpl struct {
 	pendingChans []chan *rpctypes.RPCTransaction
 
 	// txPendingMap is a map to store tx hashes in pending state.
-	txPendingMap *ttlcache.Cache[common.Hash, bool]
+	txPendingMap *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
 }
 
 func NewEVMIndexer(
@@ -128,7 +128,7 @@ func NewEVMIndexer(
 		// Use ttlcache to cope with abnormal cases like tx not included in a block
 		txPendingMap: ttlcache.New(
 			// pending tx lifetime is 1 minute in indexer
-			ttlcache.WithTTL[common.Hash, bool](time.Minute),
+			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
 	}
 

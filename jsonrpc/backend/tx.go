@@ -87,7 +87,7 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
 
 	txHash := tx.Hash()
-	b.queuedTxHashes.Store(txHash, true)
+	b.queuedTxHashes.Store(txHash, cacheKey)
 	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
 
 	// check if there are queued txs which can be sent
@@ -133,7 +133,12 @@ func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, 
 
 // GetTransactionByHash returns the transaction with the given hash.
 func (b *JSONRPCBackend) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
-	return b.getTransaction(hash)
+	rpcTx, err := b.getTransaction(hash)
+	if rpcTx == nil {
+		return nil, err
+	}
+
+	return rpcTx, nil
 }
 
 // GetTransactionCount returns the number of transactions at the given block number.
@@ -181,6 +186,15 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
 func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
+	rpcTx, err := b.getTransaction(hash)
+	if rpcTx == nil && err == nil {
+		return nil, nil // tx is not found
+	} else if rpcTx != nil && err != nil {
+		return nil, NewTxIndexingError() // tx is not fully indexed
+	} else if err != nil {
+		return nil, err // just error case
+	}
+
 	receipt, err := b.getReceipt(hash)
 	if err != nil {
 		return nil, err
@@ -188,14 +202,7 @@ func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]int
 		return nil, nil
 	}
 
-	tx, err := b.getTransaction(hash)
-	if err != nil {
-		return nil, err
-	} else if tx == nil {
-		return nil, nil
-	}
-
-	return marshalReceipt(receipt, tx), nil
+	return marshalReceipt(receipt, rpcTx), nil
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction at the given block hash and index.
@@ -270,13 +277,8 @@ func (b *JSONRPCBackend) GetBlockTransactionCountByNumber(blockNum rpc.BlockNumb
 // GetRawTransactionByHash returns the bytes of the transaction for the given hash.
 func (b *JSONRPCBackend) GetRawTransactionByHash(hash common.Hash) (hexutil.Bytes, error) {
 	rpcTx, err := b.getTransaction(hash)
-	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return nil, nil
-	} else if err != nil {
-		b.logger.Error("failed to get raw transaction by hash", "err", err)
-		return nil, NewTxIndexingError()
-	} else if rpcTx == nil {
-		return nil, nil
+	if rpcTx == nil {
+		return nil, err
 	}
 
 	return rpcTx.ToTransaction().MarshalBinary()
@@ -295,11 +297,6 @@ func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.H
 }
 
 func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
-	chainID, err := b.ChainID()
-	if err != nil {
-		return nil, err
-	}
-
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err
@@ -330,7 +327,7 @@ func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, erro
 		if ethTx != nil {
 			result = append(
 				result,
-				rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainID),
+				rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId()),
 			)
 		}
 	}
@@ -369,18 +366,32 @@ func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc
 	return result, nil
 }
 
+// getTransaction retrieves the lookup along with the transaction itself associate
+// with the given transaction hash.
+//
+// An error will be returned if the transaction is not found, and background
+// indexing for transactions is still in progress. The error is used to indicate the
+// scenario explicitly that the transaction might be reachable shortly.
+//
+// A null will be returned in the transaction is not found and background transaction
+// indexing is already finished. The transaction is not existent from the perspective
+// of node.
 func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	if tx, ok := b.txLookupCache.Get(hash); ok {
 		return tx, nil
 	}
 
 	// check if the transaction is in the queued txs
-	if _, ok := b.queuedTxHashes.Load(hash); ok {
-		return nil, NewTxIndexingError()
+	if cacheKey, ok := b.queuedTxHashes.Load(hash); ok {
+		if cacheItem, ok := b.queuedTxs.Get(cacheKey.(string)); ok {
+			rpcTx := rpctypes.NewRPCTransaction(cacheItem.body, common.Hash{}, 0, 0, cacheItem.body.ChainId())
+			return rpcTx, NewTxIndexingError()
+		}
 	}
+
 	// check if the transaction is in the pending txs
-	if ok := b.app.EVMIndexer().TxInMempool(hash); ok {
-		return nil, NewTxIndexingError()
+	if tx := b.app.EVMIndexer().TxInMempool(hash); tx != nil {
+		return tx, NewTxIndexingError()
 	}
 
 	queryCtx, err := b.getQueryCtx()
