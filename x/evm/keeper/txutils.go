@@ -225,7 +225,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		return nil, nil, err
 	}
 
-	if len(fees) > 0 && fees[0].Denom != params.FeeDenom {
+	if !(len(fees) == 0 || (len(fees) == 1 && fees[0].Denom == params.FeeDenom)) {
 		return nil, nil, nil
 	}
 
@@ -403,7 +403,7 @@ func (u *TxUtils) IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error) 
 		return false, err
 	}
 
-	if len(fees) > 0 && fees[0].Denom != params.FeeDenom {
+	if !(len(fees) == 0 || (len(fees) == 1 && fees[0].Denom == params.FeeDenom)) {
 		return false, nil
 	}
 

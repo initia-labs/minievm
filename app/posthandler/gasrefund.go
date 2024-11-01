@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 
@@ -17,12 +18,14 @@ import (
 var _ sdk.PostDecorator = &GasRefundDecorator{}
 
 type GasRefundDecorator struct {
-	ek EVMKeeper
+	logger log.Logger
+	ek     EVMKeeper
 }
 
-func NewGasRefundDecorator(ek EVMKeeper) sdk.PostDecorator {
+func NewGasRefundDecorator(logger log.Logger, ek EVMKeeper) sdk.PostDecorator {
+	logger = logger.With("module", "gas_refund")
 	return &GasRefundDecorator{
-		ek,
+		logger, ek,
 	}
 }
 
@@ -70,18 +73,38 @@ func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, 
 			sdk.NewAttribute(AttributeKeyCoins, coinsRefund.String()),
 		))
 
-		// TODO - should we charge gas for refund?
-		//
-		// for now, we use infinite gas meter to prevent out of gas error or inconsistency between
-		// used gas and refunded gas.
-		feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
-		err = erd.ek.ERC20Keeper().SendCoins(ctx.WithGasMeter(storetypes.NewInfiniteGasMeter()), feeCollectorAddr, feePayer, coinsRefund)
-		if err != nil {
-			return ctx, err
-		}
+		// conduct gas refund
+		erd.safeRefund(ctx, feePayer, coinsRefund)
 	}
 
 	return next(ctx, tx, simulate, success)
+}
+
+func (erd *GasRefundDecorator) safeRefund(ctx sdk.Context, feePayer sdk.AccAddress, coinsRefund sdk.Coins) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch r := r.(type) {
+			case storetypes.ErrorOutOfGas:
+				erd.logger.Error("failed to refund gas", "err", r)
+			default:
+				panic(r)
+			}
+		}
+	}()
+
+	// prepare context for refund operation
+	const gasLimitForRefund = 1_000_000
+	cacheCtx, commit := ctx.CacheContext()
+	cacheCtx = cacheCtx.WithGasMeter(storetypes.NewGasMeter(gasLimitForRefund))
+
+	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+	err := erd.ek.ERC20Keeper().SendCoins(cacheCtx, feeCollectorAddr, feePayer, coinsRefund)
+	if err != nil {
+		erd.logger.Error("failed to refund gas", "err", err)
+		return
+	}
+
+	commit()
 }
 
 const (
