@@ -11,7 +11,6 @@ import (
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 var _ mempool.Mempool = (*MempoolWrapper)(nil)
@@ -27,8 +26,13 @@ func (indexer *EVMIndexerImpl) MempoolWrapper(mempool mempool.Mempool) mempool.M
 }
 
 // TxInMempool returns true if the transaction with the given hash is in the mempool.
-func (indexer *EVMIndexerImpl) TxInMempool(hash common.Hash) bool {
-	return indexer.txPendingMap.Has(hash)
+func (indexer *EVMIndexerImpl) TxInMempool(hash common.Hash) *rpctypes.RPCTransaction {
+	item := indexer.txPendingMap.Get(hash)
+	if item == nil {
+		return nil
+	}
+
+	return item.Value()
 }
 
 // CountTx implements mempool.Mempool.
@@ -46,14 +50,11 @@ func (m *MempoolWrapper) Insert(ctx context.Context, tx sdk.Tx) error {
 	}
 
 	if ethTx != nil {
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		chainId := evmtypes.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID())
-		rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, chainId)
-
 		ethTxHash := ethTx.Hash()
+		rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
 
 		m.indexer.logger.Debug("inserting tx into mempool", "pending len", m.indexer.txPendingMap.Len(), "ethTxHash", ethTxHash)
-		m.indexer.txPendingMap.Set(ethTxHash, true, ttlcache.DefaultTTL)
+		m.indexer.txPendingMap.Set(ethTxHash, rpcTx, ttlcache.DefaultTTL)
 
 		go func() {
 			// emit the transaction to all pending channels
