@@ -8,7 +8,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.10
 	github.com/cosmos/ibc-go/v8 v8.5.0
 	github.com/ethereum/go-ethereum v1.14.9
-	github.com/initia-labs/initia v0.5.6
+	github.com/initia-labs/initia v0.6.0
 	github.com/initia-labs/minievm v0.5.2
 	github.com/stretchr/testify v1.9.0
 )
@@ -146,12 +146,12 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v0.5.5 // indirect
 	github.com/initia-labs/OPinit/api v0.5.1 // indirect
-	github.com/initia-labs/kvindexer v0.1.8 // indirect
+	github.com/initia-labs/kvindexer v0.1.9 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
-	github.com/initia-labs/movevm v0.5.0 // indirect
+	github.com/initia-labs/movevm v0.6.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -203,7 +203,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/supranational/blst v0.3.11 // indirect
+	github.com/supranational/blst v0.3.13 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tidwall/btree v1.7.0 // indirect
@@ -271,7 +271,7 @@ replace (
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241027024417-b90d6257f9b7
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241104061036-f8482395518d
 
 	// use custom version until this PR is merged
 	// - https://github.com/strangelove-ventures/cometbft-client/pull/10
