@@ -215,7 +215,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		return nil, nil, nil
 	}
 
-	fees := authTx.GetFee()
+	feeAmount := authTx.GetFee()
 	params, err := u.Params.Get(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -225,7 +225,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		return nil, nil, err
 	}
 
-	if len(fees) > 0 && fees[0].Denom != params.FeeDenom {
+	if !(len(feeAmount) == 0 || (len(feeAmount) == 1 && feeAmount[0].Denom == params.FeeDenom)) {
 		return nil, nil, nil
 	}
 
@@ -258,7 +258,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	} else if len(sigData.Signature) == 64 {
 		v, r, s = []byte{}, sigData.Signature[:32], sigData.Signature[32:64]
 	} else {
-		return nil, nil, nil
+		return nil, nil, types.ErrTxConversionFailed.Wrap("invalid signature length")
 	}
 
 	gasFeeCap, ok := new(big.Int).SetString(md.GasFeeCap, 10)
@@ -269,6 +269,13 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	gasTipCap, ok := new(big.Int).SetString(md.GasTipCap, 10)
 	if !ok {
 		return nil, nil, err
+	}
+
+	// check if the fee amount is correctly converted
+	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(gasFeeCap, gas, decimals))))
+	if !feeAmount.Equal(computedFeeAmount) {
+		u.Logger(ctx).Error("fee amount manipulation detected", "expected", computedFeeAmount, "actual", feeAmount)
+		return nil, nil, types.ErrTxConversionFailed.Wrap("fee amount manipulation detected")
 	}
 
 	var to *common.Address
@@ -397,13 +404,13 @@ func (u *TxUtils) IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error) 
 		return false, nil
 	}
 
-	fees := authTx.GetFee()
+	feeAmount := authTx.GetFee()
 	params, err := u.Params.Get(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	if len(fees) > 0 && fees[0].Denom != params.FeeDenom {
+	if !(len(feeAmount) == 0 || (len(feeAmount) == 1 && feeAmount[0].Denom == params.FeeDenom)) {
 		return false, nil
 	}
 
