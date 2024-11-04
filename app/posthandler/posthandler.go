@@ -3,20 +3,20 @@ package posthandler
 import (
 	"context"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 // NewPostHandler returns a new sdk.PostHandler that is composed of the sdk.ChainPostDecorators
 func NewPostHandler(
-	ak authante.AccountKeeper,
+	logger log.Logger,
 	ek EVMKeeper,
 ) sdk.PostHandler {
 	return sdk.ChainPostDecorators(
-		NewGasRefundDecorator(ek),
+		NewGasRefundDecorator(logger, ek),
 	)
 }
 
