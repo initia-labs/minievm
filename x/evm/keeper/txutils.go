@@ -271,6 +271,14 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		return nil, nil, err
 	}
 
+	// check if the fee amount is correctly converted
+	feeAmount := fees[0].Amount.BigInt()
+	computedGasFeeAmount := computeGasFeeAmount(gasFeeCap, gas, decimals)
+	if feeAmount.Cmp(computedGasFeeAmount) != 0 {
+		u.Logger(ctx).Error("fee amount manipulation detected", "expected", computedGasFeeAmount, "actual", feeAmount)
+		return nil, nil, types.ErrTxConversionFailed.Wrap("fee amount manipulation detected")
+	}
+
 	var to *common.Address
 	var input []byte
 	var value *big.Int

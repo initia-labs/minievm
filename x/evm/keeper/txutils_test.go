@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/math"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -112,7 +112,8 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	})
 
 	authTx := sdkTx.(authsigning.Tx)
-	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1))))
+	expectedFeeAmount := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1)))
+	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
 
 	sigs, err := authTx.GetSignaturesV2()
 	require.NoError(t, err)
@@ -137,6 +138,12 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
 	EqualEthTransaction(t, signedTx, ethTx2)
+
+	// manipulate the fee amount
+	txBuilder := sdkTx.(client.TxBuilder)
+	txBuilder.SetFeeAmount(expectedFeeAmount.Add(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1))))
+	_, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, txBuilder.GetTx())
+	require.ErrorIs(t, err, types.ErrTxConversionFailed)
 }
 
 func Test_AccessTxConversion(t *testing.T) {
@@ -298,7 +305,8 @@ func Test_AccessTxConversion(t *testing.T) {
 	})
 
 	authTx = sdkTx.(authsigning.Tx)
-	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1))))
+	expectedFeeAmount := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1)))
+	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
 
 	sigs, err = authTx.GetSignaturesV2()
 	require.NoError(t, err)
@@ -323,6 +331,12 @@ func Test_AccessTxConversion(t *testing.T) {
 	ethTx2, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
 	EqualEthTransaction(t, signedTx, ethTx2)
+
+	// manipulate the fee amount
+	txBuilder := sdkTx.(client.TxBuilder)
+	txBuilder.SetFeeAmount(expectedFeeAmount.Add(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1))))
+	_, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, txBuilder.GetTx())
+	require.ErrorIs(t, err, types.ErrTxConversionFailed)
 }
 
 func Test_LegacyTxConversion(t *testing.T) {
@@ -394,7 +408,8 @@ func Test_LegacyTxConversion(t *testing.T) {
 	})
 
 	authTx := sdkTx.(authsigning.Tx)
-	require.Equal(t, authTx.GetFee(), sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1))))
+	expectedFeeAmount := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1)))
+	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
 
 	sigs, err := authTx.GetSignaturesV2()
 	require.NoError(t, err)
@@ -419,6 +434,12 @@ func Test_LegacyTxConversion(t *testing.T) {
 	ethTx2, _, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	require.NoError(t, err)
 	EqualEthTransaction(t, signedTx, ethTx2)
+
+	// manipulate the fee amount
+	txBuilder := sdkTx.(client.TxBuilder)
+	txBuilder.SetFeeAmount(expectedFeeAmount.Add(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1))))
+	_, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, txBuilder.GetTx())
+	require.ErrorIs(t, err, types.ErrTxConversionFailed)
 }
 
 func Test_IsEthereumTx(t *testing.T) {
