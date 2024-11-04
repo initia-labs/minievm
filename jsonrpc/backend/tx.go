@@ -133,12 +133,7 @@ func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, 
 
 // GetTransactionByHash returns the transaction with the given hash.
 func (b *JSONRPCBackend) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
-	rpcTx, err := b.getTransaction(hash)
-	if rpcTx == nil {
-		return nil, err
-	}
-
-	return rpcTx, nil
+	return b.getTransaction(hash)
 }
 
 // GetTransactionCount returns the number of transactions at the given block number.
@@ -187,12 +182,10 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
 func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	rpcTx, err := b.getTransaction(hash)
-	if rpcTx == nil && err == nil {
+	if err != nil {
+		return nil, err
+	} else if rpcTx == nil {
 		return nil, nil // tx is not found
-	} else if rpcTx != nil && err != nil {
-		return nil, NewTxIndexingError() // tx is not fully indexed
-	} else if err != nil {
-		return nil, err // just error case
 	}
 
 	receipt, err := b.getReceipt(hash)
@@ -368,14 +361,6 @@ func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc
 
 // getTransaction retrieves the lookup along with the transaction itself associate
 // with the given transaction hash.
-//
-// An error will be returned if the transaction is not found, and background
-// indexing for transactions is still in progress. The error is used to indicate the
-// scenario explicitly that the transaction might be reachable shortly.
-//
-// A null will be returned in the transaction is not found and background transaction
-// indexing is already finished. The transaction is not existent from the perspective
-// of node.
 func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	if tx, ok := b.txLookupCache.Get(hash); ok {
 		return tx, nil
@@ -385,13 +370,13 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 	if cacheKey, ok := b.queuedTxHashes.Load(hash); ok {
 		if cacheItem, ok := b.queuedTxs.Get(cacheKey.(string)); ok {
 			rpcTx := rpctypes.NewRPCTransaction(cacheItem.body, common.Hash{}, 0, 0, cacheItem.body.ChainId())
-			return rpcTx, NewTxIndexingError()
+			return rpcTx, nil
 		}
 	}
 
 	// check if the transaction is in the pending txs
 	if tx := b.app.EVMIndexer().TxInMempool(hash); tx != nil {
-		return tx, NewTxIndexingError()
+		return tx, nil
 	}
 
 	queryCtx, err := b.getQueryCtx()
