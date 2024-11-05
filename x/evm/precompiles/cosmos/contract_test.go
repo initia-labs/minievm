@@ -67,7 +67,7 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -113,7 +113,7 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -159,7 +159,7 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -190,7 +190,7 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -221,7 +221,7 @@ func Test_ExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -294,7 +294,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -400,7 +400,7 @@ func Test_QueryCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 
@@ -447,7 +447,7 @@ func Test_ToDenom(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 
@@ -489,7 +489,7 @@ func Test_ToErc20(t *testing.T) {
 	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile = cosmosPrecompile.WithStateDB(stateDB).(precompiles.CosmosPrecompile)
+	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 

@@ -193,7 +193,8 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		stateDB,
 		types.DefaultChainConfig(ctx),
 		vmConfig,
-		k.precompiles.toMap(stateDB),
+		// use custom precompiles
+		k.Precompiles(stateDB),
 	)
 
 	if tracer != nil {
@@ -238,7 +239,7 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), accessList)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs, accessList)
 
 	retBz, gasRemaining, err := evm.StaticCall(
 		vm.AccountRef(caller),
@@ -276,7 +277,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), accessList)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs, accessList)
 
 	retBz, gasRemaining, err := evm.Call(
 		vm.AccountRef(caller),
@@ -370,7 +371,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, append(vm.ActivePrecompiles(rules), k.precompiles.toAddrs()...), accessList)
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, k.precompileAddrs, accessList)
 
 	var gasRemaining uint64
 	if salt == nil {

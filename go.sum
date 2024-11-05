@@ -1440,8 +1440,8 @@ github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261 h1:V62KOhe6Em
 github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261/go.mod h1:KsQ7Wm/dw9N0l7Ypn3QKGwgUX5XinTlcHGIF0DSjsw4=
 github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e h1:k+pg63SFozCAK4LZFSiZtof6z69Tlu0O/Zftj1aAwes=
 github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e/go.mod h1:aVposiPW9FOUeAeJ7JjJRdE3g+L6i8YDxFn6Cv6+Az4=
-github.com/initia-labs/evm v0.0.0-20241104061036-f8482395518d h1:9fqIEcfMe10BjfNWmuQDqYGmvtTIMRcMXJi26VCs5DM=
-github.com/initia-labs/evm v0.0.0-20241104061036-f8482395518d/go.mod h1:+l/fr42Mma+xBnhefL/+z11/hcmJ2egl+ScIVPjhc7E=
+github.com/initia-labs/evm v0.0.0-20241105070652-c43b570a4e98 h1:JmJpxtYnF++Lj9MhD2LxOtgNAJM0aYqgO9nBkuhiGlI=
+github.com/initia-labs/evm v0.0.0-20241105070652-c43b570a4e98/go.mod h1:+l/fr42Mma+xBnhefL/+z11/hcmJ2egl+ScIVPjhc7E=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d h1:TLq8lB1PtQ0pjGf+bN8YgGVeLMuytZ26SBGMOs1seKY=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d/go.mod h1:zh6x1osR0hNvEcFrC/lhGD08sMfQmr9wHVvZ/mRWMCs=
 github.com/initia-labs/initia v0.6.0 h1:/39ZN26zeixxZZdcfY1sOitiBhfnG3lcbPtpFqd9z7A=

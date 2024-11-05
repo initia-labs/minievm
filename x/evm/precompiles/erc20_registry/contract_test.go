@@ -76,7 +76,7 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 
 	// set context
 	stateDB := NewMockStateDB(ctx)
-	registry = registry.WithStateDB(stateDB).(precompiles.ERC20RegistryPrecompile)
+	registry.SetStateDB(stateDB)
 
 	erc20Addr := common.HexToAddress("0x1")
 	accountAddr := common.HexToAddress("0x2")
