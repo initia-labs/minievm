@@ -85,7 +85,7 @@ func (erd *GasRefundDecorator) safeRefund(ctx sdk.Context, feePayer sdk.AccAddre
 		if r := recover(); r != nil {
 			switch r := r.(type) {
 			case storetypes.ErrorOutOfGas:
-				erd.logger.Error("failed to refund gas", "err", r, "feePayer", feePayer, "refudnAmount", coinsRefund)
+				erd.logger.Error("failed to refund gas", "err", r, "feePayer", feePayer, "refundAmount", coinsRefund)
 			default:
 				panic(r)
 			}
