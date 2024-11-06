@@ -19,6 +19,8 @@ func (k Keeper) GasRefundRatio(ctx context.Context) (math.LegacyDec, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return math.LegacyZeroDec(), err
+	} else if params.GasRefundRatio.IsNil() {
+		return math.LegacyZeroDec(), nil
 	}
 
 	return params.GasRefundRatio, nil
