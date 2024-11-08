@@ -6,10 +6,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/holiman/uint256"
+
+	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -175,4 +179,129 @@ func Test_MsgServer_UpdateParams(t *testing.T) {
 		Params:    params,
 	})
 	require.ErrorContains(t, err, "sudoMint and sudoBurn")
+}
+
+func Test_MsgServer_NonceIncrement_Call(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	caller := common.BytesToAddress(addr.Bytes())
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// increment sequence
+	incremented := true
+	ctx = ctx.WithValue(evmante.ContextKeySequenceIncremented, &incremented)
+	acc := input.AccountKeeper.GetAccount(ctx, addr)
+	seq := acc.GetSequence() + 1
+	acc.SetSequence(seq)
+	input.AccountKeeper.SetAccount(ctx, acc)
+
+	inputBz, err := parsed.Pack("increase")
+	require.NoError(t, err)
+
+	// should not increment sequence
+	msgServer := keeper.NewMsgServerImpl(&input.EVMKeeper)
+	res, err := msgServer.Call(ctx, &types.MsgCall{
+		Sender:       addr.String(),
+		ContractAddr: contractAddr.Hex(),
+		Input:        hexutil.Encode(inputBz),
+	})
+	require.NoError(t, err)
+	require.Equal(t, "0x", res.Result)
+	require.NotEmpty(t, res.Logs)
+
+	acc = input.AccountKeeper.GetAccount(ctx, addr)
+	require.Equal(t, seq, acc.GetSequence())
+
+	// call again should increment sequence
+	res, err = msgServer.Call(ctx, &types.MsgCall{
+		Sender:       addr.String(),
+		ContractAddr: contractAddr.Hex(),
+		Input:        hexutil.Encode(inputBz),
+	})
+	require.NoError(t, err)
+	require.Equal(t, "0x", res.Result)
+	require.NotEmpty(t, res.Logs)
+
+	acc = input.AccountKeeper.GetAccount(ctx, addr)
+	require.Equal(t, seq+1, acc.GetSequence())
+
+	// create should increment sequence
+	_, err = msgServer.Create(ctx, &types.MsgCreate{
+		Sender: addr.String(),
+		Code:   counter.CounterBin,
+	})
+	require.NoError(t, err)
+
+	acc = input.AccountKeeper.GetAccount(ctx, addr)
+	require.Equal(t, seq+2, acc.GetSequence())
+}
+
+func Test_MsgServer_NonceIncrement_Create(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	caller := common.BytesToAddress(addr.Bytes())
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// increment sequence
+	incremented := true
+	ctx = ctx.WithValue(evmante.ContextKeySequenceIncremented, &incremented)
+	acc := input.AccountKeeper.GetAccount(ctx, addr)
+	seq := acc.GetSequence() + 1
+	acc.SetSequence(seq)
+	input.AccountKeeper.SetAccount(ctx, acc)
+
+	inputBz, err := parsed.Pack("increase")
+	require.NoError(t, err)
+
+	// should not increment sequence
+	msgServer := keeper.NewMsgServerImpl(&input.EVMKeeper)
+	_, err = msgServer.Create(ctx, &types.MsgCreate{
+		Sender: addr.String(),
+		Code:   counter.CounterBin,
+	})
+	require.NoError(t, err)
+
+	acc = input.AccountKeeper.GetAccount(ctx, addr)
+	require.Equal(t, seq, acc.GetSequence())
+
+	// call again should increment sequence
+	_, err = msgServer.Call(ctx, &types.MsgCall{
+		Sender:       addr.String(),
+		ContractAddr: contractAddr.Hex(),
+		Input:        hexutil.Encode(inputBz),
+	})
+	require.NoError(t, err)
+
+	acc = input.AccountKeeper.GetAccount(ctx, addr)
+	require.Equal(t, seq+1, acc.GetSequence())
+
+	// create should increment sequence
+	_, err = msgServer.Create(ctx, &types.MsgCreate{
+		Sender: addr.String(),
+		Code:   counter.CounterBin,
+	})
+	require.NoError(t, err)
+
+	acc = input.AccountKeeper.GetAccount(ctx, addr)
+	require.Equal(t, seq+2, acc.GetSequence())
 }
