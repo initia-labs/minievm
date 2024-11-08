@@ -259,8 +259,8 @@ func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) 
 // In the Cosmos SDK, the sequence number is incremented in the ante handler.
 // In the EVM, the sequence number is incremented during the execution of create and create2 messages.
 //
-// If the sequence number is already incremented in the ante handler but the message is create, decrement the sequence number to prevent double incrementing.
-// If the sequence number is not incremented in the ante handler but the message is call, increment the sequence number to ensure proper sequencing.
+// If the sequence number is already incremented in the ante handler and the message is create, decrement the sequence number to prevent double incrementing.
+// If the sequence number is not incremented in the ante handler and the message is call, increment the sequence number to ensure proper sequencing.
 func (k *msgServerImpl) handleSequenceIncremented(ctx context.Context, sender sdk.AccAddress, isCreate bool) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if sdkCtx.Value(evmante.ContextKeySequenceIncremented) == nil {
