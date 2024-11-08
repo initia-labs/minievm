@@ -20,7 +20,7 @@ import (
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
-const upgradeName = "0.6.4"
+const upgradeName = "0.6.5"
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
