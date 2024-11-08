@@ -22,9 +22,10 @@ contract ERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
     string public name;
     string public symbol;
     uint8 public decimals;
-    bool public metadataSealed;
-
     uint256 public totalSupply;
+
+    // metadataSealed is set to true after metadata is sealed
+    bool public metadataSealed;
 
     /**
      * @dev See {IERC165-supportsInterface}.
