@@ -29,6 +29,8 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(
 		upgradeName,
 		func(ctx context.Context, _ upgradetypes.Plan, versionMap module.VersionMap) (module.VersionMap, error) {
+			//////////////////////////// OPINIT ////////////////////////////////////
+
 			// opchild params update
 			params, err := app.OPChildKeeper.GetParams(ctx)
 			if err != nil {
@@ -43,14 +45,9 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 				return nil, err
 			}
 
-			// deploy and store erc20 factory contract address
-			if err := app.EVMKeeper.DeployERC20Factory(ctx); err != nil &&
-				// ignore contract address collision error (contract already deployed)
-				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
-				return nil, err
-			}
+			//////////////////////////// MINIEVM ///////////////////////////////////
 
-			// deploy and store erc20 wrapper contract address
+			// deploy and store erc20 factory contract address
 			if err := app.EVMKeeper.DeployERC20Factory(ctx); err != nil &&
 				// ignore contract address collision error (contract already deployed)
 				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
