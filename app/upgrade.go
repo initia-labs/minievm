@@ -72,7 +72,7 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 			codeHash := crypto.Keccak256Hash(code).Bytes()
 
 			// iterate all erc20 contracts and replace contract code to new version
-			app.EVMKeeper.ERC20s.Walk(ctx, nil, func(contractAddr []byte) (bool, error) {
+			err = app.EVMKeeper.ERC20s.Walk(ctx, nil, func(contractAddr []byte) (bool, error) {
 				acc := app.AccountKeeper.GetAccount(ctx, contractAddr)
 				if acc == nil {
 					return true, fmt.Errorf("account not found for contract address %s", contractAddr)
@@ -102,6 +102,9 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 				return false, nil
 			})
+			if err != nil {
+				return nil, err
+			}
 
 			return versionMap, nil
 		},
