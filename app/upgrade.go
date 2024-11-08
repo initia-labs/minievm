@@ -66,7 +66,7 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 			// runtime code
 			initCodeOP := common.Hex2Bytes("5ff3fe")
 			initCodePos := bytes.Index(code, initCodeOP)
-			code = code[initCodePos:]
+			code = code[initCodePos+3:]
 
 			// code hash
 			codeHash := crypto.Keccak256Hash(code).Bytes()
