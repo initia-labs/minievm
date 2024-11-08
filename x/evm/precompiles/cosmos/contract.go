@@ -24,7 +24,16 @@ import (
 
 var _ vm.ExtendedPrecompiledContract = &CosmosPrecompile{}
 var _ vm.PrecompiledContract = &CosmosPrecompile{}
-var _ types.SetStateDB = &CosmosPrecompile{}
+
+var erc20CosmosABI *abi.ABI
+
+func init() {
+	var err error
+	erc20CosmosABI, err = i_cosmos.ICosmosMetaData.GetAbi()
+	if err != nil {
+		panic(err)
+	}
+}
 
 type CosmosPrecompile struct {
 	*abi.ABI
@@ -42,6 +51,7 @@ type CosmosPrecompile struct {
 }
 
 func NewCosmosPrecompile(
+	stateDB types.StateDB,
 	cdc codec.Codec,
 	ac address.Codec,
 	ak types.AccountKeeper,
@@ -50,25 +60,17 @@ func NewCosmosPrecompile(
 	grpcRouter types.GRPCRouter,
 	queryWhitelist types.QueryCosmosWhitelist,
 ) (*CosmosPrecompile, error) {
-	abi, err := i_cosmos.ICosmosMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
 	return &CosmosPrecompile{
-		ABI:            abi,
+		ABI:            erc20CosmosABI,
 		cdc:            cdc,
 		ac:             ac,
 		ak:             ak,
 		bk:             bk,
 		edk:            edk,
+		stateDB:        stateDB,
 		grpcRouter:     grpcRouter,
 		queryWhitelist: queryWhitelist,
 	}, nil
-}
-
-func (e *CosmosPrecompile) SetStateDB(stateDB types.StateDB) {
-	e.stateDB = stateDB
 }
 
 func (e *CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sdk.AccAddress, error) {
@@ -76,7 +78,7 @@ func (e *CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sd
 	if shorthandCallerAccount, ok := account.(types.ShorthandAccountI); ok {
 		addr, err := shorthandCallerAccount.GetOriginalAddress(e.ac)
 		if err != nil {
-			return nil, types.ErrPrecompileFailed.Wrap(err.Error())
+			return nil, err
 		}
 
 		addrBz = addr.Bytes()
@@ -103,6 +105,13 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 
 		if err != nil {
+			// convert cosmos error to EVM error
+			if err != vm.ErrOutOfGas {
+				resBz = types.NewRevertReason(err)
+				err = vm.ErrExecutionReverted
+			}
+
+			// revert the stateDB to the snapshot
 			e.stateDB.RevertToSnapshot(snapshot)
 		}
 	}()

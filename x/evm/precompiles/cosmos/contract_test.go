@@ -63,11 +63,9 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, type
 func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
-	require.NoError(t, err)
-
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -109,11 +107,9 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
-	require.NoError(t, err)
-
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -155,11 +151,9 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
-	require.NoError(t, err)
-
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -186,11 +180,10 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 
 func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
-	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -217,11 +210,10 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 
 func Test_ExecuteCosmos(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
-	require.NoError(t, err)
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -250,7 +242,7 @@ func Test_ExecuteCosmos(t *testing.T) {
 
 	// cannot call execute in readonly mode
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
-	require.Error(t, err)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 
 	// succeed
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
@@ -284,17 +276,16 @@ func Test_ExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// failed with unauthorized error
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
-	require.ErrorContains(t, err, sdkerrors.ErrUnauthorized.Error())
+	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
+	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
 }
 
 func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, nil, nil)
-	require.NoError(t, err)
-
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
 	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
@@ -324,7 +315,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 
 	// cannot call execute in readonly mode
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
-	require.Error(t, err)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 
 	// succeed
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
@@ -358,8 +349,9 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	// failed with unauthorized error
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
-	require.ErrorContains(t, err, sdkerrors.ErrUnauthorized.Error())
+	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
+	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
 }
 
 func Test_QueryCosmos(t *testing.T) {
@@ -377,7 +369,9 @@ func Test_QueryCosmos(t *testing.T) {
 			},
 		},
 	}
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, nil, MockGRPCRouter{
+
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, MockGRPCRouter{
 		routes: map[string]baseapp.GRPCQueryHandler{
 			queryPath: func(ctx sdk.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
 				resBz, err := cdc.Marshal(&expectedRet)
@@ -398,9 +392,6 @@ func Test_QueryCosmos(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-
-	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 
@@ -436,7 +427,8 @@ func Test_ToDenom(t *testing.T) {
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, &MockERC20DenomKeeper{
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, &MockERC20DenomKeeper{
 		denomMap: map[string]common.Address{
 			denom: erc20Addr,
 		},
@@ -445,9 +437,6 @@ func Test_ToDenom(t *testing.T) {
 		},
 	}, nil, nil)
 	require.NoError(t, err)
-
-	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 
@@ -478,7 +467,8 @@ func Test_ToErc20(t *testing.T) {
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
 
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(cdc, ac, ak, bk, &MockERC20DenomKeeper{
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, &MockERC20DenomKeeper{
 		denomMap: map[string]common.Address{
 			denom: erc20Addr,
 		},
@@ -487,9 +477,6 @@ func Test_ToErc20(t *testing.T) {
 		},
 	}, nil, nil)
 	require.NoError(t, err)
-
-	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile.SetStateDB(stateDB)
 
 	evmAddr := common.HexToAddress("0x1")
 

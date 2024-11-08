@@ -43,7 +43,7 @@ contract Counter is IIBCAsyncCallback {
         COSMOS_CONTRACT.execute_cosmos(exec_msg);
 
         if (call_revert) {
-            revert("revert");
+            revert("revert reason dummy value for test");
         }
     }
 

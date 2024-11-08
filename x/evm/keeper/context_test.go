@@ -294,7 +294,8 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.ErrorContains(t, err, types.ErrReverted.Error())
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, "revert reason dummy value for test")
 
 	// check balance
 	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
@@ -313,7 +314,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.NoError(t, err, types.ErrReverted.Error())
+	require.NoError(t, err)
 
 	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
 	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
