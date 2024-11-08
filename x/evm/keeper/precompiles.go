@@ -26,6 +26,7 @@ func (k *Keeper) precompiles(rules params.Rules, stateDB types.StateDB) (vm.Prec
 		k,
 		k.grpcRouter,
 		k.queryCosmosWhitelist,
+		k.authority,
 	)
 	if err != nil {
 		return nil, err

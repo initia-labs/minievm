@@ -144,7 +144,7 @@ func TestQueryDenomMetadata(t *testing.T) {
 	require.Equal(t, []*types.DenomUnit{
 		{
 			Denom:    bondDenom,
-			Exponent: 0,
+			Exponent: 18,
 		},
 	}, metadata.DenomUnits)
 }

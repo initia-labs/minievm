@@ -25,6 +25,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -62,9 +63,10 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, type
 
 func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -106,9 +108,10 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 
 func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -148,11 +151,54 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	require.True(t, ret[0].(bool))
 }
 
-func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
+func Test_CosmosPrecompile_IsAuthorityAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	require.NoError(t, err)
+
+	evmAddr := common.HexToAddress("0x1")
+	require.NoError(t, err)
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// is authority address
+	inputBz, err := abi.Pack(precompiles.METHOD_IS_AUTHORITY_ADDRESS, evmAddr)
+	require.NoError(t, err)
+
+	// out of gas error
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS-1, true)
+	require.ErrorIs(t, err, vm.ErrOutOfGas)
+
+	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	ret, err := abi.Unpack(precompiles.METHOD_IS_AUTHORITY_ADDRESS, retBz)
+	require.NoError(t, err)
+	require.False(t, ret[0].(bool))
+
+	// update input to authority address
+	authorityEVMAddr := common.BytesToAddress(authtypes.NewModuleAddress(govtypes.ModuleName).Bytes())
+	inputBz, err = abi.Pack(precompiles.METHOD_IS_AUTHORITY_ADDRESS, authorityEVMAddr)
+	require.NoError(t, err)
+
+	retBz, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS+uint64(len(inputBz)), true)
+	require.NoError(t, err)
+
+	ret, err = abi.Unpack(precompiles.METHOD_IS_AUTHORITY_ADDRESS, retBz)
+	require.NoError(t, err)
+	require.True(t, ret[0].(bool))
+}
+
+func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
+	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -180,9 +226,10 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 
 func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -210,9 +257,10 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 
 func Test_ExecuteCosmos(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -283,8 +331,10 @@ func Test_ExecuteCosmos(t *testing.T) {
 
 func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -356,6 +406,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 
 func Test_QueryCosmos(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	queryPath := "/connect.oracle.v2.Query/Prices"
 	expectedRet := oracletypes.GetPricesResponse{
@@ -390,7 +441,7 @@ func Test_QueryCosmos(t *testing.T) {
 			Request:  &oracletypes.GetPricesRequest{},
 			Response: &oracletypes.GetPricesResponse{},
 		},
-	})
+	}, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -423,6 +474,7 @@ func Test_QueryCosmos(t *testing.T) {
 
 func Test_ToDenom(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
@@ -435,7 +487,7 @@ func Test_ToDenom(t *testing.T) {
 		addrMap: map[common.Address]string{
 			erc20Addr: denom,
 		},
-	}, nil, nil)
+	}, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -463,6 +515,7 @@ func Test_ToDenom(t *testing.T) {
 
 func Test_ToErc20(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
@@ -475,7 +528,7 @@ func Test_ToErc20(t *testing.T) {
 		addrMap: map[common.Address]string{
 			erc20Addr: denom,
 		},
-	}, nil, nil)
+	}, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")

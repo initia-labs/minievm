@@ -142,6 +142,13 @@ func (k ERC20Keeper) GetMetadata(ctx context.Context, denom string) (banktypes.M
 			Denom:    denom,
 			Exponent: 0,
 		},
+		{
+			Denom:    symbol,
+			Exponent: uint32(decimals),
+		},
+	}
+	if denom == symbol {
+		denomUnits = denomUnits[1:]
 	}
 
 	base := denom

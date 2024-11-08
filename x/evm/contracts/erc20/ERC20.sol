@@ -17,9 +17,13 @@ contract ERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
 
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
+
+    // ERC20 Metadata
     string public name;
     string public symbol;
     uint8 public decimals;
+    bool public metadataSealed;
+
     uint256 public totalSupply;
 
     /**
@@ -34,10 +38,11 @@ contract ERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
     }
 
     // for custom erc20s, you should add `register_erc20` modifier to the constructor
-    constructor(string memory _name, string memory _symbol, uint8 _decimals) {
+    constructor(string memory _name, string memory _symbol, uint8 _decimals, bool _metadataSealed) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
+        metadataSealed = _metadataSealed;
     }
 
     function _transfer(
@@ -126,5 +131,24 @@ contract ERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
 
     function sudoBurn(address from, uint256 amount) external onlyChain {
         _burn(from, amount);
+    }
+
+    //
+    // ERC20 Metadata onetime setters only for authority(gov)
+    //
+
+    function updateMetadata(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals
+    ) external onlyAuthority {
+        require(!metadataSealed, "ERC20: metadata sealed");
+
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+
+        // seal the metadata to prevent further updates
+        metadataSealed = true;
     }
 }
