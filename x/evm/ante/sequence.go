@@ -43,6 +43,7 @@ func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 	}
 
 	// set a flag in context to indicate that sequence has been incremented in ante handler
-	ctx = ctx.WithValue(ContextKeySequenceIncremented, true)
+	incremented := true // use pointer to enable revert after first call
+	ctx = ctx.WithValue(ContextKeySequenceIncremented, &incremented)
 	return next(ctx, tx, simulate)
 }

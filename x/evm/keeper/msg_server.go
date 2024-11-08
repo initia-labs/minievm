@@ -33,7 +33,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// handle cosmos<>evm different sequence increment logic
-	ctx, err = ms.handleSequenceIncremented(ctx, sender, true)
+	err = ms.handleSequenceIncremented(ctx, sender, true)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// handle cosmos<>evm different sequence increment logic
-	ctx, err = ms.handleSequenceIncremented(ctx, sender, true)
+	err = ms.handleSequenceIncremented(ctx, sender, true)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	}
 
 	// handle cosmos<>evm different sequence increment logic
-	ctx, err = ms.handleSequenceIncremented(ctx, sender, false)
+	err = ms.handleSequenceIncremented(ctx, sender, false)
 	if err != nil {
 		return nil, err
 	}
@@ -258,20 +258,36 @@ func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) 
 
 // In the Cosmos SDK, the sequence number is incremented in the ante handler.
 // In the EVM, the sequence number is incremented during the execution of create and create2 messages.
-// However, for call messages, the sequence number is incremented in the ante handler like the Cosmos SDK.
-// To prevent double incrementing the sequence number during EVM execution, we need to decrement it here for create messages.
-func (k *msgServerImpl) handleSequenceIncremented(ctx context.Context, sender sdk.AccAddress, isCreate bool) (context.Context, error) {
+//
+// If the sequence number is already incremented in the ante handler but the message is create, decrement the sequence number to prevent double incrementing.
+// If the sequence number is not incremented in the ante handler but the message is call, increment the sequence number to ensure proper sequencing.
+func (k *msgServerImpl) handleSequenceIncremented(ctx context.Context, sender sdk.AccAddress, isCreate bool) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if sdkCtx.Value(evmante.ContextKeySequenceIncremented) == nil {
+		return nil
+	}
 
-	// decrement sequence of the sender
-	if isCreate && sdkCtx.Value(evmante.ContextKeySequenceIncremented) != nil {
+	incremented := sdkCtx.Value(evmante.ContextKeySequenceIncremented).(*bool)
+	if isCreate && *incremented {
+		// if the sequence is already incremented, decrement it to prevent double incrementing the sequence number at create.
 		acc := k.accountKeeper.GetAccount(ctx, sender)
 		if err := acc.SetSequence(acc.GetSequence() - 1); err != nil {
-			return ctx, err
+			return err
+		}
+
+		k.accountKeeper.SetAccount(ctx, acc)
+	} else if !isCreate && !*incremented {
+		// if the sequence is not incremented and the message is call, increment the sequence number.
+		acc := k.accountKeeper.GetAccount(ctx, sender)
+		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
+			return err
 		}
 
 		k.accountKeeper.SetAccount(ctx, acc)
 	}
 
-	return sdkCtx.WithValue(evmante.ContextKeySequenceIncremented, nil), nil
+	// set the flag to false
+	*incremented = false
+
+	return nil
 }
