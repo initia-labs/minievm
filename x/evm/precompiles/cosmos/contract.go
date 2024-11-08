@@ -22,9 +22,9 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-var _ vm.ExtendedPrecompiledContract = CosmosPrecompile{}
-var _ vm.PrecompiledContract = CosmosPrecompile{}
-var _ types.WithStateDB = CosmosPrecompile{}
+var _ vm.ExtendedPrecompiledContract = &CosmosPrecompile{}
+var _ vm.PrecompiledContract = &CosmosPrecompile{}
+var _ types.SetStateDB = &CosmosPrecompile{}
 
 type CosmosPrecompile struct {
 	*abi.ABI
@@ -49,13 +49,13 @@ func NewCosmosPrecompile(
 	edk types.ERC20DenomKeeper,
 	grpcRouter types.GRPCRouter,
 	queryWhitelist types.QueryCosmosWhitelist,
-) (CosmosPrecompile, error) {
+) (*CosmosPrecompile, error) {
 	abi, err := i_cosmos.ICosmosMetaData.GetAbi()
 	if err != nil {
-		return CosmosPrecompile{}, err
+		return nil, err
 	}
 
-	return CosmosPrecompile{
+	return &CosmosPrecompile{
 		ABI:            abi,
 		cdc:            cdc,
 		ac:             ac,
@@ -67,12 +67,11 @@ func NewCosmosPrecompile(
 	}, nil
 }
 
-func (e CosmosPrecompile) WithStateDB(stateDB types.StateDB) vm.PrecompiledContract {
+func (e *CosmosPrecompile) SetStateDB(stateDB types.StateDB) {
 	e.stateDB = stateDB
-	return e
 }
 
-func (e CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sdk.AccAddress, error) {
+func (e *CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sdk.AccAddress, error) {
 	account := e.ak.GetAccount(ctx, addrBz)
 	if shorthandCallerAccount, ok := account.(types.ShorthandAccountI); ok {
 		addr, err := shorthandCallerAccount.GetOriginalAddress(e.ac)
@@ -87,7 +86,7 @@ func (e CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sdk
 }
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
-func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
+func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
 	snapshot := e.stateDB.Snapshot()
 	ctx := e.stateDB.ContextOfSnapshot(snapshot).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
 
@@ -345,11 +344,11 @@ func (e CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppl
 }
 
 // RequiredGas implements vm.PrecompiledContract.
-func (e CosmosPrecompile) RequiredGas(input []byte) uint64 {
+func (e *CosmosPrecompile) RequiredGas(input []byte) uint64 {
 	return 0
 }
 
 // Run implements vm.PrecompiledContract.
-func (e CosmosPrecompile) Run(input []byte) ([]byte, error) {
+func (e *CosmosPrecompile) Run(input []byte) ([]byte, error) {
 	return nil, errors.New("the CosmosPrecompile works exclusively with ExtendedRun")
 }

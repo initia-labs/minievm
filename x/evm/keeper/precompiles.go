@@ -1,19 +1,17 @@
 package keeper
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"math/big"
+	"slices"
+
 	"github.com/ethereum/go-ethereum/core/vm"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	cosmosprecompile "github.com/initia-labs/minievm/x/evm/precompiles/cosmos"
 	erc20registryprecompile "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
-
-// precompile is a precompiled contract.
-type precompile struct {
-	addr     common.Address
-	contract vm.PrecompiledContract
-}
 
 // loadPrecompiles loads the precompiled contracts.
 func (k *Keeper) loadPrecompiles() error {
@@ -35,38 +33,25 @@ func (k *Keeper) loadPrecompiles() error {
 		return err
 	}
 
-	k.precompiles = precompiles{
-		{
-			addr:     common.BytesToAddress([]byte{0xf1}),
-			contract: cosmosPrecompile,
-		},
-		{
-			addr:     common.BytesToAddress([]byte{0xf2}),
-			contract: erc20RegistryPrecompile,
-		},
-	}
+	// prepare precompiles; always use latest chain config
+	// to load all precompiles.
+	chainConfig := types.DefaultChainConfig(sdk.Context{})
+	rules := chainConfig.Rules(big.NewInt(1), true, 1)
+
+	precompiles := vm.ActivePrecompiledContracts(rules)
+	precompiles[types.CosmosPrecompileAddress] = cosmosPrecompile
+	precompiles[types.ERC20RegistryPrecompileAddress] = erc20RegistryPrecompile
+	k.precompiles = precompiles
+
+	precompileAddrs := slices.Clone(vm.ActivePrecompiles(rules))
+	precompileAddrs = append(precompileAddrs, types.CosmosPrecompileAddress, types.ERC20RegistryPrecompileAddress)
+	k.precompileAddrs = precompileAddrs
 
 	return nil
 }
 
-// precompiles is a list of precompiled contracts.
-type precompiles []precompile
-
-// toMap converts the precompiles to a map.
-func (ps precompiles) toMap(stateDB types.StateDB) map[common.Address]vm.PrecompiledContract {
-	m := make(map[common.Address]vm.PrecompiledContract)
-	for _, p := range ps {
-		m[p.addr] = p.contract.(types.WithStateDB).WithStateDB(stateDB)
-	}
-
-	return m
-}
-
-func (ps precompiles) toAddrs() []common.Address {
-	addrs := make([]common.Address, len(ps))
-	for i, p := range ps {
-		addrs[i] = p.addr
-	}
-
-	return addrs
+func (k *Keeper) Precompiles(stateDB types.StateDB) vm.PrecompiledContracts {
+	k.precompiles[types.CosmosPrecompileAddress].(types.SetStateDB).SetStateDB(stateDB)
+	k.precompiles[types.ERC20RegistryPrecompileAddress].(types.SetStateDB).SetStateDB(stateDB)
+	return k.precompiles
 }

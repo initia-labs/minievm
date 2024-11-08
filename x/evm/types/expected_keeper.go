@@ -90,8 +90,8 @@ type StateDB interface {
 	ContextOfSnapshot(i int) sdk.Context
 }
 
-type WithStateDB interface {
-	WithStateDB(stateDB StateDB) vm.PrecompiledContract
+type SetStateDB interface {
+	SetStateDB(stateDB StateDB)
 }
 
 type GRPCRouter interface {

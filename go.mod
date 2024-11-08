@@ -224,7 +224,7 @@ require (
 	github.com/status-im/keycard-go v0.2.0 // indirect
 	github.com/strangelove-ventures/cometbft-client v0.1.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/supranational/blst v0.3.11 // indirect
+	github.com/supranational/blst v0.3.13 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tidwall/btree v1.7.0 // indirect
@@ -288,7 +288,7 @@ replace (
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241027024417-b90d6257f9b7
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241105070652-c43b570a4e98
 
 	// use custom version until this PR is merged
 	// - https://github.com/strangelove-ventures/cometbft-client/pull/10

@@ -12,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos_callback"
@@ -77,7 +78,9 @@ type Keeper struct {
 	// evm stores
 	EVMBlockHashes collections.Map[uint64, []byte]
 
-	precompiles          precompiles
+	precompiles     vm.PrecompiledContracts
+	precompileAddrs []common.Address
+
 	queryCosmosWhitelist types.QueryCosmosWhitelist
 	cosmosCallbackABI    *abi.ABI
 }
@@ -154,7 +157,9 @@ func NewKeeper(
 
 		EVMBlockHashes: collections.NewMap(sb, types.EVMBlockHashPrefix, "evm_block_hashes", collections.Uint64Key, collections.BytesValue),
 
-		precompiles:          []precompile{},
+		precompiles:     vm.PrecompiledContracts{},
+		precompileAddrs: []common.Address{},
+
 		queryCosmosWhitelist: queryCosmosWhitelist,
 		cosmosCallbackABI:    cosmosCallbackABI,
 	}
