@@ -288,7 +288,7 @@ replace (
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20240925132752-ff8ff0126261
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241105070652-c43b570a4e98
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 
 	// use custom version until this PR is merged
 	// - https://github.com/strangelove-ventures/cometbft-client/pull/10

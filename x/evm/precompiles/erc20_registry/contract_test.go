@@ -71,12 +71,9 @@ func (e ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddres
 func Test_ERC20RegistryPrecompile(t *testing.T) {
 	ctx, k := setup()
 
-	registry, err := precompiles.NewERC20RegistryPrecompile(k)
-	require.NoError(t, err)
-
-	// set context
 	stateDB := NewMockStateDB(ctx)
-	registry.SetStateDB(stateDB)
+	registry, err := precompiles.NewERC20RegistryPrecompile(stateDB, k)
+	require.NoError(t, err)
 
 	erc20Addr := common.HexToAddress("0x1")
 	accountAddr := common.HexToAddress("0x2")

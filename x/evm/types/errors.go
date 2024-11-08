@@ -1,9 +1,13 @@
 package types
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // EVM Errors
@@ -41,12 +45,36 @@ var (
 )
 
 func NewRevertError(revert []byte) error {
-	err := ErrReverted
-
 	reason, errUnpack := abi.UnpackRevert(revert)
 	if errUnpack == nil {
-		return err.Wrapf("reason: %v, revert: %v", reason, hexutil.Encode(revert))
+		return fmt.Errorf("%w: %v", vm.ErrExecutionReverted, reason)
 	}
 
-	return err.Wrapf("revert: %v", hexutil.Encode(revert))
+	return ErrReverted.Wrapf("revert: %v", hexutil.Encode(revert))
+}
+
+// revertSelector is a special function selector for revert reason unpacking.
+var revertSelector = crypto.Keccak256([]byte("Error(string)"))[:4]
+var revertABIArguments abi.Arguments
+
+func init() {
+	revertABIType, err := abi.NewType("string", "", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	revertABIArguments = abi.Arguments{{Type: revertABIType}}
+}
+
+func NewRevertReason(reason error) []byte {
+	bz, err := revertABIArguments.Pack(reason.Error())
+	if err != nil {
+		panic(err)
+	}
+
+	ret := make([]byte, 4+len(bz))
+	copy(ret, revertSelector)
+	copy(ret[4:], bz)
+
+	return ret
 }

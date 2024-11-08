@@ -14,7 +14,16 @@ import (
 
 var _ vm.ExtendedPrecompiledContract = &ERC20RegistryPrecompile{}
 var _ vm.PrecompiledContract = &ERC20RegistryPrecompile{}
-var _ types.SetStateDB = &ERC20RegistryPrecompile{}
+
+var erc20RegistryABI *abi.ABI
+
+func init() {
+	var err error
+	erc20RegistryABI, err = i_erc20_registry.IErc20RegistryMetaData.GetAbi()
+	if err != nil {
+		panic(err)
+	}
+}
 
 type ERC20RegistryPrecompile struct {
 	*abi.ABI
@@ -22,17 +31,8 @@ type ERC20RegistryPrecompile struct {
 	k       types.IERC20StoresKeeper
 }
 
-func NewERC20RegistryPrecompile(k types.IERC20StoresKeeper) (*ERC20RegistryPrecompile, error) {
-	abi, err := i_erc20_registry.IErc20RegistryMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
-	return &ERC20RegistryPrecompile{ABI: abi, k: k}, nil
-}
-
-func (e *ERC20RegistryPrecompile) SetStateDB(stateDB types.StateDB) {
-	e.stateDB = stateDB
+func NewERC20RegistryPrecompile(stateDB types.StateDB, k types.IERC20StoresKeeper) (*ERC20RegistryPrecompile, error) {
+	return &ERC20RegistryPrecompile{stateDB: stateDB, ABI: erc20RegistryABI, k: k}, nil
 }
 
 const (
@@ -60,6 +60,13 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 		}
 
 		if err != nil {
+			// convert cosmos error to EVM error
+			if err != vm.ErrOutOfGas {
+				resBz = types.NewRevertReason(err)
+				err = vm.ErrExecutionReverted
+			}
+
+			// revert the stateDB to the snapshot
 			e.stateDB.RevertToSnapshot(snapshot)
 		}
 	}()

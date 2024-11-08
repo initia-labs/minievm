@@ -90,10 +90,6 @@ type StateDB interface {
 	ContextOfSnapshot(i int) sdk.Context
 }
 
-type SetStateDB interface {
-	SetStateDB(stateDB StateDB)
-}
-
 type GRPCRouter interface {
 	Route(path string) baseapp.GRPCQueryHandler
 }

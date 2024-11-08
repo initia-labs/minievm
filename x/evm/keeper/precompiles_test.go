@@ -6,13 +6,18 @@ import (
 
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/vm"
+
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -198,4 +203,47 @@ func Test_ToERC20(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, contractAddr, unpackedRet[0].(common.Address))
+}
+
+func Test_PrecompileRevertError(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	// deploy counter contract
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	// call execute cosmos function
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	denom := sdk.DefaultBondDenom
+	amount := math.NewInt(1000000000)
+	input.Faucet.Mint(ctx, contractAddr.Bytes(), sdk.NewCoin(denom, amount))
+
+	// call execute_cosmos with revert
+	inputBz, err := parsed.Pack("execute_cosmos",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			addr.String(), // try to call with wrong signer
+			addr.String(), // caller
+			denom,
+			amount,
+		),
+		false,
+	)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, sdkerrors.ErrUnauthorized.Error())
+
+	// check balance
+	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
+	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
 }
