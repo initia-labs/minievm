@@ -85,10 +85,6 @@ func NewStateDB(
 	if err != nil {
 		return nil, err
 	}
-	err = transientLogSize.Set(ctx, eidx, 0)
-	if err != nil {
-		return nil, err
-	}
 	err = transientRefund.Set(ctx, eidx, 0)
 	if err != nil {
 		return nil, err
