@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"sync/atomic"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
@@ -49,7 +50,7 @@ type Keeper struct {
 
 	// execIndex is unique index for each execution, which is used
 	// unique key for transient stores.
-	execIndex *uint64
+	execIndex *atomic.Uint64
 
 	// transient store
 	TSchema               collections.Schema
@@ -109,7 +110,8 @@ func NewKeeper(
 		panic(err)
 	}
 
-	execIndex := uint64(0)
+	execIndex := &atomic.Uint64{}
+	execIndex.Store(0)
 	k := &Keeper{
 		ac:           ac,
 		cdc:          cdc,
@@ -130,7 +132,7 @@ func NewKeeper(
 		Params:  collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		VMStore: collections.NewMap(sb, types.VMStorePrefix, "vm_store", collections.BytesKey, collections.BytesValue),
 
-		execIndex: &execIndex,
+		execIndex: execIndex,
 
 		TransientVMStore:      collections.NewMap(tsb, types.TransientVMStorePrefix, "transient_vm_store", collections.PairKeyCodec(collections.Uint64Key, collections.BytesKey), collections.BytesValue),
 		TransientCreated:      collections.NewKeySet(tsb, types.TransientCreatedPrefix, "transient_created", collections.PairKeyCodec(collections.Uint64Key, collections.BytesKey)),
