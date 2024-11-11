@@ -73,19 +73,15 @@ func NewStateDB(
 	transientLogSize collections.Map[uint64, uint64],
 	transientAccessList collections.KeySet[collections.Pair[uint64, []byte]],
 	transientRefund collections.Map[uint64, uint64],
-	execIndex *uint64,
+	execIndex *atomic.Uint64,
 	// erc20 params
 	evm callableEVM,
 	erc20ABI *abi.ABI,
 	feeContractAddr common.Address,
 ) (*StateDB, error) {
-	eidx := atomic.AddUint64(execIndex, 1)
+	eidx := execIndex.Add(1)
 
 	err := transientLogSize.Set(ctx, eidx, 0)
-	if err != nil {
-		return nil, err
-	}
-	err = transientLogSize.Set(ctx, eidx, 0)
 	if err != nil {
 		return nil, err
 	}
