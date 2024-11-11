@@ -18,6 +18,11 @@ interface ICosmos {
         address account
     ) external view returns (bool module);
 
+    // check if an address is a authority address
+    function is_authority_address(
+        address account
+    ) external view returns (bool authority);
+
     // convert an EVM address to a Cosmos address
     function to_cosmos_address(
         address evm_address

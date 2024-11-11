@@ -16,6 +16,11 @@ type IsModuleAddressArguments struct {
 	Address common.Address `abi:"address"`
 }
 
+// IsAuthorityAddressArguments is the arguments for the is_authority_address method.
+type IsAuthorityAddressArguments struct {
+	Address common.Address `abi:"address"`
+}
+
 // ToCosmosAddressArguments is the arguments for the to_cosmos_address method.
 type ToCosmosAddressArguments struct {
 	EVMAddress common.Address `abi:"evm_address"`
@@ -53,8 +58,9 @@ type ToERC20Arguments struct {
 }
 
 const (
-	IS_BLOCKED_ADDRESS_GAS storetypes.Gas = 100
-	IS_MODULE_ADDRESS_GAS  storetypes.Gas = 200
+	IS_BLOCKED_ADDRESS_GAS   storetypes.Gas = 100
+	IS_MODULE_ADDRESS_GAS    storetypes.Gas = 200
+	IS_AUTHORITY_ADDRESS_GAS storetypes.Gas = 200
 
 	TO_COSMOS_ADDRESS_GAS storetypes.Gas = 200
 	TO_EVM_ADDRESS_GAS    storetypes.Gas = 200
@@ -69,8 +75,9 @@ const (
 )
 
 const (
-	METHOD_IS_BLOCKED_ADDRESS = "is_blocked_address"
-	METHOD_IS_MODULE_ADDRESS  = "is_module_address"
+	METHOD_IS_BLOCKED_ADDRESS   = "is_blocked_address"
+	METHOD_IS_MODULE_ADDRESS    = "is_module_address"
+	METHOD_IS_AUTHORITY_ADDRESS = "is_authority_address"
 
 	METHOD_TO_COSMOS_ADDRESS = "to_cosmos_address"
 	METHOD_TO_EVM_ADDRESS    = "to_evm_address"

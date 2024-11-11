@@ -15,6 +15,15 @@ contract ERC20ACL {
         _;
     }
 
+    modifier onlyAuthority() {
+        require(
+            COSMOS_CONTRACT.is_authority_address(msg.sender),
+            "ERC20: caller is not the authority"
+        );
+
+        _;
+    }
+
     // check if the sender is a module address
     modifier burnable(address from) {
         require(

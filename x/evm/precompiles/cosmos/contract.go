@@ -48,6 +48,8 @@ type CosmosPrecompile struct {
 	grpcRouter types.GRPCRouter
 
 	queryWhitelist types.QueryCosmosWhitelist
+
+	authorityAddr sdk.AccAddress
 }
 
 func NewCosmosPrecompile(
@@ -59,7 +61,13 @@ func NewCosmosPrecompile(
 	edk types.ERC20DenomKeeper,
 	grpcRouter types.GRPCRouter,
 	queryWhitelist types.QueryCosmosWhitelist,
+	authority string,
 ) (*CosmosPrecompile, error) {
+	authorityAddr, err := sdk.AccAddressFromBech32(authority)
+	if err != nil {
+		return nil, err
+	}
+
 	return &CosmosPrecompile{
 		ABI:            erc20CosmosABI,
 		cdc:            cdc,
@@ -70,6 +78,7 @@ func NewCosmosPrecompile(
 		stateDB:        stateDB,
 		grpcRouter:     grpcRouter,
 		queryWhitelist: queryWhitelist,
+		authorityAddr:  authorityAddr,
 	}, nil
 }
 
@@ -171,6 +180,28 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 
 		// abi encode the response
 		resBz, err = method.Outputs.Pack(isModuleAccount)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+	case METHOD_IS_AUTHORITY_ADDRESS:
+		ctx.GasMeter().ConsumeGas(IS_AUTHORITY_ADDRESS_GAS, "is_authority_address")
+
+		var isAuthorityAddressArguments IsAuthorityAddressArguments
+		if err := method.Inputs.Copy(&isAuthorityAddressArguments, args); err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		// convert shorthand account to original address
+		addr, err := e.originAddress(ctx, isAuthorityAddressArguments.Address.Bytes())
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+
+		// check if the address is the authority address
+		isAuthorityAddr := addr.Equals(e.authorityAddr)
+
+		// abi encode the response
+		resBz, err = method.Outputs.Pack(isAuthorityAddr)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}

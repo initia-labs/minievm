@@ -17,11 +17,11 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, denom string) common.Address {
+func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, symbol string) common.Address {
 	abi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
 	require.NoError(t, err)
 
-	inputBz, err := abi.Pack("createERC20", denom, denom, uint8(6))
+	inputBz, err := abi.Pack("createERC20", symbol, symbol, uint8(6))
 	require.NoError(t, err)
 
 	factoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
@@ -128,6 +128,20 @@ func transferFromERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller,
 	} else {
 		require.NoError(t, err)
 	}
+}
+
+func updateMetadataERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, denom, name, symbol string, decimals uint8) error {
+	abi, err := erc20.Erc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("updateMetadata", name, symbol, decimals)
+	require.NoError(t, err)
+
+	erc20ContractAddr, err := types.DenomToContractAddr(ctx, &input.EVMKeeper, denom)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, erc20ContractAddr, inputBz, nil, nil)
+	return err
 }
 
 func Test_BalanceOf(t *testing.T) {
@@ -502,4 +516,45 @@ func Test_Approve(t *testing.T) {
 
 	// should fail to transferFrom more than approved
 	transferFromERC20(t, ctx, input, evmAddr2, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), true)
+}
+
+func Test_ERC20MetadataUpdate(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	evmAddr := common.BytesToAddress(addr.Bytes())
+	authorityAddr, err := input.AccountKeeper.AddressCodec().StringToBytes(input.EVMKeeper.GetAuthority())
+	require.NoError(t, err)
+	authorityEVMAddr := common.BytesToAddress(authorityAddr)
+
+	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
+	require.NoError(t, err)
+
+	// deploy erc20 contract
+	fooContractAddr := deployERC20(t, ctx, input, evmAddr, "foo")
+	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
+
+	// update metadata should fail because deployer is not 0x1
+	err = updateMetadataERC20(t, ctx, input, authorityEVMAddr, fooDenom, "new name", "new symbol", 18)
+	require.Error(t, err)
+
+	// create erc20 contract with deployer 0x1
+	fooDenom = "foo"
+	err = input.EVMKeeper.ERC20Keeper().CreateERC20(ctx, fooDenom, 6)
+	require.NoError(t, err)
+
+	// update metadata
+	err = updateMetadataERC20(t, ctx, input, authorityEVMAddr, fooDenom, "new name", "new symbol", 18)
+	require.NoError(t, err)
+	metadata, err := erc20Keeper.GetMetadata(ctx, fooDenom)
+	require.NoError(t, err)
+	require.Equal(t, "new name", metadata.Name)
+	require.Equal(t, "new symbol", metadata.Symbol)
+	require.Equal(t, uint32(18), metadata.DenomUnits[1].Exponent)
+
+	// update metadata again should fail
+	err = updateMetadataERC20(t, ctx, input, authorityEVMAddr, fooDenom, "new name", "new symbol", 18)
+	require.Error(t, err)
 }
