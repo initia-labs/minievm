@@ -79,10 +79,7 @@ func (suite *AnteTestSuite) SetupTest() {
 }
 
 // CreateTestTx is a helper function to create a tx given multiple inputs.
-func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []uint64, accSeqs []uint64, chainID string) (authsign.Tx, error) {
-	defaultSignMode, err := authsign.APISignModeToInternal(suite.clientCtx.TxConfig.SignModeHandler().DefaultMode())
-	suite.NoError(err)
-
+func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []uint64, accSeqs []uint64, chainID string, signMode signing.SignMode) (authsign.Tx, error) {
 	// First round: we gather all the signer infos. We use the "set empty
 	// signature" hack to do that.
 	var sigsV2 []signing.SignatureV2
@@ -91,7 +88,7 @@ func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []
 		sigV2 := signing.SignatureV2{
 			PubKey: priv.PubKey(),
 			Data: &signing.SingleSignatureData{
-				SignMode:  defaultSignMode,
+				SignMode:  signMode,
 				Signature: nil,
 			},
 			Sequence: accSeqs[i],
@@ -99,7 +96,7 @@ func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []
 
 		sigsV2 = append(sigsV2, sigV2)
 	}
-	err = suite.txBuilder.SetSignatures(sigsV2...)
+	err := suite.txBuilder.SetSignatures(sigsV2...)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +112,7 @@ func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []
 			PubKey:        priv.PubKey(),
 		}
 		sigV2, err := tx.SignWithPrivKey(
-			context.TODO(), defaultSignMode, signerData,
+			context.TODO(), signMode, signerData,
 			suite.txBuilder, priv, suite.clientCtx.TxConfig, accSeqs[i])
 		if err != nil {
 			return nil, err
