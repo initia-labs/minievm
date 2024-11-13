@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"slices"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -42,6 +44,6 @@ func (k *Keeper) precompiles(rules params.Rules, stateDB types.StateDB) (vm.Prec
 
 // PrecompileAddrs returns the precompile addresses for the EVM.
 func (k *Keeper) precompileAddrs(rules params.Rules) []common.Address {
-	addrs := append(vm.ActivePrecompiles(rules), types.CosmosPrecompileAddress, types.ERC20RegistryPrecompileAddress)
+	addrs := append(slices.Clone(vm.ActivePrecompiles(rules)), types.CosmosPrecompileAddress, types.ERC20RegistryPrecompileAddress)
 	return addrs
 }
