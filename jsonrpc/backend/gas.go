@@ -39,7 +39,7 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 		return hexutil.Uint64(0), err
 	}
 
-	_, decimals, err := b.feeDenomWithDecimals()
+	_, feeDecimals, err := b.feeInfo()
 	if err != nil {
 		return hexutil.Uint64(0), err
 	}
@@ -49,14 +49,14 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 		sdkMsgs = append(sdkMsgs, &types.MsgCreate{
 			Sender: sender,
 			Code:   hexutil.Encode(args.GetData()),
-			Value:  math.NewIntFromBigInt(types.FromEthersUnit(decimals, args.Value.ToInt())),
+			Value:  math.NewIntFromBigInt(types.FromEthersUnit(feeDecimals, args.Value.ToInt())),
 		})
 	} else {
 		sdkMsgs = append(sdkMsgs, &types.MsgCall{
 			Sender:       sender,
 			ContractAddr: args.To.Hex(),
 			Input:        hexutil.Encode(args.GetData()),
-			Value:        math.NewIntFromBigInt(types.FromEthersUnit(decimals, args.Value.ToInt())),
+			Value:        math.NewIntFromBigInt(types.FromEthersUnit(feeDecimals, args.Value.ToInt())),
 		})
 	}
 
@@ -90,39 +90,6 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 	return hexutil.Uint64(gasInfo.GasUsed), nil
 }
 
-func (b *JSONRPCBackend) feeDenom() (string, error) {
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return "", err
-	}
-
-	params, err := b.app.EVMKeeper.Params.Get(queryCtx)
-	if err != nil {
-		return "", err
-	}
-
-	return params.FeeDenom, nil
-}
-
-func (b *JSONRPCBackend) feeDenomWithDecimals() (string, uint8, error) {
-	feeDenom, err := b.feeDenom()
-	if err != nil {
-		return "", 0, err
-	}
-
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return "", 0, err
-	}
-
-	decimals, err := b.app.EVMKeeper.ERC20Keeper().GetDecimals(queryCtx, feeDenom)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return feeDenom, decimals, nil
-}
-
 func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
@@ -134,17 +101,26 @@ func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {
 		return nil, err
 	}
 
-	feeDenom, decimals, err := b.feeDenomWithDecimals()
+	feeDenom, feeDecimals, err := b.feeInfo()
 	if err != nil {
 		return nil, err
 	}
 
+	// Multiply by 1e9 to maintain precision during conversion
+	// This adds 9 decimal places to prevent truncation errors
+	const precisionMultiplier = 1e9
+
 	// multiply by 1e9 to prevent decimal drops
 	gasPrice := params.MinGasPrices.AmountOf(feeDenom).
-		MulTruncate(math.LegacyNewDec(1e9)).
+		MulTruncate(math.LegacyNewDec(precisionMultiplier)).
 		TruncateInt().BigInt()
 
-	return (*hexutil.Big)(types.ToEthersUint(decimals+9, gasPrice)), nil
+	// Verify the result is within safe bounds
+	if gasPrice.BitLen() > 256 {
+		return nil, NewInternalError("gas price overflow")
+	}
+
+	return (*hexutil.Big)(types.ToEthersUint(feeDecimals+9, gasPrice)), nil
 }
 
 func (b *JSONRPCBackend) MaxPriorityFeePerGas() (*hexutil.Big, error) {
