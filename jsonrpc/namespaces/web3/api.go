@@ -25,9 +25,9 @@ type Web3API struct {
 }
 
 // NewWeb3API creates a new net API instance
-func NewWeb3API(logger log.Logger, backend *backend.JSONRPCBackend) *Web3API {
+func NewWeb3API(ctx context.Context, logger log.Logger, backend *backend.JSONRPCBackend) *Web3API {
 	return &Web3API{
-		ctx:     context.TODO(),
+		ctx:     ctx,
 		logger:  logger,
 		backend: backend,
 	}

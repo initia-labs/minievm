@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -39,6 +40,10 @@ type JSONRPCBackend struct {
 	txLookupCache *lru.Cache[common.Hash, *rpctypes.RPCTransaction]
 	receiptCache  *lru.Cache[common.Hash, *coretypes.Receipt]
 
+	// fee cache
+	feeDenom    string
+	feeDecimals uint8
+
 	mut     sync.Mutex // mutex for accMuts
 	accMuts map[string]*AccMut
 
@@ -65,6 +70,7 @@ const (
 
 // NewJSONRPCBackend creates a new JSONRPCBackend instance
 func NewJSONRPCBackend(
+	ctx context.Context,
 	app *app.MinitiaApp,
 	logger log.Logger,
 	svrCtx *server.Context,
@@ -86,8 +92,7 @@ func NewJSONRPCBackend(
 		return nil, err
 	}
 
-	ctx := context.Background()
-	return &JSONRPCBackend{
+	b := &JSONRPCBackend{
 		app:    app,
 		logger: logger,
 
@@ -113,7 +118,57 @@ func NewJSONRPCBackend(
 		svrCtx:    svrCtx,
 		clientCtx: clientCtx,
 		cfg:       cfg,
-	}, nil
+	}
+
+	// start fee fetcher
+	go b.feeFetcher()
+
+	return b, nil
+}
+
+func (b *JSONRPCBackend) feeFetcher() {
+	fetcher := func() (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("feeFetcher panic: %v", r)
+			}
+		}()
+
+		queryCtx, err := b.getQueryCtx()
+		if err != nil {
+			return err
+		}
+
+		params, err := b.app.EVMKeeper.Params.Get(queryCtx)
+		if err != nil {
+			return err
+		}
+
+		feeDenom := params.FeeDenom
+		decimals, err := b.app.EVMKeeper.ERC20Keeper().GetDecimals(queryCtx, feeDenom)
+		if err != nil {
+			return err
+		}
+
+		b.feeDenom = feeDenom
+		b.feeDecimals = decimals
+
+		return nil
+	}
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := fetcher(); err != nil {
+				b.logger.Error("failed to fetch fee", "err", err)
+			}
+		case <-b.ctx.Done():
+			return
+		}
+	}
 }
 
 type AccMut struct {
