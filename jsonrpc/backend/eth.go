@@ -26,16 +26,17 @@ func (b *JSONRPCBackend) GetBalance(address common.Address, blockNrOrHash rpc.Bl
 	}
 
 	// jsonrpc is not ready for querying
-	if b.feeDenom == "" {
-		return nil, errors.New("jsonrpc is not ready")
-	}
-
-	balance, err := b.app.EVMKeeper.ERC20Keeper().GetBalance(queryCtx, sdk.AccAddress(address[:]), b.feeDenom)
+	feeDenom, feeDecimals, err := b.feeInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	return (*hexutil.Big)(types.ToEthersUint(b.feeDecimals, balance.BigInt())), nil
+	balance, err := b.app.EVMKeeper.ERC20Keeper().GetBalance(queryCtx, sdk.AccAddress(address[:]), feeDenom)
+	if err != nil {
+		return nil, err
+	}
+
+	return (*hexutil.Big)(types.ToEthersUint(feeDecimals, balance.BigInt())), nil
 }
 
 func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash, overrides *rpctypes.StateOverride, blockOverrides *rpctypes.BlockOverrides) (hexutil.Bytes, error) {

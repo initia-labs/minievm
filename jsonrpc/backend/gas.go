@@ -40,8 +40,9 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 	}
 
 	// jsonrpc is not ready for querying
-	if b.feeDenom == "" {
-		return hexutil.Uint64(0), NewInternalError("jsonrpc is not ready")
+	_, feeDecimals, err := b.feeInfo()
+	if err != nil {
+		return hexutil.Uint64(0), err
 	}
 
 	sdkMsgs := []sdk.Msg{}
@@ -49,14 +50,14 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 		sdkMsgs = append(sdkMsgs, &types.MsgCreate{
 			Sender: sender,
 			Code:   hexutil.Encode(args.GetData()),
-			Value:  math.NewIntFromBigInt(types.FromEthersUnit(b.feeDecimals, args.Value.ToInt())),
+			Value:  math.NewIntFromBigInt(types.FromEthersUnit(feeDecimals, args.Value.ToInt())),
 		})
 	} else {
 		sdkMsgs = append(sdkMsgs, &types.MsgCall{
 			Sender:       sender,
 			ContractAddr: args.To.Hex(),
 			Input:        hexutil.Encode(args.GetData()),
-			Value:        math.NewIntFromBigInt(types.FromEthersUnit(b.feeDecimals, args.Value.ToInt())),
+			Value:        math.NewIntFromBigInt(types.FromEthersUnit(feeDecimals, args.Value.ToInt())),
 		})
 	}
 
@@ -102,16 +103,26 @@ func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {
 	}
 
 	// jsonrpc is not ready for querying
-	if b.feeDenom == "" {
-		return nil, NewInternalError("jsonrpc is not ready")
+	feeDenom, feeDecimals, err := b.feeInfo()
+	if err != nil {
+		return nil, err
 	}
 
+	// Multiply by 1e9 to maintain precision during conversion
+	// This adds 9 decimal places to prevent truncation errors
+	const precisionMultiplier = 1e9
+
 	// multiply by 1e9 to prevent decimal drops
-	gasPrice := params.MinGasPrices.AmountOf(b.feeDenom).
-		MulTruncate(math.LegacyNewDec(1e9)).
+	gasPrice := params.MinGasPrices.AmountOf(feeDenom).
+		MulTruncate(math.LegacyNewDec(precisionMultiplier)).
 		TruncateInt().BigInt()
 
-	return (*hexutil.Big)(types.ToEthersUint(b.feeDecimals+9, gasPrice)), nil
+	// Verify the result is within safe bounds
+	if gasPrice.BitLen() > 256 {
+		return nil, NewInternalError("gas price overflow")
+	}
+
+	return (*hexutil.Big)(types.ToEthersUint(feeDecimals+9, gasPrice)), nil
 }
 
 func (b *JSONRPCBackend) MaxPriorityFeePerGas() (*hexutil.Big, error) {

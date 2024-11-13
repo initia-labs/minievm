@@ -43,6 +43,7 @@ type JSONRPCBackend struct {
 	// fee cache
 	feeDenom    string
 	feeDecimals uint8
+	feeMutex    sync.RWMutex
 
 	mut     sync.Mutex // mutex for accMuts
 	accMuts map[string]*AccMut
@@ -126,6 +127,17 @@ func NewJSONRPCBackend(
 	return b, nil
 }
 
+func (b *JSONRPCBackend) feeInfo() (string, uint8, error) {
+	b.feeMutex.RLock()
+	defer b.feeMutex.RUnlock()
+
+	if b.feeDenom == "" {
+		return "", 0, NewInternalError("jsonrpc is not ready")
+	}
+
+	return b.feeDenom, b.feeDecimals, nil
+}
+
 func (b *JSONRPCBackend) feeFetcher() {
 	fetcher := func() (err error) {
 		defer func() {
@@ -150,8 +162,10 @@ func (b *JSONRPCBackend) feeFetcher() {
 			return err
 		}
 
+		b.feeMutex.Lock()
 		b.feeDenom = feeDenom
 		b.feeDecimals = decimals
+		b.feeMutex.Unlock()
 
 		return nil
 	}
