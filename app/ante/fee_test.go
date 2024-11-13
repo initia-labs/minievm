@@ -6,6 +6,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	"github.com/initia-labs/minievm/app/ante"
 )
@@ -33,7 +34,9 @@ func (suite *AnteTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {
 	suite.txBuilder.SetGasLimit(gasLimit)
 
 	privs, accNums, accSeqs := []cryptotypes.PrivKey{priv1}, []uint64{0}, []uint64{0}
-	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID())
+	defaultSignMode, err := authsign.APISignModeToInternal(suite.app.TxConfig().SignModeHandler().DefaultMode())
+	suite.NoError(err)
+	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID(), defaultSignMode)
 	suite.Require().NoError(err)
 
 	gasMeter := storetypes.NewGasMeter(500000)
