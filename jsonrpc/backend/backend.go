@@ -156,7 +156,7 @@ func (b *JSONRPCBackend) feeFetcher() {
 		return nil
 	}
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for {
