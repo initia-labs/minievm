@@ -25,7 +25,6 @@ func (b *JSONRPCBackend) GetBalance(address common.Address, blockNrOrHash rpc.Bl
 		return nil, err
 	}
 
-	// jsonrpc is not ready for querying
 	feeDenom, feeDecimals, err := b.feeInfo()
 	if err != nil {
 		return nil, err

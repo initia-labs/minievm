@@ -39,7 +39,6 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 		return hexutil.Uint64(0), err
 	}
 
-	// jsonrpc is not ready for querying
 	_, feeDecimals, err := b.feeInfo()
 	if err != nil {
 		return hexutil.Uint64(0), err
@@ -102,7 +101,6 @@ func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {
 		return nil, err
 	}
 
-	// jsonrpc is not ready for querying
 	feeDenom, feeDecimals, err := b.feeInfo()
 	if err != nil {
 		return nil, err
