@@ -32,9 +32,9 @@ type TxPoolAPI struct {
 }
 
 // NewTxPoolAPI creates a new txpool API instance.
-func NewTxPoolAPI(logger log.Logger, backend *backend.JSONRPCBackend) *TxPoolAPI {
+func NewTxPoolAPI(ctx context.Context, logger log.Logger, backend *backend.JSONRPCBackend) *TxPoolAPI {
 	return &TxPoolAPI{
-		ctx:     context.TODO(),
+		ctx:     ctx,
 		logger:  logger,
 		backend: backend,
 	}

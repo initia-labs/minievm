@@ -64,7 +64,7 @@ func StartJSONRPC(
 	rpcServer := rpc.NewServer()
 	rpcServer.SetBatchLimits(jsonRPCConfig.BatchRequestLimit, jsonRPCConfig.BatchResponseMaxSize)
 
-	bkd, err := backend.NewJSONRPCBackend(app, logger, svrCtx, clientCtx, jsonRPCConfig)
+	bkd, err := backend.NewJSONRPCBackend(ctx, app, logger, svrCtx, clientCtx, jsonRPCConfig)
 	if err != nil {
 		return err
 	}
@@ -73,37 +73,37 @@ func StartJSONRPC(
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   ethns.NewEthAPI(logger, bkd),
+			Service:   ethns.NewEthAPI(ctx, logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   filters.NewFilterAPI(app, bkd, logger),
+			Service:   filters.NewFilterAPI(ctx, app, bkd, logger),
 			Public:    true,
 		},
 		{
 			Namespace: NetNamespace,
 			Version:   apiVersion,
-			Service:   netns.NewNetAPI(logger, bkd),
+			Service:   netns.NewNetAPI(ctx, logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: Web3Namespace,
 			Version:   apiVersion,
-			Service:   web3ns.NewWeb3API(logger, bkd),
+			Service:   web3ns.NewWeb3API(ctx, logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
-			Service:   txpoolns.NewTxPoolAPI(logger, bkd),
+			Service:   txpoolns.NewTxPoolAPI(ctx, logger, bkd),
 			Public:    true,
 		},
 		{
 			Namespace: CosmosNamespace,
 			Version:   apiVersion,
-			Service:   cosmosns.NewCosmosAPI(logger, bkd),
+			Service:   cosmosns.NewCosmosAPI(ctx, logger, bkd),
 			Public:    true,
 		},
 	}

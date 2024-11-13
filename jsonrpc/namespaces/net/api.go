@@ -24,9 +24,9 @@ type NetAPI struct {
 }
 
 // NewNetAPI creates a new net API instance
-func NewNetAPI(logger log.Logger, backend *backend.JSONRPCBackend) *NetAPI {
+func NewNetAPI(ctx context.Context, logger log.Logger, backend *backend.JSONRPCBackend) *NetAPI {
 	return &NetAPI{
-		ctx:     context.TODO(),
+		ctx:     ctx,
 		logger:  logger,
 		backend: backend,
 	}
