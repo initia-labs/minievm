@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -55,6 +56,7 @@ func Fuzz_Concurrent_Counter(f *testing.F) {
 		for i := uint8(0); i < numThread; i++ {
 			wg.Add(1)
 			cacheCtx, _ := ctx.CacheContext()
+			cacheCtx = cacheCtx.WithGasMeter(storetypes.NewInfiniteGasMeter())
 			cacheCtxes[i] = cacheCtx
 			go func(ctx sdk.Context) {
 				defer wg.Done()
