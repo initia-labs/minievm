@@ -201,6 +201,9 @@ contracts-gen: $(CONTRACTS_DIR)/*
 benchmark:
 	@go test -timeout 20m -mod=readonly -bench=. ./... 
 
+fuzz:
+	@go test --timeout 2m -mod=readonly -fuzz=Fuzz ./x/evm/keeper
+
 .PHONY: test test-all test-cover test-unit test-race benchmark contracts-gen
 
 ###############################################################################
