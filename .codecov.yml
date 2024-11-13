@@ -36,3 +36,4 @@ ignore:
   - "**/module.go"
   - "x/ibc/testing"
   - "x/evm/contracts"
+  - "**/*.sol"
