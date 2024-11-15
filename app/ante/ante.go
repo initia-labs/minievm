@@ -44,17 +44,23 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	if options.AccountKeeper == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "account keeper is required for ante builder")
 	}
-
 	if options.BankKeeper == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "bank keeper is required for ante builder")
 	}
-
 	if options.SignModeHandler == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "sign mode handler is required for ante builder")
 	}
-
 	if options.EVMKeeper == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "EVM keeper is required for ante builder")
+	}
+	if options.IBCkeeper == nil {
+		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "IBC keeper is required for ante builder")
+	}
+	if options.OPChildKeeper == nil {
+		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "OPChild keeper is required for ante builder")
+	}
+	if options.AuctionKeeper == nil {
+		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "Auction keeper is required for ante builder")
 	}
 
 	sigGasConsumer := options.SigGasConsumer
