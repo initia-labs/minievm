@@ -411,7 +411,7 @@ func (api *EthAPI) GetUncleCountByBlockNumber(_ rpc.BlockNumber) hexutil.Uint {
 }
 
 // *************************************
-// *             pow(leagcy)           *
+// *             pow(legacy)           *
 // *************************************
 
 // Hashrate returns the current node's hashrate. Always 0.

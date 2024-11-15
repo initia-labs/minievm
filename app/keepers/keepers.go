@@ -235,7 +235,7 @@ func NewAppKeeper(
 	appKeepers.OracleKeeper = &oracleKeeper
 
 	// Add the oracle keeper as a hook to market map keeper so new market map entries can be created
-	// and propogated to the oracle keeper.
+	// and propagated to the oracle keeper.
 	appKeepers.MarketMapKeeper.SetHooks(appKeepers.OracleKeeper.Hooks())
 
 	appKeepers.OPChildKeeper = opchildkeeper.NewKeeper(
