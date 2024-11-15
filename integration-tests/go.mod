@@ -9,7 +9,7 @@ require (
 	github.com/cometbft/cometbft v0.38.12
 	github.com/cosmos/cosmos-sdk v0.50.10
 	github.com/cosmos/ibc-go/v8 v8.5.0
-	github.com/ethereum/go-ethereum v1.14.9
+	github.com/ethereum/go-ethereum v1.14.11
 	github.com/initia-labs/initia v0.6.1
 	github.com/initia-labs/minievm v0.5.2
 	github.com/stretchr/testify v1.9.0
