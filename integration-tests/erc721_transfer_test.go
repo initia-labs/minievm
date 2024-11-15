@@ -71,11 +71,11 @@ func (suite *KeeperTestSuite) convertAppToMApp(chain *ibctesting.TestChain) {
 		genBals[i] = balance
 	}
 
-	map := minievmapp.SetupWithGenesisAccounts(chain.Vals.Copy(), genAccs, genBals...)
-	baseapp.SetChainID(chain.ChainID)(map.GetBaseApp())
-	chain.App = map
-	chain.Codec = map.AppCodec()
-	chain.TxConfig = map.TxConfig()
+	miniApp := minievmapp.SetupWithGenesisAccounts(chain.Vals.Copy(), genAccs, genBals...)
+	baseapp.SetChainID(chain.ChainID)(miniApp.GetBaseApp())
+	chain.App = miniApp
+	chain.Codec = miniApp.AppCodec()
+	chain.TxConfig = miniApp.TxConfig()
 
 	chain.CurrentHeader = cmtproto.Header{
 		ChainID:            chain.ChainID,
