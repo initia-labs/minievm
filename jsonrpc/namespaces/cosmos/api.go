@@ -17,9 +17,9 @@ type CosmosAPI struct {
 }
 
 // NewCosmosAPI creates an instance of the public ETH Web3 API.
-func NewCosmosAPI(logger log.Logger, backend *backend.JSONRPCBackend) *CosmosAPI {
+func NewCosmosAPI(ctx context.Context, logger log.Logger, backend *backend.JSONRPCBackend) *CosmosAPI {
 	api := &CosmosAPI{
-		ctx:     context.TODO(),
+		ctx:     ctx,
 		logger:  logger.With("client", "json-rpc"),
 		backend: backend,
 	}

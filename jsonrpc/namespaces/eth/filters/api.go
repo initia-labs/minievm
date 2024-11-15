@@ -42,6 +42,8 @@ type filter struct {
 
 // FilterAPI is the eth_ filter namespace API
 type FilterAPI struct {
+	ctx context.Context
+
 	app     *app.MinitiaApp
 	backend *backend.JSONRPCBackend
 
@@ -63,9 +65,11 @@ type FilterAPI struct {
 }
 
 // NewFiltersAPI returns a new instance
-func NewFilterAPI(app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger log.Logger) *FilterAPI {
+func NewFilterAPI(ctx context.Context, app *app.MinitiaApp, backend *backend.JSONRPCBackend, logger log.Logger) *FilterAPI {
 	logger = logger.With("api", "filter")
 	api := &FilterAPI{
+		ctx: ctx,
+
 		app:     app,
 		backend: backend,
 
@@ -98,23 +102,27 @@ func (api *FilterAPI) clearUnusedFilters() {
 
 	var toUninstall []*subscription
 	for {
-		<-ticker.C
-		api.filtersMut.Lock()
-		for id, f := range api.filters {
-			if time.Since(f.lastUsed) > timeout {
-				toUninstall = append(toUninstall, f.s)
-				delete(api.filters, id)
+		select {
+		case <-ticker.C:
+			api.filtersMut.Lock()
+			for id, f := range api.filters {
+				if time.Since(f.lastUsed) > timeout {
+					toUninstall = append(toUninstall, f.s)
+					delete(api.filters, id)
+				}
 			}
-		}
-		api.filtersMut.Unlock()
+			api.filtersMut.Unlock()
 
-		// Unsubscribes are processed outside the lock to avoid the following scenario:
-		// event loop attempts broadcasting events to still active filters while
-		// Unsubscribe is waiting for it to process the uninstall request.
-		for _, s := range toUninstall {
-			api.uninstallSubscription(s)
+			// Unsubscribes are processed outside the lock to avoid the following scenario:
+			// event loop attempts broadcasting events to still active filters while
+			// Unsubscribe is waiting for it to process the uninstall request.
+			for _, s := range toUninstall {
+				api.uninstallSubscription(s)
+			}
+			toUninstall = nil
+		case <-api.ctx.Done():
+			return
 		}
-		toUninstall = nil
 	}
 }
 
@@ -155,6 +163,8 @@ func (api *FilterAPI) eventLoop() {
 		case s := <-api.uninstall:
 			delete(api.subscriptions, s.id)
 			close(s.err)
+		case <-api.ctx.Done():
+			return
 		}
 	}
 }

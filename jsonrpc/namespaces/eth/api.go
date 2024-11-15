@@ -107,9 +107,9 @@ type EthAPI struct {
 }
 
 // NewEthAPI creates an instance of the public ETH Web3 API.
-func NewEthAPI(logger log.Logger, backend *backend.JSONRPCBackend) *EthAPI {
+func NewEthAPI(ctx context.Context, logger log.Logger, backend *backend.JSONRPCBackend) *EthAPI {
 	api := &EthAPI{
-		ctx:     context.TODO(),
+		ctx:     ctx,
 		logger:  logger.With("client", "json-rpc"),
 		backend: backend,
 	}
