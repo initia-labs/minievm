@@ -73,6 +73,11 @@ func (m *MockStateDB) ContextOfSnapshot(i int) sdk.Context {
 	return m.snaps[i].Context()
 }
 
+// Context implements types.StateDB.
+func (m *MockStateDB) Context() sdk.Context {
+	return m.ctx
+}
+
 //////////////////////// MOCKED METHODS ////////////////////////
 
 // AddAddressToAccessList implements types.StateDB.

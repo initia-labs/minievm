@@ -25,11 +25,6 @@ import (
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
-type callableEVM interface {
-	Call(vm.ContractRef, common.Address, []byte, uint64, *uint256.Int) ([]byte, uint64, error)
-	StaticCall(vm.ContractRef, common.Address, []byte, uint64) ([]byte, uint64, error)
-}
-
 var _ vm.StateDB = &StateDB{}
 
 type StateDB struct {
@@ -48,7 +43,7 @@ type StateDB struct {
 	transientRefund       collections.Map[uint64, uint64]
 	execIndex             uint64
 
-	evm             callableEVM
+	evm             *vm.EVM
 	erc20ABI        *abi.ABI
 	feeContractAddr common.Address // feeDenom contract address
 
@@ -75,7 +70,7 @@ func NewStateDB(
 	transientRefund collections.Map[uint64, uint64],
 	execIndex *atomic.Uint64,
 	// erc20 params
-	evm callableEVM,
+	evm *vm.EVM,
 	erc20ABI *abi.ABI,
 	feeContractAddr common.Address,
 ) (*StateDB, error) {
@@ -130,7 +125,6 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 		s.logger.Warn("failed to mint token", "error", err)
 		panic(err)
 	}
-
 }
 
 // SubBalance burn coins from the account with addr
@@ -585,12 +579,18 @@ func (s *StateDB) RevertToSnapshot(i int) {
 	s.snaps = s.snaps[:i]
 }
 
+// ContextOfSnapshot returns the context of the snapshot with the given id
 func (s *StateDB) ContextOfSnapshot(i int) sdk.Context {
 	if i == -1 {
 		return s.initialCtx
 	}
 
 	return s.snaps[i].ctx
+}
+
+// Context returns the current context
+func (s *StateDB) Context() sdk.Context {
+	return s.ctx
 }
 
 // Prepare handles the preparatory steps for executing a state transition with.
