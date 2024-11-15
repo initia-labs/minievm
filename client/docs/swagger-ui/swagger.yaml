@@ -38209,6 +38209,10 @@ paths:
                     items:
                       type: string
                     description: the list of addresses that are allowed to pay zero fee.
+                  hook_max_gas:
+                    type: string
+                    format: uint64
+                    title: Max gas for hook execution of `MsgFinalizeTokenDeposit`
             description: >-
               QueryParamsResponse is response type for the Query/Params RPC
               method.
@@ -67499,6 +67503,10 @@ definitions:
         items:
           type: string
         description: the list of addresses that are allowed to pay zero fee.
+      hook_max_gas:
+        type: string
+        format: uint64
+        title: Max gas for hook execution of `MsgFinalizeTokenDeposit`
     description: Params defines the set of opchild parameters.
   opinit.opchild.v1.QueryBaseDenomResponse:
     type: object
@@ -67658,6 +67666,10 @@ definitions:
             items:
               type: string
             description: the list of addresses that are allowed to pay zero fee.
+          hook_max_gas:
+            type: string
+            format: uint64
+            title: Max gas for hook execution of `MsgFinalizeTokenDeposit`
     description: QueryParamsResponse is response type for the Query/Params RPC method.
   opinit.opchild.v1.QueryValidatorResponse:
     type: object
