@@ -192,7 +192,7 @@ type AccMut struct {
 
 // acquireAccMut acquires the mutex for the account with the given senderHex
 // and increments the reference count. If the mutex does not exist, it is created.
-func (b *JSONRPCBackend) acquireAccMut(senderHex string) {
+func (b *JSONRPCBackend) acquireAccMut(senderHex string) *AccMut {
 	// critical section for rc and create
 	b.mut.Lock()
 	accMut, ok := b.accMuts[senderHex]
@@ -205,13 +205,13 @@ func (b *JSONRPCBackend) acquireAccMut(senderHex string) {
 	// critical section end
 
 	accMut.mut.Lock()
+	return accMut
 }
 
 // releaseAccMut releases the mutex for the account with the given senderHex
 // and decrements the reference count. If the reference count reaches zero,
 // the mutex is deleted.
-func (b *JSONRPCBackend) releaseAccMut(senderHex string) {
-	accMut := b.accMuts[senderHex]
+func (b *JSONRPCBackend) releaseAccMut(senderHex string, accMut *AccMut) {
 	accMut.mut.Unlock()
 
 	// critical section for rc and delete
