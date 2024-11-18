@@ -19,8 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
-	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
-
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -53,6 +51,9 @@ type EVMIndexer interface {
 	// mempool
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
 	TxInMempool(hash common.Hash) *rpctypes.RPCTransaction
+
+	// Stop
+	Stop()
 }
 
 // EVMIndexerImpl implements EVMIndexer.
@@ -62,9 +63,8 @@ type EVMIndexerImpl struct {
 	txConfig client.TxConfig
 	appCodec codec.Codec
 
-	store         *CacheStore
-	evmKeeper     *evmkeeper.Keeper
-	opChildKeeper *opchildkeeper.Keeper
+	store     *CacheStore
+	evmKeeper *evmkeeper.Keeper
 
 	schema                   collections.Schema
 	TxMap                    collections.Map[[]byte, rpctypes.RPCTransaction]
@@ -89,7 +89,6 @@ func NewEVMIndexer(
 	logger log.Logger,
 	txConfig client.TxConfig,
 	evmKeeper *evmkeeper.Keeper,
-	opChildKeeper *opchildkeeper.Keeper,
 ) (EVMIndexer, error) {
 	cfg := evmKeeper.Config()
 	if cfg.IndexerCacheSize == 0 {
@@ -110,8 +109,7 @@ func NewEVMIndexer(
 		txConfig: txConfig,
 		appCodec: appCodec,
 
-		evmKeeper:     evmKeeper,
-		opChildKeeper: opChildKeeper,
+		evmKeeper: evmKeeper,
 
 		TxMap:                    collections.NewMap(sb, prefixTx, "tx", collections.BytesKey, CollJsonVal[rpctypes.RPCTransaction]()),
 		TxReceiptMap:             collections.NewMap(sb, prefixTxReceipt, "tx_receipt", collections.BytesKey, CollJsonVal[coretypes.Receipt]()),
@@ -180,4 +178,9 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan 
 	}
 
 	close(done)
+}
+
+// Stop stops the indexer.
+func (e *EVMIndexerImpl) Stop() {
+	e.txPendingMap.Stop()
 }
