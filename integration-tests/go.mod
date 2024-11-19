@@ -146,8 +146,8 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.5.7 // indirect
-	github.com/initia-labs/OPinit/api v0.5.7 // indirect
+	github.com/initia-labs/OPinit v0.6.0 // indirect
+	github.com/initia-labs/OPinit/api v0.6.0 // indirect
 	github.com/initia-labs/kvindexer v0.1.9 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.2 // indirect

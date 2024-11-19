@@ -97,7 +97,7 @@ func setupBlockSDK(
 			Codec:         app.appCodec,
 			OPChildKeeper: app.OPChildKeeper,
 			TxEncoder:     app.txConfig.TxEncoder(),
-			AuctionKeeper: *app.AuctionKeeper,
+			AuctionKeeper: app.AuctionKeeper,
 			MevLane:       mevLane,
 			FreeLane:      freeLane,
 			EVMKeeper:     app.EVMKeeper,

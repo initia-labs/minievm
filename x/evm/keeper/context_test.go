@@ -198,7 +198,7 @@ func Test_GetHash(t *testing.T) {
 	require.Equal(t, hash100, [32]byte(queryRes))
 	require.Empty(t, logs)
 
-	// vaild query
+	// valid query
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(101))
 	require.NoError(t, err)
 
@@ -207,7 +207,7 @@ func Test_GetHash(t *testing.T) {
 	require.Equal(t, hash101, [32]byte(queryRes))
 	require.Empty(t, logs)
 
-	// vaild query
+	// valid query
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(356))
 	require.NoError(t, err)
 

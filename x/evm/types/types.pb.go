@@ -43,6 +43,8 @@ type Params struct {
 	GasRefundRatio cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=gas_refund_ratio,json=gasRefundRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"gas_refund_ratio" yaml:"gas_refund_ratio"`
 	// num_retain_block_hashes defines the number of block hashes to retain
 	// for the evm opcode `BLOCKHASH`.
+	//
+	// minimum is 256 and 0 means no limit.
 	NumRetainBlockHashes uint64 `protobuf:"varint,7,opt,name=num_retain_block_hashes,json=numRetainBlockHashes,proto3" json:"num_retain_block_hashes,omitempty" yaml:"num_retain_block_hashes"`
 }
 

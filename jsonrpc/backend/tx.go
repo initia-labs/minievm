@@ -71,8 +71,8 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	senderHex := hexutil.Encode(sender.Bytes())
 
 	// hold mutex for each sender
-	b.acquireAccMut(senderHex)
-	defer b.releaseAccMut(senderHex)
+	accMut := b.acquireAccMut(senderHex)
+	defer b.releaseAccMut(senderHex, accMut)
 
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {

@@ -91,7 +91,7 @@ interface ICosmos {
         Options memory options
     ) external returns (bool dummy);
 
-    // query a whitelisted cosmos querys.
+    // query a whitelisted cosmos queries.
     //
     // example)
     // path: "/connect.oracle.v2.Query/GetPrices"
