@@ -24,7 +24,7 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, fee types.Fee) (*evmstate.StateDB, error) {
+func (k Keeper) NewStateDB(ctx context.Context, evm *vm.EVM, fee types.Fee) (*evmstate.StateDB, error) {
 	return evmstate.NewStateDB(
 		// delegate gas meter to the EVM
 		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
@@ -44,12 +44,7 @@ func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
 	return gasLimit
 }
 
-type callableEVM interface {
-	Call(vm.ContractRef, common.Address, []byte, uint64, *uint256.Int) ([]byte, uint64, error)
-	StaticCall(vm.ContractRef, common.Address, []byte, uint64) ([]byte, uint64, error)
-}
-
-func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, fee types.Fee) (vm.BlockContext, error) {
+func (k Keeper) buildBlockContext(ctx context.Context, evm *vm.EVM, fee types.Fee) (vm.BlockContext, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	headerHash := sdkCtx.HeaderHash()
 	if len(headerHash) == 0 {
@@ -116,7 +111,9 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, fee type
 			}
 		},
 		GetHash: func(n uint64) common.Hash {
-			bz, err := k.EVMBlockHashes.Get(sdkCtx, n)
+			// use snapshot context to get block hash
+			ctx := evm.StateDB.(types.StateDB).Context()
+			bz, err := k.EVMBlockHashes.Get(ctx, n)
 			if err != nil {
 				return common.Hash{}
 			}
