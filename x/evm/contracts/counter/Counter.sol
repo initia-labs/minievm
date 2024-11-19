@@ -14,15 +14,17 @@ contract Counter is IIBCAsyncCallback {
 
     constructor() payable {}
 
-    function increase_for_fuzz(uint64 num) external {
-        for (uint64 i = 0; i < num; i++) {
-            increase();
+    function increase_for_fuzz(uint64 num) public {
+        if (num == 0) {
+            return;
         }
+
+        increase();
+        increase_for_fuzz(num - 1);
     }
 
     function increase() public payable {
         count++;
-
         emit increased(count - 1, count);
     }
 
