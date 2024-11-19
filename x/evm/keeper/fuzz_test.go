@@ -1,9 +1,7 @@
 package keeper_test
 
 import (
-	"bytes"
 	"sync"
-	"sync/atomic"
 	"testing"
 
 	storetypes "cosmossdk.io/store/types"
@@ -11,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
@@ -48,9 +45,6 @@ func Fuzz_Concurrent_Counter(f *testing.F) {
 		inputBz, err := parsed.Pack("increase_for_fuzz", uint64(numCount))
 		require.NoError(t, err)
 
-		atomicBloomBytes := atomic.Pointer[[]byte]{}
-		atomicBloomBytes.Store(nil)
-
 		var wg sync.WaitGroup
 		cacheCtxes := make([]sdk.Context, numThread)
 		for i := uint8(0); i < numThread; i++ {
@@ -65,9 +59,7 @@ func Fuzz_Concurrent_Counter(f *testing.F) {
 				res, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
 				require.NoError(t, err)
 				require.Empty(t, res)
-				bloomBytes := coretypes.LogsBloom(logs.ToEthLogs())
-				prev := atomicBloomBytes.Swap(&bloomBytes)
-				require.True(t, prev == nil || bytes.Equal(*prev, bloomBytes))
+				assertLogs(t, contractAddr, logs)
 			}(cacheCtx)
 		}
 		wg.Wait()
@@ -75,9 +67,23 @@ func Fuzz_Concurrent_Counter(f *testing.F) {
 		for i := uint8(0); i < numThread; i++ {
 			count := getCount(t, cacheCtxes[i], input, contractAddr)
 			require.Equal(t, uint256.NewInt(uint64(numCount)), count)
-			require.NotEmpty(t, atomicBloomBytes.Load())
 		}
 	})
+}
+
+func assertLogs(t *testing.T, contractAddr common.Address, logs []types.Log) {
+	for i := range logs {
+		require.Equal(t, contractAddr.Hex(), logs[i].Address)
+		dataBz, err := hexutil.Decode(logs[i].Data)
+		require.NoError(t, err)
+		require.Len(t, dataBz, 64)
+		before := new(uint256.Int).SetBytes(dataBz[:32])
+		after := new(uint256.Int).SetBytes(dataBz[32:])
+
+		require.NoError(t, err)
+		require.Equal(t, uint256.NewInt(uint64(i)), before)
+		require.Equal(t, uint256.NewInt(uint64(i+1)), after)
+	}
 }
 
 func getCount(t *testing.T, ctx sdk.Context, input TestKeepers, contractAddr common.Address) *uint256.Int {

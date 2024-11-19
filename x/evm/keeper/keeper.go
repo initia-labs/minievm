@@ -48,20 +48,6 @@ type Keeper struct {
 	Params  collections.Item[types.Params]
 	VMStore collections.Map[[]byte, []byte]
 
-	// execIndex is unique index for each execution, which is used
-	// unique key for transient stores.
-	execIndex *atomic.Uint64
-
-	// transient store
-	TSchema               collections.Schema
-	TransientVMStore      collections.Map[collections.Pair[uint64, []byte], []byte]
-	TransientLogs         collections.Map[collections.Pair[uint64, uint64], types.Log]
-	TransientLogSize      collections.Map[uint64, uint64]
-	TransientRefund       collections.Map[uint64, uint64]
-	TransientCreated      collections.KeySet[collections.Pair[uint64, []byte]]
-	TransientSelfDestruct collections.KeySet[collections.Pair[uint64, []byte]]
-	TransientAccessList   collections.KeySet[collections.Pair[uint64, []byte]]
-
 	// erc20 stores of users
 	ERC20FactoryAddr          collections.Item[[]byte]
 	ERC20WrapperAddr          collections.Item[[]byte]
@@ -86,7 +72,6 @@ func NewKeeper(
 	ac address.Codec,
 	cdc codec.Codec,
 	storeService corestoretypes.KVStoreService,
-	transientService corestoretypes.TransientStoreService,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	communityPoolKeeper types.CommunityPoolKeeper,
@@ -99,7 +84,6 @@ func NewKeeper(
 	queryCosmosWhitelist types.QueryCosmosWhitelist,
 ) *Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
-	tsb := collections.NewSchemaBuilderFromAccessor(transientService.OpenTransientStore)
 
 	if evmConfig.ContractSimulationGasLimit == 0 {
 		evmConfig.ContractSimulationGasLimit = evmconfig.DefaultContractSimulationGasLimit
@@ -132,16 +116,6 @@ func NewKeeper(
 		Params:  collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		VMStore: collections.NewMap(sb, types.VMStorePrefix, "vm_store", collections.BytesKey, collections.BytesValue),
 
-		execIndex: execIndex,
-
-		TransientVMStore:      collections.NewMap(tsb, types.TransientVMStorePrefix, "transient_vm_store", collections.PairKeyCodec(collections.Uint64Key, collections.BytesKey), collections.BytesValue),
-		TransientCreated:      collections.NewKeySet(tsb, types.TransientCreatedPrefix, "transient_created", collections.PairKeyCodec(collections.Uint64Key, collections.BytesKey)),
-		TransientSelfDestruct: collections.NewKeySet(tsb, types.TransientSelfDestructPrefix, "transient_self_destruct", collections.PairKeyCodec(collections.Uint64Key, collections.BytesKey)),
-		TransientLogs:         collections.NewMap(tsb, types.TransientLogsPrefix, "transient_logs", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), codec.CollValue[types.Log](cdc)),
-		TransientLogSize:      collections.NewMap(tsb, types.TransientLogSizePrefix, "transient_log_size", collections.Uint64Key, collections.Uint64Value),
-		TransientAccessList:   collections.NewKeySet(tsb, types.TransientAccessListPrefix, "transient_access_list", collections.PairKeyCodec(collections.Uint64Key, collections.BytesKey)),
-		TransientRefund:       collections.NewMap(tsb, types.TransientRefundPrefix, "transient_refund", collections.Uint64Key, collections.Uint64Value),
-
 		ERC20WrapperAddr:          collections.NewItem(sb, types.ERC20WrapperAddrKey, "erc20_wrapper_addr", collections.BytesValue),
 		ERC20FactoryAddr:          collections.NewItem(sb, types.ERC20FactoryAddrKey, "erc20_factory_addr", collections.BytesValue),
 		ERC20s:                    collections.NewKeySet(sb, types.ERC20sPrefix, "erc20s", collections.BytesKey),
@@ -164,13 +138,8 @@ func NewKeeper(
 	if err != nil {
 		panic(err)
 	}
-	tSchema, err := tsb.Build()
-	if err != nil {
-		panic(err)
-	}
 
 	k.Schema = schema
-	k.TSchema = tSchema
 	k.erc20StoresKeeper = NewERC20StoresKeeper(k)
 	k.erc20Keeper, err = NewERC20Keeper(k)
 	if err != nil {

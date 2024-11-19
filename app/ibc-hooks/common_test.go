@@ -309,7 +309,6 @@ func _createTestInput(
 		ac,
 		appCodec,
 		runtime.NewKVStoreService(keys[evmtypes.StoreKey]),
-		runtime.NewTransientStoreService(tkeys[evmtypes.TStoreKey]),
 		accountKeeper,
 		bankKeeper,
 		communityPoolKeeper,

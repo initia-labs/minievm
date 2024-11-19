@@ -20,14 +20,7 @@ const (
 // Keys for move store
 // Items are stored with the following key: values
 var (
-	VMStorePrefix               = []byte{0x21} // prefix for vm
-	TransientVMStorePrefix      = []byte{0x22} // prefix for transient vm store
-	TransientCreatedPrefix      = []byte{0x23} // prefix for transient created accounts
-	TransientSelfDestructPrefix = []byte{0x24} // prefix for transient self destruct accounts
-	TransientLogsPrefix         = []byte{0x25} // prefix for transient logs
-	TransientLogSizePrefix      = []byte{0x26} // prefix for transient log size
-	TransientAccessListPrefix   = []byte{0x27} // prefix for transient access list
-	TransientRefundPrefix       = []byte{0x28} // prefix for transient refund
+	VMStorePrefix = []byte{0x21} // prefix for vm
 
 	ERC20sPrefix                    = []byte{0x31} // prefix for erc20 stores
 	ERC20StoresPrefix               = []byte{0x32} // prefix for erc20 stores
