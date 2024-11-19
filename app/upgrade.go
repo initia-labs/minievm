@@ -47,13 +47,6 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 			//////////////////////////// MINIEVM ///////////////////////////////////
 
-			// deploy and store erc20 factory contract address
-			if err := app.EVMKeeper.DeployERC20Factory(ctx); err != nil &&
-				// ignore contract address collision error (contract already deployed)
-				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
-				return nil, err
-			}
-
 			// deploy and store erc20 wrapper contract address
 			if err := app.EVMKeeper.DeployERC20Wrapper(ctx); err != nil &&
 				// ignore contract address collision error (contract already deployed)
@@ -61,49 +54,61 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 				return nil, err
 			}
 
-			code := hexutil.MustDecode(erc20.Erc20MetaData.Bin)
-
-			// runtime code
-			initCodeOP := common.Hex2Bytes("5ff3fe")
-			initCodePos := bytes.Index(code, initCodeOP)
-			code = code[initCodePos+3:]
-
-			// code hash
-			codeHash := crypto.Keccak256Hash(code).Bytes()
-
-			// iterate all erc20 contracts and replace contract code to new version
-			err = app.EVMKeeper.ERC20s.Walk(ctx, nil, func(contractAddr []byte) (bool, error) {
-				acc := app.AccountKeeper.GetAccount(ctx, contractAddr)
-				if acc == nil {
-					return true, fmt.Errorf("account not found for contract address %s", contractAddr)
-				}
-
-				contractAcc, ok := acc.(*evmtypes.ContractAccount)
-				if !ok {
-					return true, fmt.Errorf("account is not a contract account for contract address %s", contractAddr)
-				}
-
-				contractAcc.CodeHash = codeHash
-				app.AccountKeeper.SetAccount(ctx, contractAcc)
-
-				// set code
-				codeKey := append(contractAddr, append(state.CodeKeyPrefix, codeHash...)...)
-				err := app.EVMKeeper.VMStore.Set(ctx, codeKey, code)
-				if err != nil {
-					return true, err
-				}
-
-				// set code size
-				codeSizeKey := append(contractAddr, append(state.CodeSizeKeyPrefix, codeHash...)...)
-				err = app.EVMKeeper.VMStore.Set(ctx, codeSizeKey, uint64ToBytes(uint64(len(code))))
-				if err != nil {
-					return true, err
-				}
-
-				return false, nil
-			})
-			if err != nil {
+			// deploy and store erc20 factory contract address
+			if err := app.EVMKeeper.DeployERC20Factory(ctx); err != nil &&
+				// ignore contract address collision error (contract already deployed)
+				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
 				return nil, err
+			} else if err == nil {
+				// update erc20 contracts only if erc20 factory contract has been deployed without error.
+				//
+				// address collision error is ignored because it means that the contract has already been deployed
+				// and the erc20 contracts have already been updated.
+				//
+				code := hexutil.MustDecode(erc20.Erc20MetaData.Bin)
+
+				// runtime code
+				initCodeOP := common.Hex2Bytes("5ff3fe")
+				initCodePos := bytes.Index(code, initCodeOP)
+				code = code[initCodePos+3:]
+
+				// code hash
+				codeHash := crypto.Keccak256Hash(code).Bytes()
+
+				// iterate all erc20 contracts and replace contract code to new version
+				err = app.EVMKeeper.ERC20s.Walk(ctx, nil, func(contractAddr []byte) (bool, error) {
+					acc := app.AccountKeeper.GetAccount(ctx, contractAddr)
+					if acc == nil {
+						return true, fmt.Errorf("account not found for contract address %s", contractAddr)
+					}
+
+					contractAcc, ok := acc.(*evmtypes.ContractAccount)
+					if !ok {
+						return true, fmt.Errorf("account is not a contract account for contract address %s", contractAddr)
+					}
+
+					contractAcc.CodeHash = codeHash
+					app.AccountKeeper.SetAccount(ctx, contractAcc)
+
+					// set code
+					codeKey := append(contractAddr, append(state.CodeKeyPrefix, codeHash...)...)
+					err := app.EVMKeeper.VMStore.Set(ctx, codeKey, code)
+					if err != nil {
+						return true, err
+					}
+
+					// set code size
+					codeSizeKey := append(contractAddr, append(state.CodeSizeKeyPrefix, codeHash...)...)
+					err = app.EVMKeeper.VMStore.Set(ctx, codeSizeKey, uint64ToBytes(uint64(len(code))))
+					if err != nil {
+						return true, err
+					}
+
+					return false, nil
+				})
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			return versionMap, nil
