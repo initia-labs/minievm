@@ -27,11 +27,8 @@ import (
 func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, fee types.Fee) (*evmstate.StateDB, error) {
 	return evmstate.NewStateDB(
 		// delegate gas meter to the EVM
-		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
-		k.accountKeeper, k.VMStore, k.TransientVMStore, k.TransientCreated,
-		k.TransientSelfDestruct, k.TransientLogs, k.TransientLogSize,
-		k.TransientAccessList, k.TransientRefund, k.execIndex,
-		evm, k.ERC20Keeper().GetERC20ABI(), fee.Contract(),
+		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.cdc, k.Logger(ctx),
+		k.accountKeeper, k.VMStore, evm, k.ERC20Keeper().GetERC20ABI(), fee.Contract(),
 	)
 }
 
