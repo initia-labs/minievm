@@ -537,15 +537,14 @@ func (s *StateDB) SetTransientState(addr common.Address, key, value common.Hash)
 	if prev == value {
 		return
 	}
-
-	if err := s.memStoreVMStore.Set(s.ctx, key[:], value[:]); err != nil {
+	if err := s.memStoreVMStore.Set(s.ctx, append(addr.Bytes(), key.Bytes()...), value[:]); err != nil {
 		panic(err)
 	}
 }
 
 // GetTransientState gets memStore storage for a given account.
 func (s *StateDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
-	data, err := s.memStoreVMStore.Get(s.ctx, key[:])
+	data, err := s.memStoreVMStore.Get(s.ctx, append(addr.Bytes(), key.Bytes()...))
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return common.Hash{}
 	} else if err != nil {
