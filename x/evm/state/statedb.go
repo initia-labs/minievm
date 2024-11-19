@@ -101,7 +101,7 @@ func NewStateDB(
 	}
 	schema, err := sb.Build()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	s.schema = schema
 
