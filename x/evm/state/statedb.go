@@ -1,15 +1,17 @@
 package state
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
-	"sync/atomic"
 
 	"github.com/holiman/uint256"
 
 	"cosmossdk.io/collections"
+	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -28,20 +30,22 @@ import (
 var _ vm.StateDB = &StateDB{}
 
 type StateDB struct {
-	ctx           sdk.Context
-	initialCtx    sdk.Context
+	ctx           Context
+	initialCtx    Context
 	logger        log.Logger
 	accountKeeper evmtypes.AccountKeeper
 
-	vmStore               collections.Map[[]byte, []byte]
-	transientVMStore      collections.Map[collections.Pair[uint64, []byte], []byte]
-	transientCreated      collections.KeySet[collections.Pair[uint64, []byte]]
-	transientSelfDestruct collections.KeySet[collections.Pair[uint64, []byte]]
-	transientLogs         collections.Map[collections.Pair[uint64, uint64], evmtypes.Log]
-	transientLogSize      collections.Map[uint64, uint64]
-	transientAccessList   collections.KeySet[collections.Pair[uint64, []byte]]
-	transientRefund       collections.Map[uint64, uint64]
-	execIndex             uint64
+	vmStore collections.Map[[]byte, []byte]
+
+	// transient memory store for the current execution
+	memStoreVMStore      collections.Map[[]byte, []byte]
+	memStoreCreated      collections.KeySet[[]byte]
+	memStoreSelfDestruct collections.KeySet[[]byte]
+	memStoreLogs         collections.Map[uint64, evmtypes.Log]
+	memStoreLogSize      collections.Item[uint64]
+	memStoreAccessList   collections.KeySet[[]byte]
+	memStoreRefund       collections.Item[uint64]
+	schema               collections.Schema
 
 	evm             *vm.EVM
 	erc20ABI        *abi.ABI
@@ -56,54 +60,58 @@ const (
 )
 
 func NewStateDB(
-	ctx sdk.Context,
+	sdkCtx sdk.Context,
+	cdc codec.Codec,
 	logger log.Logger,
 	accountKeeper evmtypes.AccountKeeper,
 	// store params
 	vmStore collections.Map[[]byte, []byte],
-	transientVMStore collections.Map[collections.Pair[uint64, []byte], []byte],
-	transientCreated collections.KeySet[collections.Pair[uint64, []byte]],
-	transientSelfDestruct collections.KeySet[collections.Pair[uint64, []byte]],
-	transientLogs collections.Map[collections.Pair[uint64, uint64], evmtypes.Log],
-	transientLogSize collections.Map[uint64, uint64],
-	transientAccessList collections.KeySet[collections.Pair[uint64, []byte]],
-	transientRefund collections.Map[uint64, uint64],
-	execIndex *atomic.Uint64,
 	// erc20 params
 	evm *vm.EVM,
 	erc20ABI *abi.ABI,
 	feeContractAddr common.Address,
 ) (*StateDB, error) {
-	eidx := execIndex.Add(1)
+	sb := collections.NewSchemaBuilderFromAccessor(
+		func(ctx context.Context) corestoretypes.KVStore {
+			stateCtx := ctx.(Context)
+			return newKVStore(stateCtx.memStore.GetKVStore(stateCtx.memStoreKey))
+		},
+	)
 
-	err := transientLogSize.Set(ctx, eidx, 0)
-	if err != nil {
-		return nil, err
-	}
-	err = transientRefund.Set(ctx, eidx, 0)
-	if err != nil {
-		return nil, err
-	}
-
+	ctx := NewContext(sdkCtx)
 	s := &StateDB{
 		ctx:           ctx,
 		initialCtx:    ctx,
 		logger:        logger,
 		accountKeeper: accountKeeper,
 
-		vmStore:               vmStore,
-		transientVMStore:      transientVMStore,
-		transientCreated:      transientCreated,
-		transientSelfDestruct: transientSelfDestruct,
-		transientLogs:         transientLogs,
-		transientLogSize:      transientLogSize,
-		transientAccessList:   transientAccessList,
-		transientRefund:       transientRefund,
-		execIndex:             eidx,
+		vmStore: vmStore,
+
+		memStoreVMStore:      collections.NewMap(sb, memStoreVMStorePrefix, "mem_store_vm_store", collections.BytesKey, collections.BytesValue),
+		memStoreCreated:      collections.NewKeySet(sb, memStoreCreatedPrefix, "mem_store_created", collections.BytesKey),
+		memStoreSelfDestruct: collections.NewKeySet(sb, memStoreSelfDestructPrefix, "mem_store_self_destruct", collections.BytesKey),
+		memStoreLogs:         collections.NewMap(sb, memStoreLogsPrefix, "mem_store_logs", collections.Uint64Key, codec.CollValue[evmtypes.Log](cdc)),
+		memStoreLogSize:      collections.NewItem(sb, memStoreLogSizePrefix, "mem_store_log_size", collections.Uint64Value),
+		memStoreAccessList:   collections.NewKeySet(sb, memStoreAccessListPrefix, "mem_store_access_list", collections.BytesKey),
+		memStoreRefund:       collections.NewItem(sb, memStoreRefundPrefix, "mem_store_refund", collections.Uint64Value),
 
 		evm:             evm,
 		erc20ABI:        erc20ABI,
 		feeContractAddr: feeContractAddr,
+	}
+	schema, err := sb.Build()
+	if err != nil {
+		panic(err)
+	}
+	s.schema = schema
+
+	err = s.memStoreLogSize.Set(ctx, 0)
+	if err != nil {
+		return nil, err
+	}
+	err = s.memStoreRefund.Set(ctx, 0)
+	if err != nil {
+		return nil, err
 	}
 
 	return s, nil
@@ -176,12 +184,12 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 
 // AddRefund implements vm.StateDB.
 func (s *StateDB) AddRefund(gas uint64) {
-	refund, err := s.transientRefund.Get(s.ctx, s.execIndex)
+	refund, err := s.memStoreRefund.Get(s.ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	err = s.transientRefund.Set(s.ctx, s.execIndex, refund+gas)
+	err = s.memStoreRefund.Set(s.ctx, refund+gas)
 	if err != nil {
 		panic(err)
 	}
@@ -189,7 +197,7 @@ func (s *StateDB) AddRefund(gas uint64) {
 
 // SubRefund implements vm.StateDB.
 func (s *StateDB) SubRefund(gas uint64) {
-	refund, err := s.transientRefund.Get(s.ctx, s.execIndex)
+	refund, err := s.memStoreRefund.Get(s.ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -198,7 +206,7 @@ func (s *StateDB) SubRefund(gas uint64) {
 		panic(fmt.Sprintf("Refund counter below zero (gas: %d > refund: %d)", gas, refund))
 	}
 
-	err = s.transientRefund.Set(s.ctx, s.execIndex, refund-gas)
+	err = s.memStoreRefund.Set(s.ctx, refund-gas)
 	if err != nil {
 		panic(err)
 	}
@@ -206,7 +214,7 @@ func (s *StateDB) SubRefund(gas uint64) {
 
 // AddAddressToAccessList adds the given address to the access list
 func (s *StateDB) AddAddressToAccessList(addr common.Address) {
-	err := s.transientAccessList.Set(s.ctx, collections.Join(s.execIndex, addr.Bytes()))
+	err := s.memStoreAccessList.Set(s.ctx, addr.Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -219,7 +227,7 @@ func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 		s.AddAddressToAccessList(addr)
 	}
 
-	err := s.transientAccessList.Set(s.ctx, collections.Join(s.execIndex, append(addr.Bytes(), slot[:]...)))
+	err := s.memStoreAccessList.Set(s.ctx, append(addr.Bytes(), slot[:]...))
 	if err != nil {
 		panic(err)
 	}
@@ -227,7 +235,7 @@ func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 
 // AddressInAccessList returns true if the given address is in the access list
 func (s *StateDB) AddressInAccessList(addr common.Address) bool {
-	ok, err := s.transientAccessList.Has(s.ctx, collections.Join(s.execIndex, addr.Bytes()))
+	ok, err := s.memStoreAccessList.Has(s.ctx, addr.Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -237,14 +245,14 @@ func (s *StateDB) AddressInAccessList(addr common.Address) bool {
 
 // SlotInAccessList returns true if the given (address, slot)-tuple is in the access list
 func (s *StateDB) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
-	ok, err := s.transientAccessList.Has(s.ctx, collections.Join(s.execIndex, addr.Bytes()))
+	ok, err := s.memStoreAccessList.Has(s.ctx, addr.Bytes())
 	if err != nil {
 		panic(err)
 	} else if !ok {
 		return false, false
 	}
 
-	ok, err = s.transientAccessList.Has(s.ctx, collections.Join(s.execIndex, append(addr.Bytes(), slot[:]...)))
+	ok, err = s.memStoreAccessList.Has(s.ctx, append(addr.Bytes(), slot[:]...))
 	if err != nil {
 		panic(err)
 	}
@@ -260,7 +268,7 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 
 // CreateContract creates a contract account with the given address
 func (s *StateDB) CreateContract(contractAddr common.Address) {
-	if err := s.transientCreated.Set(s.ctx, collections.Join(s.execIndex, contractAddr.Bytes())); err != nil {
+	if err := s.memStoreCreated.Set(s.ctx, contractAddr.Bytes()); err != nil {
 		panic(err)
 	}
 
@@ -441,7 +449,7 @@ func (s *StateDB) SetNonce(addr common.Address, nonce uint64) {
 
 // GetRefund returns the refund
 func (s *StateDB) GetRefund() uint64 {
-	refund, err := s.transientRefund.Get(s.ctx, s.execIndex)
+	refund, err := s.memStoreRefund.Get(s.ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -470,7 +478,7 @@ func (s *StateDB) GetState(addr common.Address, slot common.Hash) common.Hash {
 func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
 	acc := s.getAccount(addr)
 	if acc != nil {
-		ok, err := s.transientSelfDestruct.Has(s.ctx, collections.Join(s.execIndex, addr.Bytes()))
+		ok, err := s.memStoreSelfDestruct.Has(s.ctx, addr.Bytes())
 		if err != nil {
 			panic(err)
 		}
@@ -493,7 +501,7 @@ func (s *StateDB) SelfDestruct(addr common.Address) {
 	}
 
 	// mark the account as self-destructed
-	if err := s.transientSelfDestruct.Set(s.ctx, collections.Join(s.execIndex, addr.Bytes())); err != nil {
+	if err := s.memStoreSelfDestruct.Set(s.ctx, addr.Bytes()); err != nil {
 		panic(err)
 	}
 
@@ -508,7 +516,7 @@ func (s *StateDB) Selfdestruct6780(addr common.Address) {
 		return
 	}
 
-	ok, err := s.transientCreated.Has(s.ctx, collections.Join(s.execIndex, addr.Bytes()))
+	ok, err := s.memStoreCreated.Has(s.ctx, addr.Bytes())
 	if err != nil {
 		panic(err)
 	} else if ok {
@@ -523,21 +531,21 @@ func (s *StateDB) SetState(addr common.Address, slot common.Hash, value common.H
 	}
 }
 
-// SetTransientState sets transient storage for a given account.
+// SetTransientState sets memStore storage for a given account.
 func (s *StateDB) SetTransientState(addr common.Address, key, value common.Hash) {
 	prev := s.GetTransientState(addr, key)
 	if prev == value {
 		return
 	}
 
-	if err := s.transientVMStore.Set(s.ctx, collections.Join(s.execIndex, key[:]), value[:]); err != nil {
+	if err := s.memStoreVMStore.Set(s.ctx, key[:], value[:]); err != nil {
 		panic(err)
 	}
 }
 
-// GetTransientState gets transient storage for a given account.
+// GetTransientState gets memStore storage for a given account.
 func (s *StateDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
-	data, err := s.transientVMStore.Get(s.ctx, collections.Join(s.execIndex, key[:]))
+	data, err := s.memStoreVMStore.Get(s.ctx, key[:])
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return common.Hash{}
 	} else if err != nil {
@@ -582,15 +590,15 @@ func (s *StateDB) RevertToSnapshot(i int) {
 // ContextOfSnapshot returns the context of the snapshot with the given id
 func (s *StateDB) ContextOfSnapshot(i int) sdk.Context {
 	if i == -1 {
-		return s.initialCtx
+		return s.initialCtx.Context
 	}
 
-	return s.snaps[i].ctx
+	return s.snaps[i].ctx.Context
 }
 
 // Context returns the current context
 func (s *StateDB) Context() sdk.Context {
-	return s.ctx
+	return s.ctx.Context
 }
 
 // Prepare handles the preparatory steps for executing a state transition with.
@@ -605,7 +613,7 @@ func (s *StateDB) Context() sdk.Context {
 // Potential EIPs:
 // - Reset access list (Berlin)
 // - Add coinbase to access list (EIP-3651)
-// - Reset transient storage (EIP-1153)
+// - Reset memStore storage (EIP-1153)
 func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
 	if rules.IsBerlin {
 		// Clear out any leftover from previous executions
@@ -632,8 +640,8 @@ func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase co
 
 func (s *StateDB) Commit() error {
 	// clear destructed accounts
-	err := s.transientSelfDestruct.Walk(s.ctx, collections.NewPrefixedPairRange[uint64, []byte](s.execIndex), func(key collections.Pair[uint64, []byte]) (stop bool, err error) {
-		addr := common.BytesToAddress(key.K2())
+	err := s.memStoreSelfDestruct.Walk(s.ctx, nil, func(key []byte) (stop bool, err error) {
+		addr := common.BytesToAddress(key)
 
 		// If ether was sent to account post-selfdestruct it is burnt.
 		if bal := s.GetBalance(addr); bal.Sign() != 0 {
@@ -663,24 +671,24 @@ func (s *StateDB) Commit() error {
 
 // AddLog implements vm.StateDB.
 func (s *StateDB) AddLog(log *types.Log) {
-	logSize, err := s.transientLogSize.Get(s.ctx, s.execIndex)
+	logSize, err := s.memStoreLogSize.Get(s.ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	err = s.transientLogSize.Set(s.ctx, s.execIndex, logSize+1)
+	err = s.memStoreLogSize.Set(s.ctx, logSize+1)
 	if err != nil {
 		panic(err)
 	}
 
-	err = s.transientLogs.Set(s.ctx, collections.Join(s.execIndex, logSize), evmtypes.NewLog(log))
+	err = s.memStoreLogs.Set(s.ctx, logSize, evmtypes.NewLog(log))
 	if err != nil {
 		panic(err)
 	}
 }
 
 func (s *StateDB) Logs() evmtypes.Logs {
-	logSize, err := s.transientLogSize.Get(s.ctx, s.execIndex)
+	logSize, err := s.memStoreLogSize.Get(s.ctx)
 	if err != nil {
 		panic(err)
 	} else if logSize == 0 {
@@ -688,8 +696,8 @@ func (s *StateDB) Logs() evmtypes.Logs {
 	}
 
 	logs := make([]evmtypes.Log, logSize)
-	err = s.transientLogs.Walk(s.ctx, collections.NewPrefixedPairRange[uint64, uint64](s.execIndex), func(key collections.Pair[uint64, uint64], log evmtypes.Log) (stop bool, err error) {
-		logs[key.K2()] = log
+	err = s.memStoreLogs.Walk(s.ctx, nil, func(key uint64, log evmtypes.Log) (stop bool, err error) {
+		logs[key] = log
 		return false, nil
 	})
 	if err != nil {
