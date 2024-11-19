@@ -38,13 +38,13 @@ func bytesToUint64(bz []byte) uint64 {
 	return binary.BigEndian.Uint64(bz)
 }
 
-// Keys for transient store
+// Keys for memStore
 var (
-	memStoreVMStorePrefix      = []byte{0x01} // prefix for transient vm store
-	memStoreCreatedPrefix      = []byte{0x02} // prefix for transient created accounts
-	memStoreSelfDestructPrefix = []byte{0x03} // prefix for transient self destruct accounts
-	memStoreLogsPrefix         = []byte{0x04} // prefix for transient logs
-	memStoreLogSizePrefix      = []byte{0x05} // prefix for transient log size
-	memStoreAccessListPrefix   = []byte{0x06} // prefix for transient access list
-	memStoreRefundPrefix       = []byte{0x07} // prefix for transient refund
+	memStoreVMStorePrefix      = []byte{0x01} // prefix for memStore vm store
+	memStoreCreatedPrefix      = []byte{0x02} // prefix for memStore created accounts
+	memStoreSelfDestructPrefix = []byte{0x03} // prefix for memStore self destruct accounts
+	memStoreLogsPrefix         = []byte{0x04} // prefix for memStore logs
+	memStoreLogSizePrefix      = []byte{0x05} // prefix for memStore log size
+	memStoreAccessListPrefix   = []byte{0x06} // prefix for memStore access list
+	memStoreRefundPrefix       = []byte{0x07} // prefix for memStore refund
 )
