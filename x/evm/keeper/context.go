@@ -156,20 +156,20 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	}
 
 	// prepare SDK context for EVM execution
-	sdkCtx, err := prepareSDKContext(sdk.UnwrapSDKContext(ctx))
+	ctx, err = prepareSDKContext(sdk.UnwrapSDKContext(ctx))
 	if err != nil {
 		return ctx, nil, err
 	}
 
-	chainConfig := types.DefaultChainConfig(sdkCtx)
+	chainConfig := types.DefaultChainConfig(ctx)
 	vmConfig := vm.Config{Tracer: tracer, ExtraEips: extraEIPs, NumRetainBlockHashes: &params.NumRetainBlockHashes}
 
 	// use dummy block context for chain rules in EVM creation
-	dummyBlockContext, err := k.buildBlockContext(sdkCtx, nil, fee)
+	dummyBlockContext, err := k.buildBlockContext(ctx, nil, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
-	txContext, err := k.buildTxContext(sdkCtx, caller, fee)
+	txContext, err := k.buildTxContext(ctx, caller, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -183,11 +183,11 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		vmConfig,
 	)
 	// customize EVM contexts and stateDB and precompiles
-	evm.Context, err = k.buildBlockContext(sdkCtx, evm, fee)
+	evm.Context, err = k.buildBlockContext(ctx, evm, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
-	evm.StateDB, err = k.NewStateDB(sdkCtx, evm, fee)
+	evm.StateDB, err = k.NewStateDB(ctx, evm, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -203,7 +203,7 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		tracer.OnTxStart(evm.GetVMContext(), nil, caller)
 	}
 
-	return sdkCtx, evm, nil
+	return ctx, evm, nil
 }
 
 // prepare SDK context for EVM execution
