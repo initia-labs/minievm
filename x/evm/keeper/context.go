@@ -166,9 +166,13 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 
 	// use dummy block context for chain rules in EVM creation
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	headerHash := sdkCtx.HeaderHash()
+	if len(headerHash) == 0 {
+		headerHash = make([]byte, 32)
+	}
 	dummyBlockContext := vm.BlockContext{
 		BlockNumber: big.NewInt(sdkCtx.BlockHeight()),
-		Random:      (*common.Hash)(sdkCtx.HeaderHash()),
+		Random:      (*common.Hash)(headerHash),
 		Time:        uint64(sdkCtx.BlockTime().Unix()),
 	}
 
