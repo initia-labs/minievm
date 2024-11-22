@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -108,6 +109,9 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 						wg.Done()
 					}
 				}
+			case <-time.After(10 * time.Second):
+				t.Error("timeout waiting for pending transaction")
+				wg.Done()
 			}
 		}
 	}()
@@ -116,4 +120,35 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	require.NoError(t, err)
 
 	wg.Wait()
+}
+
+func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
+	app, indexer, _, privKeys := setupIndexer(t)
+	defer app.Close()
+
+	tx, evmTxHash := generateCreateInitiaERC20Tx(t, app, privKeys[0])
+	finalizeReq, finalizeRes := executeTxs(t, app, tx)
+	checkTxResult(t, finalizeRes.TxResults[0], true)
+
+	events := finalizeRes.TxResults[0].Events
+	createEvent := events[len(events)-3]
+	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
+
+	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
+	require.NoError(t, err)
+
+	// listen finalize block
+	ctx, err := app.CreateQueryContext(0, false)
+	require.NoError(t, err)
+
+	err = indexer.ListenFinalizeBlock(ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter()), *finalizeReq, *finalizeRes)
+	require.NoError(t, err)
+
+	// check the tx is indexed
+	receipt, err := indexer.TxReceiptByHash(ctx, evmTxHash)
+	require.NoError(t, err)
+	require.NotNil(t, receipt)
+
+	// contract creation should have contract address in receipt
+	require.Equal(t, contractAddr, receipt.ContractAddress.Bytes())
 }

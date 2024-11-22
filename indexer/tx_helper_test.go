@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
@@ -22,6 +23,7 @@ import (
 	minitiaapp "github.com/initia-labs/minievm/app"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
+	"github.com/initia-labs/minievm/x/evm/contracts/initia_erc20"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
@@ -96,6 +98,19 @@ func generateTx(
 	require.NoError(t, err)
 
 	return sdkTx, signedTx.Hash()
+}
+
+func generateCreateInitiaERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, seqNum ...uint64) (sdk.Tx, common.Hash) {
+	abi, err := initia_erc20.InitiaErc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	bin, err := hexutil.Decode(initia_erc20.InitiaErc20MetaData.Bin)
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("", "foo", "foo", uint8(6))
+	require.NoError(t, err)
+
+	return generateTx(t, app, privKey, nil, append(bin, inputBz...), seqNum...)
 }
 
 func generateCreateERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, seqNum ...uint64) (sdk.Tx, common.Hash) {

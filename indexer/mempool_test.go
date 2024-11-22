@@ -3,6 +3,7 @@ package indexer_test
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -22,10 +23,15 @@ func Test_Mempool_Subscribe(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		pendingTx := <-pendChan
-		require.NotNil(t, pendingTx)
-		require.Equal(t, evmTxHash, pendingTx.Hash)
-		wg.Done()
+		select {
+		case pendingTx := <-pendChan:
+			require.NotNil(t, pendingTx)
+			require.Equal(t, evmTxHash, pendingTx.Hash)
+			wg.Done()
+		case <-time.After(5 * time.Second):
+			t.Error("timeout waiting for pending transaction")
+			wg.Done()
+		}
 	}()
 
 	noopMempool := &mempool.NoOpMempool{}
