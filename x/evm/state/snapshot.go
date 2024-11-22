@@ -1,19 +1,12 @@
 package state
 
-import (
-	"context"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-)
-
 type Snapshot struct {
-	ctx    sdk.Context
+	ctx    Context
 	commit func()
 }
 
-func NewSnapshot(ctx context.Context) *Snapshot {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	cacheCtx, commit := sdkCtx.CacheContext()
+func NewSnapshot(ctx Context) *Snapshot {
+	cacheCtx, commit := ctx.CacheContext()
 	return &Snapshot{
 		ctx:    cacheCtx,
 		commit: commit,
@@ -25,6 +18,6 @@ func (s *Snapshot) Commit() {
 }
 
 // for mock testing
-func (s *Snapshot) Context() sdk.Context {
+func (s *Snapshot) Context() Context {
 	return s.ctx
 }

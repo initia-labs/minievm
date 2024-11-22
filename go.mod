@@ -28,7 +28,7 @@ require (
 	github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0
 	github.com/cosmos/ibc-go/modules/capability v1.0.1
 	github.com/cosmos/ibc-go/v8 v8.5.0
-	github.com/ethereum/go-ethereum v1.14.9
+	github.com/ethereum/go-ethereum v1.14.11
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
@@ -36,7 +36,7 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.1
-	github.com/initia-labs/OPinit v0.5.7
+	github.com/initia-labs/OPinit v0.6.1
 	github.com/initia-labs/initia v0.6.1
 	github.com/initia-labs/kvindexer v0.1.9
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0
@@ -178,7 +178,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit/api v0.5.7 // indirect
+	github.com/initia-labs/OPinit/api v0.6.0 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

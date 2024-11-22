@@ -118,7 +118,7 @@ func Test_Call(t *testing.T) {
 	res, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, uint256.NewInt(100), nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
-	require.NotEmpty(t, logs)
+	require.Len(t, logs, int(2))
 
 	// check balance
 	balance, err := input.EVMKeeper.ERC20Keeper().GetBalance(ctx, contractAddr.Bytes(), sdk.DefaultBondDenom)

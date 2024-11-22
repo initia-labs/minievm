@@ -24,14 +24,15 @@ import (
 var _ evmtypes.StateDB = &MockStateDB{}
 
 type MockStateDB struct {
-	ctx        sdk.Context
-	initialCtx sdk.Context
+	ctx        state.Context
+	initialCtx state.Context
 
 	// Snapshot stack
 	snaps []*state.Snapshot
 }
 
-func NewMockStateDB(ctx sdk.Context) *MockStateDB {
+func NewMockStateDB(sdkCtx sdk.Context) *MockStateDB {
+	ctx := state.NewContext(sdkCtx)
 	return &MockStateDB{
 		ctx:        ctx,
 		initialCtx: ctx,
@@ -73,10 +74,15 @@ func (m *MockStateDB) RevertToSnapshot(i int) {
 // ContextOfSnapshot implements types.StateDB.
 func (m *MockStateDB) ContextOfSnapshot(i int) sdk.Context {
 	if i == -1 {
-		return m.initialCtx
+		return m.initialCtx.Context
 	}
 
-	return m.snaps[i].Context()
+	return m.snaps[i].Context().Context
+}
+
+// Context implements types.StateDB.
+func (m *MockStateDB) Context() sdk.Context {
+	return m.ctx.Context
 }
 
 //////////////////////// MOCKED METHODS ////////////////////////

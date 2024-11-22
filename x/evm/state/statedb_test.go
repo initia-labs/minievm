@@ -88,6 +88,14 @@ func Test_SnapshotRevert(t *testing.T) {
 	// take more snapshots
 	stateDB.Snapshot()
 	stateDB.SubRefund(10)
+	require.Equal(t, uint64(90), stateDB.GetBalance(common.BytesToAddress(addr1)).Uint64())
+	require.Equal(t, uint64(80), stateDB.GetRefund())
+	require.Equal(t, evmtypes.NewLogs([]*coretypes.Log{log1, log2}), stateDB.Logs()[:2])
+	require.True(t, stateDB.AddressInAccessList(common.BytesToAddress(addr1)))
+	require.True(t, stateDB.AddressInAccessList(common.BytesToAddress(addr2)))
+	require.Equal(t, common.BytesToHash([]byte("value2")), stateDB.GetState(common.BytesToAddress(addr1), common.BytesToHash([]byte("key"))))
+	require.Equal(t, common.BytesToHash([]byte("value2")), stateDB.GetState(common.BytesToAddress(addr2), common.BytesToHash([]byte("key"))))
+
 	stateDB.Snapshot()
 	stateDB.SubBalance(common.BytesToAddress(addr1), uint256.NewInt(10), tracing.BalanceDecreaseSelfdestructBurn)
 

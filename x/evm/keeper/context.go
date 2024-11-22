@@ -24,14 +24,11 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func (k Keeper) NewStateDB(ctx context.Context, evm callableEVM, fee types.Fee) (*evmstate.StateDB, error) {
+func (k Keeper) NewStateDB(ctx context.Context, evm *vm.EVM, fee types.Fee) (*evmstate.StateDB, error) {
 	return evmstate.NewStateDB(
 		// delegate gas meter to the EVM
-		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.Logger(ctx),
-		k.accountKeeper, k.VMStore, k.TransientVMStore, k.TransientCreated,
-		k.TransientSelfDestruct, k.TransientLogs, k.TransientLogSize,
-		k.TransientAccessList, k.TransientRefund, k.execIndex,
-		evm, k.ERC20Keeper().GetERC20ABI(), fee.Contract(),
+		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.cdc, k.Logger(ctx),
+		k.accountKeeper, k.VMStore, evm, k.ERC20Keeper().GetERC20ABI(), fee.Contract(),
 	)
 }
 
@@ -44,12 +41,7 @@ func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
 	return gasLimit
 }
 
-type callableEVM interface {
-	Call(vm.ContractRef, common.Address, []byte, uint64, *uint256.Int) ([]byte, uint64, error)
-	StaticCall(vm.ContractRef, common.Address, []byte, uint64) ([]byte, uint64, error)
-}
-
-func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, fee types.Fee) (vm.BlockContext, error) {
+func (k Keeper) buildBlockContext(ctx context.Context, evm *vm.EVM, fee types.Fee) (vm.BlockContext, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	headerHash := sdkCtx.HeaderHash()
 	if len(headerHash) == 0 {
@@ -116,7 +108,9 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm callableEVM, fee type
 			}
 		},
 		GetHash: func(n uint64) common.Hash {
-			bz, err := k.EVMBlockHashes.Get(sdkCtx, n)
+			// use snapshot context to get block hash
+			ctx := evm.StateDB.(types.StateDB).Context()
+			bz, err := k.EVMBlockHashes.Get(ctx, n)
 			if err != nil {
 				return common.Hash{}
 			}
@@ -167,8 +161,11 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 		return ctx, nil, err
 	}
 
-	evm := &vm.EVM{}
-	blockContext, err := k.buildBlockContext(ctx, evm, fee)
+	chainConfig := types.DefaultChainConfig(ctx)
+	vmConfig := vm.Config{Tracer: tracer, ExtraEips: extraEIPs, NumRetainBlockHashes: &params.NumRetainBlockHashes}
+
+	// use dummy block context for chain rules in EVM creation
+	dummyBlockContext, err := k.buildBlockContext(ctx, nil, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
@@ -176,27 +173,30 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	if err != nil {
 		return ctx, nil, err
 	}
-	stateDB, err := k.NewStateDB(ctx, evm, fee)
-	if err != nil {
-		return ctx, nil, err
-	}
 
-	chainConfig := types.DefaultChainConfig(ctx)
-	rules := chainConfig.Rules(blockContext.BlockNumber, blockContext.Random != nil, blockContext.Time)
-	vmConfig := vm.Config{Tracer: tracer, ExtraEips: extraEIPs, NumRetainBlockHashes: &params.NumRetainBlockHashes}
-	precompiles, err := k.precompiles(rules, stateDB)
-	if err != nil {
-		return ctx, nil, err
-	}
-
-	*evm = *vm.NewEVMWithPrecompiles(
-		blockContext,
+	// NOTE: need to check if the EVM is correctly initialized with empty context and stateDB
+	evm := vm.NewEVM(
+		dummyBlockContext,
 		txContext,
-		stateDB,
+		nil,
 		chainConfig,
 		vmConfig,
-		precompiles,
 	)
+	// customize EVM contexts and stateDB and precompiles
+	evm.Context, err = k.buildBlockContext(ctx, evm, fee)
+	if err != nil {
+		return ctx, nil, err
+	}
+	evm.StateDB, err = k.NewStateDB(ctx, evm, fee)
+	if err != nil {
+		return ctx, nil, err
+	}
+	rules := chainConfig.Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
+	precompiles, err := k.precompiles(rules, evm.StateDB.(types.StateDB))
+	if err != nil {
+		return ctx, nil, err
+	}
+	evm.SetPrecompiles(precompiles)
 
 	if tracer != nil {
 		// register vm context to tracer
