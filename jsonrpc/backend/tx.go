@@ -454,7 +454,7 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 	}
 
 	recepts := []*coretypes.Receipt{}
-	err = b.app.EVMIndexer().IterateBlockTxRecepts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
+	err = b.app.EVMIndexer().IterateBlockTxReceipts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
 		recepts = append(recepts, recept)
 		return false, nil
 	})

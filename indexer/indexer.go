@@ -35,7 +35,7 @@ type EVMIndexer interface {
 
 	// tx receipt
 	TxReceiptByHash(ctx context.Context, hash common.Hash) (*coretypes.Receipt, error)
-	IterateBlockTxRecepts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error
+	IterateBlockTxReceipts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error
 
 	// block
 	BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error)

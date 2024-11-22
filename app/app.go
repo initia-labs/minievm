@@ -602,7 +602,9 @@ func (app *MinitiaApp) Close() error {
 		return err
 	}
 
-	app.evmIndexer.Stop()
+	if app.evmIndexer != nil {
+		app.evmIndexer.Stop()
+	}
 
 	return nil
 }
