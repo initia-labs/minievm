@@ -186,7 +186,6 @@ Also when a contract make IBC transfer request, it should provide async callback
 ### IBC Transfer using ERC20Wrapper
 
 `src -> dst`: Execute the ERC20Wrapper contract to wrap and do ibc-transfer
-
 `dst -> src`: ibc-transfer and execute the ERC20Wrapper contract via ibc-hook
 
 - data example
