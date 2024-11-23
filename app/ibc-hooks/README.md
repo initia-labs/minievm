@@ -147,7 +147,7 @@ If an ICS20 packet is directed towards evmhooks, and is formatted incorrectly, t
 
 Pre evm hooks:
 
-- Ensure the incoming IBC packet is cryptogaphically valid
+- Ensure the incoming IBC packet is cryptographically valid
 - Ensure the incoming IBC packet is not timed out.
 
 In evm hooks, pre packet execution:
@@ -187,7 +187,7 @@ Also when a contract make IBC transfer request, it should provide async callback
 
 `src -> dst`: Execute the ERC20Wrapper contract to wrap and do ibc-transfer
 
-`dst -> src`: ibc-trasfer and execute the ERC20Wrapper contract via ibc-hook
+`dst -> src`: ibc-transfer and execute the ERC20Wrapper contract via ibc-hook
 
 - data example
 
