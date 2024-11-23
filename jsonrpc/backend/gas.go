@@ -20,6 +20,9 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 	if overrides != nil {
 		return hexutil.Uint64(0), errors.New("state overrides are not supported")
 	}
+	if args.From == nil {
+		return hexutil.Uint64(0), errors.New("empty from address is not allowed from the estimate gas")
+	}
 
 	if args.Nonce == nil && args.From != nil {
 		nonce, err := b.GetTransactionCount(*args.From, rpc.BlockNumberOrHashWithNumber(rpc.PendingBlockNumber))
