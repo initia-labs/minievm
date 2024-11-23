@@ -21,7 +21,7 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 		return hexutil.Uint64(0), errors.New("state overrides are not supported")
 	}
 	if args.From == nil {
-		return hexutil.Uint64(0), errors.New("empty from address is not allowed from the estimate gas")
+		return hexutil.Uint64(0), errors.New("from address cannot be empty in the estimated gas")
 	}
 
 	if args.Nonce == nil && args.From != nil {
