@@ -58,6 +58,9 @@ func (suite *AnteTestSuite) createTestApp(tempDir string) (*minievmapp.MinitiaAp
 	err = app.EVMKeeper.Params.Set(ctx, params)
 	suite.NoError(err)
 
+	err = app.EVMKeeper.Initialize(ctx)
+	suite.NoError(err)
+
 	return app, ctx
 }
 
@@ -130,4 +133,8 @@ func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []
 
 func TestAnteTestSuite(t *testing.T) {
 	suite.Run(t, new(AnteTestSuite))
+}
+
+func noopAnteHandler(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+	return ctx, nil
 }

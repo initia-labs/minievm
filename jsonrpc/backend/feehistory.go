@@ -9,12 +9,10 @@ import (
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 const (
@@ -226,19 +224,13 @@ func (b *JSONRPCBackend) resolveBlockRange(reqEnd rpc.BlockNumber, blocks uint64
 // the block field filled in, retrieves the block from the backend if not present yet and
 // fills in the rest of the fields.
 func (b *JSONRPCBackend) processBlock(bf *blockFees, percentiles []float64) {
-	ctx, err := b.app.CreateQueryContext(0, false)
-	if err != nil {
-		bf.err = err
-		return
-	}
-
-	config := evmtypes.DefaultChainConfig(ctx)
-
 	// Fill in base fee and next base fee.
 	if bf.results.baseFee = bf.header.BaseFee; bf.results.baseFee == nil {
 		bf.results.baseFee = new(big.Int)
 	}
-	bf.results.nextBaseFee = eip1559.CalcBaseFee(config, bf.header)
+
+	// NOTE: we don't have dynamic base fee calculation yet
+	bf.results.nextBaseFee = bf.header.BaseFee
 	bf.results.blobBaseFee = new(big.Int)
 	bf.results.nextBlobBaseFee = new(big.Int)
 

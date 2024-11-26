@@ -249,18 +249,19 @@ func NewMinitiaApp(
 	}
 
 	// setup indexer
-	if evmIndexer, kvIndexerKeeper, kvIndexerModule, streamingManager, err := setupIndexer(app, appOpts, indexerDB, kvindexerDB); err != nil {
+	evmIndexer, kvIndexerKeeper, kvIndexerModule, streamingManager, err := setupIndexer(app, appOpts, indexerDB, kvindexerDB)
+	if err != nil {
 		tmos.Exit(err.Error())
-	} else if kvIndexerKeeper != nil && kvIndexerModule != nil && streamingManager != nil {
+	} else if kvIndexerKeeper != nil && kvIndexerModule != nil {
 		// register kvindexer keeper and module, and register services.
 		app.SetKVIndexer(kvIndexerKeeper, kvIndexerModule)
-
-		// register evm indexer
-		app.SetEVMIndexer(evmIndexer)
-
-		// override base-app's streaming manager
-		app.SetStreamingManager(*streamingManager)
 	}
+
+	// register evm indexer
+	app.SetEVMIndexer(evmIndexer)
+
+	// override base-app's streaming manager
+	app.SetStreamingManager(*streamingManager)
 
 	// register upgrade handler for later use
 	app.RegisterUpgradeHandlers(app.configurator)

@@ -126,6 +126,8 @@ func (api *FilterAPI) clearUnusedFilters() {
 	}
 }
 
+// eventLoop is the main loop for the filter API.
+// NOTE: api.subscriptions is not thread-safe and should only be accessed from this goroutine.
 func (api *FilterAPI) eventLoop() {
 	for {
 		select {
@@ -219,7 +221,7 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) 
 					f.hashes = append(f.hashes, hash)
 				}
 				api.filtersMut.Unlock()
-			case <-s.err: // subsciprtion is uninstalled
+			case <-s.err: // subscription is uninstalled
 				return
 			}
 		}
@@ -265,7 +267,7 @@ func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
 					f.hashes = append(f.hashes, header.Hash())
 				}
 				api.filtersMut.Unlock()
-			case <-s.err: // subsciprtion is uninstalled
+			case <-s.err: // subscription is uninstalled
 				return
 			}
 		}
@@ -343,7 +345,7 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 					f.logs = append(f.logs, logs...)
 				}
 				api.filtersMut.Unlock()
-			case <-s.err: // subsciprtion is uninstalled
+			case <-s.err: // subscription is uninstalled
 				return
 			}
 		}

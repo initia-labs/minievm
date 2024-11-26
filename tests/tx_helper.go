@@ -1,4 +1,4 @@
-package indexer_test
+package tests
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ import (
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
-func generateKeys(t *testing.T, n int) ([]common.Address, []*ecdsa.PrivateKey) {
+func GenerateKeys(t *testing.T, n int) ([]common.Address, []*ecdsa.PrivateKey) {
 	addrs := make([]common.Address, n)
 	privKeys := make([]*ecdsa.PrivateKey, n)
 	for i := 0; i < n; i++ {
@@ -52,13 +52,46 @@ func generateKeys(t *testing.T, n int) ([]common.Address, []*ecdsa.PrivateKey) {
 	return addrs, privKeys
 }
 
-func generateTx(
+// Opt is a function that modifies the tx
+type Opt func(tx *coretypes.DynamicFeeTx)
+
+// SetNonce sets the nonce of the tx
+func SetNonce(nonce uint64) Opt {
+	return func(tx *coretypes.DynamicFeeTx) {
+		tx.Nonce = nonce
+	}
+}
+
+// SetGasFeeCap sets the gas fee cap of the tx
+func SetGasFeeCap(gasFeeCap *big.Int) Opt {
+	return func(tx *coretypes.DynamicFeeTx) {
+		tx.GasFeeCap = gasFeeCap
+	}
+}
+
+// SetGasLimit sets the gas limit of the tx
+func SetGasLimit(gasLimit uint64) Opt {
+	return func(tx *coretypes.DynamicFeeTx) {
+		tx.Gas = gasLimit
+	}
+}
+
+// SetGasTipCap sets the gas tip cap of the tx
+func SetGasTipCap(gasTipCap *big.Int) Opt {
+	return func(tx *coretypes.DynamicFeeTx) {
+		tx.GasTipCap = gasTipCap
+	}
+}
+
+// GenerateTx generates a tx with the given parameters
+func GenerateTx(
 	t *testing.T,
 	app *minitiaapp.MinitiaApp,
 	privKey *ecdsa.PrivateKey,
 	to *common.Address,
 	inputBz []byte,
-	seqNum ...uint64,
+	value *big.Int,
+	opts ...Opt,
 ) (sdk.Tx, common.Hash) {
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
@@ -66,29 +99,29 @@ func generateTx(
 	gasLimit := new(big.Int).SetUint64(1_000_000)
 	gasPrice := new(big.Int).SetUint64(1_000_000_000)
 
-	nonce := uint64(0)
-	if len(seqNum) == 0 {
-		cosmosKey := ethsecp256k1.PrivKey{Key: crypto.FromECDSA(privKey)}
-		addrBz := cosmosKey.PubKey().Address()
-		nonce, err = app.AccountKeeper.GetSequence(ctx, sdk.AccAddress(addrBz))
-		require.NoError(t, err)
-	} else {
-		nonce = seqNum[0]
-	}
-
 	ethChainID := evmtypes.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
-	ethTx := coretypes.NewTx(&coretypes.DynamicFeeTx{
+	dynamicFeeTx := &coretypes.DynamicFeeTx{
 		ChainID:    ethChainID,
-		Nonce:      nonce,
+		Nonce:      0,
 		GasTipCap:  big.NewInt(0),
 		GasFeeCap:  gasPrice,
 		Gas:        gasLimit.Uint64(),
 		To:         to,
 		Data:       inputBz,
-		Value:      new(big.Int).SetUint64(0),
+		Value:      value,
 		AccessList: coretypes.AccessList{},
-	})
+	}
+	for _, opt := range opts {
+		opt(dynamicFeeTx)
+	}
+	if dynamicFeeTx.Nonce == 0 {
+		cosmosKey := ethsecp256k1.PrivKey{Key: crypto.FromECDSA(privKey)}
+		addrBz := cosmosKey.PubKey().Address()
+		dynamicFeeTx.Nonce, err = app.AccountKeeper.GetSequence(ctx, sdk.AccAddress(addrBz))
+		require.NoError(t, err)
+	}
 
+	ethTx := coretypes.NewTx(dynamicFeeTx)
 	signer := coretypes.LatestSignerForChainID(ethChainID)
 	signedTx, err := coretypes.SignTx(ethTx, signer, privKey)
 	require.NoError(t, err)
@@ -100,7 +133,7 @@ func generateTx(
 	return sdkTx, signedTx.Hash()
 }
 
-func generateCreateInitiaERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, seqNum ...uint64) (sdk.Tx, common.Hash) {
+func GenerateCreateInitiaERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, opts ...Opt) (sdk.Tx, common.Hash) {
 	abi, err := initia_erc20.InitiaErc20MetaData.GetAbi()
 	require.NoError(t, err)
 
@@ -110,10 +143,10 @@ func generateCreateInitiaERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privK
 	inputBz, err := abi.Pack("", "foo", "foo", uint8(6))
 	require.NoError(t, err)
 
-	return generateTx(t, app, privKey, nil, append(bin, inputBz...), seqNum...)
+	return GenerateTx(t, app, privKey, nil, append(bin, inputBz...), new(big.Int).SetUint64(0), opts...)
 }
 
-func generateCreateERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, seqNum ...uint64) (sdk.Tx, common.Hash) {
+func GenerateCreateERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, opts ...Opt) (sdk.Tx, common.Hash) {
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
@@ -126,31 +159,31 @@ func generateCreateERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ec
 	inputBz, err := abi.Pack("createERC20", "foo", "foo", uint8(6))
 	require.NoError(t, err)
 
-	return generateTx(t, app, privKey, &ethFactoryAddr, inputBz, seqNum...)
+	return GenerateTx(t, app, privKey, &ethFactoryAddr, inputBz, new(big.Int).SetUint64(0), opts...)
 }
 
-func generateMintERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, erc20Addr, recipient common.Address, amount *big.Int, seqNum ...uint64) (sdk.Tx, common.Hash) {
+func GenerateMintERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, erc20Addr, recipient common.Address, amount *big.Int, opts ...Opt) (sdk.Tx, common.Hash) {
 	abi, err := erc20.Erc20MetaData.GetAbi()
 	require.NoError(t, err)
 
 	inputBz, err := abi.Pack("mint", recipient, amount)
 	require.NoError(t, err)
 
-	return generateTx(t, app, privKey, &erc20Addr, inputBz, seqNum...)
+	return GenerateTx(t, app, privKey, &erc20Addr, inputBz, new(big.Int).SetUint64(0), opts...)
 }
 
-func generateTransferERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, erc20Addr, recipient common.Address, amount *big.Int, seqNum ...uint64) (sdk.Tx, common.Hash) {
+func GenerateTransferERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, erc20Addr, recipient common.Address, amount *big.Int, opts ...Opt) (sdk.Tx, common.Hash) {
 	abi, err := erc20.Erc20MetaData.GetAbi()
 	require.NoError(t, err)
 
 	inputBz, err := abi.Pack("transfer", recipient, amount)
 	require.NoError(t, err)
 
-	return generateTx(t, app, privKey, &erc20Addr, inputBz, seqNum...)
+	return GenerateTx(t, app, privKey, &erc20Addr, inputBz, new(big.Int).SetUint64(0), opts...)
 }
 
 // execute txs and finalize block and commit block
-func executeTxs(t *testing.T, app *minitiaapp.MinitiaApp, txs ...sdk.Tx) (*abcitypes.RequestFinalizeBlock, *abcitypes.ResponseFinalizeBlock) {
+func ExecuteTxs(t *testing.T, app *minitiaapp.MinitiaApp, txs ...sdk.Tx) (*abcitypes.RequestFinalizeBlock, *abcitypes.ResponseFinalizeBlock) {
 	txsBytes := make([][]byte, len(txs))
 	for i, tx := range txs {
 		txBytes, err := app.TxConfig().TxEncoder()(tx)
@@ -175,7 +208,7 @@ func executeTxs(t *testing.T, app *minitiaapp.MinitiaApp, txs ...sdk.Tx) (*abcit
 	return finalizeReq, finalizeRes
 }
 
-func checkTxResult(t *testing.T, txResult *abcitypes.ExecTxResult, expectSuccess bool) {
+func CheckTxResult(t *testing.T, txResult *abcitypes.ExecTxResult, expectSuccess bool) {
 	if expectSuccess {
 		require.Equal(t, abcitypes.CodeTypeOK, txResult.Code)
 	} else {

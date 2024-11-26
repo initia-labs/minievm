@@ -2,6 +2,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -87,6 +88,7 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 		return hexutil.Uint64(0), err
 	}
 
+	fmt.Println(gasInfo)
 	return hexutil.Uint64(gasInfo.GasUsed), nil
 }
 

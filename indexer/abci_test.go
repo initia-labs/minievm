@@ -8,8 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	storetypes "cosmossdk.io/store/types"
-
+	"github.com/initia-labs/minievm/tests"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,12 +16,13 @@ import (
 )
 
 func Test_ListenFinalizeBlock(t *testing.T) {
-	app, indexer, addrs, privKeys := setupIndexer(t)
+	app, addrs, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
 	defer app.Close()
 
-	tx, evmTxHash := generateCreateERC20Tx(t, app, privKeys[0])
-	finalizeReq, finalizeRes := executeTxs(t, app, tx)
-	checkTxResult(t, finalizeRes.TxResults[0], true)
+	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	events := finalizeRes.TxResults[0].Events
 	createEvent := events[len(events)-3]
@@ -35,24 +35,18 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
-	err = indexer.ListenFinalizeBlock(ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter()), *finalizeReq, *finalizeRes)
-	require.NoError(t, err)
-
 	// check the tx is indexed
 	evmTx, err := indexer.TxByHash(ctx, evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
 	// mint 1_000_000 tokens to the first address
-	tx, evmTxHash = generateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
-	finalizeReq, finalizeRes = executeTxs(t, app, tx)
-	checkTxResult(t, finalizeRes.TxResults[0], true)
+	tx, evmTxHash = tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	// listen finalize block
 	ctx, err = app.CreateQueryContext(0, false)
-	require.NoError(t, err)
-
-	err = indexer.ListenFinalizeBlock(ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter()), *finalizeReq, *finalizeRes)
 	require.NoError(t, err)
 
 	// check the tx is indexed
@@ -69,27 +63,16 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 }
 
 func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
-	app, indexer, _, privKeys := setupIndexer(t)
+	app, _, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
 	defer app.Close()
 
 	blockChan, logsChan, pendChan := indexer.Subscribe()
 	close(pendChan)
 
-	tx, evmTxHash := generateCreateERC20Tx(t, app, privKeys[0])
-	finalizeReq, finalizeRes := executeTxs(t, app, tx)
-	checkTxResult(t, finalizeRes.TxResults[0], true)
+	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 
-	events := finalizeRes.TxResults[0].Events
-	createEvent := events[len(events)-3]
-	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
-
-	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
-	require.NoError(t, err)
-
-	// listen finalize block
-	ctx, err := app.CreateQueryContext(0, false)
-	require.NoError(t, err)
-
+	reqHeight := app.LastBlockHeight() + 1
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	go func() {
@@ -97,18 +80,17 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 			select {
 			case block := <-blockChan:
 				require.NotNil(t, block)
-				require.Equal(t, finalizeReq.Height, block.Number.Int64())
+				require.Equal(t, reqHeight, block.Number.Int64())
 				wg.Done()
 			case logs := <-logsChan:
 				require.NotNil(t, logs)
 
 				for _, log := range logs {
-					if log.Address == common.BytesToAddress(contractAddr) {
-						require.Equal(t, evmTxHash, log.TxHash)
-						require.Equal(t, uint64(finalizeReq.Height), log.BlockNumber)
-						wg.Done()
-					}
+					require.Equal(t, evmTxHash, log.TxHash)
+					require.Equal(t, uint64(reqHeight), log.BlockNumber)
 				}
+
+				wg.Done()
 			case <-time.After(10 * time.Second):
 				t.Error("timeout waiting for pending transaction")
 				wg.Done()
@@ -116,19 +98,25 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 		}
 	}()
 
-	err = indexer.ListenFinalizeBlock(ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter()), *finalizeReq, *finalizeRes)
-	require.NoError(t, err)
+	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	require.Equal(t, reqHeight, finalizeReq.Height)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	events := finalizeRes.TxResults[0].Events
+	createEvent := events[len(events)-3]
+	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
 
 	wg.Wait()
 }
 
 func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
-	app, indexer, _, privKeys := setupIndexer(t)
+	app, _, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
 	defer app.Close()
 
-	tx, evmTxHash := generateCreateInitiaERC20Tx(t, app, privKeys[0])
-	finalizeReq, finalizeRes := executeTxs(t, app, tx)
-	checkTxResult(t, finalizeRes.TxResults[0], true)
+	tx, evmTxHash := tests.GenerateCreateInitiaERC20Tx(t, app, privKeys[0])
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	events := finalizeRes.TxResults[0].Events
 	createEvent := events[len(events)-3]
@@ -137,14 +125,10 @@ func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
 	require.NoError(t, err)
 
-	// listen finalize block
+	// check the tx is indexed
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
-	err = indexer.ListenFinalizeBlock(ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter()), *finalizeReq, *finalizeRes)
-	require.NoError(t, err)
-
-	// check the tx is indexed
 	receipt, err := indexer.TxReceiptByHash(ctx, evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, receipt)

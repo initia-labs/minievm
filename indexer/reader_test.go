@@ -8,23 +8,23 @@ import (
 
 	cmttypes "github.com/cometbft/cometbft/types"
 
-	storetypes "cosmossdk.io/store/types"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	"github.com/initia-labs/minievm/tests"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 func Test_Reader(t *testing.T) {
-	app, indexer, addrs, privKeys := setupIndexer(t)
+	app, addrs, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
 	defer app.Close()
 
-	tx, evmTxHash := generateCreateERC20Tx(t, app, privKeys[0])
-	finalizeReq, finalizeRes := executeTxs(t, app, tx)
-	checkTxResult(t, finalizeRes.TxResults[0], true)
+	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	events := finalizeRes.TxResults[0].Events
 	createEvent := events[len(events)-3]
@@ -33,24 +33,20 @@ func Test_Reader(t *testing.T) {
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
 	require.NoError(t, err)
 
-	// listen finalize block
+	// check the tx is indexed
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
-	err = indexer.ListenFinalizeBlock(ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter()), *finalizeReq, *finalizeRes)
-	require.NoError(t, err)
-
-	// check the tx is indexed
 	evmTx, err := indexer.TxByHash(ctx, evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
 	// mint 1_000_000 tokens to the first address
-	tx, evmTxHash = generateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
-	tx2, evmTxHash2 := generateTransferERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), 2)
-	finalizeReq, finalizeRes = executeTxs(t, app, tx, tx2)
-	checkTxResult(t, finalizeRes.TxResults[0], true)
-	checkTxResult(t, finalizeRes.TxResults[1], true)
+	tx, evmTxHash = tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+	tx2, evmTxHash2 := tests.GenerateTransferERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), tests.SetNonce(2))
+	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx, tx2)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
 	txBytes, err := app.TxEncode(tx)
 	require.NoError(t, err)
@@ -62,14 +58,10 @@ func Test_Reader(t *testing.T) {
 	cmtTx2 := cmttypes.Tx(txBytes2)
 	cosmosTxHash2 := cmtTx2.Hash()
 
-	// listen finalize block
+	// check the tx is indexed
 	ctx, err = app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
-	err = indexer.ListenFinalizeBlock(ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter()), *finalizeReq, *finalizeRes)
-	require.NoError(t, err)
-
-	// check the tx is indexed
 	evmTx, err = indexer.TxByHash(ctx, evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)

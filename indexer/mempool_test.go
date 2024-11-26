@@ -5,20 +5,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/initia-labs/minievm/tests"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 )
 
 func Test_Mempool_Subscribe(t *testing.T) {
-	app, indexer, _, privKeys := setupIndexer(t)
+	app, _, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
 	defer app.Close()
 
 	blockChan, logsChan, pendChan := indexer.Subscribe()
 	close(blockChan)
 	close(logsChan)
 
-	tx, evmTxHash := generateCreateERC20Tx(t, app, privKeys[0])
+	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

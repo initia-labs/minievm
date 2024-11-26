@@ -162,25 +162,27 @@ type blockEvents struct {
 
 // blockEventsEmitter emits block events to subscribers.
 func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan struct{}) {
+	defer close(done)
 	if blockEvents == nil {
 		return
 	}
+
+	// emit logs first; use unbuffered channel to ensure logs are emitted before block header
 	for _, logs := range blockEvents.logs {
 		for _, logsChan := range e.logsChans {
 			logsChan <- logs
 		}
 	}
-	for _, logsChan := range e.logsChans {
-		logsChan <- []*coretypes.Log{}
-	}
+
+	// emit block header
 	for _, blockChan := range e.blockChans {
 		blockChan <- blockEvents.header
 	}
-
-	close(done)
 }
 
 // Stop stops the indexer.
 func (e *EVMIndexerImpl) Stop() {
-	e.txPendingMap.Stop()
+	if e.txPendingMap != nil {
+		e.txPendingMap.Stop()
+	}
 }
