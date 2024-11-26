@@ -51,7 +51,8 @@ func CreateApp(t *testing.T) (*minitiaapp.MinitiaApp, []common.Address, []*ecdsa
 	_, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{Height: app.LastBlockHeight() + 1})
 	require.NoError(t, err)
 
-	app.Commit()
+	_, err = app.Commit()
+	require.NoError(t, err)
 
 	return app, addrs, privKeys
 }

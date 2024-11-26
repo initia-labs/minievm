@@ -203,7 +203,8 @@ func ExecuteTxs(t *testing.T, app *minitiaapp.MinitiaApp, txs ...sdk.Tx) (*abcit
 		TxResults: resBlock.TxResults,
 	}
 
-	app.Commit()
+	_, err = app.Commit()
+	require.NoError(t, err)
 
 	return finalizeReq, finalizeRes
 }
