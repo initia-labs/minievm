@@ -44,7 +44,6 @@ interface ICosmos {
     ) external returns (address erc20_address);
 
     // record a cosmos message to be executed after the current message execution.
-    // - if execution fails, whole transaction will be reverted.
     //
     // `msg` format (json string):
     // {
