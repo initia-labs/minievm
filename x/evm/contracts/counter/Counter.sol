@@ -47,27 +47,19 @@ contract Counter is IIBCAsyncCallback {
         return COSMOS_CONTRACT.query_cosmos(path, req);
     }
 
-    function execute_cosmos(string memory exec_msg, bool call_revert) external {
-        COSMOS_CONTRACT.execute_cosmos(exec_msg);
-
-        if (call_revert) {
-            revert("revert reason dummy value for test");
-        }
-    }
-
-    function execute_cosmos_with_options(
+    function execute_cosmos(
         string memory exec_msg,
-        bool allow_failure,
-        uint64 callback_id
+        bool try_catch
     ) external {
-        COSMOS_CONTRACT.execute_cosmos_with_options(
-            exec_msg,
-            ICosmos.Options(allow_failure, callback_id)
-        );
-    }
-
-    function callback(uint64 callback_id, bool success) external {
-        emit callback_received(callback_id, success);
+        if (try_catch) {
+            try COSMOS_CONTRACT.execute_cosmos(exec_msg) {
+                // do nothing
+            } catch {
+                // do nothing
+            }
+        } else {
+            COSMOS_CONTRACT.execute_cosmos(exec_msg);
+        }
     }
 
     function get_blockhash(uint64 n) external view returns (bytes32) {

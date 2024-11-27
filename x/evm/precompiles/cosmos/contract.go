@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +15,7 @@ import (
 
 	"cosmossdk.io/core/address"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -45,6 +47,7 @@ type CosmosPrecompile struct {
 	ak         types.AccountKeeper
 	bk         types.BankKeeper
 	edk        types.ERC20DenomKeeper
+	msgRouter  baseapp.MessageRouter
 	grpcRouter types.GRPCRouter
 
 	queryWhitelist types.QueryCosmosWhitelist
@@ -59,6 +62,7 @@ func NewCosmosPrecompile(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,
 	edk types.ERC20DenomKeeper,
+	msgRouter baseapp.MessageRouter,
 	grpcRouter types.GRPCRouter,
 	queryWhitelist types.QueryCosmosWhitelist,
 	authority string,
@@ -76,6 +80,7 @@ func NewCosmosPrecompile(
 		bk:             bk,
 		edk:            edk,
 		stateDB:        stateDB,
+		msgRouter:      msgRouter,
 		grpcRouter:     grpcRouter,
 		queryWhitelist: queryWhitelist,
 		authorityAddr:  authorityAddr,
@@ -284,14 +289,32 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 			}
 		}
 
-		messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
-		*messages = append(*messages, types.ExecuteRequest{
-			Caller: caller,
-			Msg:    sdkMsg,
+		// find handler for the message
+		handler := e.msgRouter.Handler(sdkMsg)
+		if handler == nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNotSupportedCosmosMessage
+		}
 
-			AllowFailure: executeCosmosArguments.Options.AllowFailure,
-			CallbackId:   executeCosmosArguments.Options.CallbackId,
-		})
+		// and execute it
+		res, err := handler(ctx, sdkMsg)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), err
+		}
+
+		// emit events
+		// remove logs from the events to avoid double logging
+		ctx.EventManager().EmitEvents(slices.DeleteFunc(res.GetEvents(), func(event sdk.Event) bool {
+			return event.Type == types.EventTypeEVM
+		}))
+
+		// extract logs from the response
+		logs, err := types.ExtractLogsFromResponse(res.Data, sdk.MsgTypeURL(sdkMsg))
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), err
+		}
+		for _, log := range logs {
+			e.stateDB.AddLog(log.ToEthLog())
+		}
 
 		// abi encode the response
 		resBz, err = method.Outputs.Pack(true)
