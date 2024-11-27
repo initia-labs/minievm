@@ -9,7 +9,7 @@ contract Counter is IIBCAsyncCallback {
     uint256 public count;
 
     event increased(uint256 oldCount, uint256 newCount);
-    event callback_received(uint64 callback_id, bool success);
+    event execute_reverted(bool reverted);
     event recursive_called(uint64 n);
 
     constructor() payable {}
@@ -53,9 +53,9 @@ contract Counter is IIBCAsyncCallback {
     ) external {
         if (try_catch) {
             try COSMOS_CONTRACT.execute_cosmos(exec_msg) {
-                // do nothing
+                emit execute_reverted(false);
             } catch {
-                // do nothing
+                emit execute_reverted(true);
             }
         } else {
             COSMOS_CONTRACT.execute_cosmos(exec_msg);

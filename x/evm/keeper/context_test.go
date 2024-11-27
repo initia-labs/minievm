@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
@@ -313,11 +315,33 @@ func Test_ExecuteCosmos(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	eventManager := sdk.NewEventManager()
+	_, _, err = input.EVMKeeper.EVMCall(ctx.WithEventManager(eventManager), caller, contractAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
 	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+
+	shouldEnter := false
+	for _, event := range eventManager.Events() {
+		if event.Type == types.EventTypeEVM {
+			for _, attr := range event.Attributes {
+				if attr.Key == types.AttributeKeyLog {
+					var log types.Log
+					err := json.Unmarshal([]byte(attr.Value), &log)
+					require.NoError(t, err)
+					if log.Address == contractAddr.Hex() {
+						// should emit reverted true log
+						require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000001", log.Data)
+						shouldEnter = true
+					}
+				}
+			}
+		} else if event.Type == banktypes.EventTypeTransfer {
+			require.FailNow(t, "should not emit bank transfer event")
+		}
+	}
+	require.True(t, shouldEnter)
 
 	// call normally
 	inputBz, err = parsed.Pack("execute_cosmos",
@@ -327,13 +351,37 @@ func Test_ExecuteCosmos(t *testing.T) {
 			denom,
 			amount,
 		),
-		false,
+		true,
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	eventManager = sdk.NewEventManager()
+	_, _, err = input.EVMKeeper.EVMCall(ctx.WithEventManager(eventManager), caller, contractAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
 	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+
+	shouldEnter = false
+	shouldEnterBank := false
+	for _, event := range eventManager.Events() {
+		if event.Type == types.EventTypeEVM {
+			for _, attr := range event.Attributes {
+				if attr.Key == types.AttributeKeyLog {
+					var log types.Log
+					err := json.Unmarshal([]byte(attr.Value), &log)
+					require.NoError(t, err)
+					if log.Address == contractAddr.Hex() {
+						// should emit reverted false log
+						require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", log.Data)
+						shouldEnter = true
+					}
+				}
+			}
+		} else if event.Type == banktypes.EventTypeTransfer {
+			shouldEnterBank = true
+		}
+	}
+	require.True(t, shouldEnter)
+	require.True(t, shouldEnterBank)
 }
