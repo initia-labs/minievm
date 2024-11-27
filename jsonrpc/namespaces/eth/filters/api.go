@@ -3,6 +3,7 @@ package filters
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -339,7 +340,9 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 		for {
 			select {
 			case logs := <-logsChan:
+				fmt.Println(logs)
 				logs = filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
+				fmt.Println(logs)
 				api.filtersMut.Lock()
 				if f, found := api.filters[id]; found {
 					f.logs = append(f.logs, logs...)

@@ -3,6 +3,8 @@ package types
 import (
 	"math/big"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -132,4 +134,10 @@ func (rpcTx RPCTransaction) ToTransaction() *coretypes.Transaction {
 	default:
 		return nil
 	}
+}
+
+// String implements the fmt.Stringer interface
+func (rpcTx RPCTransaction) String() string {
+	yamlBytes, _ := yaml.Marshal(rpcTx)
+	return string(yamlBytes)
 }
