@@ -226,6 +226,9 @@ func Test_NewBlockFilter(t *testing.T) {
 	_, finalizeRes = tests.ExecuteTxs(t, app, tx2)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
+	// wait txs to be indexed
+	time.Sleep(2 * time.Second)
+
 	// there should be 2 changes
 	changes, err := input.filterAPI.GetFilterChanges(filterID)
 	require.NoError(t, err)
@@ -281,11 +284,66 @@ func Test_NewFilter(t *testing.T) {
 	_, finalizeRes = tests.ExecuteTxs(t, app, tx2)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
+	// wait txs to be indexed
+	time.Sleep(2 * time.Second)
+
 	changes, err := input.filterAPI.GetFilterChanges(filterID)
 	require.NoError(t, err)
 	require.NotEmpty(t, changes)
 	for _, change := range changes.([]*coretypes.Log) {
 		require.Equal(t, txHash2, change.TxHash)
-		t.Logf("%v", change)
+	}
+}
+
+func Test_GetLogs(t *testing.T) {
+	input := setupFilterAPI(t)
+	defer input.app.Close()
+
+	app, addrs, privKeys := input.app, input.addrs, input.privKeys
+
+	// invalid block range
+	_, err := input.filterAPI.NewFilter(ethfilters.FilterCriteria{
+		FromBlock: big.NewInt(100),
+		ToBlock:   big.NewInt(10),
+	})
+	require.Error(t, err)
+
+	tx, txHash1 := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	events := finalizeRes.TxResults[0].Events
+	createEvent := events[len(events)-3]
+	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
+
+	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
+	require.NoError(t, err)
+
+	// mint 1_000_000 tokens to the first address
+	tx2, txHash2 := tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+	_, finalizeRes = tests.ExecuteTxs(t, app, tx2)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	// wait txs to be indexed
+	time.Sleep(2 * time.Second)
+
+	logs, err := input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
+		FromBlock: big.NewInt(app.LastBlockHeight()),
+		ToBlock:   big.NewInt(app.LastBlockHeight()),
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, logs)
+	for _, log := range logs {
+		require.Equal(t, txHash2, log.TxHash)
+	}
+
+	logs, err = input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
+		FromBlock: big.NewInt(app.LastBlockHeight() - 1),
+		ToBlock:   big.NewInt(app.LastBlockHeight() - 1),
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, logs)
+	for _, log := range logs {
+		require.Equal(t, txHash1, log.TxHash)
 	}
 }

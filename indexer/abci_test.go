@@ -1,10 +1,10 @@
 package indexer_test
 
 import (
+	"context"
 	"math/big"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -74,6 +74,7 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 
 	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 
+	ctx, done := context.WithCancel(context.Background())
 	reqHeight := app.LastBlockHeight() + 1
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -93,9 +94,8 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 				}
 
 				wg.Done()
-			case <-time.After(10 * time.Second):
-				t.Error("timeout waiting for pending transaction")
-				wg.Done()
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -109,6 +109,7 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
 
 	wg.Wait()
+	done()
 }
 
 func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {

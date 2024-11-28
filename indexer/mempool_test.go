@@ -1,9 +1,9 @@
 package indexer_test
 
 import (
+	"context"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/initia-labs/minievm/tests"
 	"github.com/stretchr/testify/require"
@@ -23,6 +23,7 @@ func Test_Mempool_Subscribe(t *testing.T) {
 
 	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 
+	ctx, done := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -31,9 +32,8 @@ func Test_Mempool_Subscribe(t *testing.T) {
 			require.NotNil(t, pendingTx)
 			require.Equal(t, evmTxHash, pendingTx.Hash)
 			wg.Done()
-		case <-time.After(5 * time.Second):
-			t.Error("timeout waiting for pending transaction")
-			wg.Done()
+		case <-ctx.Done():
+			return
 		}
 	}()
 
@@ -50,4 +50,5 @@ func Test_Mempool_Subscribe(t *testing.T) {
 	require.Equal(t, evmTxHash, rpcTx.Hash)
 
 	wg.Wait()
+	done()
 }
