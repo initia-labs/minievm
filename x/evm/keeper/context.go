@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/holiman/uint256"
@@ -207,12 +206,8 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 }
 
 // prepare SDK context for EVM execution
-// 1. set cosmos messages to context
-// 2. check recursive depth and increment it (the maximum depth is 16)
+// - check recursive depth and increment it (the maximum depth is 16)
 func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
-	// set cosmos messages to context
-	ctx = ctx.WithValue(types.CONTEXT_KEY_EXECUTE_REQUESTS, &[]types.ExecuteRequest{})
-
 	depth := 1
 	if val := ctx.Value(types.CONTEXT_KEY_RECURSIVE_DEPTH); val != nil {
 		depth = val.(int) + 1
@@ -335,14 +330,6 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		attrs...,
 	))
 
-	// handle cosmos execute requests
-	requests := sdkCtx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
-	if dispatchLogs, err := k.dispatchMessages(sdkCtx, *requests); err != nil {
-		return nil, nil, err
-	} else {
-		logs = append(logs, dispatchLogs...)
-	}
-
 	return retBz, logs, nil
 }
 
@@ -440,14 +427,6 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 		attrs...,
 	))
 
-	// handle cosmos execute requests
-	requests := sdkCtx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
-	if dispatchLogs, err := k.dispatchMessages(sdkCtx, *requests); err != nil {
-		return nil, common.Address{}, nil, err
-	} else {
-		logs = append(logs, dispatchLogs...)
-	}
-
 	return retBz, contractAddr, logs, nil
 }
 
@@ -460,106 +439,4 @@ func (k Keeper) NextContractAddress(ctx context.Context, caller common.Address) 
 	}
 
 	return crypto.CreateAddress(caller, stateDB.GetNonce(caller)), nil
-}
-
-// dispatchMessages run the given cosmos msgs and emit events
-func (k Keeper) dispatchMessages(ctx context.Context, requests []types.ExecuteRequest) (types.Logs, error) {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	var logs types.Logs
-	for _, request := range requests {
-		callLogs, err := k.dispatchMessage(sdkCtx, request)
-		if err != nil {
-			return nil, err
-		}
-
-		logs = append(logs, callLogs...)
-	}
-
-	return logs, nil
-}
-
-func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequest) (logs types.Logs, err error) {
-	msg := request.Msg
-	caller := request.Caller
-
-	allowFailure := request.AllowFailure
-	callbackId := request.CallbackId
-
-	ctx, commit := parentCtx.CacheContext()
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("panic: %v", r)
-		}
-
-		success := err == nil
-
-		// create submsg event
-		event := sdk.NewEvent(
-			types.EventTypeSubmsg,
-			sdk.NewAttribute(types.AttributeKeySuccess, fmt.Sprintf("%v", success)),
-		)
-
-		if !success {
-			// return error if failed and not allowed to fail
-			if !allowFailure {
-				return
-			}
-
-			// emit failed reason event if failed and allowed to fail
-			event = event.AppendAttributes(sdk.NewAttribute(types.AttributeKeyReason, err.Error()))
-		} else {
-			// commit if success
-			commit()
-		}
-
-		// reset error because it's allowed to fail
-		err = nil
-
-		// emit submessage event
-		parentCtx.EventManager().EmitEvent(event)
-
-		// if callback exists, execute it with parent context because it's already committed
-		if callbackId > 0 {
-			inputBz, err := k.cosmosCallbackABI.Pack("callback", callbackId, success)
-			if err != nil {
-				return
-			}
-
-			var callbackLogs types.Logs
-			_, callbackLogs, err = k.EVMCall(parentCtx, caller.Address(), caller.Address(), inputBz, nil, nil)
-			if err != nil {
-				return
-			}
-
-			logs = append(logs, callbackLogs...)
-		}
-	}()
-
-	// find the handler
-	handler := k.msgRouter.Handler(msg)
-	if handler == nil {
-		err = types.ErrNotSupportedCosmosMessage
-		return
-	}
-
-	// and execute it
-	res, err := handler(ctx, msg)
-	if err != nil {
-		return
-	}
-
-	// emit events
-	ctx.EventManager().EmitEvents(res.GetEvents())
-
-	// extract logs
-	dispatchLogs, err := types.ExtractLogsFromResponse(res.Data, sdk.MsgTypeURL(msg))
-	if err != nil {
-		return
-	}
-
-	// append logs
-	logs = append(logs, dispatchLogs...)
-
-	return
 }

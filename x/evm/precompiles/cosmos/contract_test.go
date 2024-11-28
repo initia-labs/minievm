@@ -42,7 +42,7 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, type
 	kv := db.NewMemDB()
 	cms := store.NewCommitMultiStore(kv, log.NewNopLogger(), storemetrics.NewNoOpMetrics())
 
-	ctx := sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger()).WithValue(types.CONTEXT_KEY_EXECUTE_REQUESTS, &[]types.ExecuteRequest{})
+	ctx := sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger())
 
 	interfaceRegistry, _ := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
 		ProtoFiles: proto.HybridResolver,
@@ -52,6 +52,7 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, type
 		},
 	})
 	banktypes.RegisterInterfaces(interfaceRegistry)
+	types.RegisterInterfaces(interfaceRegistry)
 
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	ac := codecaddress.NewBech32Codec("init")
@@ -66,7 +67,7 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -111,7 +112,7 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -156,7 +157,7 @@ func Test_CosmosPrecompile_IsAuthorityAddress(t *testing.T) {
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -198,7 +199,7 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -229,7 +230,7 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -260,7 +261,37 @@ func Test_ExecuteCosmos(t *testing.T) {
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, MockMessageRouter{
+		routes: map[string]baseapp.MsgServiceHandler{
+			"/minievm.evm.v1.MsgCall": func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+				ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeEVM, sdk.NewAttribute(types.AttributeKeyLog, "dummy")))
+				ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeEVM, sdk.NewAttribute(types.AttributeKeyLog, "dummy2")))
+				resp, err := proto.Marshal(&types.MsgCallResponse{
+					Logs: []types.Log{
+						{
+							Address: "0x1",
+							Topics:  []string{"hello", "world"},
+							Data:    "0x1234",
+						},
+						{
+							Address: "0x2",
+							Topics:  []string{"hello", "world"},
+							Data:    "0x4567",
+						},
+					},
+				})
+				require.NoError(t, err)
+				return &sdk.Result{
+					Data: resp,
+				}, nil
+			},
+			"/minievm.evm.v1.MsgCreate": func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+				ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeEVM, sdk.NewAttribute(types.AttributeKeyLog, "dummy")))
+				ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeEVM, sdk.NewAttribute(types.AttributeKeyLog, "dummy2")))
+				return &sdk.Result{}, fmt.Errorf("FORCE_REVERT")
+			},
+		},
+	}, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -270,17 +301,12 @@ func Test_ExecuteCosmos(t *testing.T) {
 	abi, err := contracts.ICosmosMetaData.GetAbi()
 	require.NoError(t, err)
 
-	// execute cosmos message
+	// 1. execute cosmos message
 	inputBz, err := abi.Pack(precompiles.METHOD_EXECUTE_COSMOS, fmt.Sprintf(`{
-		"@type": "/cosmos.bank.v1beta1.MsgSend",
-		"from_address": "%s",
-		"to_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
-		"amount": [
-			{
-				"denom": "stake",
-				"amount": "100"
-			}
-		]
+		"@type": "/minievm.evm.v1.MsgCall",
+		"sender": "%s",
+		"contract_addr": "0x1",
+		"input": "0x"
 	}`, cosmosAddr))
 	require.NoError(t, err)
 
@@ -296,112 +322,65 @@ func Test_ExecuteCosmos(t *testing.T) {
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.NoError(t, err)
 
-	messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
-	require.Len(t, *messages, 1)
-	require.Equal(t, (*messages)[0], types.ExecuteRequest{
-		Caller: vm.AccountRef(evmAddr),
-		Msg: &banktypes.MsgSend{
-			FromAddress: cosmosAddr,
-			ToAddress:   "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
-			Amount:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-		},
-		AllowFailure: false,
-		CallbackId:   0,
-	})
+	// should have empty events
+	require.Empty(t, stateDB.ctx.EventManager().Events())
+	// should have 2 logs
+	require.Len(t, stateDB.Logs(), 2)
 
-	// wrong signer message
+	// 2. execute create to revert the call
+	inputBz, err = abi.Pack(precompiles.METHOD_EXECUTE_COSMOS, fmt.Sprintf(`{
+		"@type": "/minievm.evm.v1.MsgCreate",
+		"sender": "%s",
+		"code": "0x"
+	}`, cosmosAddr))
+	require.NoError(t, err)
+
+	// failed with unauthorized error
+	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
+	require.Contains(t, types.NewRevertError(ret).Error(), "FORCE_REVERT")
+
+	// 3. wrong signer message
+	inputBz, err = abi.Pack(precompiles.METHOD_EXECUTE_COSMOS, `{
+		"@type": "/minievm.evm.v1.MsgCall",
+		"sender": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+		"contract_addr": "0x1",
+		"input": "0x"
+	}`)
+	require.NoError(t, err)
+
+	// failed with unauthorized error
+	ret, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
+	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
+
+	// 4. invalid message
+	inputBz, err = abi.Pack(precompiles.METHOD_EXECUTE_COSMOS, fmt.Sprintf(`{
+		"@type": "/minievm.evm.v2.MsgCall",
+		"sender": "%s",
+		"contract_addr": "0x1",
+		"input": "0x"
+	}`, cosmosAddr))
+	require.NoError(t, err)
+
+	// failed with unauthorized error
+	ret, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
+	require.Contains(t, types.NewRevertError(ret).Error(), "unable to resolve type")
+
+	// 5. invalid message 2
 	inputBz, err = abi.Pack(precompiles.METHOD_EXECUTE_COSMOS, fmt.Sprintf(`{
 		"@type": "/cosmos.bank.v1beta1.MsgSend",
-		"from_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
-		"to_address": "%s",
-		"amount": [
-			{
-				"denom": "stake",
-				"amount": "100"
-			}
-		]
+		"from_address": "%s",
+		"to_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
+		"amount": []
 	}`, cosmosAddr))
 	require.NoError(t, err)
 
 	// failed with unauthorized error
-	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	ret, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
-	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
-}
-
-func Test_ExecuteCosmosWithOptions(t *testing.T) {
-	ctx, cdc, ac, ak, bk := setup()
-	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-
-	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
-	require.NoError(t, err)
-
-	evmAddr := common.HexToAddress("0x1")
-	cosmosAddr, err := ac.BytesToString(evmAddr.Bytes())
-	require.NoError(t, err)
-
-	abi, err := contracts.ICosmosMetaData.GetAbi()
-	require.NoError(t, err)
-
-	// execute cosmos message
-	require.NoError(t, err)
-	inputBz, err := abi.Pack(precompiles.METHOD_EXECUTE_COSMOS_WITH_OPTIONS, fmt.Sprintf(`{
-		"@type": "/cosmos.bank.v1beta1.MsgSend",
-		"from_address": "%s",
-		"to_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
-		"amount": [
-			{
-				"denom": "stake",
-				"amount": "100"
-			}
-		]
-	}`, cosmosAddr), precompiles.ExecuteOptions{true, 100})
-	require.NoError(t, err)
-
-	// out of gas error
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS-1, false)
-	require.ErrorIs(t, err, vm.ErrOutOfGas)
-
-	// cannot call execute in readonly mode
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
-	require.ErrorIs(t, err, vm.ErrExecutionReverted)
-
-	// succeed
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
-	require.NoError(t, err)
-
-	messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
-	require.Len(t, *messages, 1)
-	require.Equal(t, (*messages)[0], types.ExecuteRequest{
-		Caller: vm.AccountRef(evmAddr),
-		Msg: &banktypes.MsgSend{
-			FromAddress: cosmosAddr,
-			ToAddress:   "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
-			Amount:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-		},
-		AllowFailure: true,
-		CallbackId:   100,
-	})
-
-	// wrong signer message
-	inputBz, err = abi.Pack(precompiles.METHOD_EXECUTE_COSMOS_WITH_OPTIONS, fmt.Sprintf(`{
-		"@type": "/cosmos.bank.v1beta1.MsgSend",
-		"from_address": "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
-		"to_address": "%s",
-		"amount": [
-			{
-				"denom": "stake",
-				"amount": "100"
-			}
-		]
-	}`, cosmosAddr), precompiles.ExecuteOptions{true, 100})
-	require.NoError(t, err)
-
-	// failed with unauthorized error
-	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
-	require.ErrorIs(t, err, vm.ErrExecutionReverted)
-	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
+	require.Contains(t, types.NewRevertError(ret).Error(), types.ErrNotSupportedCosmosMessage.Error())
 }
 
 func Test_QueryCosmos(t *testing.T) {
@@ -422,7 +401,7 @@ func Test_QueryCosmos(t *testing.T) {
 	}
 
 	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, MockGRPCRouter{
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, MockGRPCRouter{
 		routes: map[string]baseapp.GRPCQueryHandler{
 			queryPath: func(ctx sdk.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
 				resBz, err := cdc.Marshal(&expectedRet)
@@ -487,7 +466,7 @@ func Test_ToDenom(t *testing.T) {
 		addrMap: map[common.Address]string{
 			erc20Addr: denom,
 		},
-	}, nil, nil, authorityAddr)
+	}, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
@@ -528,7 +507,7 @@ func Test_ToErc20(t *testing.T) {
 		addrMap: map[common.Address]string{
 			erc20Addr: denom,
 		},
-	}, nil, nil, authorityAddr)
+	}, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
 	evmAddr := common.HexToAddress("0x1")
