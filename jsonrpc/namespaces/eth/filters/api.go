@@ -49,7 +49,7 @@ type FilterAPI struct {
 
 	logger log.Logger
 
-	filtersMut sync.Mutex
+	filtersMut sync.RWMutex
 
 	filters       map[rpc.ID]*filter
 	subscriptions map[rpc.ID]*subscription
@@ -210,17 +210,17 @@ func (api *FilterAPI) NewPendingTransactionFilter(fullTx *bool) (rpc.ID, error) 
 		for {
 			select {
 			case rpcTx := <-txChan:
-				api.filtersMut.Lock()
+				api.filtersMut.RLock()
 				if f, found := api.filters[id]; found {
 					f.txs = append(f.txs, rpcTx)
 				}
-				api.filtersMut.Unlock()
+				api.filtersMut.RUnlock()
 			case hash := <-hashChan:
-				api.filtersMut.Lock()
+				api.filtersMut.RLock()
 				if f, found := api.filters[id]; found {
 					f.hashes = append(f.hashes, hash)
 				}
-				api.filtersMut.Unlock()
+				api.filtersMut.RUnlock()
 			case <-s.err: // subscription is uninstalled
 				return
 			}
@@ -262,11 +262,11 @@ func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
 		for {
 			select {
 			case header := <-headerChan:
-				api.filtersMut.Lock()
+				api.filtersMut.RLock()
 				if f, found := api.filters[id]; found {
 					f.hashes = append(f.hashes, header.Hash())
 				}
-				api.filtersMut.Unlock()
+				api.filtersMut.RUnlock()
 			case <-s.err: // subscription is uninstalled
 				return
 			}
@@ -340,11 +340,11 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 			select {
 			case logs := <-logsChan:
 				logs = filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
-				api.filtersMut.Lock()
+				api.filtersMut.RLock()
 				if f, found := api.filters[id]; found {
 					f.logs = append(f.logs, logs...)
 				}
-				api.filtersMut.Unlock()
+				api.filtersMut.RUnlock()
 			case <-s.err: // subscription is uninstalled
 				return
 			}
@@ -406,9 +406,9 @@ func (api *FilterAPI) UninstallFilter(id rpc.ID) bool {
 // GetFilterLogs returns the logs for the filter with the given id.
 // If the filter could not be found an empty array of logs is returned.
 func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretypes.Log, error) {
-	api.filtersMut.Lock()
+	api.filtersMut.RLock()
 	f, found := api.filters[id]
-	api.filtersMut.Unlock()
+	api.filtersMut.RUnlock()
 
 	if !found || f.s.ty != ethfilters.LogsSubscription {
 		return nil, errFilterNotFound
@@ -447,10 +447,10 @@ func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretype
 // For pending transaction and block filters the result is []common.Hash.
 // (pending)Log filters return []Log.
 func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
-	api.filtersMut.Lock()
-	defer api.filtersMut.Unlock()
-
+	api.filtersMut.RLock()
 	f, ok := api.filters[id]
+	api.filtersMut.RUnlock()
+
 	if !ok {
 		return []interface{}{}, errFilterNotFound
 	}
