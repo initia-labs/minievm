@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -68,9 +67,6 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	indexer := app.EVMIndexer()
 	defer app.Close()
 
-	// wait indexer to be ready
-	time.Sleep(3 * time.Second)
-
 	blockChan, logsChan, pendChan := indexer.Subscribe()
 	defer close(blockChan)
 	defer close(logsChan)
@@ -86,11 +82,18 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 		for {
 			select {
 			case block := <-blockChan:
+				if block == nil || block.Number.Int64() < reqHeight {
+					continue
+				}
+
 				require.NotNil(t, block)
 				require.Equal(t, reqHeight, block.Number.Int64())
 				wg.Done()
 			case logs := <-logsChan:
 				require.NotNil(t, logs)
+				if logs[0].BlockNumber < uint64(reqHeight) {
+					continue
+				}
 
 				for _, log := range logs {
 					require.Equal(t, evmTxHash, log.TxHash)

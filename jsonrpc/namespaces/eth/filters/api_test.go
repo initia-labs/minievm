@@ -128,6 +128,9 @@ func Test_NewPendingTransactionFilter_FullTx(t *testing.T) {
 	rpcTx2, err := backend.GetTransactionByHash(txHash2)
 	require.NoError(t, err)
 
+	// wait txs to be indexed
+	time.Sleep(1 * time.Second)
+
 	// there should be 2 changes
 	changes, err := input.filterAPI.GetFilterChanges(filterID)
 	require.NoError(t, err)
@@ -206,6 +209,9 @@ func Test_NewPendingTransactionFilter(t *testing.T) {
 
 	_, finalizeRes = tests.ExecuteTxs(t, app, tx2)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	// wait txs to be indexed
+	time.Sleep(1 * time.Second)
 
 	// there should be 2 changes
 	changes, err := input.filterAPI.GetFilterChanges(filterID)
