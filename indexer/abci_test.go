@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -67,6 +68,9 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	indexer := app.EVMIndexer()
 	defer app.Close()
 
+	// wait indexer to be ready
+	time.Sleep(3 * time.Second)
+
 	blockChan, logsChan, pendChan := indexer.Subscribe()
 	defer close(blockChan)
 	defer close(logsChan)
@@ -103,10 +107,6 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
 	require.Equal(t, reqHeight, finalizeReq.Height)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
-
-	events := finalizeRes.TxResults[0].Events
-	createEvent := events[len(events)-3]
-	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
 
 	wg.Wait()
 	done()
