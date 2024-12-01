@@ -12,7 +12,7 @@ Please report bugs using the issue tracker at GitHub:
 
   <https://github.com/initia-labs/initia/issues>
 
-To receive security and update notifications, please join our Discord channel <https://discord.com/invite/initia>
+To receive security and update notifications, please join our [Discord channel](https://discord.gg/initia)
 
 
 What's Changed
