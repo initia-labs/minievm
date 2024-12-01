@@ -10,12 +10,12 @@ improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/initia-labs/initia-labs/issues>
+  <https://github.com/initia-labs/initia/issues>
 
-To receive security and update notifications, please join our discord channel. 
+To receive security and update notifications, please join our Discord channel <https://discord.com/invite/initia>
 
 
-What's Changed 
+What's Changed
 ==============
 ### Initia
 - upgrade to cosmos-sdk v0.45.12 by @zkst in #102
@@ -29,15 +29,15 @@ What's Changed
 
 ### Build system
 
-- #25201 windeploy: Renewed windows code signing certificate
+- #25201 windeploy: Renewed Windows code signing certificate
 - #25788 guix: patch NSIS to remove .reloc sections from installer stubs
 - #25861 guix: use --build={arch}-guix-linux-gnu in cross toolchain
 - #25985 Revert "build: Use Homebrew's sqlite package if it is available"
 
 ### GUI
 
-- gui#631 Disallow encryption of watchonly wallets
-- gui#680 Fixes MacOS 13 segfault by preventing certain notifications
+- #631 Disallow encryption of watchonly wallets
+- #680 Fixes macOS 13 segfault by preventing certain notifications
 
 ### Tests
 
@@ -47,4 +47,4 @@ What's Changed
 
 - #26321 Adjust .tx/config for new Transifex CLI
 
-Full Changelog: Initia-node-v1.0.0...Initia-node-v1.0.1 [link]
+Full Changelog: Initia-node-v1.0.0...Initia-node-v1.0.1
