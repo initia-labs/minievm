@@ -36,7 +36,7 @@ type EVMConfig struct {
 func DefaultEVMConfig() EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: DefaultContractSimulationGasLimit,
-		DisableIndexer:             true,
+		DisableIndexer:             DefaultDisableIndexer,
 		IndexerCacheSize:           DefaultIndexerCacheSize,
 	}
 }
