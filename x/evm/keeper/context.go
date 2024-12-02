@@ -41,23 +41,33 @@ func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
 	return gasLimit
 }
 
-func (k Keeper) buildBlockContext(ctx context.Context, evm *vm.EVM, fee types.Fee) (vm.BlockContext, error) {
+func (k Keeper) buildDefaultBlockContext(ctx context.Context) (vm.BlockContext, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	headerHash := sdkCtx.HeaderHash()
 	if len(headerHash) == 0 {
 		headerHash = make([]byte, 32)
 	}
 
+	return vm.BlockContext{
+		BlockNumber: big.NewInt(sdkCtx.BlockHeight()),
+		Time:        uint64(sdkCtx.BlockTime().Unix()),
+		Random:      (*common.Hash)(headerHash),
+	}, nil
+}
+
+func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockContext, evm *vm.EVM, fee types.Fee) (vm.BlockContext, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	baseFee, err := k.baseFee(ctx, fee)
 	if err != nil {
 		return vm.BlockContext{}, err
 	}
 
 	return vm.BlockContext{
+		BlockNumber: defaultBlockCtx.BlockNumber,
+		Time:        defaultBlockCtx.Time,
+		Random:      defaultBlockCtx.Random,
 		BaseFee:     baseFee,
 		GasLimit:    k.computeGasLimit(sdkCtx),
-		BlockNumber: big.NewInt(sdkCtx.BlockHeight()),
-		Time:        uint64(sdkCtx.BlockTime().Unix()),
 		CanTransfer: func(sd vm.StateDB, a common.Address, i *uint256.Int) bool {
 			if i == nil || i.IsZero() {
 				return true
@@ -117,8 +127,6 @@ func (k Keeper) buildBlockContext(ctx context.Context, evm *vm.EVM, fee types.Fe
 
 			return common.BytesToHash(bz)
 		},
-		// put header hash to bypass isMerge check in evm
-		Random: (*common.Hash)(headerHash),
 		// unused fields
 		Coinbase:    common.Address{},
 		Difficulty:  big.NewInt(0),
@@ -164,16 +172,10 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	chainConfig := types.DefaultChainConfig(ctx)
 	vmConfig := vm.Config{Tracer: tracer, ExtraEips: extraEIPs, NumRetainBlockHashes: &params.NumRetainBlockHashes}
 
-	// use dummy block context for chain rules in EVM creation
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	headerHash := sdkCtx.HeaderHash()
-	if len(headerHash) == 0 {
-		headerHash = make([]byte, 32)
-	}
-	dummyBlockContext := vm.BlockContext{
-		BlockNumber: big.NewInt(sdkCtx.BlockHeight()),
-		Random:      (*common.Hash)(headerHash),
-		Time:        uint64(sdkCtx.BlockTime().Unix()),
+	// use default block context for chain rules in EVM creation
+	defaultBlockContext, err := k.buildDefaultBlockContext(ctx)
+	if err != nil {
+		return ctx, nil, err
 	}
 
 	txContext, err := k.buildTxContext(ctx, caller, fee)
@@ -183,14 +185,14 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 
 	// NOTE: need to check if the EVM is correctly initialized with empty context and stateDB
 	evm := vm.NewEVM(
-		dummyBlockContext,
+		defaultBlockContext,
 		txContext,
 		nil,
 		chainConfig,
 		vmConfig,
 	)
 	// customize EVM contexts and stateDB and precompiles
-	evm.Context, err = k.buildBlockContext(ctx, evm, fee)
+	evm.Context, err = k.buildBlockContext(ctx, defaultBlockContext, evm, fee)
 	if err != nil {
 		return ctx, nil, err
 	}
