@@ -1,7 +1,10 @@
+#!/bin/bash
 set -e
 BUILD_DIR=build
 CONTRACTS_DIR=x/evm/contracts
 VERSION="0.8.25"
+
+echo "If you don't have solc-select installed, please install it first from https://github.com/crytic/solc-select?tab=readme-ov-file#quickstart"
 solc-select use $VERSION --always-install
 for CONTRACT_HOME in $CONTRACTS_DIR/*; do
     if [ -d "$CONTRACT_HOME" ]; then

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.25;
 
 import "../i_erc20/IERC20.sol";
 import "../ownable/Ownable.sol";
