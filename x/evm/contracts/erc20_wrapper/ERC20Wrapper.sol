@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.25;
 
 import "../strings/Strings.sol";
 import "../i_cosmos/ICosmos.sol";

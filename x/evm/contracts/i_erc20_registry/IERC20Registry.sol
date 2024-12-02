@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.25;
 
 /// @dev The IERC20Registry contract's address.
 address constant ERC20_REGISTRY_ADDRESS = 0x00000000000000000000000000000000000000F2;
