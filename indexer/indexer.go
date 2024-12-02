@@ -58,6 +58,8 @@ type EVMIndexer interface {
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
+	enabled bool
+
 	db       dbm.DB
 	logger   log.Logger
 	txConfig client.TxConfig
@@ -102,7 +104,10 @@ func NewEVMIndexer(
 		},
 	)
 
+	logger.Info("EVM Indexer", "enable", !cfg.DisableIndexer)
 	indexer := &EVMIndexerImpl{
+		enabled: !cfg.DisableIndexer,
+
 		db:       db,
 		store:    store,
 		logger:   logger,
