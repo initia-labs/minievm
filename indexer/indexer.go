@@ -168,6 +168,7 @@ type blockEvents struct {
 // blockEventsEmitter emits block events to subscribers.
 func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan struct{}) {
 	defer close(done)
+
 	if blockEvents == nil {
 		return
 	}

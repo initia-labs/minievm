@@ -4,11 +4,15 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/initia-labs/minievm/tests"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/types/mempool"
+
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 func Test_Mempool_Subscribe(t *testing.T) {
@@ -17,9 +21,7 @@ func Test_Mempool_Subscribe(t *testing.T) {
 	defer app.Close()
 
 	blockChan, logsChan, pendChan := indexer.Subscribe()
-	defer close(blockChan)
-	defer close(logsChan)
-	defer close(pendChan)
+	go consumeBlockLogsChan(blockChan, logsChan, 5)
 
 	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 
@@ -51,4 +53,17 @@ func Test_Mempool_Subscribe(t *testing.T) {
 
 	wg.Wait()
 	done()
+}
+
+func consumeBlockLogsChan(blockCh <-chan *coretypes.Header, logChan <-chan []*coretypes.Log, duration int) {
+	timer := time.NewTimer(time.Second * time.Duration(duration))
+
+	for {
+		select {
+		case <-blockCh:
+		case <-logChan:
+		case <-timer.C:
+			return
+		}
+	}
 }

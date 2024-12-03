@@ -67,10 +67,7 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	indexer := app.EVMIndexer()
 	defer app.Close()
 
-	blockChan, logsChan, pendChan := indexer.Subscribe()
-	defer close(blockChan)
-	defer close(logsChan)
-	defer close(pendChan)
+	blockChan, logsChan, _ := indexer.Subscribe()
 
 	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 
