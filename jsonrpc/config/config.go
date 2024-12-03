@@ -42,6 +42,8 @@ const (
 	DefaultFilterTimeout = 5 * time.Minute
 	// DefaultLogCacheSize is the maximum number of cached blocks.
 	DefaultLogCacheSize = 32
+	// DefaultGasMultiplier is the default gas multiplier for the EVM state transition.
+	DefaultGasMultiplier = "1.4"
 )
 
 var (
@@ -67,6 +69,7 @@ const (
 	flagJSONRPCFeeHistoryMaxBlocks  = "json-rpc.fee-history-max-blocks"
 	flagJSONRPCFilterTimeout        = "json-rpc.filter-timeout"
 	flagJSONRPCLogCacheSize         = "json-rpc.log-cache-size"
+	flagJSONRPCGasMultiplier        = "json-rpc.gas-multiplier"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -104,6 +107,8 @@ type JSONRPCConfig struct {
 	FilterTimeout time.Duration `mapstructure:"filter-timeout"`
 	// LogCacheSize is the maximum number of cached blocks.
 	LogCacheSize int `mapstructure:"log-cache-size"`
+	// GasMultiplier is the gas multiplier for the EVM state transition.
+	GasMultiplier string `mapstructure:"gas-multiplier"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -132,6 +137,8 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 		FilterTimeout: DefaultFilterTimeout,
 
 		LogCacheSize: DefaultLogCacheSize,
+
+		GasMultiplier: DefaultGasMultiplier,
 	}
 }
 
@@ -153,6 +160,7 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxBlocks, DefaultFeeHistoryMaxBlocks, "Maximum number of blocks used to lookup the fee history")
 	startCmd.Flags().Duration(flagJSONRPCFilterTimeout, DefaultFilterTimeout, "Duration how long filters stay active")
 	startCmd.Flags().Int(flagJSONRPCLogCacheSize, DefaultLogCacheSize, "Maximum number of cached blocks for the log filter")
+	startCmd.Flags().String(flagJSONRPCGasMultiplier, DefaultGasMultiplier, "Gas multiplier for the EVM state transition")
 }
 
 // GetConfig load config values from the app options
@@ -174,6 +182,7 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		FeeHistoryMaxBlocks:  cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxBlocks)),
 		FilterTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCFilterTimeout)),
 		LogCacheSize:         cast.ToInt(appOpts.Get(flagJSONRPCLogCacheSize)),
+		GasMultiplier:        cast.ToString(appOpts.Get(flagJSONRPCGasMultiplier)),
 	}
 }
 
@@ -235,4 +244,7 @@ filter-timeout = "{{ .JSONRPCConfig.FilterTimeout }}"
 
 # LogCacheSize is the maximum number of cached blocks for the log filter.
 log-cache-size = {{ .JSONRPCConfig.LogCacheSize }}
+
+# GasMultiplier is the gas multiplier for the EVM state transition.
+gas-multiplier = {{ .JSONRPCConfig.GasMultiplier }}
 `

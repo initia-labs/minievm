@@ -90,7 +90,9 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 		return hexutil.Uint64(0), err
 	}
 
-	return hexutil.Uint64(gasInfo.GasUsed), nil
+	// apply gas multiplier
+	gasUsed := b.gasMultiplier.MulInt(math.NewIntFromUint64(gasInfo.GasUsed)).TruncateInt().Uint64()
+	return hexutil.Uint64(gasUsed), nil
 }
 
 func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {

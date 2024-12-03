@@ -12,6 +12,7 @@ import (
 	lrucache "github.com/hashicorp/golang-lru/v2"
 
 	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 
@@ -52,7 +53,8 @@ type JSONRPCBackend struct {
 	svrCtx    *server.Context
 	clientCtx client.Context
 
-	cfg config.JSONRPCConfig
+	cfg           config.JSONRPCConfig
+	gasMultiplier math.LegacyDec
 }
 
 type txQueueItem struct {
@@ -83,6 +85,14 @@ func NewJSONRPCBackend(
 	}
 	if cfg.LogCacheSize == 0 {
 		cfg.LogCacheSize = config.DefaultLogCacheSize
+	}
+	if cfg.GasMultiplier == "" {
+		cfg.GasMultiplier = config.DefaultGasMultiplier
+	}
+
+	gasMultiplier, err := math.LegacyNewDecFromStr(config.DefaultGasMultiplier)
+	if err != nil {
+		return nil, err
 	}
 
 	queuedTxHashes := new(sync.Map)
@@ -118,7 +128,9 @@ func NewJSONRPCBackend(
 		ctx:       ctx,
 		svrCtx:    svrCtx,
 		clientCtx: clientCtx,
-		cfg:       cfg,
+
+		cfg:           cfg,
+		gasMultiplier: gasMultiplier,
 	}
 
 	// start fee fetcher
