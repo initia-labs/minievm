@@ -1445,8 +1445,8 @@ github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb h1:oyH9gg/4f7uMCIJ
 github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb/go.mod h1:+l/fr42Mma+xBnhefL/+z11/hcmJ2egl+ScIVPjhc7E=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d h1:TLq8lB1PtQ0pjGf+bN8YgGVeLMuytZ26SBGMOs1seKY=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d/go.mod h1:zh6x1osR0hNvEcFrC/lhGD08sMfQmr9wHVvZ/mRWMCs=
-github.com/initia-labs/initia v0.6.1 h1:lJdaNp6UWwars+DCumF2L9vRmdcS+fRAMUG7f5SR6pA=
-github.com/initia-labs/initia v0.6.1/go.mod h1:sQYysCP3GScSmPxNLFhnjBwVVzZFtP7EeECQQ1wzPOk=
+github.com/initia-labs/initia v0.6.4 h1:61ERWEW888b0IEqI9LQUkD1ztmOtRY74nOPsuKVnJWM=
+github.com/initia-labs/initia v0.6.4/go.mod h1:d8D+AbkOVktXTx9gnRL7iN0dA/+sG98uz52zRSEhh+0=
 github.com/initia-labs/kvindexer v0.1.9 h1:rv/zD8VMU0+P7f+rTtYefIG93f3vRy55JqNK+fohQr8=
 github.com/initia-labs/kvindexer v0.1.9/go.mod h1:OV85HaQ9KVrg+zGPUlxT9RF9nAaM3Yq4/3MoHqGqhWk=
 github.com/initia-labs/kvindexer/submodules/block v0.1.0 h1:y+EXnksd/I2F96mzIoQA64nZUZON2P+99YrSzeLCLoY=
@@ -1457,8 +1457,8 @@ github.com/initia-labs/kvindexer/submodules/pair v0.1.1 h1:o151gA4jIbqEl+pWTOCiz
 github.com/initia-labs/kvindexer/submodules/pair v0.1.1/go.mod h1:8X1GE1ZLkH7z8TKb5MUh7UClTkcqVFIwXIIRdsqeUZY=
 github.com/initia-labs/kvindexer/submodules/tx v0.1.0 h1:6kbf6wmzXPN0XCQLasiFgq1AlZHkt5K3/ZG+IWw1nNs=
 github.com/initia-labs/kvindexer/submodules/tx v0.1.0/go.mod h1:i0XeLbLa6xdgTR01WF8kaAO50vMmwxbeq0fKexwpFHU=
-github.com/initia-labs/movevm v0.6.0 h1:46JjDfOId6hfeoqYqKWTzPeb5ESQzzm8AhhGWYnFOmE=
-github.com/initia-labs/movevm v0.6.0/go.mod h1:aUWdvFZPdULjJ2McQTE+mLnfnG3CLAz0TWJRFzFFUwg=
+github.com/initia-labs/movevm v0.6.1 h1:g+nUX289tou8HaHkwvZIE7KzhVAi+fykpGORItw8j0E=
+github.com/initia-labs/movevm v0.6.1/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
 github.com/jackpal/go-nat-pmp v1.0.2 h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7BdWus=
 github.com/jackpal/go-nat-pmp v1.0.2/go.mod h1:QPH045xvCAeXUZOxsnwmrtiCoxIr9eob+4orBN1SBKc=
 github.com/jellydator/ttlcache/v3 v3.3.0 h1:BdoC9cE81qXfrxeb9eoJi9dWrdhSuwXMAnHTbnBm4Wc=
