@@ -246,5 +246,5 @@ filter-timeout = "{{ .JSONRPCConfig.FilterTimeout }}"
 log-cache-size = {{ .JSONRPCConfig.LogCacheSize }}
 
 # GasMultiplier is the gas multiplier for the EVM state transition.
-gas-multiplier = {{ .JSONRPCConfig.GasMultiplier }}
+gas-multiplier = "{{ .JSONRPCConfig.GasMultiplier }}"
 `

@@ -90,7 +90,7 @@ func NewJSONRPCBackend(
 		cfg.GasMultiplier = config.DefaultGasMultiplier
 	}
 
-	gasMultiplier, err := math.LegacyNewDecFromStr(config.DefaultGasMultiplier)
+	gasMultiplier, err := math.LegacyNewDecFromStr(cfg.GasMultiplier)
 	if err != nil {
 		return nil, err
 	}
