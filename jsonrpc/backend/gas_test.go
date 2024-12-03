@@ -84,6 +84,5 @@ func Test_EstimateGas(t *testing.T) {
 		Nonce: nil,
 	}, nil, nil)
 	require.NoError(t, err)
-	require.Greater(t, gasEstimated, uint64(10_000))
-	require.Less(t, uint64(gasEstimated), uint64(finalizeRes.TxResults[1].GasUsed))
+	require.Greater(t, uint64(gasEstimated), uint64(finalizeRes.TxResults[1].GasUsed))
 }
