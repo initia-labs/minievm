@@ -1,6 +1,8 @@
 package evm_hooks
 
 import (
+	"encoding/json"
+
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -42,4 +44,42 @@ type HookData struct {
 
 	// AsyncCallback is a contract address
 	AsyncCallback *AsyncCallback `json:"async_callback,omitempty"`
+}
+
+// asyncCallback is same as AsyncCallback.
+type asyncCallback struct {
+	// callback id should be issued form the executor contract
+	Id              uint64 `json:"id"`
+	ContractAddress string `json:"contract_address"`
+}
+
+// asyncCallbackStringID is same as AsyncCallback but
+// it has Id as string.
+type asyncCallbackStringID struct {
+	// callback id should be issued form the executor contract
+	Id              uint64 `json:"id,string"`
+	ContractAddress string `json:"contract_address"`
+}
+
+// UnmarshalJSON implements the json unmarshaler interface.
+// custom unmarshaler is required because we have to handle
+// id as string and uint64.
+func (a *AsyncCallback) UnmarshalJSON(bz []byte) error {
+	var ac asyncCallback
+	err := json.Unmarshal(bz, &ac)
+	if err != nil {
+		var acStr asyncCallbackStringID
+		err := json.Unmarshal(bz, &acStr)
+		if err != nil {
+			return err
+		}
+
+		a.Id = acStr.Id
+		a.ContractAddress = acStr.ContractAddress
+		return nil
+	}
+
+	a.Id = ac.Id
+	a.ContractAddress = ac.ContractAddress
+	return nil
 }
