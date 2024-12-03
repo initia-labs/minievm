@@ -27,6 +27,10 @@ func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseComm
 
 // IndexBlock implements EVMIndexer.
 func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.RequestFinalizeBlock, res abci.ResponseFinalizeBlock) error {
+	if !e.enabled {
+		return nil
+	}
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// load base fee from evm keeper

@@ -37,3 +37,4 @@ ignore:
   - "x/ibc/testing"
   - "x/evm/contracts"
   - "**/*.sol"
+  - "tests/"

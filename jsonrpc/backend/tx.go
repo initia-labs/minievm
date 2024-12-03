@@ -68,7 +68,7 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	accSeq := uint64(0)
 	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
-	senderHex := hexutil.Encode(sender.Bytes())
+	senderHex := common.BytesToAddress(sender.Bytes()).Hex()
 
 	// hold mutex for each sender
 	accMut := b.acquireAccMut(senderHex)
@@ -328,7 +328,7 @@ func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, erro
 	return result, nil
 }
 
-func (b *JSONRPCBackend) GetBlockReceipts(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
+func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
 	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
@@ -454,7 +454,7 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 	}
 
 	recepts := []*coretypes.Receipt{}
-	err = b.app.EVMIndexer().IterateBlockTxRecepts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
+	err = b.app.EVMIndexer().IterateBlockTxReceipts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
 		recepts = append(recepts, recept)
 		return false, nil
 	})

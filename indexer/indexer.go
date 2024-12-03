@@ -19,8 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
-	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
-
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -37,7 +35,7 @@ type EVMIndexer interface {
 
 	// tx receipt
 	TxReceiptByHash(ctx context.Context, hash common.Hash) (*coretypes.Receipt, error)
-	IterateBlockTxRecepts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error
+	IterateBlockTxReceipts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error
 
 	// block
 	BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error)
@@ -53,18 +51,22 @@ type EVMIndexer interface {
 	// mempool
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
 	TxInMempool(hash common.Hash) *rpctypes.RPCTransaction
+
+	// Stop
+	Stop()
 }
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
+	enabled bool
+
 	db       dbm.DB
 	logger   log.Logger
 	txConfig client.TxConfig
 	appCodec codec.Codec
 
-	store         *CacheStore
-	evmKeeper     *evmkeeper.Keeper
-	opChildKeeper *opchildkeeper.Keeper
+	store     *CacheStore
+	evmKeeper *evmkeeper.Keeper
 
 	schema                   collections.Schema
 	TxMap                    collections.Map[[]byte, rpctypes.RPCTransaction]
@@ -89,7 +91,6 @@ func NewEVMIndexer(
 	logger log.Logger,
 	txConfig client.TxConfig,
 	evmKeeper *evmkeeper.Keeper,
-	opChildKeeper *opchildkeeper.Keeper,
 ) (EVMIndexer, error) {
 	cfg := evmKeeper.Config()
 	if cfg.IndexerCacheSize == 0 {
@@ -103,15 +104,17 @@ func NewEVMIndexer(
 		},
 	)
 
+	logger.Info("EVM Indexer", "enable", !cfg.DisableIndexer)
 	indexer := &EVMIndexerImpl{
+		enabled: !cfg.DisableIndexer,
+
 		db:       db,
 		store:    store,
 		logger:   logger,
 		txConfig: txConfig,
 		appCodec: appCodec,
 
-		evmKeeper:     evmKeeper,
-		opChildKeeper: opChildKeeper,
+		evmKeeper: evmKeeper,
 
 		TxMap:                    collections.NewMap(sb, prefixTx, "tx", collections.BytesKey, CollJsonVal[rpctypes.RPCTransaction]()),
 		TxReceiptMap:             collections.NewMap(sb, prefixTxReceipt, "tx_receipt", collections.BytesKey, CollJsonVal[coretypes.Receipt]()),
@@ -164,20 +167,27 @@ type blockEvents struct {
 
 // blockEventsEmitter emits block events to subscribers.
 func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan struct{}) {
+	defer close(done)
 	if blockEvents == nil {
 		return
 	}
+
+	// emit logs first; use unbuffered channel to ensure logs are emitted before block header
 	for _, logs := range blockEvents.logs {
 		for _, logsChan := range e.logsChans {
 			logsChan <- logs
 		}
 	}
-	for _, logsChan := range e.logsChans {
-		logsChan <- []*coretypes.Log{}
-	}
+
+	// emit block header
 	for _, blockChan := range e.blockChans {
 		blockChan <- blockEvents.header
 	}
+}
 
-	close(done)
+// Stop stops the indexer.
+func (e *EVMIndexerImpl) Stop() {
+	if e.txPendingMap != nil {
+		e.txPendingMap.Stop()
+	}
 }

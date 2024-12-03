@@ -110,6 +110,8 @@ func TestDynamicFeeTxTypeRPCTransaction(t *testing.T) {
 
 	err = matchTx(signedTx, ethTx)
 	require.NoError(t, err)
+
+	_ = rpcTx.String()
 }
 
 func matchTx(signedTx *coretypes.Transaction, ethTx *coretypes.Transaction) error {

@@ -76,3 +76,8 @@ func (m *MempoolWrapper) Remove(tx sdk.Tx) error {
 func (m *MempoolWrapper) Select(ctx context.Context, txs [][]byte) mempool.Iterator {
 	return m.mempool.Select(ctx, txs)
 }
+
+// Inner returns the inner mempool.
+func (m *MempoolWrapper) Inner() mempool.Mempool {
+	return m.mempool
+}

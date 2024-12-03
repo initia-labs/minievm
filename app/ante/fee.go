@@ -10,9 +10,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-// feeDeductionGasAmount is a estimated gas amount of fee payment
-const feeDeductionGasAmount = 250_000
-
 // GasFreeFeeDecorator is a decorator that sets the gas meter to infinite before calling the inner DeductFeeDecorator
 // and then resets the gas meter to the original value after the inner DeductFeeDecorator is called.
 //
@@ -34,6 +31,9 @@ func NewGasFreeFeeDecorator(
 	}
 }
 
+// gasLimitForFeeDeduction is the gas limit used for fee deduction.
+const gasLimitForFeeDeduction = 1_000_000
+
 func (fd GasFreeFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
@@ -43,19 +43,22 @@ func (fd GasFreeFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	fees := feeTx.GetFee()
 	feeDenom, err := fd.ek.GetFeeDenom(ctx.WithGasMeter(storetypes.NewInfiniteGasMeter()))
 	if !(err == nil && len(fees) == 1 && fees[0].Denom == feeDenom) {
-		if simulate && fees.IsZero() {
-			// Charge gas for fee deduction simulation
-			//
-			// At gas simulation normally gas amount is zero, so the gas is not charged in the simulation.
-			ctx.GasMeter().ConsumeGas(feeDeductionGasAmount, "fee deduction")
-		}
-
 		return fd.inner.AnteHandle(ctx, tx, simulate, next)
 	}
 
 	// If the fee contains only one denom and it is the fee denom, set the gas meter to infinite
 	// to avoid gas consumption for fee deduction.
 	gasMeter := ctx.GasMeter()
-	ctx, err = fd.inner.AnteHandle(ctx.WithGasMeter(storetypes.NewInfiniteGasMeter()), tx, simulate, next)
-	return ctx.WithGasMeter(gasMeter), err
+	ctx, err = fd.inner.AnteHandle(ctx.WithGasMeter(storetypes.NewGasMeter(gasLimitForFeeDeduction)), tx, simulate, noopAnteHandler)
+	// restore the original gas meter
+	ctx = ctx.WithGasMeter(gasMeter)
+	if err != nil {
+		return ctx, err
+	}
+
+	return next(ctx, tx, simulate)
+}
+
+func noopAnteHandler(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+	return ctx, nil
 }

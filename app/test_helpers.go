@@ -12,6 +12,7 @@ import (
 	tmtypes "github.com/cometbft/cometbft/types"
 	dbm "github.com/cosmos/cosmos-db"
 
+	"cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -22,7 +23,9 @@ import (
 
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
+	"github.com/initia-labs/minievm/types"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 // defaultConsensusParams defines the default Tendermint consensus params used in
@@ -65,7 +68,7 @@ func setup(db *dbm.DB, withGenesis bool) (*MinitiaApp, GenesisState) {
 	)
 
 	if withGenesis {
-		return app, NewDefaultGenesisState(encCdc.Codec, app.BasicModuleManager, sdk.DefaultBondDenom)
+		return app, NewDefaultGenesisState(encCdc.Codec, app.BasicModuleManager, types.BaseDenom)
 	}
 
 	return app, GenesisState{}
@@ -128,10 +131,17 @@ func SetupWithGenesisAccounts(
 	app.AppCodec().MustUnmarshalJSON(genesisState[opchildtypes.ModuleName], &opchildGenesis)
 	opchildGenesis.Params.Admin = sdk.AccAddress(valSet.Validators[0].Address.Bytes()).String()
 	opchildGenesis.Params.BridgeExecutors = []string{sdk.AccAddress(valSet.Validators[0].Address.Bytes()).String()}
+	opchildGenesis.Params.MinGasPrices = sdk.NewDecCoins(sdk.NewDecCoin(types.BaseDenom, math.NewInt(1_000_000_000)))
 
 	// set validators and delegations
 	opchildGenesis = *opchildtypes.NewGenesisState(opchildGenesis.Params, validators, nil)
 	genesisState[opchildtypes.ModuleName] = app.AppCodec().MustMarshalJSON(&opchildGenesis)
+
+	// set evm genesis params
+	var evmGenesis evmtypes.GenesisState
+	app.AppCodec().MustUnmarshalJSON(genesisState[evmtypes.ModuleName], &evmGenesis)
+	evmGenesis.Params.GasRefundRatio = math.LegacyZeroDec()
+	genesisState[evmtypes.ModuleName] = app.AppCodec().MustMarshalJSON(&evmGenesis)
 
 	// update total supply
 	bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, sdk.NewCoins(), []banktypes.Metadata{}, []banktypes.SendEnabled{})
