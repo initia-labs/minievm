@@ -210,5 +210,10 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	// 	return err
 	// }
 
+	// execute pruning only if retain height is set
+	if e.retainHeight > 0 {
+		e.doPrune(ctx, uint64(blockHeight))
+	}
+
 	return nil
 }

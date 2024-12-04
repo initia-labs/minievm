@@ -10,34 +10,41 @@ import (
 const (
 	// DefaultContractSimulationGasLimit - default max simulation gas
 	DefaultContractSimulationGasLimit = uint64(3_000_000)
-	// DefaultDisableIndexer is the default flag to disable indexer
-	DefaultDisableIndexer = false
+	// DefaultIndexerDisable is the default flag to disable indexer
+	DefaultIndexerDisable = false
 	// DefaultIndexerCacheSize is the default maximum size (MiB) of the cache.
 	DefaultIndexerCacheSize = 100
+	// DefaultIndexerRetainHeight is the default height to retain indexer data.
+	DefaultIndexerRetainHeight = uint64(0)
 )
 
 const (
 	flagContractSimulationGasLimit = "evm.contract-simulation-gas-limit"
-	flagDisableIndexer             = "evm.disable-indexer"
+	flagIndexerDisable             = "evm.indexer-disable"
 	flagIndexerCacheSize           = "evm.indexer-cache-size"
+	flagIndexerRetainHeight        = "evm.indexer-retain-height"
 )
 
 // EVMConfig is the extra config required for evm
 type EVMConfig struct {
 	// ContractSimulationGasLimit is the maximum gas amount can be used in a tx simulation call.
 	ContractSimulationGasLimit uint64 `mapstructure:"contract-simulation-gas-limit"`
-	// DisableIndexer is the flag to disable indexer
-	DisableIndexer bool `mapstructure:"disable-indexer"`
+	// IndexerDisable is the flag to disable indexer
+	IndexerDisable bool `mapstructure:"indexer-disable"`
 	// IndexerCacheSize is the maximum size (MiB) of the cache.
 	IndexerCacheSize int `mapstructure:"indexer-cache-size"`
+	// IndexerRetainHeight is the height to retain indexer data.
+	// If 0, it will retain all data.
+	IndexerRetainHeight uint64 `mapstructure:"indexer-retain-height"`
 }
 
 // DefaultEVMConfig returns the default settings for EVMConfig
 func DefaultEVMConfig() EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: DefaultContractSimulationGasLimit,
-		DisableIndexer:             DefaultDisableIndexer,
+		IndexerDisable:             DefaultIndexerDisable,
 		IndexerCacheSize:           DefaultIndexerCacheSize,
+		IndexerRetainHeight:        DefaultIndexerRetainHeight,
 	}
 }
 
@@ -45,16 +52,18 @@ func DefaultEVMConfig() EVMConfig {
 func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: cast.ToUint64(appOpts.Get(flagContractSimulationGasLimit)),
-		DisableIndexer:             cast.ToBool(appOpts.Get(flagDisableIndexer)),
+		IndexerDisable:             cast.ToBool(appOpts.Get(flagIndexerDisable)),
 		IndexerCacheSize:           cast.ToInt(appOpts.Get(flagIndexerCacheSize)),
+		IndexerRetainHeight:        cast.ToUint64(appOpts.Get(flagIndexerRetainHeight)),
 	}
 }
 
 // AddConfigFlags implements servertypes.EVMConfigFlags interface.
 func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Uint64(flagContractSimulationGasLimit, DefaultContractSimulationGasLimit, "Maximum simulation gas amount for evm contract execution")
-	startCmd.Flags().Bool(flagDisableIndexer, DefaultDisableIndexer, "Disable evm indexer")
+	startCmd.Flags().Bool(flagIndexerDisable, DefaultIndexerDisable, "Disable evm indexer")
 	startCmd.Flags().Int(flagIndexerCacheSize, DefaultIndexerCacheSize, "Maximum size (MiB) of the indexer cache")
+	startCmd.Flags().Uint64(flagIndexerRetainHeight, DefaultIndexerRetainHeight, "Height to retain indexer data")
 }
 
 // DefaultConfigTemplate default config template for evm
@@ -68,10 +77,14 @@ const DefaultConfigTemplate = `
 # The maximum gas amount can be used in a tx simulation call.
 contract-simulation-gas-limit = "{{ .EVMConfig.ContractSimulationGasLimit }}"
 
-# DisableIndexer is the flag to disable indexer. If true, evm jsonrpc queries will return 
+# IndexerDisable is the flag to disable indexer. If true, evm jsonrpc queries will return 
 # empty results for block, tx, and receipt queries.
-disable-indexer = {{ .EVMConfig.DisableIndexer }}
+indexer-disable = {{ .EVMConfig.IndexerDisable }}
 
 # IndexerCacheSize is the maximum size (MiB) of the cache for evm indexer.
 indexer-cache-size = {{ .EVMConfig.IndexerCacheSize }}
+
+# IndexerRetainHeight is the height to retain indexer data.
+# If 0, it will retain all data.
+indexer-retain-height = {{ .EVMConfig.IndexerRetainHeight }}
 `
