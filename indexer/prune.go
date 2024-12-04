@@ -66,7 +66,7 @@ func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 func (e *EVMIndexerImpl) pruneBlocks(ctx context.Context, minHeight uint64) error {
 	// record block hashes
 	var blockHashes []common.Hash
-	rn := new(collections.Range[uint64]).StartInclusive(1).EndInclusive(minHeight)
+	rn := new(collections.Range[uint64]).EndInclusive(minHeight)
 	err := e.BlockHeaderMap.Walk(ctx, rn, func(key uint64, value coretypes.Header) (stop bool, err error) {
 		blockHashes = append(blockHashes, value.Hash())
 		return false, nil
