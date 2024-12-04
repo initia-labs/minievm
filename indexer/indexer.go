@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
@@ -14,6 +15,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -58,7 +60,9 @@ type EVMIndexer interface {
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
-	enabled bool
+	enabled        bool
+	retainHeight   uint64
+	pruningRunning *atomic.Bool
 
 	db       dbm.DB
 	logger   log.Logger
@@ -68,14 +72,18 @@ type EVMIndexerImpl struct {
 	store     *CacheStore
 	evmKeeper *evmkeeper.Keeper
 
-	schema                   collections.Schema
-	TxMap                    collections.Map[[]byte, rpctypes.RPCTransaction]
-	TxReceiptMap             collections.Map[[]byte, coretypes.Receipt]
+	schema collections.Schema
+
+	// blocks
 	BlockHeaderMap           collections.Map[uint64, coretypes.Header]
 	BlockAndIndexToTxHashMap collections.Map[collections.Pair[uint64, uint64], []byte]
 	BlockHashToNumberMap     collections.Map[[]byte, uint64]
-	TxHashToCosmosTxHash     collections.Map[[]byte, []byte]
-	CosmosTxHashToTxHash     collections.Map[[]byte, []byte]
+
+	// txs
+	TxMap                collections.Map[[]byte, rpctypes.RPCTransaction]
+	TxReceiptMap         collections.Map[[]byte, coretypes.Receipt]
+	TxHashToCosmosTxHash collections.Map[[]byte, []byte]
+	CosmosTxHashToTxHash collections.Map[[]byte, []byte]
 
 	blockChans   []chan *coretypes.Header
 	logsChans    []chan []*coretypes.Log
@@ -100,13 +108,20 @@ func NewEVMIndexer(
 	store := NewCacheStore(dbadapter.Store{DB: db}, cfg.IndexerCacheSize)
 	sb := collections.NewSchemaBuilderFromAccessor(
 		func(ctx context.Context) corestoretypes.KVStore {
+			// if there is prune store in context, use it
+			if pruneStore := sdk.UnwrapSDKContext(ctx).Value(pruneStoreKey); pruneStore != nil {
+				return pruneStore.(corestoretypes.KVStore)
+			}
+
 			return store
 		},
 	)
 
-	logger.Info("EVM Indexer", "enable", !cfg.DisableIndexer)
+	logger.Info("EVM Indexer", "enable", !cfg.IndexerDisable)
 	indexer := &EVMIndexerImpl{
-		enabled: !cfg.DisableIndexer,
+		enabled:        !cfg.IndexerDisable,
+		retainHeight:   cfg.IndexerRetainHeight,
+		pruningRunning: &atomic.Bool{},
 
 		db:       db,
 		store:    store,
