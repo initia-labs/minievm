@@ -184,8 +184,8 @@ func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]int
 	rpcTx, err := b.getTransaction(hash)
 	if err != nil {
 		return nil, err
-	} else if rpcTx == nil {
-		return nil, nil // tx is not found
+	} else if rpcTx == nil || rpcTx.BlockNumber == nil || rpcTx.BlockNumber.ToInt() == nil {
+		return nil, nil // tx is not found or in pending/queued state
 	}
 
 	receipt, err := b.getReceipt(hash)
