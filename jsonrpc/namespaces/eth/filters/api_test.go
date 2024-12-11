@@ -53,7 +53,7 @@ func setupFilterAPI(t *testing.T) testInput {
 
 	cfg := config.DefaultJSONRPCConfig()
 	cfg.Enable = true
-	cfg.FilterTimeout = 3 * time.Second
+	cfg.FilterTimeout = 10 * time.Second
 
 	mockCometRPC := tests.NewMockCometRPC(app.BaseApp)
 	clientCtx = clientCtx.WithClient(mockCometRPC)

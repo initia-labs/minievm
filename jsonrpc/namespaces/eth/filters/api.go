@@ -57,6 +57,7 @@ type FilterAPI struct {
 	// Channels for subscription managements
 	install   chan *subscription // install filter for event notification
 	uninstall chan *subscription // remove filter for event notification
+	status    chan chan int      // get status of the subscriptions
 
 	// channels for block and log events
 	blockChan   chan *coretypes.Header
@@ -77,6 +78,7 @@ func NewFilterAPI(ctx context.Context, app *app.MinitiaApp, backend *backend.JSO
 
 		install:   make(chan *subscription),
 		uninstall: make(chan *subscription),
+		status:    make(chan chan int),
 
 		filters:       make(map[rpc.ID]*filter),
 		subscriptions: make(map[rpc.ID]*subscription),
@@ -165,6 +167,8 @@ func (api *FilterAPI) eventLoop() {
 		case s := <-api.uninstall:
 			delete(api.subscriptions, s.id)
 			close(s.err)
+		case ch := <-api.status:
+			ch <- len(api.subscriptions)
 		case <-api.ctx.Done():
 			return
 		}
@@ -483,6 +487,13 @@ func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
 	}
 
 	return []interface{}{}, errFilterNotFound
+}
+
+// NumSubscriptions returns the number of active subscriptions.
+func (api *FilterAPI) NumSubscriptions() int {
+	ch := make(chan int)
+	api.status <- ch
+	return <-ch
 }
 
 // returnLogs is a helper that will return an empty log array in case the given logs array is nil,
