@@ -73,3 +73,39 @@ func Test_AllowLongCosmosAddress(t *testing.T) {
 	))
 	require.ErrorContains(t, err, types.ErrAddressAlreadyExists.Error())
 }
+
+func Test_AllowLongCosmosAddress_ConvertEmptyAccount(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	_, _, addr2 := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+	evmAddr2 := common.BytesToAddress(addr2.Bytes())
+
+	addr3 := append([]byte{0}, addr2.Bytes()...)
+
+	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
+	require.NoError(t, err)
+
+	// deploy erc20 contract
+	fooContractAddr := deployERC20(t, ctx, input, evmAddr, "foo")
+	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
+
+	// mint erc20
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
+
+	// create empty account
+	mintERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
+	expectedAccNum := input.AccountKeeper.GetAccount(ctx, addr2).GetAccountNumber()
+
+	// take the address ownership
+	err = erc20Keeper.SendCoins(ctx, addr3, addr, sdk.NewCoins(
+		sdk.NewCoin(fooDenom, math.NewInt(50)),
+	))
+	require.NoError(t, err)
+
+	// account number should be the same
+	accNum := input.AccountKeeper.GetAccount(ctx, addr2).GetAccountNumber()
+	require.Equal(t, expectedAccNum, accNum)
+}

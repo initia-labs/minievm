@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
 
 	"cosmossdk.io/collections"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -39,42 +42,15 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// argument validation
-	caller, err := ms.convertToEVMAddress(ctx, sender, true)
+	caller, codeBz, value, accessList, err := ms.validateArguments(ctx, sender, msg.Code, msg.Value, msg.AccessList, true)
 	if err != nil {
 		return nil, err
 	}
-	if len(msg.Code) == 0 {
-		return nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
-	}
-	codeBz, err := hexutil.Decode(msg.Code)
-	if err != nil {
-		return nil, types.ErrInvalidHexString.Wrap(err.Error())
-	}
-	value, overflow := uint256.FromBig(msg.Value.BigInt())
-	if overflow {
-		return nil, types.ErrInvalidValue.Wrap("value is out of range")
-	}
-	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
+
 	// check the sender is allowed publisher
-	params, err := ms.Params.Get(ctx)
+	err = ms.assertAllowedPublishers(ctx, msg.Sender)
 	if err != nil {
 		return nil, err
-	}
-
-	// assert deploy authorization
-	if len(params.AllowedPublishers) != 0 {
-		allowed := false
-		for _, publisher := range params.AllowedPublishers {
-			if msg.Sender == publisher {
-				allowed = true
-
-				break
-			}
-		}
-
-		if !allowed {
-			return nil, sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", msg.Sender)
-		}
 	}
 
 	// deploy a contract
@@ -104,42 +80,15 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// argument validation
-	caller, err := ms.convertToEVMAddress(ctx, sender, true)
+	caller, codeBz, value, accessList, err := ms.validateArguments(ctx, sender, msg.Code, msg.Value, msg.AccessList, true)
 	if err != nil {
 		return nil, err
 	}
-	if len(msg.Code) == 0 {
-		return nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
-	}
-	codeBz, err := hexutil.Decode(msg.Code)
-	if err != nil {
-		return nil, types.ErrInvalidHexString.Wrap(err.Error())
-	}
-	value, overflow := uint256.FromBig(msg.Value.BigInt())
-	if overflow {
-		return nil, types.ErrInvalidValue.Wrap("value is out of range")
-	}
-	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
+
 	// check the sender is allowed publisher
-	params, err := ms.Params.Get(ctx)
+	err = ms.assertAllowedPublishers(ctx, msg.Sender)
 	if err != nil {
 		return nil, err
-	}
-
-	// assert deploy authorization
-	if len(params.AllowedPublishers) != 0 {
-		allowed := false
-		for _, publisher := range params.AllowedPublishers {
-			if msg.Sender == publisher {
-				allowed = true
-
-				break
-			}
-		}
-
-		if !allowed {
-			return nil, sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", msg.Sender)
-		}
 	}
 
 	// deploy a contract
@@ -174,19 +123,10 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	}
 
 	// argument validation
-	caller, err := ms.convertToEVMAddress(ctx, sender, true)
+	caller, inputBz, value, accessList, err := ms.validateArguments(ctx, sender, msg.Input, msg.Value, msg.AccessList, false)
 	if err != nil {
 		return nil, err
 	}
-	inputBz, err := hexutil.Decode(msg.Input)
-	if err != nil {
-		return nil, types.ErrInvalidHexString.Wrap(err.Error())
-	}
-	value, overflow := uint256.FromBig(msg.Value.BigInt())
-	if overflow {
-		return nil, types.ErrInvalidValue.Wrap("value is out of range")
-	}
-	accessList := types.ConvertCosmosAccessListToEth(msg.AccessList)
 
 	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList)
 	if err != nil {
@@ -288,6 +228,56 @@ func (k *msgServerImpl) handleSequenceIncremented(ctx context.Context, sender sd
 
 	// set the flag to false
 	*incremented = false
+
+	return nil
+}
+
+// validateArguments validates the arguments of create, create2, and call messages.
+func (ms *msgServerImpl) validateArguments(
+	ctx context.Context, sender []byte, data string,
+	value math.Int, accessList []types.AccessTuple, isCreate bool,
+) (common.Address, []byte, *uint256.Int, coretypes.AccessList, error) {
+	caller, err := ms.convertToEVMAddress(ctx, sender, true)
+	if err != nil {
+		return common.Address{}, nil, nil, nil, err
+	}
+	if isCreate && len(data) == 0 {
+		return common.Address{}, nil, nil, nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
+	}
+	dataBz, err := hexutil.Decode(data)
+	if err != nil {
+		return common.Address{}, nil, nil, nil, types.ErrInvalidHexString.Wrap(err.Error())
+	}
+	val, overflow := uint256.FromBig(value.BigInt())
+	if overflow {
+		return common.Address{}, nil, nil, nil, types.ErrInvalidValue.Wrap("value is out of range")
+	}
+
+	return caller, dataBz, val, types.ConvertCosmosAccessListToEth(accessList), nil
+}
+
+// assertAllowedPublishers asserts the sender is allowed to deploy a contract.
+func (ms *msgServerImpl) assertAllowedPublishers(ctx context.Context, sender string) error {
+	params, err := ms.Params.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	// assert deploy authorization
+	if len(params.AllowedPublishers) != 0 {
+		allowed := false
+		for _, publisher := range params.AllowedPublishers {
+			if sender == publisher {
+				allowed = true
+
+				break
+			}
+		}
+
+		if !allowed {
+			return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", sender)
+		}
+	}
 
 	return nil
 }
