@@ -18,6 +18,7 @@ func (k Keeper) convertToEVMAddress(ctx context.Context, addr sdk.AccAddress, is
 		return common.BytesToAddress(addr.Bytes()), nil
 	}
 
+	accountNumber := uint64(0)
 	shorthandAddr := common.BytesToAddress(addr.Bytes())
 	if found := k.accountKeeper.HasAccount(ctx, shorthandAddr.Bytes()); found {
 		account := k.accountKeeper.GetAccount(ctx, shorthandAddr.Bytes())
@@ -36,9 +37,16 @@ func (k Keeper) convertToEVMAddress(ctx context.Context, addr sdk.AccAddress, is
 
 			return common.Address{}, types.ErrAddressAlreadyExists.Wrapf("failed to create shorthand account of `%s`: `%s`", addr, shorthandAddr)
 		}
+
+		accountNumber = account.GetAccountNumber()
 	}
 
 	if isSigner {
+		// if account number is not set, get next account number
+		if accountNumber == 0 {
+			accountNumber = k.accountKeeper.NextAccountNumber(ctx)
+		}
+
 		// create shorthand account
 		shorthandAccount, err := types.NewShorthandAccountWithAddress(k.ac, addr)
 		if err != nil {
@@ -46,7 +54,7 @@ func (k Keeper) convertToEVMAddress(ctx context.Context, addr sdk.AccAddress, is
 		}
 
 		// register shorthand account
-		shorthandAccount.AccountNumber = k.accountKeeper.NextAccountNumber(ctx)
+		shorthandAccount.AccountNumber = accountNumber
 		k.accountKeeper.SetAccount(ctx, shorthandAccount)
 	}
 
