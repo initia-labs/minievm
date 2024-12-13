@@ -1439,8 +1439,8 @@ github.com/initia-labs/OPinit v0.5.5 h1:1AxaZ7NXJThIkDBBvIvsU2RZEqXVSW5nEL0ewU0A
 github.com/initia-labs/OPinit v0.5.5/go.mod h1:lx1amLMszculwPu8ln+btJno38UV28fd2nP7XC88ZeE=
 github.com/initia-labs/OPinit/api v0.5.1 h1:zwyJf7HtKJCKvLJ1R9PjVfJO1L+d/jKoeFyT7WTLHFI=
 github.com/initia-labs/OPinit/api v0.5.1/go.mod h1:gHK6DEWb3/DqQD5LjKirUx9jilAh2UioXanoQdgqVfU=
-github.com/initia-labs/cometbft v0.0.0-20241113064430-a371e2dc387f h1:PpYBvJ0L58bAgH7KwS/7GBEUphLnhf4fnTLua9uOov8=
-github.com/initia-labs/cometbft v0.0.0-20241113064430-a371e2dc387f/go.mod h1:y7+6kPknafzWlkSMCekzXC81wpRf1pcVAUnO0wRy9lQ=
+github.com/initia-labs/cometbft v0.0.0-20241209060054-203460274117 h1:uELJfPYKLQvJTWN6bkFR63hvgpw8ROtSdQkXOUU+7IU=
+github.com/initia-labs/cometbft v0.0.0-20241209060054-203460274117/go.mod h1:y7+6kPknafzWlkSMCekzXC81wpRf1pcVAUnO0wRy9lQ=
 github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e h1:k+pg63SFozCAK4LZFSiZtof6z69Tlu0O/Zftj1aAwes=
 github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e/go.mod h1:aVposiPW9FOUeAeJ7JjJRdE3g+L6i8YDxFn6Cv6+Az4=
 github.com/initia-labs/evm v0.0.0-20241027024417-b90d6257f9b7 h1:m7ni67mL0+7qQCFXvjNPeEx3s91Oyxcu5UL82INOvMs=
