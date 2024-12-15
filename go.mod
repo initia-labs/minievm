@@ -270,7 +270,7 @@ replace (
 
 	// Use latest iavl version to fix following issue:
 	// https://github.com/cosmos/iavl/pull/943
-	github.com/cosmos/iavl => github.com/cosmos/iavl v1.1.4
+	github.com/cosmos/iavl => github.com/initia-labs/iavl v0.0.0-20241215032444-c426d78ab474
 
 	// dgrijalva/jwt-go is deprecated and doesn't receive security updates.
 	// TODO: remove it: https://github.com/cosmos/cosmos-sdk/issues/13134
