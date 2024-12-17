@@ -13,6 +13,7 @@ import (
 	kvindexer "github.com/initia-labs/kvindexer"
 	kvindexerconfig "github.com/initia-labs/kvindexer/config"
 	blocksubmodule "github.com/initia-labs/kvindexer/submodules/block"
+	nft "github.com/initia-labs/kvindexer/submodules/evm-nft"
 	tx "github.com/initia-labs/kvindexer/submodules/evm-tx"
 	"github.com/initia-labs/kvindexer/submodules/pair"
 	kvindexermodule "github.com/initia-labs/kvindexer/x/kvindexer"
@@ -56,7 +57,11 @@ func setupIndexer(
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	err = kvIndexerKeeper.RegisterSubmodules(smBlock, smTx, smPair)
+	smNft, err := nft.NewEvmNFTSubmodule(app.ac, app.appCodec, kvIndexerKeeper, app.EVMKeeper, smPair)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	err = kvIndexerKeeper.RegisterSubmodules(smBlock, smTx, smPair, smNft)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
