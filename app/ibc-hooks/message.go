@@ -48,7 +48,7 @@ type HookData struct {
 
 // asyncCallback is same as AsyncCallback.
 type asyncCallback struct {
-	// callback id should be issued form the executor contract
+	// callback id should be issued from the executor contract
 	Id              uint64 `json:"id"`
 	ContractAddress string `json:"contract_address"`
 }
