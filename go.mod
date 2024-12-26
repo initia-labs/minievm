@@ -179,7 +179,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit/api v0.6.0 // indirect
+	github.com/initia-labs/OPinit/api v0.6.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -269,10 +269,6 @@ replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 
-	// Use latest iavl version to fix following issue:
-	// https://github.com/cosmos/iavl/pull/943
-	github.com/cosmos/iavl => github.com/cosmos/iavl v1.1.4
-
 	// dgrijalva/jwt-go is deprecated and doesn't receive security updates.
 	// TODO: remove it: https://github.com/cosmos/cosmos-sdk/issues/13134
 	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.2
@@ -289,7 +285,7 @@ replace (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20241209060054-203460274117
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20241224101634-a905db74416a
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 

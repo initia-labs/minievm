@@ -1001,8 +1001,8 @@ github.com/cosmos/gogogateway v1.2.0/go.mod h1:iQpLkGWxYcnCdz5iAdLcRBSw3h7NXeOkZ
 github.com/cosmos/gogoproto v1.4.2/go.mod h1:cLxOsn1ljAHSV527CHOtaIP91kK6cCrZETRBrkzItWU=
 github.com/cosmos/gogoproto v1.7.0 h1:79USr0oyXAbxg3rspGh/m4SWNyoz/GLaAh0QlCe2fro=
 github.com/cosmos/gogoproto v1.7.0/go.mod h1:yWChEv5IUEYURQasfyBW5ffkMHR/90hiHgbNgrtp4j0=
-github.com/cosmos/iavl v1.1.4 h1:Z0cVVjeQqOUp78/nWt/uhQy83vYluWlAMGQ4zbH9G34=
-github.com/cosmos/iavl v1.1.4/go.mod h1:vCYmRQUJU1wwj0oRD3wMEtOM9sJNDP+GFMaXmIxZ/rU=
+github.com/cosmos/iavl v1.2.0 h1:kVxTmjTh4k0Dh1VNL046v6BXqKziqMDzxo93oh3kOfM=
+github.com/cosmos/iavl v1.2.0/go.mod h1:HidWWLVAtODJqFD6Hbne2Y0q3SdxByJepHUOeoH4LiI=
 github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.0.2 h1:dyLNlDElY6+5zW/BT/dO/3Ad9FpQblfh+9dQpYQodbA=
 github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.0.2/go.mod h1:82hPO/tRawbuFad2gPwChvpZ0JEIoNi91LwVneAYCeM=
 github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 h1:AQO9NIAP3RFqvBCj7IqM/V1LCxmuvcvGUdu0RIEz/c0=
@@ -1435,10 +1435,10 @@ github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLf
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
 github.com/initia-labs/OPinit v0.6.1 h1:G9ebeYeqPlV9Z2s3JdSWfwQAUgIM+nhkcA8xSJUMR7M=
 github.com/initia-labs/OPinit v0.6.1/go.mod h1:gDpCh4Zx94mihwgzP/PLav8eVHLroZBu3dFyzCy8iIs=
-github.com/initia-labs/OPinit/api v0.6.0 h1:Q3hDHpTd9EqlDfY/OryCKIwuXYWJxGJdGfJicV1RjL4=
-github.com/initia-labs/OPinit/api v0.6.0/go.mod h1:gHK6DEWb3/DqQD5LjKirUx9jilAh2UioXanoQdgqVfU=
-github.com/initia-labs/cometbft v0.0.0-20241209060054-203460274117 h1:uELJfPYKLQvJTWN6bkFR63hvgpw8ROtSdQkXOUU+7IU=
-github.com/initia-labs/cometbft v0.0.0-20241209060054-203460274117/go.mod h1:y7+6kPknafzWlkSMCekzXC81wpRf1pcVAUnO0wRy9lQ=
+github.com/initia-labs/OPinit/api v0.6.2 h1:nU9Rv5s/6WbV3CfmNnW3MSSmqpk7Avgfd68qMWjYD08=
+github.com/initia-labs/OPinit/api v0.6.2/go.mod h1:gHK6DEWb3/DqQD5LjKirUx9jilAh2UioXanoQdgqVfU=
+github.com/initia-labs/cometbft v0.0.0-20241224101634-a905db74416a h1:qQP2cQhsZ+YyPJ0aayQr/LVva+3TbhSaBnplj0etnF8=
+github.com/initia-labs/cometbft v0.0.0-20241224101634-a905db74416a/go.mod h1:9Jv7s3Z8ukB0YpH4P6PrsL5DVadnoIIL9XDToIinx9A=
 github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e h1:k+pg63SFozCAK4LZFSiZtof6z69Tlu0O/Zftj1aAwes=
 github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e/go.mod h1:aVposiPW9FOUeAeJ7JjJRdE3g+L6i8YDxFn6Cv6+Az4=
 github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb h1:oyH9gg/4f7uMCIJYnSpp7wa1NrGjSMsXTtypUfrsPLU=
