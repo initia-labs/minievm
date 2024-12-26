@@ -6,7 +6,7 @@ toolchain go1.23.0
 
 require (
 	cosmossdk.io/math v1.4.0
-	github.com/cometbft/cometbft v0.38.12
+	github.com/cometbft/cometbft v0.38.15
 	github.com/cosmos/cosmos-sdk v0.50.11
 	github.com/cosmos/ibc-go/v8 v8.5.0
 	github.com/ethereum/go-ethereum v1.14.11
@@ -146,7 +146,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.6.1 // indirect
+	github.com/initia-labs/OPinit v0.6.2 // indirect
 	github.com/initia-labs/OPinit/api v0.6.2 // indirect
 	github.com/initia-labs/kvindexer v0.1.9 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
