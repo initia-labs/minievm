@@ -251,7 +251,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
-	case METHOD_EXECUTE_COSMOS, METHOD_EXECUTE_COSMOS_WITH_OPTIONS:
+	case METHOD_EXECUTE_COSMOS:
 		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_GAS, "execute_cosmos")
 
 		if readOnly {

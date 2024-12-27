@@ -82,9 +82,8 @@ const (
 	METHOD_TO_COSMOS_ADDRESS = "to_cosmos_address"
 	METHOD_TO_EVM_ADDRESS    = "to_evm_address"
 
-	METHOD_QUERY_COSMOS                = "query_cosmos"
-	METHOD_EXECUTE_COSMOS              = "execute_cosmos"
-	METHOD_EXECUTE_COSMOS_WITH_OPTIONS = "execute_cosmos_with_options"
+	METHOD_QUERY_COSMOS   = "query_cosmos"
+	METHOD_EXECUTE_COSMOS = "execute_cosmos"
 
 	METHOD_TO_DENOM = "to_denom"
 	METHOD_TO_ERC20 = "to_erc20"
