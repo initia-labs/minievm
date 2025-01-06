@@ -62,7 +62,25 @@ func (k Keeper) DeployERC20Factory(ctx context.Context) error {
 		return err
 	}
 
-	return k.ERC20FactoryAddr.Set(ctx, factoryAddr.Bytes())
+	err = k.ERC20FactoryAddr.Set(ctx, factoryAddr.Bytes())
+	if err != nil {
+		return err
+	}
+
+	wrapperAddr, err := k.ERC20WrapperAddr.Get(ctx)
+	if err == nil {
+		inputBz, err := k.ERC20Keeper().GetERC20WrapperABI().Pack("setFactory", common.BytesToAddress(factoryAddr.Bytes()))
+		if err != nil {
+			return err
+		}
+
+		_, _, err = k.EVMCall(ctx, types.StdAddress, common.BytesToAddress(wrapperAddr), inputBz, nil, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // DeployERC20Wrapper deploys the ERC20 wrapper contract and stores the address in the keeper.
