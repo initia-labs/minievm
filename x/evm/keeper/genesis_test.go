@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_wrapper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -102,4 +103,57 @@ func Test_Initialize(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, expectedFactoryAddr, factoryAddr)
+}
+
+func Test_DeployERC20Factory(t *testing.T) {
+	ctx, input := createTestInput(t, false, false)
+
+	// set random factory address and check if it is set correctly
+	err := input.EVMKeeper.ERC20FactoryAddr.Set(ctx, common.HexToAddress("0x123").Bytes())
+	require.NoError(t, err)
+
+	// set params
+	input.EVMKeeper.Params.Set(ctx, types.DefaultParams())
+
+	factoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
+
+	require.Equal(t, common.HexToAddress("0x123"), factoryAddr)
+
+	// deploy wrapper contract and check if the factory address is set correctly
+	err = input.EVMKeeper.DeployERC20Wrapper(ctx)
+	require.NoError(t, err)
+
+	expectedFactoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
+
+	require.Equal(t, expectedFactoryAddr, queryFactoryAddressFromWrapper(t, ctx, input))
+
+	// deploy factory contract again and check if the factory address is set correctly
+	err = input.EVMKeeper.DeployERC20Factory(ctx)
+	require.NoError(t, err)
+
+	expectedFactoryAddr, err = input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
+
+	require.Equal(t, expectedFactoryAddr, queryFactoryAddressFromWrapper(t, ctx, input))
+	require.NotEqual(t, factoryAddr, expectedFactoryAddr)
+}
+
+func queryFactoryAddressFromWrapper(t *testing.T, ctx sdk.Context, input TestKeepers) common.Address {
+	wrapperAddr, err := input.EVMKeeper.GetERC20WrapperAddr(ctx)
+	require.NoError(t, err)
+
+	caller := common.HexToAddress("0x0")
+	abi, err := erc20_wrapper.Erc20WrapperMetaData.GetAbi()
+	require.NoError(t, err)
+
+	viewArg, err := abi.Pack("factory")
+	require.NoError(t, err)
+
+	factoryAddrBytes, err := input.EVMKeeper.EVMStaticCall(ctx, caller, wrapperAddr, viewArg, nil)
+	require.NoError(t, err)
+
+	factoryAddr := common.BytesToAddress(factoryAddrBytes)
+	return factoryAddr
 }

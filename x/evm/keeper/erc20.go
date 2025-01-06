@@ -19,6 +19,7 @@ import (
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_wrapper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -29,6 +30,7 @@ type ERC20Keeper struct {
 	ERC20Bin        []byte
 	ERC20ABI        *abi.ABI
 	ERC20FactoryABI *abi.ABI
+	ERC20WrapperABI *abi.ABI
 }
 
 func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
@@ -42,17 +44,32 @@ func NewERC20Keeper(k *Keeper) (types.IERC20Keeper, error) {
 		return ERC20Keeper{}, err
 	}
 
+	wrapperABI, err := erc20_wrapper.Erc20WrapperMetaData.GetAbi()
+	if err != nil {
+		return ERC20Keeper{}, err
+	}
+
 	erc20Bin, err := hexutil.Decode(erc20.Erc20Bin)
 	if err != nil {
 		return ERC20Keeper{}, err
 	}
 
-	return &ERC20Keeper{k, erc20Bin, erc20ABI, factoryABI}, nil
+	return &ERC20Keeper{k, erc20Bin, erc20ABI, factoryABI, wrapperABI}, nil
 }
 
 // GetERC20ABI implements IERC20Keeper.
 func (k ERC20Keeper) GetERC20ABI() *abi.ABI {
 	return k.ERC20ABI
+}
+
+// GetERC20FactoryABI implements IERC20Keeper.
+func (K ERC20Keeper) GetERC20FactoryABI() *abi.ABI {
+	return K.ERC20FactoryABI
+}
+
+// GetERC20WrapperABI implements IERC20Keeper.
+func (K ERC20Keeper) GetERC20WrapperABI() *abi.ABI {
+	return K.ERC20WrapperABI
 }
 
 // BurnCoins implements IERC20Keeper.

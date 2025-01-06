@@ -10,7 +10,7 @@ import "../erc20_acl/ERC20ACL.sol";
 import "../i_ibc_async_callback/IIBCAsyncCallback.sol";
 import {ERC165, IERC165} from "../erc165/ERC165.sol";
 
-contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
+contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     struct IbcCallBack {
         address sender;
         address originToken;
@@ -21,12 +21,18 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback {
     string constant NAME_PREFIX = "Wrapped";
     string constant SYMBOL_PREFIX = "W";
     uint64 callBackId = 0;
-    ERC20Factory public immutable factory;
+    ERC20Factory public factory;
     mapping(address => address) public wrappedTokens; // origin -> wrapped
     mapping(uint64 => IbcCallBack) private ibcCallBack; // id -> CallBackInfo
 
     constructor(address erc20Factory) {
         factory = ERC20Factory(erc20Factory);
+    }
+
+    // This function can only be called by the chain at upgrade.
+    function setFactory(address newFactory) external onlyChain {
+        require(newFactory != address(0), "invalid factory address");
+        factory = ERC20Factory(newFactory);
     }
 
     modifier onlyContract() {

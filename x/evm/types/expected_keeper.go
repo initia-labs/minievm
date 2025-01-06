@@ -66,6 +66,8 @@ type IERC20Keeper interface {
 
 	// ABI
 	GetERC20ABI() *abi.ABI
+	GetERC20FactoryABI() *abi.ABI
+	GetERC20WrapperABI() *abi.ABI
 
 	// erc20 queries
 	GetDecimals(ctx context.Context, denom string) (uint8, error)
