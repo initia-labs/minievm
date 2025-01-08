@@ -149,7 +149,7 @@ func (k Keeper) buildTxContext(ctx context.Context, caller common.Address, fee t
 	}, nil
 }
 
-// createEVM creates a new EVM instance.
+// CreateEVM creates a new EVM instance.
 func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (context.Context, *vm.EVM, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -347,7 +347,7 @@ func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []b
 	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, accessList, nil)
 }
 
-// EVMCreate creates a new contract with the given code.
+// EVMCreate2 creates a new contract with the given code.
 func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt uint64, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
 	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, &salt, accessList, nil)
 }
