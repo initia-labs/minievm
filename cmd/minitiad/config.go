@@ -44,6 +44,7 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.MinGasPrices = fmt.Sprintf("0%s", types.BaseDenom)
 	srvCfg.Mempool.MaxTxs = 2000
 	srvCfg.QueryGasLimit = 3000000
+	srvCfg.InterBlockCache = false
 
 	// Enable API and unsafe CORS (CORS allowed from any host)
 	srvCfg.API.Enable = true
