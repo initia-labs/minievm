@@ -212,6 +212,9 @@ func (qs *queryServerImpl) ERC721ClassIdByContractAddr(ctx context.Context, req 
 
 // ERC721OriginTokenInfos implements types.QueryServer.
 func (qs *queryServerImpl) ERC721OriginTokenInfos(ctx context.Context, req *types.QueryERC721OriginTokenInfosRequest) (*types.QueryERC721OriginTokenInfosResponse, error) {
+	if len(req.TokenIds) == 0 {
+		return nil, errorsmod.Wrap(types.ErrInvalidRequest, "empty token ids")
+	}
 	tokenOriginIds, tokenUris, err := qs.Keeper.GetOriginTokenInfos(ctx, req.ClassId, req.TokenIds)
 	if err != nil {
 		return nil, err
