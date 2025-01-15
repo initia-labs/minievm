@@ -289,6 +289,10 @@ func local_request_Query_ERC721ClassIdByContractAddr_0(ctx context.Context, mars
 
 }
 
+var (
+	filter_Query_ERC721OriginTokenInfos_0 = &utilities.DoubleArray{Encoding: map[string]int{"class_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+)
+
 func request_Query_ERC721OriginTokenInfos_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq QueryERC721OriginTokenInfosRequest
 	var metadata runtime.ServerMetadata
@@ -311,15 +315,11 @@ func request_Query_ERC721OriginTokenInfos_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "class_id", err)
 	}
 
-	val, ok = pathParams["token_ids"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "token_ids")
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	protoReq.TokenIds, err = runtime.StringSlice(val, ",")
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "token_ids", err)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_ERC721OriginTokenInfos_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.ERC721OriginTokenInfos(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -349,15 +349,11 @@ func local_request_Query_ERC721OriginTokenInfos_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "class_id", err)
 	}
 
-	val, ok = pathParams["token_ids"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "token_ids")
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	protoReq.TokenIds, err = runtime.StringSlice(val, ",")
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "token_ids", err)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_ERC721OriginTokenInfos_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.ERC721OriginTokenInfos(ctx, &protoReq)
@@ -964,7 +960,7 @@ var (
 
 	pattern_Query_ERC721ClassIdByContractAddr_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"minievm", "evm", "v1", "erc721", "class_id", "contract_addr"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ERC721OriginTokenInfos_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 1, 0, 4, 1, 5, 6}, []string{"minievm", "evm", "v1", "erc721", "origin_token_infos", "class_id", "token_ids"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_ERC721OriginTokenInfos_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"minievm", "evm", "v1", "erc721", "origin_token_infos", "class_id"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_Query_Denom_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"minievm", "evm", "v1", "denoms", "contract_addr"}, "", runtime.AssumeColonVerbOpt(false)))
 

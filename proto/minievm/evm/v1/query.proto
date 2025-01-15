@@ -44,7 +44,7 @@ service Query {
 
   // ERC721OriginTokenInfos gets the origin token infos by class id and token ids.
   rpc ERC721OriginTokenInfos(QueryERC721OriginTokenInfosRequest) returns (QueryERC721OriginTokenInfosResponse) {
-    option (google.api.http).get = "/minievm/evm/v1/erc721/origin_token_infos/{class_id}/{token_ids}";
+    option (google.api.http).get = "/minievm/evm/v1/erc721/origin_token_infos/{class_id=**}";
   }
 
   // Denom gets the denom of the given contract address.
