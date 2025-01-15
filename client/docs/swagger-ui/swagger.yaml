@@ -37493,10 +37493,10 @@ paths:
                             description: The target chain type.
                             type: string
                             enum:
-                              - CHAIN_TYPE_UNSPECIFIED
-                              - CHAIN_TYPE_INITIA
-                              - CHAIN_TYPE_CELESTIA
-                            default: CHAIN_TYPE_UNSPECIFIED
+                              - UNSPECIFIED
+                              - INITIA
+                              - CELESTIA
+                            default: UNSPECIFIED
                       submission_interval:
                         type: string
                         description: >-
@@ -39665,6 +39665,114 @@ paths:
           in: path
           required: true
           type: string
+      tags:
+        - Query
+  /minievm/evm/v1/erc721/class_id/{contract_addr}:
+    get:
+      summary: ERC721ClassIdByContractAddr gets the class id by contract address.
+      operationId: ERC721ClassIdByContractAddr
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              class_id:
+                type: string
+            title: >-
+              QueryERC721ClassIdsByContractAddrResponse is the response type for
+              the Query/ERC721ClassIdsByContractAddr RPC
+
+              method
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: contract_addr
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /minievm/evm/v1/erc721/origin_token_infos/{class_id}:
+    get:
+      summary: >-
+        ERC721OriginTokenInfos gets the origin token infos by class id and token
+        ids.
+      operationId: ERC721OriginTokenInfos
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              token_infos:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    token_origin_id:
+                      type: string
+                    token_uri:
+                      type: string
+            title: >-
+              QueryERC721OriginTokenInfosResponse is the response type for the
+              Query/ERC721OriginTokenInfos RPC
+
+              method
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: class_id
+          in: path
+          required: true
+          type: string
+        - name: token_ids
+          in: query
+          required: false
+          type: array
+          items:
+            type: string
+          collectionFormat: multi
       tags:
         - Query
   /minievm/evm/v1/params:
@@ -67991,10 +68099,10 @@ definitions:
                 description: The target chain type.
                 type: string
                 enum:
-                  - CHAIN_TYPE_UNSPECIFIED
-                  - CHAIN_TYPE_INITIA
-                  - CHAIN_TYPE_CELESTIA
-                default: CHAIN_TYPE_UNSPECIFIED
+                  - UNSPECIFIED
+                  - INITIA
+                  - CELESTIA
+                default: UNSPECIFIED
           submission_interval:
             type: string
             description: >-
@@ -68124,10 +68232,10 @@ definitions:
                     description: The target chain type.
                     type: string
                     enum:
-                      - CHAIN_TYPE_UNSPECIFIED
-                      - CHAIN_TYPE_INITIA
-                      - CHAIN_TYPE_CELESTIA
-                    default: CHAIN_TYPE_UNSPECIFIED
+                      - UNSPECIFIED
+                      - INITIA
+                      - CELESTIA
+                    default: UNSPECIFIED
               submission_interval:
                 type: string
                 description: >-
@@ -68864,24 +68972,24 @@ definitions:
         description: The target chain type.
         type: string
         enum:
-          - CHAIN_TYPE_UNSPECIFIED
-          - CHAIN_TYPE_INITIA
-          - CHAIN_TYPE_CELESTIA
-        default: CHAIN_TYPE_UNSPECIFIED
+          - UNSPECIFIED
+          - INITIA
+          - CELESTIA
+        default: UNSPECIFIED
     description: BatchInfo defines the set of batch information.
   opinit.ophost.v1.BatchInfo.ChainType:
     type: string
     enum:
-      - CHAIN_TYPE_UNSPECIFIED
-      - CHAIN_TYPE_INITIA
-      - CHAIN_TYPE_CELESTIA
-    default: CHAIN_TYPE_UNSPECIFIED
+      - UNSPECIFIED
+      - INITIA
+      - CELESTIA
+    default: UNSPECIFIED
     description: |-
       ChainType defines the type of chain.
 
-       - CHAIN_TYPE_UNSPECIFIED: Unspecified chain type.
-       - CHAIN_TYPE_INITIA: The chain type of the initia chain.
-       - CHAIN_TYPE_CELESTIA: The chain type of the celestia chain.
+       - UNSPECIFIED: Unspecified chain type.
+       - INITIA: The chain type of the initia chain.
+       - CELESTIA: The chain type of the celestia chain.
   opinit.ophost.v1.BridgeConfig:
     type: object
     properties:
@@ -68902,10 +69010,10 @@ definitions:
             description: The target chain type.
             type: string
             enum:
-              - CHAIN_TYPE_UNSPECIFIED
-              - CHAIN_TYPE_INITIA
-              - CHAIN_TYPE_CELESTIA
-            default: CHAIN_TYPE_UNSPECIFIED
+              - UNSPECIFIED
+              - INITIA
+              - CELESTIA
+            default: UNSPECIFIED
       submission_interval:
         type: string
         description: >-
@@ -68930,6 +69038,13 @@ definitions:
         format: byte
         description: Normally it is IBC channelID for permissioned IBC relayer.
     description: BridgeConfig defines the set of bridge config.
+  minievm.evm.v1.ERC721OriginTokenInfo:
+    type: object
+    properties:
+      token_origin_id:
+        type: string
+      token_uri:
+        type: string
   minievm.evm.v1.Log:
     type: object
     properties:
@@ -69109,6 +69224,33 @@ definitions:
     title: >-
       QueryERC20WrapperResponse is the response type for the Query/ERC20Wrapper
       RPC
+
+      method
+  minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse:
+    type: object
+    properties:
+      class_id:
+        type: string
+    title: >-
+      QueryERC721ClassIdsByContractAddrResponse is the response type for the
+      Query/ERC721ClassIdsByContractAddr RPC
+
+      method
+  minievm.evm.v1.QueryERC721OriginTokenInfosResponse:
+    type: object
+    properties:
+      token_infos:
+        type: array
+        items:
+          type: object
+          properties:
+            token_origin_id:
+              type: string
+            token_uri:
+              type: string
+    title: >-
+      QueryERC721OriginTokenInfosResponse is the response type for the
+      Query/ERC721OriginTokenInfos RPC
 
       method
   minievm.evm.v1.QueryParamsResponse:
