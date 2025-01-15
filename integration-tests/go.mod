@@ -72,7 +72,6 @@ require (
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.0 // indirect
-	github.com/cosmos/iavl v1.2.2 // indirect
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.0.2 // indirect
 	github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
@@ -248,6 +247,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
+// cosmos repalces
 replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
@@ -266,15 +266,15 @@ replace (
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
 
+// indirect custom dependencies
+require github.com/cosmos/iavl v1.2.4 // indirect
+
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20241224101634-a905db74416a
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250109053429-822f3def6a97
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 
-	// use custom version until this PR is merged
-	// - https://github.com/strangelove-ventures/cometbft-client/pull/10
-	github.com/strangelove-ventures/cometbft-client => github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
 	google.golang.org/grpc => google.golang.org/grpc v1.65.0

@@ -107,7 +107,6 @@ require (
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
-	github.com/cosmos/iavl v1.2.2 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/interchain-security/v6 v6.0.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.13.3 // indirect
@@ -225,7 +224,6 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/status-im/keycard-go v0.2.0 // indirect
-	github.com/strangelove-ventures/cometbft-client v0.1.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/supranational/blst v0.3.13 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
@@ -265,6 +263,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
+// cosmos replaces
 replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
@@ -283,15 +282,18 @@ replace (
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
 
+// indirect custom dependencies
+require (
+	github.com/cosmos/iavl v1.2.4 // indirect
+	github.com/strangelove-ventures/cometbft-client v0.1.1 // indirect
+)
+
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20241224101634-a905db74416a
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250109053429-822f3def6a97
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 
-	// use custom version until this PR is merged
-	// - https://github.com/strangelove-ventures/cometbft-client/pull/10
-	github.com/strangelove-ventures/cometbft-client => github.com/initia-labs/cometbft-client v0.0.0-20240924071428-ef115cefa07e
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
 	google.golang.org/grpc => google.golang.org/grpc v1.65.0
