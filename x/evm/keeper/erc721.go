@@ -282,6 +282,30 @@ func (k ERC721Keeper) GetTokenInfos(ctx context.Context, classId string, tokenId
 	return tokenUris, make([]string, len(tokenIds)), err
 }
 
+func (k ERC721Keeper) GetOriginTokenInfos(ctx context.Context, classId string, tokenIds []*big.Int) (tokenOriginIds, tokenUris []string, err error) {
+	contractAddr, err := types.ContractAddressFromClassId(ctx, k, classId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tokenOriginIds = make([]string, len(tokenIds))
+	tokenUris = make([]string, len(tokenIds))
+	for i, tokenId := range tokenIds {
+		tokenUri, err := k.tokenURI(ctx, tokenId, contractAddr)
+		if err != nil {
+			return nil, nil, err
+		}
+		tokenUris[i] = tokenUri
+
+		tokenOriginId, err := k.tokenOriginId(ctx, tokenId, contractAddr)
+		if err != nil {
+			return nil, nil, err
+		}
+		tokenOriginIds[i] = tokenOriginId
+	}
+	return tokenOriginIds, tokenUris, err
+}
+
 func (k ERC721Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Address) (math.Int, error) {
 	inputBz, err := k.ABI.Pack("balanceOf", addr)
 	if err != nil {
@@ -404,4 +428,28 @@ func (k ERC721Keeper) tokenURI(ctx context.Context, tokenId *big.Int, contractAd
 	}
 
 	return tokenUri, nil
+}
+
+func (k ERC721Keeper) tokenOriginId(ctx context.Context, tokenId *big.Int, contractAddr common.Address) (string, error) {
+	inputBz, err := k.ABI.Pack("tokenOriginId", tokenId)
+	if err != nil {
+		return "", types.ErrFailedToPackABI.Wrap(err.Error())
+	}
+
+	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := k.ABI.Unpack("tokenOriginId", retBz)
+	if err != nil {
+		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
+	}
+
+	tokenOriginId, ok := res[0].(string)
+	if !ok {
+		return tokenOriginId, types.ErrFailedToDecodeOutput
+	}
+
+	return tokenOriginId, nil
 }

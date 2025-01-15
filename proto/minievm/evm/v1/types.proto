@@ -77,3 +77,8 @@ message AccessTuple {
   // These keys represent specific storage slots in the contract's storage that are accessed or modified.
   repeated string storage_keys = 2;
 }
+
+message ERC721OriginTokenInfo {
+  string token_origin_id = 1;
+  string token_uri = 2;
+}

@@ -37,6 +37,16 @@ service Query {
     option (google.api.http).get = "/minievm/evm/v1/contracts/by_denom";
   }
 
+  // ERC721ClassIdByContractAddr gets the class id by contract address.
+  rpc ERC721ClassIdByContractAddr(QueryERC721ClassIdByContractAddrRequest) returns (QueryERC721ClassIdByContractAddrResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/erc721/class_id/{contract_addr}";
+  }
+
+  // ERC721OriginTokenInfos gets the origin token infos by class id and token ids.
+  rpc ERC721OriginTokenInfos(QueryERC721OriginTokenInfosRequest) returns (QueryERC721OriginTokenInfosResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/erc721/origin_token_infos/{class_id=**}";
+  }
+
   // Denom gets the denom of the given contract address.
   rpc Denom(QueryDenomRequest) returns (QueryDenomResponse) {
     option (google.api.http).get = "/minievm/evm/v1/denoms/{contract_addr}";
@@ -183,6 +193,31 @@ message QueryCallResponse {
   ];
   string trace_output = 4;
   string error = 5;
+}
+
+// QueryERC721ClassIdsByContractAddrRequest is the request type for the Query/ERC721ClassIdsByContractAddr RPC
+// method
+message QueryERC721ClassIdByContractAddrRequest {
+  string contract_addr = 1;
+}
+
+// QueryERC721ClassIdsByContractAddrResponse is the response type for the Query/ERC721ClassIdsByContractAddr RPC
+// method
+message QueryERC721ClassIdByContractAddrResponse {
+  string class_id = 1;
+}
+
+// QueryERC721OriginTokenInfosRequest is the request type for the Query/ERC721OriginTokenInfos RPC
+// method
+message QueryERC721OriginTokenInfosRequest {
+  string class_id = 1;
+  repeated string token_ids = 2;
+}
+
+// QueryERC721OriginTokenInfosResponse is the response type for the Query/ERC721OriginTokenInfos RPC
+// method
+message QueryERC721OriginTokenInfosResponse {
+  repeated ERC721OriginTokenInfo token_infos = 1;
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.

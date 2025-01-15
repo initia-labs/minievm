@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"math/big"
 	"sync/atomic"
 
 	"cosmossdk.io/collections"
@@ -216,6 +217,27 @@ func (k Keeper) GetContractAddrByClassId(ctx context.Context, classId string) (c
 // GetDenomByContractAddr returns denom by contract address
 func (k Keeper) GetClassIdByContractAddr(ctx context.Context, contractAddr common.Address) (string, error) {
 	return k.ERC721ClassIdsByContractAddr.Get(ctx, contractAddr.Bytes())
+}
+
+// GetClassUriByContractAddr returns class uri by contract address
+func (k Keeper) GetClassUriByContractAddr(ctx context.Context, contractAddr common.Address) (string, error) {
+	return k.ERC721ClassURIs.Get(ctx, contractAddr.Bytes())
+}
+
+// GetOriginTokenInfos returns token origin ids and token uris
+func (k Keeper) GetOriginTokenInfos(ctx context.Context, classId string, tokenIdStrings []string) (tokenOriginIds, tokenUris []string, err error) {
+	tokenIds := make([]*big.Int, 0)
+	for _, tokenId := range tokenIdStrings {
+		tokenId, ok := new(big.Int).SetString(tokenId, 10)
+		if !ok {
+			return nil, nil, types.ErrInvalidTokenId
+		}
+		tokenIds = append(tokenIds, tokenId)
+	}
+
+	erc721Keeper := k.ERC721Keeper().(*ERC721Keeper)
+	tokenOriginIds, tokenUris, err = erc721Keeper.GetOriginTokenInfos(ctx, classId, tokenIds)
+	return
 }
 
 func (k Keeper) GetERC20FactoryAddr(ctx context.Context) (common.Address, error) {
