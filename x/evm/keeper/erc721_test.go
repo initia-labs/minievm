@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -161,4 +162,61 @@ func Test_TransferNFTs(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, receiverAddr, owner)
 	}
+}
+
+func Test_GetContractAddrByClassId(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	evmKeeper := input.EVMKeeper
+	ierc721Keeper, err := keeper.NewERC721Keeper(&evmKeeper)
+	require.NoError(t, err)
+	erc721Keeper := ierc721Keeper.(*keeper.ERC721Keeper)
+
+	classId := "ibc/test-class-id"
+	classUri := "test-class-uri"
+	classData := "test-class-data"
+
+	contractAddr := crypto.CreateAddress(types.StdAddress, 2)
+
+	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, classData)
+	require.NoError(t, err)
+
+	actualClassId, err := evmKeeper.GetClassIdByContractAddr(ctx, contractAddr)
+	require.NoError(t, err)
+	require.Equal(t, classId, actualClassId)
+}
+
+func Test_GetOriginTokenInfos(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	evmKeeper := input.EVMKeeper
+	ierc721Keeper, err := keeper.NewERC721Keeper(&evmKeeper)
+	require.NoError(t, err)
+	erc721Keeper := ierc721Keeper.(*keeper.ERC721Keeper)
+
+	classId := "ibc/test-class-id"
+	classUri := "test-class-uri"
+	classData := "test-class-data"
+
+	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, classData)
+	require.NoError(t, err)
+
+	_, _, addr := keyPubAddr()
+
+	tokenIds := []string{"test-token-id", "token-idasdfasdf", "2198372123"}
+	tokenUris := []string{"test-token-uri", "", "23123"}
+	tokenDatas := []string{"test-token-data", "", "1239827194812"}
+
+	err = erc721Keeper.Mints(ctx, addr, classId, tokenIds, tokenUris, tokenDatas)
+	require.NoError(t, err)
+
+	evmTokenIds := make([]*big.Int, 0)
+	for i := range tokenIds {
+		tokenId, ok := types.TokenIdToBigInt(classId, tokenIds[i])
+		require.True(t, ok)
+		evmTokenIds = append(evmTokenIds, tokenId)
+	}
+
+	tokenOriginIds, actualTokenUris, err := erc721Keeper.GetOriginTokenInfos(ctx, classId, evmTokenIds)
+	require.NoError(t, err)
+	require.Equal(t, tokenIds, tokenOriginIds)
+	require.Equal(t, tokenUris, actualTokenUris)
 }

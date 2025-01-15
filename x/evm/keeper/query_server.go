@@ -195,6 +195,39 @@ func (qs *queryServerImpl) Denom(ctx context.Context, req *types.QueryDenomReque
 	return &types.QueryDenomResponse{Denom: denom}, nil
 }
 
+// ERC721ClassIdByContractAddr implements types.QueryServer.
+func (qs *queryServerImpl) ERC721ClassIdByContractAddr(ctx context.Context, req *types.QueryERC721ClassIdByContractAddrRequest) (*types.QueryERC721ClassIdByContractAddrResponse, error) {
+	contractAddr, err := types.ContractAddressFromString(qs.ac, req.ContractAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	classId, err := qs.Keeper.GetClassIdByContractAddr(ctx, contractAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryERC721ClassIdByContractAddrResponse{ClassId: classId}, nil
+}
+
+// ERC721OriginTokenInfos implements types.QueryServer.
+func (qs *queryServerImpl) ERC721OriginTokenInfos(ctx context.Context, req *types.QueryERC721OriginTokenInfosRequest) (*types.QueryERC721OriginTokenInfosResponse, error) {
+	tokenOriginIds, tokenUris, err := qs.Keeper.GetOriginTokenInfos(ctx, req.ClassId, req.TokenIds)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenInfos := make([]*types.ERC721OriginTokenInfo, len(tokenOriginIds))
+	for i, tokenOriginId := range tokenOriginIds {
+		tokenInfos[i] = &types.ERC721OriginTokenInfo{
+			TokenOriginId: tokenOriginId,
+			TokenUri:      tokenUris[i],
+		}
+	}
+
+	return &types.QueryERC721OriginTokenInfosResponse{TokenInfos: tokenInfos}, nil
+}
+
 // Params implements types.QueryServer.
 func (qs *queryServerImpl) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	params, err := qs.Keeper.Params.Get(ctx)
