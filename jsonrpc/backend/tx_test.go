@@ -13,6 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_SendRawTransaction_EIP155(t *testing.T) {
+	input := setupBackend(t)
+
+	txBz, err := hexutil.Decode("0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222")
+	require.NoError(t, err)
+
+	_, err = input.backend.SendRawTransaction(txBz)
+	require.ErrorContains(t, err, "EIP-155")
+}
+
 func Test_SendRawTransaction(t *testing.T) {
 	input := setupBackend(t)
 	app, _, backend, addrs, privKeys := input.app, input.addrs, input.backend, input.addrs, input.privKeys
