@@ -29,6 +29,11 @@ func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, e
 		return common.Hash{}, err
 	}
 
+	if !tx.Protected() {
+		// Ensure only eip155 signed transactions are submitted if EIP155Required is set.
+		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
+	}
+
 	if err := b.SendTx(tx); err != nil {
 		return common.Hash{}, err
 	}
