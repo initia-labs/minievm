@@ -583,7 +583,7 @@ func (s *StateDB) RevertToSnapshot(i int) {
 	s.ctx = snap.ctx
 
 	// clear the snapshots after the given id
-	s.snaps = s.snaps[:i]
+	s.snaps = s.snaps[:i+1]
 }
 
 // ContextOfSnapshot returns the context of the snapshot with the given id
