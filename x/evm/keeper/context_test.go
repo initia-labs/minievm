@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -15,7 +14,6 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
@@ -261,7 +259,7 @@ func Test_RecursiveDepth(t *testing.T) {
 	require.ErrorContains(t, err, types.ErrExceedMaxRecursiveDepth.Error())
 }
 
-func Test_ExecuteCosmos(t *testing.T) {
+func Test_RevertAfterExecuteCosmos(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 
@@ -283,68 +281,8 @@ func Test_ExecuteCosmos(t *testing.T) {
 	amount := math.NewInt(1000000000)
 	input.Faucet.Mint(ctx, contractAddr.Bytes(), sdk.NewCoin(denom, amount))
 
-	// call execute_cosmos without try catch
+	// call execute_cosmos with revert
 	inputBz, err := parsed.Pack("execute_cosmos",
-		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
-			sdk.AccAddress(contractAddr.Bytes()).String(),
-			addr.String(), // caller
-			denom,
-			amount.AddRaw(100), // try to send more than balance
-		),
-		false,
-	)
-	require.NoError(t, err)
-
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
-	require.ErrorContains(t, err, "transfer amount exceeds balance")
-
-	// check balance
-	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
-	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
-
-	// call execute_cosmos with try catch
-	inputBz, err = parsed.Pack("execute_cosmos",
-		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
-			sdk.AccAddress(contractAddr.Bytes()).String(),
-			addr.String(), // caller
-			denom,
-			amount.AddRaw(100), // try to send more than balance
-		),
-		true,
-	)
-	require.NoError(t, err)
-
-	eventManager := sdk.NewEventManager()
-	_, _, err = input.EVMKeeper.EVMCall(ctx.WithEventManager(eventManager), caller, contractAddr, inputBz, nil, nil)
-	require.NoError(t, err)
-
-	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
-	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
-
-	shouldEnter := false
-	for _, event := range eventManager.Events() {
-		if event.Type == types.EventTypeEVM {
-			for _, attr := range event.Attributes {
-				if attr.Key == types.AttributeKeyLog {
-					var log types.Log
-					err := json.Unmarshal([]byte(attr.Value), &log)
-					require.NoError(t, err)
-					if log.Address == contractAddr.Hex() {
-						// should emit reverted true log
-						require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000001", log.Data)
-						shouldEnter = true
-					}
-				}
-			}
-		} else if event.Type == banktypes.EventTypeTransfer {
-			require.FailNow(t, "should not emit bank transfer event")
-		}
-	}
-	require.True(t, shouldEnter)
-
-	// call normally
-	inputBz, err = parsed.Pack("execute_cosmos",
 		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
 			sdk.AccAddress(contractAddr.Bytes()).String(),
 			addr.String(), // caller
@@ -355,33 +293,144 @@ func Test_ExecuteCosmos(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	eventManager = sdk.NewEventManager()
-	_, _, err = input.EVMKeeper.EVMCall(ctx.WithEventManager(eventManager), caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, "revert reason dummy value for test")
+
+	// check balance
+	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
+	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+
+	// call execute_cosmos without revert
+	inputBz, err = parsed.Pack("execute_cosmos",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(), // caller
+			denom,
+			amount,
+		),
+		false,
+	)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
 	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+}
 
-	shouldEnter = false
-	shouldEnterBank := false
-	for _, event := range eventManager.Events() {
-		if event.Type == types.EventTypeEVM {
-			for _, attr := range event.Attributes {
-				if attr.Key == types.AttributeKeyLog {
-					var log types.Log
-					err := json.Unmarshal([]byte(attr.Value), &log)
-					require.NoError(t, err)
-					if log.Address == contractAddr.Hex() {
-						// should emit reverted false log
-						require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", log.Data)
-						shouldEnter = true
-					}
-				}
-			}
-		} else if event.Type == banktypes.EventTypeTransfer {
-			shouldEnterBank = true
+func Test_ExecuteCosmosWithOptions(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	// deploy counter contract
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	// call execute cosmos function
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	denom := sdk.DefaultBondDenom
+	amount := math.NewInt(1000000000)
+	input.Faucet.Mint(ctx, contractAddr.Bytes(), sdk.NewCoin(denom, amount))
+
+	// case 1. call execute_cosmos with options by sending more than balance to revert the cosmos execute
+	inputBz, err := parsed.Pack("execute_cosmos_with_options",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(), // caller
+			denom,
+			amount.AddRaw(1),
+		),
+		true,
+		uint64(100),
+	)
+	require.NoError(t, err)
+
+	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, logs, 1)
+
+	// check balance
+	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
+	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+
+	// check events
+	events := ctx.EventManager().Events()
+	var shouldEnter bool
+	for _, event := range events {
+		if event.Type == types.EventTypeSubmsg {
+			shouldEnter = true
+			require.Equal(t, "false", event.Attributes[0].Value)
+			break
 		}
 	}
 	require.True(t, shouldEnter)
-	require.True(t, shouldEnterBank)
+
+	// check callback logs
+	log := logs[0]
+	require.Equal(t, contractAddr.Hex(), log.Address)
+	require.Equal(t, parsed.Events["callback_received"].ID.Hex(), log.Topics[0])
+	require.Equal(t, "0x00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000000", log.Data)
+
+	// case 2. call execute_cosmos with options by sending less than balance to revert the cosmos execute but not allow revert
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
+	inputBz, err = parsed.Pack("execute_cosmos_with_options",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(), // caller
+			denom,
+			amount.AddRaw(1),
+		),
+		false,
+		uint64(101),
+	)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.Error(t, err)
+
+	// case 3. call execute_cosmos with options by sending valid amount
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
+	inputBz, err = parsed.Pack("execute_cosmos_with_options",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(), // caller
+			denom,
+			amount,
+		),
+		true,
+		uint64(102),
+	)
+	require.NoError(t, err)
+
+	_, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+	require.Equal(t, len(logs), 1)
+
+	// check events
+	events = ctx.EventManager().Events()
+	shouldEnter = false
+	for _, event := range events {
+		if event.Type == types.EventTypeSubmsg {
+			shouldEnter = true
+			require.Equal(t, "true", event.Attributes[0].Value)
+			break
+		}
+	}
+	require.True(t, shouldEnter)
+
+	// check callback logs
+	log = logs[len(logs)-1]
+	require.Equal(t, contractAddr.Hex(), log.Address)
+	require.Equal(t, parsed.Events["callback_received"].ID.Hex(), log.Topics[0])
+	require.Equal(t, "0x00000000000000000000000000000000000000000000000000000000000000660000000000000000000000000000000000000000000000000000000000000001", log.Data)
 }
