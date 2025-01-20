@@ -86,7 +86,6 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             wrappedAmt: wrappedAmt
         });
 
-        // require(false, COSMOS_CONTRACT.to_cosmos_address(address(this)));
         string memory message = _ibc_transfer(
             channel,
             wrappedTokens[token],
@@ -173,6 +172,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     ) internal pure returns (uint convertedAmount) {
         if (decimal > newDecimal) {
             uint factor = 10 ** uint(decimal - newDecimal);
+            require(amount % factor == 0, "dust amount should be zero");
             convertedAmount = amount / factor;
         } else if (decimal < newDecimal) {
             uint factor = 10 ** uint(newDecimal - decimal);
