@@ -26,7 +26,6 @@ func (k *Keeper) precompiles(rules params.Rules, stateDB types.StateDB) (vm.Prec
 		k.accountKeeper,
 		k.bankKeeper,
 		k,
-		k.msgRouter,
 		k.grpcRouter,
 		k.queryCosmosWhitelist,
 		k.authority,

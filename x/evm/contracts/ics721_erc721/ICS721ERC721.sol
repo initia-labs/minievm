@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import {ERC721} from "../erc721/ERC721.sol";
 import {Ownable} from "../ownable/Ownable.sol";

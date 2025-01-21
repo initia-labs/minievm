@@ -29,8 +29,6 @@ type MockStateDB struct {
 
 	// Snapshot stack
 	snaps []*state.Snapshot
-
-	logs []*types.Log
 }
 
 func NewMockStateDB(sdkCtx sdk.Context) *MockStateDB {
@@ -87,16 +85,6 @@ func (m *MockStateDB) Context() sdk.Context {
 	return m.ctx.Context
 }
 
-// AddLog implements types.StateDB.
-func (m *MockStateDB) AddLog(log *types.Log) {
-	m.logs = append(m.logs, log)
-}
-
-// Logs log getter
-func (m *MockStateDB) Logs() []*types.Log {
-	return m.logs
-}
-
 //////////////////////// MOCKED METHODS ////////////////////////
 
 // AddAddressToAccessList implements types.StateDB.
@@ -106,6 +94,11 @@ func (m *MockStateDB) AddAddressToAccessList(addr common.Address) {
 
 // AddBalance implements types.StateDB.
 func (m *MockStateDB) AddBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) {
+	panic("unimplemented")
+}
+
+// AddLog implements types.StateDB.
+func (m *MockStateDB) AddLog(*types.Log) {
 	panic("unimplemented")
 }
 
@@ -362,18 +355,4 @@ func (e *MockERC20DenomKeeper) GetDenomByContractAddr(_ context.Context, addr co
 	}
 
 	return denom, nil
-}
-
-var _ baseapp.MessageRouter = MockMessageRouter{}
-
-type MockMessageRouter struct {
-	routes map[string]baseapp.MsgServiceHandler
-}
-
-func (router MockMessageRouter) Handler(msg sdk.Msg) baseapp.MsgServiceHandler {
-	return router.routes[sdk.MsgTypeURL(msg)]
-}
-
-func (router MockMessageRouter) HandlerByTypeURL(typeURL string) baseapp.MsgServiceHandler {
-	return router.routes[typeURL]
 }
