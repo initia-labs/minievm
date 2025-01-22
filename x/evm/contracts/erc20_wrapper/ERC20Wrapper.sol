@@ -54,7 +54,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         uint amount,
         uint timeout
     ) public {
-       wrap(channel, token, receiver, amount, timeout, "{}");
+        wrap(channel, token, receiver, amount, timeout, "{}");
     }
 
     function wrap(
@@ -109,18 +109,14 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     ) public {
         address wrappedToken = wrappedTokens[originToken];
         require(wrappedToken != address(0), "wrapped token doesn't exist");
+        _unwrap(wrappedToken, originToken, msg.sender, receiver, wrappedAmt);
+    }
 
-        // burn wrapped token
-        ERC20(wrappedToken).burnFrom(msg.sender, wrappedAmt);
-
-        // unlock origin token and transfer to receiver
-        uint amount = _convertDecimal(
-            wrappedAmt,
-            WRAPPED_DECIMAL,
-            IERC20(originToken).decimals()
-        );
-
-        ERC20(originToken).transfer(receiver, amount);
+    function unwrap(address originToken, address receiver) public {
+        address wrappedToken = wrappedTokens[originToken];
+        require(wrappedToken != address(0), "wrapped token doesn't exist");
+        uint wrappedAmt = ERC20(wrappedToken).balanceOf(msg.sender);
+        _unwrap(wrappedToken, originToken, msg.sender, receiver, wrappedAmt);
     }
 
     function ibc_ack(uint64 callback_id, bool success) external onlyContract {
@@ -136,6 +132,26 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     }
 
     // internal functions //
+    function _unwrap(
+        address wrappedToken,
+        address originToken,
+        address sender,
+        address receiver,
+        uint wrappedAmt
+    ) internal {
+        // burn wrapped token
+        ERC20(wrappedToken).burnFrom(sender, wrappedAmt);
+
+        // unlock origin token and transfer to receiver
+        uint amount = _convertDecimal(
+            wrappedAmt,
+            WRAPPED_DECIMAL,
+            IERC20(originToken).decimals()
+        );
+
+        ERC20(originToken).transfer(receiver, amount);
+    }
+
     function _handleFailedIbcTransfer(uint64 callback_id) internal {
         IbcCallBack memory callback = ibcCallBack[callback_id];
         address wrappedToken = wrappedTokens[callback.originToken];
