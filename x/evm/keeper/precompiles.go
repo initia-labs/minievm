@@ -9,6 +9,7 @@ import (
 
 	cosmosprecompile "github.com/initia-labs/minievm/x/evm/precompiles/cosmos"
 	erc20registryprecompile "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"
+	"github.com/initia-labs/minievm/x/evm/precompiles/jsonutils"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -34,10 +35,16 @@ func (k *Keeper) precompiles(rules params.Rules, stateDB types.StateDB) (vm.Prec
 		return nil, err
 	}
 
+	jsonutilsPrecompile, err := jsonutils.NewJSONUtilsPrecompile(stateDB)
+	if err != nil {
+		return nil, err
+	}
+
 	// clone the active precompiles and add the new precompiles
 	precompiles := vm.ActivePrecompiledContracts(rules)
 	precompiles[types.CosmosPrecompileAddress] = cosmosPrecompile
 	precompiles[types.ERC20RegistryPrecompileAddress] = erc20RegistryPrecompile
+	precompiles[types.JSONUtilsPrecompileAddress] = jsonutilsPrecompile
 
 	return precompiles, nil
 }
