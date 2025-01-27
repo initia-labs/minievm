@@ -33,6 +33,24 @@ func Test_MergeJSON(t *testing.T) {
 			src:      `{"b": {"c": 3}, "c": 4}`,
 			expected: `{"a":1,"b":{"c":3},"c":4}`,
 		},
+		{
+			name:     "empty objects",
+			dst:      `{}`,
+			src:      `{"a": 1}`,
+			expected: `{"a":1}`,
+		},
+		{
+			name:     "null values",
+			dst:      `{"a": 1, "b": null}`,
+			src:      `{"b": 2}`,
+			expected: `{"a":1,"b":2}`,
+		},
+		{
+			name:     "array handling",
+			dst:      `{"a": [1,2]}`,
+			src:      `{"a": [3,4]}`,
+			expected: `{"a":[3,4]}`,
+		},
 	}
 
 	for _, tc := range testCases {

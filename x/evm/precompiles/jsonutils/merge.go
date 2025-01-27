@@ -10,6 +10,13 @@ import (
 // MergeJSON recursively merges the src and dst maps. Key conflicts are resolved by
 // preferring src, or recursively descending, if both src and dst are maps.
 func MergeJSON(dstStr, srcStr string) (string, error) {
+	if len(dstStr) == 0 || len(srcStr) == 0 {
+		return "", errors.New("empty JSON string")
+	}
+	if len(dstStr) > MaxJSONSize || len(srcStr) > MaxJSONSize {
+		return "", errors.New("JSON string too large")
+	}
+
 	var dstMap, srcMap map[string]interface{}
 	err := json.Unmarshal([]byte(dstStr), &dstMap)
 	if err != nil {

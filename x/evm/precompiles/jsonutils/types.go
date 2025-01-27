@@ -19,5 +19,6 @@ const (
 
 	GAS_PER_BYTE storetypes.Gas = 1
 
-	MaxDepth = 16
+	MaxDepth    = 16
+	MaxJSONSize = 10 * 1024
 )
