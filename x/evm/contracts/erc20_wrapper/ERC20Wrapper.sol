@@ -8,6 +8,7 @@ import "../i_erc20/IERC20.sol";
 import "../ownable/Ownable.sol";
 import "../erc20_acl/ERC20ACL.sol";
 import "../i_ibc_async_callback/IIBCAsyncCallback.sol";
+import "../i_jsonutils/IJSONUtils.sol";
 import {ERC165, IERC165} from "../erc165/ERC165.sol";
 
 contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
@@ -63,7 +64,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         string memory receiver,
         uint amount,
         uint timeout,
-        string memory move_memo
+        string memory memo
     ) public {
         _ensureWrappedTokenExists(token);
 
@@ -92,7 +93,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             wrappedAmt,
             timeout,
             receiver,
-            move_memo
+            memo
         );
         // do ibc transfer wrapped token
         COSMOS_CONTRACT.execute_cosmos(message);
@@ -206,8 +207,22 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         uint amount,
         uint timeout,
         string memory receiver,
-        string memory move_memo
+        string memory memo
     ) internal returns (string memory message) {
+        // Construct the memo with the async callback
+        string memory callback_memo = string(
+            abi.encodePacked(
+                '{"evm": {"async_callback": {"id": ',
+                Strings.toString(callBackId),
+                ',"contract_address":"',
+                Strings.toHexString(address(this)),
+                '"}}}'
+            )
+        );
+
+        string memory merged_memo = JSONUTILS_CONTRACT.merge_json(memo, callback_memo);
+        string memory stringified_memo = JSONUTILS_CONTRACT.stringify_json(merged_memo);
+
         // Construct the IBC transfer message
         message = string(
             abi.encodePacked(
@@ -232,13 +247,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 '"timeout_timestamp": "',
                 Strings.toString(timeout),
                 '",',
-                '"memo": "{\\"evm\\": {\\"async_callback\\": {\\"id\\": ',
-                Strings.toString(callBackId),
-                ',\\"contract_address\\":\\"',
-                Strings.toHexString(address(this)),
-                '\\"}}, \\"move\\": ',
-                move_memo,
-                '}"}'
+                '"memo": ',
+                stringified_memo,
+                '}'
             )
         );
     }

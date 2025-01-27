@@ -15,6 +15,7 @@ import (
 
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos"
+	"github.com/initia-labs/minievm/x/evm/contracts/i_jsonutils"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 
@@ -203,6 +204,26 @@ func Test_ToERC20(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, contractAddr, unpackedRet[0].(common.Address))
+}
+
+func Test_JSONMerge(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	abi, err := i_jsonutils.IJsonutilsMetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Pack("merge_json", `{"a": 1, "b": 2}`, `{"b": 3, "c": 4}`)
+	require.NoError(t, err)
+
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.JSONUtilsPrecompileAddress, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	unpackedRet, err := abi.Methods["merge_json"].Outputs.Unpack(retBz)
+	require.NoError(t, err)
+
+	require.Equal(t, `{"a":1,"b":3,"c":4}`, unpackedRet[0].(string))
 }
 
 func Test_PrecompileRevertError(t *testing.T) {
