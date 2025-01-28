@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"cosmossdk.io/collections"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/bloombits"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -45,7 +44,6 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		return err
 	}
 
-	lastHead := common.Hash{}
 	for i := uint64(0); i < evmconfig.SectionSize; i++ {
 		header, err := e.BlockHeaderByNumber(ctx, section*evmconfig.SectionSize+i)
 		if err != nil {
@@ -55,8 +53,6 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		if err := gen.AddBloom(uint(header.Number.Uint64()-section*evmconfig.SectionSize), header.Bloom); err != nil {
 			return err
 		}
-
-		lastHead = header.Hash()
 	}
 
 	// write the bloom bits to the store
@@ -66,7 +62,7 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 			return err
 		}
 
-		if err := e.RecordBloomBits(ctx, section, uint32(i), lastHead, bits); err != nil {
+		if err := e.RecordBloomBits(ctx, section, uint32(i), bits); err != nil {
 			return err
 		}
 	}
@@ -80,8 +76,8 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 }
 
 // ReadBloomBits reads the bloom bits for the given index, section and hash.
-func (e *EVMIndexerImpl) ReadBloomBits(ctx context.Context, section uint64, index uint32, hash common.Hash) ([]byte, error) {
-	bloomBits, err := e.BloomBits.Get(ctx, collections.Join3(section, index, hash.Bytes()))
+func (e *EVMIndexerImpl) ReadBloomBits(ctx context.Context, section uint64, index uint32) ([]byte, error) {
+	bloomBits, err := e.BloomBits.Get(ctx, collections.Join(section, index))
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +86,8 @@ func (e *EVMIndexerImpl) ReadBloomBits(ctx context.Context, section uint64, inde
 }
 
 // RecordBloomBits records the bloom bits for the given index, section and hash.
-func (e *EVMIndexerImpl) RecordBloomBits(ctx context.Context, section uint64, index uint32, hash common.Hash, bloomBits []byte) error {
-	return e.BloomBits.Set(ctx, collections.Join3(section, index, hash.Bytes()), bloomBits)
+func (e *EVMIndexerImpl) RecordBloomBits(ctx context.Context, section uint64, index uint32, bloomBits []byte) error {
+	return e.BloomBits.Set(ctx, collections.Join(section, index), bloomBits)
 }
 
 // NextBloomBitsSection increments the section number.

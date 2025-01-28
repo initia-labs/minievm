@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"errors"
 	"time"
 
+	"cosmossdk.io/collections"
 	"github.com/ethereum/go-ethereum/common/bitutil"
 	"github.com/ethereum/go-ethereum/core/bloombits"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -115,21 +117,22 @@ func (b *JSONRPCBackend) startBloomHandlers(sectionSize uint64) {
 					}
 
 					for i, section := range task.Sections {
-						header, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, (section+1)*sectionSize-1)
-						if err != nil {
+						compVector, err := b.app.EVMIndexer().ReadBloomBits(queryCtx, section, uint32(task.Bit))
+						if errors.Is(err, collections.ErrNotFound) {
+							// pruned section, return empty bitset
+							task.Bitsets[i] = make([]byte, evmconfig.SectionSize/8)
+							continue
+						} else if err != nil {
 							task.Error = err
 							break
 						}
-						compVector, err := b.app.EVMIndexer().ReadBloomBits(queryCtx, section, uint32(task.Bit), header.Hash())
-						if err != nil {
-							task.Error = err
-							break
-						}
+
 						blob, err := bitutil.DecompressBytes(compVector, int(sectionSize/8))
 						if err != nil {
 							task.Error = err
 							break
 						}
+
 						task.Bitsets[i] = blob
 					}
 					request <- task
