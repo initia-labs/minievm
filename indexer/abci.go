@@ -215,5 +215,8 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		e.doPrune(ctx, uint64(blockHeight))
 	}
 
+	// trigger bloom indexing
+	e.doBloomIndexing(ctx, uint64(blockHeight))
+
 	return nil
 }

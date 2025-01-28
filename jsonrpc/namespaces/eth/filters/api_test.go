@@ -20,18 +20,20 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	minitiaapp "github.com/initia-labs/minievm/app"
-	"github.com/initia-labs/minievm/indexer"
+	evmindexer "github.com/initia-labs/minievm/indexer"
 	"github.com/initia-labs/minievm/jsonrpc/backend"
 	"github.com/initia-labs/minievm/jsonrpc/config"
 	"github.com/initia-labs/minievm/jsonrpc/namespaces/eth/filters"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/tests"
+
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 type testInput struct {
 	app       *minitiaapp.MinitiaApp
-	indexer   indexer.EVMIndexer
+	indexer   evmindexer.EVMIndexer
 	backend   *backend.JSONRPCBackend
 	addrs     []common.Address
 	privKeys  []*ecdsa.PrivateKey
@@ -340,7 +342,7 @@ func Test_GetLogs(t *testing.T) {
 	// wait indexer to be ready
 	time.Sleep(3 * time.Second)
 
-	app, addrs, privKeys := input.app, input.addrs, input.privKeys
+	app, indexer, addrs, privKeys := input.app, input.indexer, input.addrs, input.privKeys
 
 	// invalid block range
 	_, err := input.filterAPI.NewFilter(ethfilters.FilterCriteria{
@@ -371,8 +373,23 @@ func Test_GetLogs(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// increase block heights for batching tests
-	for i := 0; i < 100; i++ {
+	for i := uint64(0); i < evmconfig.SectionSize; i++ {
 		tests.IncreaseBlockHeight(t, app)
+	}
+
+	// mint 1_000_000 tokens to the first address
+	tx3, txHash3 := tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+	_, finalizeRes = tests.ExecuteTxs(t, app, tx3)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+	tx3Height := app.LastBlockHeight()
+
+	// wait for bloom indexing
+	for {
+		if indexer.IsBloomIndexingRunning() {
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			break
+		}
 	}
 
 	logs, err := input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
@@ -380,7 +397,11 @@ func Test_GetLogs(t *testing.T) {
 	})
 	require.NoError(t, err)
 	for _, log := range logs {
-		require.Equal(t, txHash2, log.TxHash)
+		if log.BlockNumber == uint64(tx3Height) {
+			require.Equal(t, txHash3, log.TxHash)
+		} else {
+			require.Equal(t, txHash2, log.TxHash)
+		}
 	}
 
 	logs, err = input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
@@ -403,7 +424,11 @@ func Test_GetLogs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, logs)
 	for _, log := range logs {
-		require.Equal(t, txHash2, log.TxHash)
+		if log.BlockNumber == uint64(tx3Height) {
+			require.Equal(t, txHash3, log.TxHash)
+		} else {
+			require.Equal(t, txHash2, log.TxHash)
+		}
 	}
 
 	header, err = input.backend.GetHeaderByNumber(rpc.BlockNumber(tx1Height))

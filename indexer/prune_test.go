@@ -13,6 +13,7 @@ import (
 
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	"github.com/initia-labs/minievm/tests"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -106,4 +107,48 @@ func Test_PruneIndexer(t *testing.T) {
 	// check cosmos tx hash is pruned
 	_, err = indexer.CosmosTxHashByTxHash(ctx, evmTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
+}
+
+func Test_PruneIndexer_BloomBits(t *testing.T) {
+	app, _, _ := tests.CreateApp(t)
+	indexer := app.EVMIndexer().(*evmindexer.EVMIndexerImpl)
+	defer app.Close()
+
+	// set retain height to 1, only last block is indexed
+	indexer.SetRetainHeight(1)
+
+	for i := uint64(0); i < evmconfig.SectionSize; i++ {
+		tests.IncreaseBlockHeight(t, app)
+	}
+
+	// wait for bloom indexing
+	for {
+		if indexer.IsBloomIndexingRunning() {
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+
+	// wait for pruning
+	for {
+		if indexer.IsPruningRunning() {
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+
+	// clear cache
+	indexer.ClearCache()
+
+	// check the bloom bits are pruned
+	ctx, err := app.CreateQueryContext(0, false)
+	require.NoError(t, err)
+
+	err = indexer.BloomBits.Walk(ctx, nil, func(key collections.Triple[uint64, uint32, []byte], value []byte) (bool, error) {
+		require.Fail(t, "bloom bits should be pruned")
+		return true, nil
+	})
+	require.NoError(t, err)
 }

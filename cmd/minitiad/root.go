@@ -304,9 +304,13 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 			panic(err)
 		}
 
+		evmConfig := evmconfig.GetConfig(appOpts)
+		if err := evmConfig.Validate(); err != nil {
+			panic(err)
+		}
 		app := minitiaapp.NewMinitiaApp(
 			logger, db, indexerDB, kvindexerDB, traceStore, true,
-			evmconfig.GetConfig(appOpts),
+			evmConfig,
 			appOpts,
 			baseappOptions...,
 		)

@@ -54,15 +54,22 @@ type EVMIndexer interface {
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
 	TxInMempool(hash common.Hash) *rpctypes.RPCTransaction
 
+	// bloom
+	ReadBloomBits(ctx context.Context, section uint64, index uint32, bloom common.Hash) ([]byte, error)
+	PeekBloomBitsNextSection(ctx context.Context) (uint64, error)
+	IsBloomIndexingRunning() bool
+
 	// Stop
 	Stop()
 }
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
-	enabled        bool
-	retainHeight   uint64
-	pruningRunning *atomic.Bool
+	enabled      bool
+	retainHeight uint64
+
+	pruningRunning       *atomic.Bool
+	bloomIndexingRunning *atomic.Bool
 
 	db       dbm.DB
 	logger   log.Logger
@@ -84,6 +91,10 @@ type EVMIndexerImpl struct {
 	TxReceiptMap         collections.Map[[]byte, coretypes.Receipt]
 	TxHashToCosmosTxHash collections.Map[[]byte, []byte]
 	CosmosTxHashToTxHash collections.Map[[]byte, []byte]
+
+	// bloom
+	BloomBits            collections.Map[collections.Triple[uint64, uint32, []byte], []byte]
+	BloomBitsNextSection collections.Sequence
 
 	blockChans   []chan *coretypes.Header
 	logsChans    []chan []*coretypes.Log
@@ -119,9 +130,11 @@ func NewEVMIndexer(
 
 	logger.Info("EVM Indexer", "enable", !cfg.IndexerDisable)
 	indexer := &EVMIndexerImpl{
-		enabled:        !cfg.IndexerDisable,
-		retainHeight:   cfg.IndexerRetainHeight,
-		pruningRunning: &atomic.Bool{},
+		enabled:      !cfg.IndexerDisable,
+		retainHeight: cfg.IndexerRetainHeight,
+
+		pruningRunning:       &atomic.Bool{},
+		bloomIndexingRunning: &atomic.Bool{},
 
 		db:       db,
 		store:    store,
@@ -138,6 +151,8 @@ func NewEVMIndexer(
 		BlockHashToNumberMap:     collections.NewMap(sb, prefixBlockHashToNumber, "block_hash_to_number", collections.BytesKey, collections.Uint64Value),
 		TxHashToCosmosTxHash:     collections.NewMap(sb, prefixTxHashToCosmosTxHash, "tx_hash_to_cosmos_tx_hash", collections.BytesKey, collections.BytesValue),
 		CosmosTxHashToTxHash:     collections.NewMap(sb, prefixCosmosTxHashToTxHash, "cosmos_tx_hash_to_tx_hash", collections.BytesKey, collections.BytesValue),
+		BloomBits:                collections.NewMap(sb, prefixBloomBits, "bloom_bits", collections.TripleKeyCodec(collections.Uint64Key, collections.Uint32Key, collections.BytesKey), collections.BytesValue),
+		BloomBitsNextSection:     collections.NewSequence(sb, prefixBloomBitsNextSection, "bloom_bits_next_section"),
 
 		blockChans:   nil,
 		logsChans:    nil,

@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/collections"
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -50,6 +51,9 @@ func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 	})
 	g.Go(func() error {
 		return e.pruneTxs(ctx, minHeight)
+	})
+	g.Go(func() error {
+		return e.pruneBloomBits(ctx, minHeight)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -132,6 +136,12 @@ func (e *EVMIndexerImpl) pruneTxs(ctx context.Context, minHeight uint64) error {
 	}
 
 	return nil
+}
+
+// pruneBloomBits removes old bloom bits from the indexer.
+func (e *EVMIndexerImpl) pruneBloomBits(ctx context.Context, minHeight uint64) error {
+	section := minHeight/evmconfig.SectionSize - 1
+	return e.BloomBits.Clear(ctx, collections.NewPrefixedTripleRange[uint64, uint32, []byte](section))
 }
 
 //////////////////////// TESTING INTERFACE ////////////////////////

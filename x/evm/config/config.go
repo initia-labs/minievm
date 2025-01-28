@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
@@ -16,6 +18,9 @@ const (
 	DefaultIndexerCacheSize = 100
 	// DefaultIndexerRetainHeight is the default height to retain indexer data.
 	DefaultIndexerRetainHeight = uint64(0)
+
+	// SectionSize is the size of the section for bloom indexing
+	SectionSize = uint64(4096)
 )
 
 const (
@@ -36,6 +41,14 @@ type EVMConfig struct {
 	// IndexerRetainHeight is the height to retain indexer data.
 	// If 0, it will retain all data.
 	IndexerRetainHeight uint64 `mapstructure:"indexer-retain-height"`
+}
+
+func (c EVMConfig) Validate() error {
+	if c.IndexerRetainHeight%SectionSize != 0 {
+		return fmt.Errorf("indexer-retain-height must be a multiple of %d", SectionSize)
+	}
+
+	return nil
 }
 
 // DefaultEVMConfig returns the default settings for EVMConfig
