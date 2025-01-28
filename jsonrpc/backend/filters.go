@@ -115,7 +115,7 @@ func (b *JSONRPCBackend) startBloomHandlers(sectionSize uint64) {
 					}
 
 					for i, section := range task.Sections {
-						header, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, section*sectionSize-1)
+						header, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, (section+1)*sectionSize-1)
 						if err != nil {
 							task.Error = err
 							break
