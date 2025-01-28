@@ -66,7 +66,9 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 			return err
 		}
 
-		e.RecordBloomBits(ctx, section, uint32(i), lastHead, bits)
+		if err := e.RecordBloomBits(ctx, section, uint32(i), lastHead, bits); err != nil {
+			return err
+		}
 	}
 
 	// increment the section number; if this fails, the section will be reprocessed
