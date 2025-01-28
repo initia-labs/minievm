@@ -84,6 +84,9 @@ func NewJSONRPCBackend(
 	if cfg.LogCacheSize == 0 {
 		cfg.LogCacheSize = config.DefaultLogCacheSize
 	}
+	if cfg.FilterMaxBlockRange == 0 {
+		cfg.FilterMaxBlockRange = config.DefaultFilterMaxBlockRange
+	}
 
 	queuedTxHashes := new(sync.Map)
 	queuedTxs, err := lrucache.NewWithEvict(cfg.QueuedTransactionCap, func(_ string, txCache txQueueItem) {
@@ -226,4 +229,8 @@ func (b *JSONRPCBackend) releaseAccMut(senderHex string, accMut *AccMut) {
 
 func (b *JSONRPCBackend) FilterTimeout() time.Duration {
 	return b.cfg.FilterTimeout
+}
+
+func (b *JSONRPCBackend) FilterMaxBlockRange() int {
+	return b.cfg.FilterMaxBlockRange
 }
