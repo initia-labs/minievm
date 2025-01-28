@@ -249,7 +249,7 @@ func (f *Filter) indexedLogs(ctx context.Context, end uint64, logChan chan *core
 // unindexedLogs returns the logs matching the filter criteria based on raw block
 // iteration and bloom matching.
 func (f *Filter) unindexedLogs(ctx context.Context, logChan chan *coretypes.Log) error {
-	const batchSize = 100
+	const batchSize = 500
 
 	g, innerCtx := errgroup.WithContext(ctx)
 	diff := f.end - f.begin + 1
