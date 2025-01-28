@@ -377,7 +377,7 @@ func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteri
 		if begin > 0 && end > 0 && begin > end {
 			return nil, errInvalidBlockRange
 		}
-		if maxRange := api.backend.FilterMaxBlockRange(); end-begin > int64(maxRange) {
+		if maxRange := api.backend.FilterMaxBlockRange(); end-begin+1 > int64(maxRange) {
 			return nil, fmt.Errorf("block range greater than %d", maxRange)
 		}
 		// Construct the range filter
@@ -432,7 +432,7 @@ func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretype
 		if f.crit.ToBlock != nil {
 			end = f.crit.ToBlock.Int64()
 		}
-		if maxRange := api.backend.FilterMaxBlockRange(); end-begin > int64(maxRange) {
+		if maxRange := api.backend.FilterMaxBlockRange(); end-begin+1 > int64(maxRange) {
 			return nil, fmt.Errorf("block range greater than %d", maxRange)
 		}
 		// Construct the range filter
