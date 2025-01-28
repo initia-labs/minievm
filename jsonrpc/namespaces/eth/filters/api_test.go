@@ -352,6 +352,7 @@ func Test_GetLogs(t *testing.T) {
 	tx, txHash1 := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+	tx1Height := app.LastBlockHeight()
 
 	events := finalizeRes.TxResults[0].Events
 	createEvent := events[len(events)-3]
@@ -364,20 +365,27 @@ func Test_GetLogs(t *testing.T) {
 	tx2, txHash2 := tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
 	_, finalizeRes = tests.ExecuteTxs(t, app, tx2)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+	tx2Height := app.LastBlockHeight()
 
 	// wait txs to be indexed
 	time.Sleep(1 * time.Second)
 
-	logs, err := input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{})
+	// increase block heights for batching tests
+	for i := 0; i < 100; i++ {
+		tests.IncreaseBlockHeight(t, app)
+	}
+
+	logs, err := input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
+		FromBlock: big.NewInt(tx2Height),
+	})
 	require.NoError(t, err)
-	require.NotEmpty(t, logs)
 	for _, log := range logs {
 		require.Equal(t, txHash2, log.TxHash)
 	}
 
 	logs, err = input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
-		FromBlock: big.NewInt(app.LastBlockHeight() - 1),
-		ToBlock:   big.NewInt(app.LastBlockHeight() - 1),
+		FromBlock: big.NewInt(tx1Height),
+		ToBlock:   big.NewInt(tx1Height),
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, logs)
@@ -386,7 +394,7 @@ func Test_GetLogs(t *testing.T) {
 	}
 
 	// by block hash
-	header, err := input.backend.GetHeaderByNumber(rpc.BlockNumber(app.LastBlockHeight()))
+	header, err := input.backend.GetHeaderByNumber(rpc.BlockNumber(tx2Height))
 	require.NoError(t, err)
 	blockHash := header.Hash()
 	logs, err = input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
@@ -398,7 +406,7 @@ func Test_GetLogs(t *testing.T) {
 		require.Equal(t, txHash2, log.TxHash)
 	}
 
-	header, err = input.backend.GetHeaderByNumber(rpc.BlockNumber(app.LastBlockHeight() - 1))
+	header, err = input.backend.GetHeaderByNumber(rpc.BlockNumber(tx1Height))
 	require.NoError(t, err)
 	blockHash = header.Hash()
 	logs, err = input.filterAPI.GetLogs(context.Background(), ethfilters.FilterCriteria{
