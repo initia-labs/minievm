@@ -55,7 +55,7 @@ type EVMIndexer interface {
 	TxInMempool(hash common.Hash) *rpctypes.RPCTransaction
 
 	// bloom
-	ReadBloomBits(ctx context.Context, section uint64, index uint32, bloom common.Hash) ([]byte, error)
+	ReadBloomBits(ctx context.Context, section uint64, index uint32) ([]byte, error)
 	PeekBloomBitsNextSection(ctx context.Context) (uint64, error)
 	IsBloomIndexingRunning() bool
 
@@ -93,7 +93,7 @@ type EVMIndexerImpl struct {
 	CosmosTxHashToTxHash collections.Map[[]byte, []byte]
 
 	// bloom
-	BloomBits            collections.Map[collections.Triple[uint64, uint32, []byte], []byte]
+	BloomBits            collections.Map[collections.Pair[uint64, uint32], []byte]
 	BloomBitsNextSection collections.Sequence
 
 	blockChans   []chan *coretypes.Header
@@ -151,7 +151,7 @@ func NewEVMIndexer(
 		BlockHashToNumberMap:     collections.NewMap(sb, prefixBlockHashToNumber, "block_hash_to_number", collections.BytesKey, collections.Uint64Value),
 		TxHashToCosmosTxHash:     collections.NewMap(sb, prefixTxHashToCosmosTxHash, "tx_hash_to_cosmos_tx_hash", collections.BytesKey, collections.BytesValue),
 		CosmosTxHashToTxHash:     collections.NewMap(sb, prefixCosmosTxHashToTxHash, "cosmos_tx_hash_to_tx_hash", collections.BytesKey, collections.BytesValue),
-		BloomBits:                collections.NewMap(sb, prefixBloomBits, "bloom_bits", collections.TripleKeyCodec(collections.Uint64Key, collections.Uint32Key, collections.BytesKey), collections.BytesValue),
+		BloomBits:                collections.NewMap(sb, prefixBloomBits, "bloom_bits", collections.PairKeyCodec(collections.Uint64Key, collections.Uint32Key), collections.BytesValue),
 		BloomBitsNextSection:     collections.NewSequence(sb, prefixBloomBitsNextSection, "bloom_bits_next_section"),
 
 		blockChans:   nil,

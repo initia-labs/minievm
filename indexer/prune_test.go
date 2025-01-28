@@ -146,7 +146,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
-	err = indexer.BloomBits.Walk(ctx, nil, func(key collections.Triple[uint64, uint32, []byte], value []byte) (bool, error) {
+	err = indexer.BloomBits.Walk(ctx, nil, func(key collections.Pair[uint64, uint32], value []byte) (bool, error) {
 		require.Fail(t, "bloom bits should be pruned")
 		return true, nil
 	})

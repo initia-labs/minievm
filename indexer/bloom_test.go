@@ -54,11 +54,8 @@ func Test_BloomIndexing(t *testing.T) {
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
-	lastHeader, err := indexer.BlockHeaderByNumber(ctx, evmconfig.SectionSize-1)
-	require.NoError(t, err)
-
 	for i := uint32(0); i < coretypes.BloomBitLength; i++ {
-		bloomBits, err := indexer.ReadBloomBits(ctx, 0, i, lastHeader.Hash())
+		bloomBits, err := indexer.ReadBloomBits(ctx, 0, i)
 		require.NoError(t, err)
 		require.NotNil(t, bloomBits)
 	}
