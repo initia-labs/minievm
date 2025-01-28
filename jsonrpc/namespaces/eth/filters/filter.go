@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"cosmossdk.io/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -147,7 +148,7 @@ func (f *Filter) rangeLogsAsync(ctx context.Context) (chan *coretypes.Log, chan 
 		}()
 
 		// Gather all non indexed ones
-		if err := f.unindexedLogs(ctx, uint64(f.end), logChan); err != nil {
+		if err := f.unindexedLogs(ctx, logChan); err != nil {
 			errChan <- err
 			return
 		}
@@ -160,17 +161,48 @@ func (f *Filter) rangeLogsAsync(ctx context.Context) (chan *coretypes.Log, chan 
 
 // unindexedLogs returns the logs matching the filter criteria based on raw block
 // iteration and bloom matching.
-func (f *Filter) unindexedLogs(ctx context.Context, end uint64, logChan chan *coretypes.Log) error {
-	for ; f.begin <= int64(end); f.begin++ {
-		header, err := f.backend.GetHeaderByNumber(rpc.BlockNumber(f.begin))
-		if header == nil || err != nil {
-			return err
+func (f *Filter) unindexedLogs(ctx context.Context, logChan chan *coretypes.Log) error {
+	const batchSize = 100
+
+	g, innerCtx := errgroup.WithContext(ctx)
+	diff := f.end - f.begin + 1
+	batchNum := diff / batchSize
+	if diff%batchSize != 0 {
+		batchNum++
+	}
+
+	logsArray := make([][]*coretypes.Log, batchNum)
+	for i := int64(0); i < batchNum; i++ {
+
+		// make local copy of i for goroutine
+		idx := i
+		begin := f.begin + i*batchSize
+		end := begin + batchSize - 1
+		if end > f.end {
+			end = f.end
 		}
-		found, err := f.blockLogs(header)
-		if err != nil {
-			return err
-		}
-		for _, log := range found {
+
+		// fetch logs in parallel
+		g.Go(func() error {
+			logs, err := f.searchLogs(innerCtx, begin, end)
+			if err != nil {
+				return err
+			}
+
+			logsArray[idx] = logs
+			return nil
+		})
+	}
+
+	// wait for all goroutines to finish
+	err := g.Wait()
+	if err != nil {
+		return err
+	}
+
+	// send logs to channel in order
+	for _, logs := range logsArray {
+		for _, log := range logs {
 			select {
 			case logChan <- log:
 			case <-ctx.Done():
@@ -178,7 +210,32 @@ func (f *Filter) unindexedLogs(ctx context.Context, end uint64, logChan chan *co
 			}
 		}
 	}
+
 	return nil
+}
+
+func (f *Filter) searchLogs(ctx context.Context, begin, end int64) ([]*coretypes.Log, error) {
+	logs := make([]*coretypes.Log, 0)
+	for ; begin <= int64(end); begin++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		header, err := f.backend.GetHeaderByNumber(rpc.BlockNumber(begin))
+		if header == nil || err != nil {
+			return nil, err
+		}
+		found, err := f.blockLogs(header)
+		if err != nil {
+			return nil, err
+		}
+
+		logs = append(logs, found...)
+	}
+
+	return logs, nil
 }
 
 // blockLogs returns the logs matching the filter criteria within a single block.

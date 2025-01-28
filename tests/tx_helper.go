@@ -216,3 +216,13 @@ func CheckTxResult(t *testing.T, txResult *abcitypes.ExecTxResult, expectSuccess
 		require.NotEqual(t, abcitypes.CodeTypeOK, txResult.Code)
 	}
 }
+
+func IncreaseBlockHeight(t *testing.T, app *minitiaapp.MinitiaApp) {
+	_, err := app.FinalizeBlock(&abcitypes.RequestFinalizeBlock{
+		Height: app.LastBlockHeight() + 1,
+	})
+	require.NoError(t, err)
+
+	_, err = app.Commit()
+	require.NoError(t, err)
+}
