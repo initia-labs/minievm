@@ -12,6 +12,9 @@ const (
 	DefaultContractSimulationGasLimit = uint64(3_000_000)
 	// DefaultIndexerCacheSize is the default maximum size (MiB) of the cache.
 	DefaultIndexerCacheSize = 100
+
+	// SectionSize is the size of the section for bloom indexing
+	SectionSize = uint64(4096)
 )
 
 const (
@@ -25,6 +28,10 @@ type EVMConfig struct {
 	ContractSimulationGasLimit uint64 `mapstructure:"contract-simulation-gas-limit"`
 	// IndexerCacheSize is the maximum size (MiB) of the cache.
 	IndexerCacheSize int `mapstructure:"indexer-cache-size"`
+}
+
+func (c EVMConfig) Validate() error {
+	return nil
 }
 
 // DefaultEVMConfig returns the default settings for EVMConfig

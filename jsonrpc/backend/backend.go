@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/lru"
+	"github.com/ethereum/go-ethereum/core/bloombits"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	lrucache "github.com/hashicorp/golang-lru/v2"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/initia-labs/minievm/app"
 	"github.com/initia-labs/minievm/jsonrpc/config"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 )
 
 type JSONRPCBackend struct {
@@ -53,6 +55,9 @@ type JSONRPCBackend struct {
 	clientCtx client.Context
 
 	cfg config.JSONRPCConfig
+
+	// Channel receiving bloom data retrieval requests
+	bloomRequests chan chan *bloombits.Retrieval
 }
 
 type txQueueItem struct {
@@ -121,11 +126,17 @@ func NewJSONRPCBackend(
 		ctx:       ctx,
 		svrCtx:    svrCtx,
 		clientCtx: clientCtx,
-		cfg:       cfg,
+
+		cfg: cfg,
+
+		bloomRequests: make(chan chan *bloombits.Retrieval),
 	}
 
 	// start fee fetcher
 	go b.feeFetcher()
+
+	// Start the bloom bits servicing goroutines
+	b.startBloomHandlers(evmconfig.SectionSize)
 
 	return b, nil
 }

@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"math/big"
 
 	"cosmossdk.io/collections"
 	"github.com/ethereum/go-ethereum/common"
@@ -11,6 +12,14 @@ import (
 
 // BlockHeaderByNumber implements EVMIndexer.
 func (e *EVMIndexerImpl) BlockHeaderByNumber(ctx context.Context, blockNumber uint64) (*coretypes.Header, error) {
+	if blockNumber == 0 {
+		// this is a special case for genesis block
+		return &coretypes.Header{
+			Number: big.NewInt(0),
+			Bloom:  coretypes.Bloom{},
+		}, nil
+	}
+
 	blockHeader, err := e.BlockHeaderMap.Get(ctx, blockNumber)
 	if err != nil {
 		return nil, err
