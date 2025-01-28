@@ -41,7 +41,7 @@ const (
 	// DefaultFilterTimeout is the default filter timeout, how long filters stay active.
 	DefaultFilterTimeout = 5 * time.Minute
 	// DefaultFilterMaxBlockRange is the default maximum number of blocks that can be queried in a filter.
-	DefaultFilterMaxBlockRange = 500
+	DefaultFilterMaxBlockRange = 1_000_000
 	// DefaultLogCacheSize is the maximum number of cached blocks.
 	DefaultLogCacheSize = 32
 )
