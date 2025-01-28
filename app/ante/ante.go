@@ -114,6 +114,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 
 func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, ek *evmkeeper.Keeper, signModeHandler *txsigning.HandlerMap) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
+		ante.NewValidateBasicDecorator(),
 		ante.NewSetPubKeyDecorator(ak),
 		ante.NewValidateSigCountDecorator(ak),
 		ante.NewSigGasConsumeDecorator(ak, ante.DefaultSigVerificationGasConsumer),
