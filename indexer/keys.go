@@ -17,4 +17,8 @@ var (
 	// cosmos indexes
 	prefixTxHashToCosmosTxHash = collections.Prefix([]byte{0, 0, 3, 1})
 	prefixCosmosTxHashToTxHash = collections.Prefix([]byte{0, 0, 3, 2})
+
+	// bloom filter indexes
+	prefixBloomBits            = collections.Prefix([]byte{0, 0, 5, 1})
+	prefixBloomBitsNextSection = collections.Prefix([]byte{0, 0, 5, 2})
 )

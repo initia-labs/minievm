@@ -11,10 +11,12 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/bloombits"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/initia-labs/minievm/jsonrpc/backend"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 )
 
 // BloomIV represents the bit indexes and value inside the bloom filter that belong
@@ -34,6 +36,8 @@ type Filter struct {
 
 	block      *common.Hash
 	begin, end int64
+
+	matcher *bloombits.Matcher
 }
 
 // newBlockFilter creates a new filter which directly inspects the contents of
@@ -51,6 +55,26 @@ func newRangeFilter(logger log.Logger, backend *backend.JSONRPCBackend, begin, e
 	filter := newFilter(logger, backend, addresses, topics)
 	filter.begin = begin
 	filter.end = end
+
+	// Flatten the address and topic filter clauses into a single bloombits filter
+	// system. Since the bloombits are not positional, nil topics are permitted,
+	// which get flattened into a nil byte slice.
+	var filters [][][]byte
+	if len(addresses) > 0 {
+		filter := make([][]byte, len(addresses))
+		for i, address := range addresses {
+			filter[i] = address.Bytes()
+		}
+		filters = append(filters, filter)
+	}
+	for _, topicList := range topics {
+		filter := make([][]byte, len(topicList))
+		for i, topic := range topicList {
+			filter[i] = topic.Bytes()
+		}
+		filters = append(filters, filter)
+	}
+	filter.matcher = bloombits.NewMatcher(evmconfig.SectionSize, filters)
 
 	return filter
 }
@@ -147,6 +171,23 @@ func (f *Filter) rangeLogsAsync(ctx context.Context) (chan *coretypes.Log, chan 
 			close(logChan)
 		}()
 
+		size, sections, err := f.backend.BloomStatus()
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		end := uint64(f.end)
+		if indexed := sections * size; indexed > uint64(f.begin) {
+			if indexed > end {
+				indexed = end + 1
+			}
+			if err = f.indexedLogs(ctx, indexed-1, logChan); err != nil {
+				errChan <- err
+				return
+			}
+		}
+
 		// Gather all non indexed ones
 		if err := f.unindexedLogs(ctx, logChan); err != nil {
 			errChan <- err
@@ -159,10 +200,56 @@ func (f *Filter) rangeLogsAsync(ctx context.Context) (chan *coretypes.Log, chan 
 	return logChan, errChan
 }
 
+// indexedLogs returns the logs matching the filter criteria based on the bloom
+// bits indexed available locally or via the network.
+func (f *Filter) indexedLogs(ctx context.Context, end uint64, logChan chan *coretypes.Log) error {
+	// Create a matcher session and request servicing from the backend
+	matches := make(chan uint64, 64)
+
+	session, err := f.matcher.Start(ctx, uint64(f.begin), end, matches)
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+
+	f.backend.ServiceFilter(session)
+
+	for {
+		select {
+		case number, ok := <-matches:
+			// Abort if all matches have been fulfilled
+			if !ok {
+				err := session.Error()
+				if err == nil {
+					f.begin = int64(end) + 1
+				}
+				return err
+			}
+			f.begin = int64(number) + 1
+
+			// Retrieve the suggested block and pull any truly matching logs
+			header, err := f.backend.GetHeaderByNumber(rpc.BlockNumber(number))
+			if header == nil || err != nil {
+				return err
+			}
+			found, err := f.checkMatches(header)
+			if err != nil {
+				return err
+			}
+			for _, log := range found {
+				logChan <- log
+			}
+
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+}
+
 // unindexedLogs returns the logs matching the filter criteria based on raw block
 // iteration and bloom matching.
 func (f *Filter) unindexedLogs(ctx context.Context, logChan chan *coretypes.Log) error {
-	const batchSize = 100
+	const batchSize = 500
 
 	g, innerCtx := errgroup.WithContext(ctx)
 	diff := f.end - f.begin + 1
