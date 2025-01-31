@@ -2,15 +2,15 @@
 
 This module is copied from [osmosis](https://github.com/osmosis-labs/osmosis) and changed to execute evm contract with ICS-20 token transfer calls.
 
-## EVM Hooks
+## EVM-Hooks
 
-The evm hook is an IBC middleware which is used to allow ICS-20 token transfers to initiate contract calls.
+The evm-hook is an IBC middleware which is used to allow ICS-20 token transfers to initiate contract calls.
 This allows cross-chain contract calls, that involve token movement.
 This is useful for a variety of use cases.
 One of primary importance is cross-chain swaps, which is an extremely powerful primitive.
 
 The mechanism enabling this is a `memo` field on every ICS20 and ICS721 transfer packet as of [IBC v3.4.0](https://medium.com/the-interchain-foundation/moving-beyond-simple-token-transfers-d42b2b1dc29b).
-Move hooks is an IBC middleware that parses an ICS20 transfer, and if the `memo` field is of a particular form, executes a evm contract call. We now detail the `memo` format for `evm` contract calls, and the execution guarantees provided.
+EVM-hooks is an IBC middleware that parses an ICS20 transfer, and if the `memo` field is of a particular form, executes a evm contract call. We now detail the `memo` format for `evm` contract calls, and the execution guarantees provided.
 
 ### EVM Contract Execution Format
 
@@ -34,14 +34,14 @@ type HookData struct {
 // AsyncCallback is data wrapper which is required
 // when we implement async callback.
 type AsyncCallback struct {
- // callback id should be issued form the executor contract
+ // callback id should be issued from the executor contract
  Id            uint64 `json:"id"`
  ContractAddr  string `json:"contract_addr"`
 }
 
 // MsgCall is a message to call an Ethereum contract.
 type MsgCall struct {
- // Sender is the that actor that signed the messages
+ // Sender is the actor that signed the messages
  Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
  // ContractAddr is the contract address to be executed.
  // It can be cosmos address or hex encoded address.
@@ -50,7 +50,7 @@ type MsgCall struct {
  Input string `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
  // Value is the amount of fee denom token to transfer to the contract.
  Value string `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
- // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. can be none
+ // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. Can be none
  AccessList []AccessTuple `protobuf:"bytes,5,rep,name=access_list,json=accessList,proto3" json:"access_list"`
 }
 
@@ -76,7 +76,7 @@ So our constructed evm call message that we execute will look like:
 
 ```go
 msg := MsgCall{
- // Sender is the that actor that signed the messages
+ // Sender is the actor that signed the messages
  Sender: "init1-hash-of-channel-and-sender",
  // ContractAddr is the contract address to be executed.
  // It can be cosmos address or hex encoded address.
@@ -84,8 +84,7 @@ msg := MsgCall{
  // Hex encoded execution input bytes.
  Input: packet.data.memo["evm"]["message"]["input"],
  // Value is the amount of fee denom token to transfer to the contract.
- Value: packet.data.memo["evm"]["message"]["value"]
- // Value is the amount of fee denom token to transfer to the contract.
+ Value: packet.data.memo["evm"]["message"]["value"],
  AccessList: packet.data.memo["evm"]["message"]["access_list"]
 }
 ```
@@ -111,8 +110,8 @@ ICS20 is JSON native, so we use JSON for the memo format.
           "input": "hex encoded byte string",
           "value": "0",
           "access_list": {
-            "address" : "0x1", // contract address
-            "storage_keys":  ["0xabc","0xdef"] // storage keys of contract
+            "address": "0x1", // contract address
+            "storage_keys": ["0xabc", "0xdef"] // storage keys of contract
           }
         },
         // optional field to get async callback (ack and timeout)
@@ -126,7 +125,7 @@ ICS20 is JSON native, so we use JSON for the memo format.
 }
 ```
 
-An ICS20 packet is formatted correctly for evmhooks iff the following all hold:
+An ICS20 packet is formatted correctly for evm-hooks iff the following all hold:
 
 - `memo` is not blank
 - `memo` is valid JSON
@@ -134,28 +133,28 @@ An ICS20 packet is formatted correctly for evmhooks iff the following all hold:
 - `memo["evm"]["message"]` has exactly 4 entries, `"contract_addr"`, `"input"`, `"value"`, `"access_list"`
 - `receiver` == "" || `receiver` == "module_address::module_name::function_name"
 
-We consider an ICS20 packet as directed towards evmhooks iff all of the following hold:
+We consider an ICS20 packet as directed towards evm-hooks iff all of the following hold:
 
 - `memo` is not blank
 - `memo` is valid JSON
 - `memo` has at least one key, with name `"evm"`
 
-If an ICS20 packet is not directed towards evmhooks, evmhooks doesn't do anything.
-If an ICS20 packet is directed towards evmhooks, and is formatted incorrectly, then evmhooks returns an error.
+If an ICS20 packet is not directed towards evm-hooks, evm-hooks doesn't do anything.
+If an ICS20 packet is directed towards evm-hooks, and is formatted incorrectly, then evm-hooks returns an error.
 
 ### Execution flow
 
-Pre evm hooks:
+Pre evm-hooks:
 
-- Ensure the incoming IBC packet is cryptogaphically valid
+- Ensure the incoming IBC packet is cryptographically valid
 - Ensure the incoming IBC packet is not timed out.
 
-In evm hooks, pre packet execution:
+In evm-hooks, pre packet execution:
 
 - Ensure the packet is correctly formatted (as defined above)
 - Edit the receiver to be the hardcoded IBC module account
 
-In evm hooks, post packet execution:
+In evm-hooks, post packet execution:
 
 - Construct evm message as defined before
 - Execute evm message
@@ -166,28 +165,28 @@ In evm hooks, post packet execution:
 
 A contract that sends an IBC transfer, may need to listen for the ACK from that packet.
 To allow contracts to listen on the ack of specific packets, we provide Ack callbacks.
-The contract, which wants to receive ack callback, have to implement two functions.
+The contract, which wants to receive ack callback, has to implement two functions.
 
-- ibc_ack
-- ibc_timeout
+- ibcAck
+- ibcTimeout
 
 ```solidity
 interface IIBCAsyncCallback {
-    function ibc_ack(uint64 callback_id, bool success) external;
-    function ibc_timeout(uint64 callback_id) external;
+    function ibcAck(uint64 callbackId, bool success) external;
+    function ibcTimeout(uint64 callbackId) external;
 }
 ```
 
-Also when a contract make IBC transfer request, it should provide async callback data through memo field.
+Also when a contract makes an IBC transfer request, it should provide async callback data through memo field.
 
-- `memo['evm']['async_callback']['id']`: the async callback id is assigned from the contract. so later it will be passed as argument of `ibc_ack` and `ibc_timeout`.
+- `memo['evm']['async_callback']['id']`: the async callback id is assigned from the contract. so later it will be passed as argument of `ibcAck` and `ibcTimeout`.
 - `memo['evm']['async_callback']['contract_addr']`: The address of contract which defines the callback function.
 
 ### IBC Transfer using ERC20Wrapper
 
 `src -> dst`: Execute the ERC20Wrapper contract to wrap and do ibc-transfer
 
-`dst -> src`: ibc-trasfer and execute the ERC20Wrapper contract via ibc-hook
+`dst -> src`: ibc-transfer and execute the ERC20Wrapper contract via ibc-hook
 
 - data example
 
@@ -207,8 +206,8 @@ Also when a contract make IBC transfer request, it should provide async callback
           "input": "pack(unwrap, denom, recipient, amount)", // function selector(fc078758) + abiCoder.encode([string,address,address],denom,recipient,amount) ref) https://docs.ethers.org/v6/api/abi/abi-coder/#AbiCoder-encode
           "value": "0",
           "access_list": {
-            "address" : "...", // contract address
-            "storage_keys":  ["...","..."] // storage keys of contract
+            "address": "...", // contract address
+            "storage_keys": ["...", "..."] // storage keys of contract
           }
         }
       }
