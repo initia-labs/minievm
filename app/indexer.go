@@ -25,17 +25,19 @@ func setupIndexer(
 	appOpts servertypes.AppOptions,
 	indexerDB, kvindexerDB dbm.DB,
 ) (evmindexer.EVMIndexer, *kvindexerkeeper.Keeper, *kvindexermodule.AppModuleBasic, *storetypes.StreamingManager, error) {
-	// setup evm indexer
+	// Initialize EVM Indexer
 	evmIndexer, err := evmindexer.NewEVMIndexer(indexerDB, app.appCodec, app.Logger(), app.txConfig, app.EVMKeeper)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	// initialize the indexer keeper
+	// Configure kvindexer
 	kvindexerConfig, err := kvindexerconfig.NewConfig(appOpts)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
+
+	// Initialize kvIndexerKeeper
 	kvIndexerKeeper := kvindexerkeeper.NewKeeper(
 		app.appCodec,
 		"evm",
@@ -45,65 +47,57 @@ func setupIndexer(
 		app.vc,
 	)
 
-	smBlock, err := blocksubmodule.NewBlockSubmodule(app.appCodec, kvIndexerKeeper, app.OPChildKeeper)
-	if err != nil {
-		return nil, nil, nil, nil, err
+	// Setup submodules
+	subModules := []interface {
+		Setup() error
+	}{
+		blocksubmodule.NewBlockSubmodule(app.appCodec, kvIndexerKeeper, app.OPChildKeeper),
+		tx.NewTxSubmodule(app.appCodec, kvIndexerKeeper),
+		pair.NewPairSubmodule(app.appCodec, kvIndexerKeeper, app.IBCKeeper.ChannelKeeper, app.TransferKeeper),
+		nft.NewEvmNFTSubmodule(app.ac, app.appCodec, kvIndexerKeeper, app.EVMKeeper, nil),
 	}
-	smTx, err := tx.NewTxSubmodule(app.appCodec, kvIndexerKeeper)
-	if err != nil {
-		return nil, nil, nil, nil, err
+
+	for _, subModule := range subModules {
+		if err := subModule.Setup(); err != nil {
+			return nil, nil, nil, nil, err
+		}
 	}
-	smPair, err := pair.NewPairSubmodule(app.appCodec, kvIndexerKeeper, app.IBCKeeper.ChannelKeeper, app.TransferKeeper)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	smNft, err := nft.NewEvmNFTSubmodule(app.ac, app.appCodec, kvIndexerKeeper, app.EVMKeeper, smPair)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	err = kvIndexerKeeper.RegisterSubmodules(smBlock, smTx, smPair, smNft)
-	if err != nil {
+
+	// Register submodules with kvIndexerKeeper
+	if err := kvIndexerKeeper.RegisterSubmodules(subModules...); err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	// Add your implementation here
-
+	// Create kvIndexer
 	kvIndexer, err := kvindexer.NewIndexer(app.GetBaseApp().Logger(), kvIndexerKeeper)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	listeners := []storetypes.ABCIListener{evmIndexer}
-
-	var kvIndexerModule *kvindexermodule.AppModuleBasic
-	if kvIndexer != nil {
-		if err = kvIndexer.Validate(); err != nil {
-			return nil, nil, nil, nil, err
-		}
-
-		if err = kvIndexer.Prepare(nil); err != nil {
-			return nil, nil, nil, nil, err
-		}
-
-		if err = kvIndexerKeeper.Seal(); err != nil {
-			return nil, nil, nil, nil, err
-		}
-
-		if err = kvIndexer.Start(nil); err != nil {
-			return nil, nil, nil, nil, err
-		}
-
-		listeners = append(listeners, kvIndexer)
-
-		// set kvindexer module
-		m := kvindexermodule.NewAppModuleBasic(kvIndexerKeeper)
-		kvIndexerModule = &m
+	if err := kvIndexer.Validate(); err != nil {
+		return nil, nil, nil, nil, err
 	}
 
-	streamingManager := storetypes.StreamingManager{
+	if err := kvIndexer.Prepare(nil); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	if err := kvIndexerKeeper.Seal(); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	if err := kvIndexer.Start(nil); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	listeners := []storetypes.ABCIListener{evmIndexer, kvIndexer}
+
+	kvIndexerModule := kvindexermodule.NewAppModuleBasic(kvIndexerKeeper)
+
+	streamingManager := &storetypes.StreamingManager{
 		ABCIListeners: listeners,
 		StopNodeOnErr: true,
 	}
 
-	return evmIndexer, kvIndexerKeeper, kvIndexerModule, &streamingManager, nil
+	return evmIndexer, kvIndexerKeeper, &kvIndexerModule, streamingManager, nil
 }
