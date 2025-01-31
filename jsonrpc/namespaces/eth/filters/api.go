@@ -378,7 +378,7 @@ func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteri
 			return nil, errInvalidBlockRange
 		}
 		if maxRange := api.backend.FilterMaxBlockRange(); end-begin+1 > int64(maxRange) {
-			return nil, fmt.Errorf("block range greater than %d", maxRange)
+			return nil, fmt.Errorf("block range exceeded %d", maxRange)
 		}
 		// Construct the range filter
 		filter = newRangeFilter(api.logger, api.backend, begin, end, crit.Addresses, crit.Topics)
