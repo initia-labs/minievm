@@ -8319,7 +8319,7 @@ type TraceOptions struct {
 	WithMemory bool `protobuf:"varint,1,opt,name=with_memory,json=withMemory,proto3" json:"with_memory,omitempty"`
 	// whether to trace stack
 	WithStack bool `protobuf:"varint,2,opt,name=with_stack,json=withStack,proto3" json:"with_stack,omitempty"`
-	// wtether to trace storage
+	// whether to trace storage
 	WithStorage bool `protobuf:"varint,3,opt,name=with_storage,json=withStorage,proto3" json:"with_storage,omitempty"`
 	// whether to return data trace
 	WithReturnData bool `protobuf:"varint,4,opt,name=with_return_data,json=withReturnData,proto3" json:"with_return_data,omitempty"`
