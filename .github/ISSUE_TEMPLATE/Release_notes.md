@@ -10,7 +10,7 @@ improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/initia-labs/initia-labs/issues>
+  <https://github.com/initia-labs/initia/issues>
 
 To receive security and update notifications, please join our discord channel. 
 
