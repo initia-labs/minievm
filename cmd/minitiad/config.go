@@ -7,7 +7,7 @@ import (
 	tmcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 
-	// FIXME: indexerconfig "github.com/initia-labs/kvindexer/config"
+	indexerconfig "github.com/initia-labs/kvindexer/config"
 	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
@@ -17,8 +17,8 @@ import (
 // minitiaAppConfig initia specify app config
 type minitiaAppConfig struct {
 	serverconfig.Config
-	EVMConfig evmconfig.EVMConfig `mapstructure:"evm"`
-	// FIXME: IndexerConfig indexerconfig.IndexerConfig `mapstructure:"indexer"`
+	EVMConfig     evmconfig.EVMConfig         `mapstructure:"evm"`
+	IndexerConfig indexerconfig.IndexerConfig `mapstructure:"indexer"`
 	JSONRPCConfig jsonrpcconfig.JSONRPCConfig `mapstructure:"jsonrpc"`
 }
 
@@ -56,9 +56,9 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.GRPC.Address = "0.0.0.0:9090"
 
 	minitiaAppConfig := minitiaAppConfig{
-		Config:    *srvCfg,
-		EVMConfig: evmconfig.DefaultEVMConfig(),
-		// FIXME: IndexerConfig: indexerconfig.DefaultConfig(),
+		Config:        *srvCfg,
+		EVMConfig:     evmconfig.DefaultEVMConfig(),
+		IndexerConfig: indexerconfig.DefaultConfig(),
 		JSONRPCConfig: jsonrpcconfig.DefaultJSONRPCConfig(),
 	}
 
@@ -67,7 +67,7 @@ func initAppConfig() (string, interface{}) {
 
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
 		evmconfig.DefaultConfigTemplate +
-		// FIXME: indexerconfig.DefaultConfigTemplate +
+		indexerconfig.DefaultConfigTemplate +
 		jsonrpcconfig.DefaultConfigTemplate
 
 	return minitiaAppTemplate, minitiaAppConfig

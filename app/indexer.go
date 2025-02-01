@@ -1,6 +1,5 @@
 package app
 
-/*
 import (
 	storetypes "cosmossdk.io/store/types"
 
@@ -108,4 +107,3 @@ func setupIndexer(
 
 	return evmIndexer, kvIndexerKeeper, kvIndexerModule, &streamingManager, nil
 }
-*/
