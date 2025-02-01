@@ -70,21 +70,17 @@ import (
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	// kvindexer
-	kvindexermodule "github.com/initia-labs/kvindexer/x/kvindexer"
-	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
+	// kvindexermodule "github.com/initia-labs/kvindexer/x/kvindexer"
+	// kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/initia-labs/minievm/client/docs/statik"
 )
 
-var (
-	// DefaultNodeHome default home directories for the application daemon
-	DefaultNodeHome string
-)
+// DefaultNodeHome default home directories for the application daemon
+var DefaultNodeHome string
 
-var (
-	_ servertypes.Application = (*MinitiaApp)(nil)
-)
+var _ servertypes.Application = (*MinitiaApp)(nil)
 
 func init() {
 	userHomeDir, err := os.UserHomeDir()
@@ -121,9 +117,9 @@ type MinitiaApp struct {
 	checkTxHandler blockchecktx.CheckTx
 
 	// indexer keeper for graceful shutdown
-	kvIndexerKeeper *kvindexerkeeper.Keeper
+	// FIXME: kvIndexerKeeper *kvindexerkeeper.Keeper
 	// indexer module for grpc-gateway registration
-	kvIndexerModule *kvindexermodule.AppModuleBasic
+	// FIXME: kvIndexerModule *kvindexermodule.AppModuleBasic
 
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
@@ -249,6 +245,7 @@ func NewMinitiaApp(
 	}
 
 	// setup indexer
+	/* FIXME:
 	evmIndexer, kvIndexerKeeper, kvIndexerModule, streamingManager, err := setupIndexer(app, appOpts, indexerDB, kvindexerDB)
 	if err != nil {
 		tmos.Exit(err.Error())
@@ -256,12 +253,13 @@ func NewMinitiaApp(
 		// register kvindexer keeper and module, and register services.
 		app.SetKVIndexer(kvIndexerKeeper, kvIndexerModule)
 	}
+	*/
 
 	// register evm indexer
-	app.SetEVMIndexer(evmIndexer)
+	// FIXME: app.SetEVMIndexer(evmIndexer)
 
 	// override base-app's streaming manager
-	app.SetStreamingManager(*streamingManager)
+	// FIXME: app.SetStreamingManager(*streamingManager)
 
 	// register upgrade handler for later use
 	app.RegisterUpgradeHandlers(app.configurator)
@@ -374,11 +372,13 @@ func (app *MinitiaApp) setPostHandler() {
 }
 
 // SetKVIndexer sets the kvindexer keeper and module for the app and registers the services.
+/* FIXME:
 func (app *MinitiaApp) SetKVIndexer(kvIndexerKeeper *kvindexerkeeper.Keeper, kvIndexerModule *kvindexermodule.AppModuleBasic) {
 	app.kvIndexerKeeper = kvIndexerKeeper
 	app.kvIndexerModule = kvIndexerModule
 	app.kvIndexerModule.RegisterServices(app.configurator)
 }
+*/
 
 // SetEVMIndexer sets the evm indexer for the app.
 func (app *MinitiaApp) SetEVMIndexer(evmIndexer evmindexer.EVMIndexer) {
@@ -484,9 +484,11 @@ func (app *MinitiaApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.AP
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register grpc-gateway routes for indexer module.
+	/* FIXME:
 	if app.kvIndexerModule != nil {
 		app.kvIndexerModule.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 	}
+	*/
 
 	// register swagger API from root so that other applications can override easily
 	if apiConfig.Swagger {
@@ -593,11 +595,13 @@ func VerifyAddressLen() func(addr []byte) error {
 // Close closes the underlying baseapp, the oracle service, and the prometheus server if required.
 // This method blocks on the closure of both the prometheus server, and the oracle-service
 func (app *MinitiaApp) Close() error {
+	/* FIXME:
 	if app.kvIndexerKeeper != nil {
 		if err := app.kvIndexerKeeper.Close(); err != nil {
 			return err
 		}
 	}
+	*/
 
 	if err := app.BaseApp.Close(); err != nil {
 		return err

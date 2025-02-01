@@ -46,10 +46,11 @@ import (
 	minitiaapp "github.com/initia-labs/minievm/app"
 
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
-	kvindexerconfig "github.com/initia-labs/kvindexer/config"
-	kvindexerstore "github.com/initia-labs/kvindexer/store"
-	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
-)
+	/*
+		kvindexerconfig "github.com/initia-labs/kvindexer/config"
+		kvindexerstore "github.com/initia-labs/kvindexer/store"
+		kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
+	*/)
 
 // NewRootCmd creates a new root command for initiad. It is called once in the
 // main function.
@@ -297,19 +298,22 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 		if err != nil {
 			panic(err)
 		}
+		/* FIXME:
 		kvdbConfig := getKVIndexerDBConfig(appOpts)
 
 		kvindexerDB, err := kvindexerstore.OpenDB(dbDir, kvindexerkeeper.StoreName, kvdbConfig.BackendConfig)
 		if err != nil {
 			panic(err)
 		}
+		*/
 
 		evmConfig := evmconfig.GetConfig(appOpts)
 		if err := evmConfig.Validate(); err != nil {
 			panic(err)
 		}
 		app := minitiaapp.NewMinitiaApp(
-			logger, db, indexerDB, kvindexerDB, traceStore, true,
+			// FIXME: logger, db, indexerDB, kvindexerDB, traceStore, true,
+			logger, db, indexerDB, nil, traceStore, true,
 			evmConfig,
 			appOpts,
 			baseappOptions...,
@@ -337,7 +341,6 @@ func (a appCreator) appExport(
 	appOpts servertypes.AppOptions,
 	modulesToExport []string,
 ) (servertypes.ExportedApp, error) {
-
 	homePath, ok := appOpts.Get(flags.FlagHome).(string)
 	if !ok || homePath == "" {
 		return servertypes.ExportedApp{}, errors.New("application home not set")
@@ -410,6 +413,7 @@ func getDBConfig(appOpts servertypes.AppOptions) (string, dbm.BackendType) {
 	return rootify(dbDir, rootDir), dbBackend
 }
 
+/* FIXME:
 // getKVIndexerDBConfig returns the database configuration for the KV indexer
 func getKVIndexerDBConfig(appOpts servertypes.AppOptions) *kvindexerconfig.IndexerConfig {
 	dbBackend, err := kvindexerconfig.NewConfig(appOpts)
@@ -419,6 +423,7 @@ func getKVIndexerDBConfig(appOpts servertypes.AppOptions) *kvindexerconfig.Index
 
 	return dbBackend
 }
+*/
 
 // helper function to make config creation independent of root dir
 func rootify(path, root string) string {

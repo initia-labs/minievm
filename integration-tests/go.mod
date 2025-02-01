@@ -1,8 +1,8 @@
 module github.com/initia-labs/minievm/integration-tests
 
-go 1.22.7
+go 1.23.3
 
-toolchain go1.23.0
+toolchain go1.23.5
 
 require (
 	cosmossdk.io/math v1.4.0
@@ -11,7 +11,6 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.5.0
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/initia-labs/initia v0.6.4
-	github.com/initia-labs/minievm v0.5.2
 	github.com/stretchr/testify v1.9.0
 )
 
@@ -105,7 +104,7 @@ require (
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
-	github.com/gogo/protobuf v1.3.3 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
@@ -147,12 +146,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v0.6.2 // indirect
 	github.com/initia-labs/OPinit/api v0.6.2 // indirect
-	github.com/initia-labs/kvindexer v0.1.9 // indirect
-	github.com/initia-labs/kvindexer/submodules/block v0.1.0 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.6 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.2 // indirect
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.1 // indirect
-	github.com/initia-labs/kvindexer/submodules/tx v0.1.0 // indirect
 	github.com/initia-labs/movevm v0.6.1 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -259,8 +252,6 @@ replace (
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
-
-	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 	// Downgraded to avoid bugs in following commits which caused simulations to fail.
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
