@@ -14,7 +14,7 @@ for CONTRACT_HOME in $CONTRACTS_DIR/*; do
                 echo $CONTRACT_PATH
                 CONTRACT_NAME=$(basename $CONTRACT_PATH .sol)
                 echo $CONTRACT_HOME $PKG_NAME $CONTRACT_PATH $CONTRACT_NAME
-                solc $CONTRACT_PATH --bin --abi -o $BUILD_DIR --overwrite
+                solc $CONTRACT_PATH --metadata-hash none --bin --abi -o $BUILD_DIR --overwrite
                 abigen --pkg $PKG_NAME \
                     --bin=$BUILD_DIR/$CONTRACT_NAME.bin \
                     --abi=$BUILD_DIR/$CONTRACT_NAME.abi \

@@ -32,7 +32,7 @@ var (
 // Erc20AclMetaData contains all meta data concerning the Erc20Acl contract.
 var Erc20AclMetaData = &bind.MetaData{
 	ABI: "[]",
-	Bin: "0x6080604052348015600e575f5ffd5b50603e80601a5f395ff3fe60806040525f5ffdfea2646970667358221220bea658d0dd6380a3fb56346121f27e7ef257e7cf06c1b1dfbc008c25d086ae6164736f6c634300081c0033",
+	Bin: "0x6080604052348015600e575f80fd5b50601580601a5f395ff3fe60806040525f80fdfea164736f6c6343000819000a",
 }
 
 // Erc20AclABI is the input ABI used to generate the binding from.

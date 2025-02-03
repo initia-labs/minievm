@@ -51,6 +51,18 @@ func Test_BloomIndexing(t *testing.T) {
 		}
 	}
 
+	// create a new block to trigger bloom indexing
+	tests.IncreaseBlockHeight(t, app)
+
+	// wait for bloom indexing
+	for {
+		if indexer.IsBloomIndexingRunning() {
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
 
