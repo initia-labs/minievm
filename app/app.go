@@ -77,14 +77,10 @@ import (
 	_ "github.com/initia-labs/minievm/client/docs/statik"
 )
 
-var (
-	// DefaultNodeHome default home directories for the application daemon
-	DefaultNodeHome string
-)
+// DefaultNodeHome default home directories for the application daemon
+var DefaultNodeHome string
 
-var (
-	_ servertypes.Application = (*MinitiaApp)(nil)
-)
+var _ servertypes.Application = (*MinitiaApp)(nil)
 
 func init() {
 	userHomeDir, err := os.UserHomeDir()
