@@ -6,7 +6,7 @@ MiniEVM is an optimistic rollup consumer chain powered by EVM, designed to simpl
 
 ## Prerequisites
 
-- Go v1.22.7+
+- Go v1.23.3+
 - (optional) [solc-select](https://github.com/crytic/solc-select) v1.0.4+ (used in contractsgen.sh)
 
 ## Getting Started

@@ -139,7 +139,7 @@ func (h EVMHooks) onRecvIcs721Packet(
 	//
 	// If that succeeds, we make the contract call
 	data.Receiver = intermediateSender
-	packet.Data = data.GetBytes(packet.SourcePort)
+	packet.Data = data.GetBytes()
 
 	ack := im.App.OnRecvPacket(ctx, packet, relayer)
 	if !ack.Success() {

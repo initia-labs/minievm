@@ -88,9 +88,9 @@ import (
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	// noble forwarding keeper
-	forwarding "github.com/noble-assets/forwarding/v2/x/forwarding"
-	forwardingkeeper "github.com/noble-assets/forwarding/v2/x/forwarding/keeper"
-	forwardingtypes "github.com/noble-assets/forwarding/v2/x/forwarding/types"
+	forwarding "github.com/noble-assets/forwarding/v2"
+	forwardingkeeper "github.com/noble-assets/forwarding/v2/keeper"
+	forwardingtypes "github.com/noble-assets/forwarding/v2/types"
 )
 
 type AppKeepers struct {
@@ -309,7 +309,7 @@ func NewAppKeeper(
 	)
 
 	// Set IBC post handler to receive validator set updates
-	appKeepers.IBCKeeper.ClientKeeper.WithPostUpdateHandler(
+	appKeepers.IBCKeeper.ClientKeeper.SetPostUpdateHandler(
 		appKeepers.OPChildKeeper.UpdateHostValidatorSet,
 	)
 
