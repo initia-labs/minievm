@@ -38,11 +38,11 @@ require (
 	github.com/holiman/uint256 v1.3.1
 	github.com/initia-labs/OPinit v0.7.0
 	github.com/initia-labs/initia v0.7.0
-	github.com/initia-labs/kvindexer v0.1.10-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/block v0.1.1-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.7-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.3-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.2-0.20250201074115-b7f88dafd1ca
+	github.com/initia-labs/kvindexer v0.1.10
+	github.com/initia-labs/kvindexer/submodules/block v0.1.2
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.3
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/noble-assets/forwarding/v2 v2.0.0
 	github.com/pkg/errors v0.9.1
@@ -137,7 +137,6 @@ require (
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/gobwas/ws v1.2.1 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
@@ -270,9 +269,6 @@ replace (
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
-
-	// github.com/gogo/protobuf => github.com/cosmos/gogoproto v1.7.0
-	// 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 	// Downgraded to avoid bugs in following commits which caused simulations to fail.
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
