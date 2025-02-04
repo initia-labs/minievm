@@ -21938,6 +21938,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             description: >-
               QueryChannelsResponse is the response type for the Query/Channels
               RPC method.
@@ -22325,6 +22332,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             description: >-
               QueryChannelResponse is the response type for the Query/Channel
               RPC method.
@@ -22780,6 +22794,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryChannelClientStateResponse is the Response type for the
               Query/QueryChannelClientState RPC method
@@ -23215,6 +23236,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryChannelClientStateResponse is the Response type for the
               Query/QueryChannelClientState RPC method
@@ -23486,6 +23514,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QuerySequenceResponse is the response type for the
               Query/QueryNextSequenceReceiveResponse RPC method
@@ -23743,6 +23778,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryNextSequenceSendResponse is the request type for the
               Query/QueryNextSequenceSend RPC method
@@ -24054,6 +24096,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryPacketAcknowledgemetsResponse is the request type for the
               Query/QueryPacketAcknowledgements RPC method
@@ -24376,6 +24425,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: >-
               QueryPacketAcknowledgementResponse defines the client query
               response for a
@@ -24695,6 +24751,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryPacketCommitmentsResponse is the request type for the
               Query/QueryPacketCommitments RPC method
@@ -25010,6 +25073,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryUnreceivedAcksResponse is the response type for the
               Query/UnreceivedAcks RPC method
@@ -25279,6 +25349,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryUnreceivedPacketsResponse is the response type for the
               Query/UnreceivedPacketCommitments RPC method
@@ -25546,6 +25623,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: >-
               QueryPacketCommitmentResponse defines the client query response
               for a packet
@@ -25817,6 +25901,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: >-
               QueryPacketReceiptResponse defines the client query response for a
               packet
@@ -26113,6 +26204,15 @@ paths:
                           as the RevisionHeight
 
                           gets reset
+
+
+                          Please note that json tags for generated Go code are
+                          overridden to explicitly exclude the omitempty
+                          jsontag.
+
+                          This enforces the Go json marshaller to always emit
+                          zero values for both revision_number and
+                          revision_height.
                       timestamp:
                         type: string
                         format: uint64
@@ -26179,6 +26279,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: >-
               QueryUpgradeResponse is the response type for the
               QueryUpgradeResponse RPC method
@@ -26448,6 +26555,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: >-
               QueryUpgradeErrorResponse is the response type for the
               Query/QueryUpgradeError RPC method
@@ -26820,6 +26934,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryConnectionChannelsResponse is the Response type for the
               Query/QueryConnectionChannels RPC method
@@ -27129,6 +27250,15 @@ paths:
                           as the RevisionHeight
 
                           gets reset
+
+
+                          Please note that json tags for generated Go code are
+                          overridden to explicitly exclude the omitempty
+                          jsontag.
+
+                          This enforces the Go json marshaller to always emit
+                          zero values for both revision_number and
+                          revision_height.
                       timestamp:
                         type: string
                         format: uint64
@@ -28057,6 +28187,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             description: >-
               QueryClientStateResponse is the response type for the
               Query/ClientState RPC
@@ -28532,6 +28669,13 @@ paths:
                         the RevisionHeight
 
                         gets reset
+
+
+                        Please note that json tags for generated Go code are
+                        overridden to explicitly exclude the omitempty jsontag.
+
+                        This enforces the Go json marshaller to always emit zero
+                        values for both revision_number and revision_height.
                     consensus_state:
                       type: object
                       properties:
@@ -29053,6 +29197,13 @@ paths:
                     RevisionHeight
 
                     gets reset
+
+
+                    Please note that json tags for generated Go code are
+                    overridden to explicitly exclude the omitempty jsontag.
+
+                    This enforces the Go json marshaller to always emit zero
+                    values for both revision_number and revision_height.
                   title: >-
                     Height is a monotonically increasing data type
 
@@ -29576,6 +29727,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
                 title: >-
                   Height is a monotonically increasing data type
 
@@ -31065,6 +31223,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
                 title: >-
                   Height is a monotonically increasing data type
 
@@ -31154,6 +31319,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryClientConnectionsResponse is the response type for the
               Query/ClientConnections RPC method
@@ -31514,6 +31686,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             description: >-
               QueryConnectionsResponse is the response type for the
               Query/Connections RPC
@@ -31908,6 +32087,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             description: >-
               QueryConnectionResponse is the response type for the
               Query/Connection RPC
@@ -32356,6 +32542,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryConnectionClientStateResponse is the response type for the
               Query/ConnectionClientState RPC method
@@ -32786,6 +32979,13 @@ paths:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
             title: |-
               QueryConnectionConsensusStateResponse is the response type for the
               Query/ConnectionConsensusState RPC method
@@ -33842,7 +34042,7 @@ paths:
           type: string
       tags:
         - Query
-  /ibc/apps/nft_transfer/v1/class_hashs/{trace}:
+  /ibc/apps/nft_transfer/v1/class_hashes/{trace}:
     get:
       summary: ClassHash queries a class id hash information.
       operationId: ClassHash
@@ -40032,6 +40232,78 @@ paths:
                       format: byte
       tags:
         - Query
+  /connect/oracle/v2/get_currency_pair_mapping_list:
+    get:
+      summary: >-
+        Get the mapping of currency pair ID <-> currency pair as a list. This is
+
+        useful for indexers that have access to the ID of a currency pair, but
+        no
+
+        way to get the underlying currency pair from it.
+      operationId: GetCurrencyPairMappingList
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              mappings:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uint64
+                      description: >-
+                        ID is the unique identifier for this currency pair
+                        string.
+                    currency_pair:
+                      type: object
+                      properties:
+                        Base:
+                          type: string
+                        Quote:
+                          type: string
+                      title: >-
+                        CurrencyPair is the standard representation of a pair of
+                        assets, where one
+
+                        (Base) is priced in terms of the other (Quote)
+                      description: >-
+                        CurrencyPair is the human-readable representation of the
+                        currency pair.
+                description: |-
+                  mappings is a list of the id representing the currency pair
+                  to the currency pair itself.
+            description: >-
+              GetCurrencyPairMappingResponse is the GetCurrencyPairMapping
+              response type.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   /connect/oracle/v2/get_price:
     get:
       summary: >-
@@ -40443,7 +40715,8 @@ paths:
     get:
       summary: |-
         MarketMap returns the full market map stored in the x/marketmap
-        module.
+        module.  NOTE: the value returned by this query is not safe for on-chain
+        code.
       operationId: MarketMap
       responses:
         '200':
@@ -40606,6 +40879,169 @@ paths:
                 type: string
                 description: ChainId is the chain identifier for the market map.
             description: MarketMapResponse is the query response for the MarketMap query.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
+  /connect/marketmap/v2/markets:
+    get:
+      summary: |-
+        Market returns all stored in the x/marketmap
+        module as a sorted list.
+      operationId: Markets
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              markets:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ticker:
+                      description: >-
+                        Ticker represents a price feed for a given asset pair
+                        i.e. BTC/USD. The
+
+                        price feed is scaled to a number of decimal places and
+                        has a minimum number
+
+                        of providers required to consider the ticker valid.
+                      type: object
+                      properties:
+                        currency_pair:
+                          description: CurrencyPair is the currency pair for this ticker.
+                          type: object
+                          properties:
+                            Base:
+                              type: string
+                            Quote:
+                              type: string
+                          title: >-
+                            CurrencyPair is the standard representation of a
+                            pair of assets, where one
+
+                            (Base) is priced in terms of the other (Quote)
+                        decimals:
+                          type: string
+                          format: uint64
+                          description: >-
+                            Decimals is the number of decimal places for the
+                            ticker. The number of
+
+                            decimal places is used to convert the price to a
+                            human-readable format.
+                        min_provider_count:
+                          type: string
+                          format: uint64
+                          description: >-
+                            MinProviderCount is the minimum number of providers
+                            required to consider
+
+                            the ticker valid.
+                        enabled:
+                          type: boolean
+                          description: >-
+                            Enabled is the flag that denotes if the Ticker is
+                            enabled for price
+
+                            fetching by an oracle.
+                        metadata_JSON:
+                          type: string
+                          description: >-
+                            MetadataJSON is a string of JSON that encodes any
+                            extra configuration
+
+                            for the given ticker.
+                    provider_configs:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            description: >-
+                              Name corresponds to the name of the provider for
+                              which the configuration is
+
+                              being set.
+                          off_chain_ticker:
+                            type: string
+                            description: >-
+                              OffChainTicker is the off-chain representation of
+                              the ticker i.e. BTC/USD.
+
+                              The off-chain ticker is unique to a given provider
+                              and is used to fetch the
+
+                              price of the ticker from the provider.
+                          normalize_by_pair:
+                            description: >-
+                              NormalizeByPair is the currency pair for this
+                              ticker to be normalized by.
+
+                              For example, if the desired Ticker is BTC/USD,
+                              this market could be reached
+
+                              using: OffChainTicker = BTC/USDT NormalizeByPair =
+                              USDT/USD This field is
+
+                              optional and nullable.
+                            type: object
+                            properties:
+                              Base:
+                                type: string
+                              Quote:
+                                type: string
+                            title: >-
+                              CurrencyPair is the standard representation of a
+                              pair of assets, where one
+
+                              (Base) is priced in terms of the other (Quote)
+                          invert:
+                            type: boolean
+                            title: >-
+                              Invert is a boolean indicating if the BASE and
+                              QUOTE of the market should
+
+                              be inverted. i.e. BASE -> QUOTE, QUOTE -> BASE
+                          metadata_JSON:
+                            type: string
+                            description: >-
+                              MetadataJSON is a string of JSON that encodes any
+                              extra configuration
+
+                              for the given provider config.
+                      description: >-
+                        ProviderConfigs is the list of provider-specific configs
+                        for this Market.
+                  description: >-
+                    Market encapsulates a Ticker and its provider-specific
+                    configuration.
+                description: Markets is a sorted list of all markets in the module.
+            description: MarketsResponse is the query response for the Markets query.
         default:
           description: An unexpected error response.
           schema:
@@ -62201,6 +62637,13 @@ definitions:
               RevisionHeight
 
               gets reset
+
+
+              Please note that json tags for generated Go code are overridden to
+              explicitly exclude the omitempty jsontag.
+
+              This enforces the Go json marshaller to always emit zero values
+              for both revision_number and revision_height.
           timestamp:
             type: string
             format: uint64
@@ -62433,6 +62876,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryChannelClientStateResponse is the Response type for the
       Query/QueryChannelClientState RPC method
@@ -62639,6 +63089,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryChannelClientStateResponse is the Response type for the
       Query/QueryChannelClientState RPC method
@@ -62681,6 +63138,13 @@ definitions:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
               timestamp:
                 type: string
                 format: uint64
@@ -62817,6 +63281,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     description: >-
       QueryChannelResponse is the response type for the Query/Channel RPC
       method.
@@ -62971,6 +63442,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     description: >-
       QueryChannelsResponse is the response type for the Query/Channels RPC
       method.
@@ -63121,6 +63599,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryConnectionChannelsResponse is the Response type for the
       Query/QueryConnectionChannels RPC method
@@ -63163,6 +63648,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QuerySequenceResponse is the response type for the
       Query/QueryNextSequenceReceiveResponse RPC method
@@ -63205,6 +63697,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryNextSequenceSendResponse is the request type for the
       Query/QueryNextSequenceSend RPC method
@@ -63247,6 +63746,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryPacketAcknowledgementResponse defines the client query response for a
       packet which also includes a proof and the height from which the
@@ -63337,6 +63843,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryPacketAcknowledgemetsResponse is the request type for the
       Query/QueryPacketAcknowledgements RPC method
@@ -63379,6 +63892,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: >-
       QueryPacketCommitmentResponse defines the client query response for a
       packet
@@ -63472,6 +63992,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryPacketCommitmentsResponse is the request type for the
       Query/QueryPacketCommitments RPC method
@@ -63513,6 +64040,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: >-
       QueryPacketReceiptResponse defines the client query response for a packet
 
@@ -63557,6 +64091,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryUnreceivedAcksResponse is the response type for the
       Query/UnreceivedAcks RPC method
@@ -63597,6 +64138,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryUnreceivedPacketsResponse is the response type for the
       Query/UnreceivedPacketCommitments RPC method
@@ -63653,6 +64201,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: >-
       QueryUpgradeErrorResponse is the response type for the
       Query/QueryUpgradeError RPC method
@@ -63719,6 +64274,13 @@ definitions:
                   RevisionHeight
 
                   gets reset
+
+
+                  Please note that json tags for generated Go code are
+                  overridden to explicitly exclude the omitempty jsontag.
+
+                  This enforces the Go json marshaller to always emit zero
+                  values for both revision_number and revision_height.
               timestamp:
                 type: string
                 format: uint64
@@ -63782,6 +64344,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: >-
       QueryUpgradeResponse is the response type for the QueryUpgradeResponse RPC
       method
@@ -63840,6 +64409,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
       timestamp:
         type: string
         format: uint64
@@ -63914,6 +64490,13 @@ definitions:
               RevisionHeight
 
               gets reset
+
+
+              Please note that json tags for generated Go code are overridden to
+              explicitly exclude the omitempty jsontag.
+
+              This enforces the Go json marshaller to always emit zero values
+              for both revision_number and revision_height.
           timestamp:
             type: string
             format: uint64
@@ -63980,13 +64563,25 @@ definitions:
         type: string
         format: uint64
         title: the height within the given revision
-    description: |-
+    description: >-
       Normally the RevisionHeight is incremented at each height while keeping
+
       RevisionNumber the same. However some consensus algorithms may choose to
+
       reset the height in certain conditions e.g. hard forks, state-machine
+
       breaking changes In these cases, the RevisionNumber is incremented so that
+
       height continues to be monitonically increasing even as the RevisionHeight
+
       gets reset
+
+
+      Please note that json tags for generated Go code are overridden to
+      explicitly exclude the omitempty jsontag.
+
+      This enforces the Go json marshaller to always emit zero values for both
+      revision_number and revision_height.
     title: >-
       Height is a monotonically increasing data type
 
@@ -64199,6 +64794,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
       consensus_state:
         type: object
         properties:
@@ -64610,6 +65212,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     description: >-
       QueryClientStateResponse is the response type for the Query/ClientState
       RPC
@@ -64884,6 +65493,13 @@ definitions:
             RevisionHeight
 
             gets reset
+
+
+            Please note that json tags for generated Go code are overridden to
+            explicitly exclude the omitempty jsontag.
+
+            This enforces the Go json marshaller to always emit zero values for
+            both revision_number and revision_height.
           title: >-
             Height is a monotonically increasing data type
 
@@ -65123,6 +65739,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
         title: >-
           Height is a monotonically increasing data type
 
@@ -65172,6 +65795,13 @@ definitions:
                 RevisionHeight
 
                 gets reset
+
+
+                Please note that json tags for generated Go code are overridden
+                to explicitly exclude the omitempty jsontag.
+
+                This enforces the Go json marshaller to always emit zero values
+                for both revision_number and revision_height.
             consensus_state:
               type: object
               properties:
@@ -65762,6 +66392,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
         title: >-
           Height is a monotonically increasing data type
 
@@ -66083,6 +66720,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryClientConnectionsResponse is the response type for the
       Query/ClientConnections RPC method
@@ -66302,6 +66946,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryConnectionClientStateResponse is the response type for the
       Query/ConnectionClientState RPC method
@@ -66508,6 +67159,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     title: |-
       QueryConnectionConsensusStateResponse is the response type for the
       Query/ConnectionConsensusState RPC method
@@ -66658,6 +67316,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     description: >-
       QueryConnectionResponse is the response type for the Query/Connection RPC
 
@@ -66806,6 +67471,13 @@ definitions:
           RevisionHeight
 
           gets reset
+
+
+          Please note that json tags for generated Go code are overridden to
+          explicitly exclude the omitempty jsontag.
+
+          This enforces the Go json marshaller to always emit zero values for
+          both revision_number and revision_height.
     description: >-
       QueryConnectionsResponse is the response type for the Query/Connections
       RPC
@@ -69331,6 +70003,28 @@ definitions:
         type: boolean
         title: whether to return data trace
     title: TraceOption is the option for tracing
+  connect.oracle.v2.CurrencyPairMapping:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uint64
+        description: ID is the unique identifier for this currency pair string.
+      currency_pair:
+        type: object
+        properties:
+          Base:
+            type: string
+          Quote:
+            type: string
+        title: >-
+          CurrencyPair is the standard representation of a pair of assets, where
+          one
+
+          (Base) is priced in terms of the other (Quote)
+        description: >-
+          CurrencyPair is the human-readable representation of the currency
+          pair.
   connect.oracle.v2.GetAllCurrencyPairsResponse:
     type: object
     properties:
@@ -69351,6 +70045,39 @@ definitions:
     description: |-
       GetAllCurrencyPairsResponse returns all CurrencyPairs that the module is
       currently tracking.
+  connect.oracle.v2.GetCurrencyPairMappingListResponse:
+    type: object
+    properties:
+      mappings:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uint64
+              description: ID is the unique identifier for this currency pair string.
+            currency_pair:
+              type: object
+              properties:
+                Base:
+                  type: string
+                Quote:
+                  type: string
+              title: >-
+                CurrencyPair is the standard representation of a pair of assets,
+                where one
+
+                (Base) is priced in terms of the other (Quote)
+              description: >-
+                CurrencyPair is the human-readable representation of the
+                currency pair.
+        description: |-
+          mappings is a list of the id representing the currency pair
+          to the currency pair itself.
+    description: >-
+      GetCurrencyPairMappingResponse is the GetCurrencyPairMapping response
+      type.
   connect.oracle.v2.GetCurrencyPairMappingResponse:
     type: object
     properties:
@@ -70066,6 +70793,136 @@ definitions:
               ProviderConfigs is the list of provider-specific configs for this
               Market.
     description: MarketResponse is the query response for the Market query.
+  connect.marketmap.v2.MarketsResponse:
+    type: object
+    properties:
+      markets:
+        type: array
+        items:
+          type: object
+          properties:
+            ticker:
+              description: >-
+                Ticker represents a price feed for a given asset pair i.e.
+                BTC/USD. The
+
+                price feed is scaled to a number of decimal places and has a
+                minimum number
+
+                of providers required to consider the ticker valid.
+              type: object
+              properties:
+                currency_pair:
+                  description: CurrencyPair is the currency pair for this ticker.
+                  type: object
+                  properties:
+                    Base:
+                      type: string
+                    Quote:
+                      type: string
+                  title: >-
+                    CurrencyPair is the standard representation of a pair of
+                    assets, where one
+
+                    (Base) is priced in terms of the other (Quote)
+                decimals:
+                  type: string
+                  format: uint64
+                  description: >-
+                    Decimals is the number of decimal places for the ticker. The
+                    number of
+
+                    decimal places is used to convert the price to a
+                    human-readable format.
+                min_provider_count:
+                  type: string
+                  format: uint64
+                  description: >-
+                    MinProviderCount is the minimum number of providers required
+                    to consider
+
+                    the ticker valid.
+                enabled:
+                  type: boolean
+                  description: >-
+                    Enabled is the flag that denotes if the Ticker is enabled
+                    for price
+
+                    fetching by an oracle.
+                metadata_JSON:
+                  type: string
+                  description: >-
+                    MetadataJSON is a string of JSON that encodes any extra
+                    configuration
+
+                    for the given ticker.
+            provider_configs:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: >-
+                      Name corresponds to the name of the provider for which the
+                      configuration is
+
+                      being set.
+                  off_chain_ticker:
+                    type: string
+                    description: >-
+                      OffChainTicker is the off-chain representation of the
+                      ticker i.e. BTC/USD.
+
+                      The off-chain ticker is unique to a given provider and is
+                      used to fetch the
+
+                      price of the ticker from the provider.
+                  normalize_by_pair:
+                    description: >-
+                      NormalizeByPair is the currency pair for this ticker to be
+                      normalized by.
+
+                      For example, if the desired Ticker is BTC/USD, this market
+                      could be reached
+
+                      using: OffChainTicker = BTC/USDT NormalizeByPair =
+                      USDT/USD This field is
+
+                      optional and nullable.
+                    type: object
+                    properties:
+                      Base:
+                        type: string
+                      Quote:
+                        type: string
+                    title: >-
+                      CurrencyPair is the standard representation of a pair of
+                      assets, where one
+
+                      (Base) is priced in terms of the other (Quote)
+                  invert:
+                    type: boolean
+                    title: >-
+                      Invert is a boolean indicating if the BASE and QUOTE of
+                      the market should
+
+                      be inverted. i.e. BASE -> QUOTE, QUOTE -> BASE
+                  metadata_JSON:
+                    type: string
+                    description: >-
+                      MetadataJSON is a string of JSON that encodes any extra
+                      configuration
+
+                      for the given provider config.
+              description: >-
+                ProviderConfigs is the list of provider-specific configs for
+                this Market.
+          description: >-
+            Market encapsulates a Ticker and its provider-specific
+            configuration.
+        description: Markets is a sorted list of all markets in the module.
+    description: MarketsResponse is the query response for the Markets query.
   connect.marketmap.v2.Params:
     type: object
     properties:
