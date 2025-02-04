@@ -38,11 +38,11 @@ require (
 	github.com/holiman/uint256 v1.3.1
 	github.com/initia-labs/OPinit v0.6.2
 	github.com/initia-labs/initia v0.6.4
-	github.com/initia-labs/kvindexer v0.1.10-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/block v0.1.1-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.7-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.3-0.20250201074115-b7f88dafd1ca
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.2-0.20250201074115-b7f88dafd1ca
+	github.com/initia-labs/kvindexer v0.1.10
+	github.com/initia-labs/kvindexer/submodules/block v0.1.1
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.7
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.3
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.2
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/noble-assets/forwarding/v2 v2.0.0-20240521090705-86712c4c9e43
 	github.com/pkg/errors v0.9.1
@@ -137,7 +137,6 @@ require (
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/gobwas/ws v1.2.1 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
