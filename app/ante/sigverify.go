@@ -23,6 +23,8 @@ import (
 
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
+
+	forwardingtypes "github.com/noble-assets/forwarding/v2/types"
 )
 
 // SigVerificationDecorator verifies all signatures for a tx and return an error if any are invalid. Note,
@@ -174,6 +176,9 @@ func DefaultSigVerificationGasConsumer(
 		if err != nil {
 			return err
 		}
+		return nil
+
+	case *forwardingtypes.ForwardingPubKey:
 		return nil
 
 	default:
