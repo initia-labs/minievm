@@ -13,9 +13,6 @@ func MergeJSON(dstStr, srcStr string) (string, error) {
 	if len(dstStr) == 0 || len(srcStr) == 0 {
 		return "", errors.New("empty JSON string")
 	}
-	if len(dstStr) > MaxJSONSize || len(srcStr) > MaxJSONSize {
-		return "", errors.New("JSON string too large")
-	}
 
 	var dstMap, srcMap map[string]interface{}
 	err := json.Unmarshal([]byte(dstStr), &dstMap)

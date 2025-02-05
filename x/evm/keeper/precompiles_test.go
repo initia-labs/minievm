@@ -1,7 +1,9 @@
 package keeper_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -9,10 +11,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	abiapi "github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 
+	"github.com/initia-labs/minievm/x/evm/contracts/connect_oracle"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_jsonutils"
@@ -20,6 +24,10 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 
 	"github.com/stretchr/testify/require"
+
+	connecttypes "github.com/skip-mev/connect/v2/pkg/types"
+	marketmaptypes "github.com/skip-mev/connect/v2/x/marketmap/types"
+	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
 )
 
 func Test_ExecuteCosmosMessage(t *testing.T) {
@@ -267,4 +275,167 @@ func Test_PrecompileRevertError(t *testing.T) {
 	// check balance
 	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
 	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+}
+
+func mustMarshalJSON(t *testing.T, obj interface{}) []byte {
+	bz, err := json.Marshal(obj)
+	require.NoError(t, err)
+	return bz
+}
+
+func Test_JSONUnmarshalObject(t *testing.T) {
+	testCases := []struct {
+		name        string
+		input       []byte
+		expected    i_jsonutils.IJSONUtilsJSONObject
+		expectedErr bool
+	}{
+		{
+			name:     "simple map",
+			input:    []byte(`{"a": 1, "b": 2}`),
+			expected: i_jsonutils.IJSONUtilsJSONObject{Elements: []i_jsonutils.IJSONUtilsJSONElement{{Key: "a", Value: mustMarshalJSON(t, 1)}, {Key: "b", Value: mustMarshalJSON(t, 2)}}},
+		},
+		{
+			name:     "nested map",
+			input:    []byte(`{"a": 1, "b": {"c": 2}}`),
+			expected: i_jsonutils.IJSONUtilsJSONObject{Elements: []i_jsonutils.IJSONUtilsJSONElement{{Key: "a", Value: mustMarshalJSON(t, 1)}, {Key: "b", Value: mustMarshalJSON(t, map[string]int{"c": 2})}}},
+		},
+		{
+			name:        "invalid json",
+			input:       []byte(`{"a": 1, "b": 2`),
+			expectedErr: true,
+		},
+		{
+			name:        "slice",
+			input:       []byte(`[1,2,3]`),
+			expectedErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, input := createDefaultTestInput(t)
+			_, _, addr := keyPubAddr()
+			evmAddr := common.BytesToAddress(addr.Bytes())
+
+			abi, err := i_jsonutils.IJsonutilsMetaData.GetAbi()
+			require.NoError(t, err)
+
+			inputBz, err := abi.Pack("unmarshal_to_object", tc.input)
+			require.NoError(t, err)
+
+			retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.JSONUtilsPrecompileAddress, inputBz, nil, nil)
+			if tc.expectedErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			unpackedRet, err := abi.Methods["unmarshal_to_object"].Outputs.Unpack(retBz)
+			require.NoError(t, err)
+
+			res := *abiapi.ConvertType(unpackedRet[0], new(i_jsonutils.IJSONUtilsJSONObject)).(*i_jsonutils.IJSONUtilsJSONObject)
+			require.Equal(t, tc.expected, res)
+		})
+	}
+}
+
+func Test_ConnectOracle_GetPrice(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	input.MarketMapKeeper.MarketMap["BTC/USD"] = marketmaptypes.Market{
+		Ticker:          marketmaptypes.NewTicker("BTC", "USD", 6, 0, true),
+		ProviderConfigs: []marketmaptypes.ProviderConfig{},
+	}
+	input.MarketMapKeeper.MarketMap["ETH/USD"] = marketmaptypes.Market{
+		Ticker:          marketmaptypes.NewTicker("ETH", "USD", 6, 0, true),
+		ProviderConfigs: []marketmaptypes.ProviderConfig{},
+	}
+
+	// set BTC/USD price to 1000
+	btcCp, err := connecttypes.CurrencyPairFromString("BTC/USD")
+	require.NoError(t, err)
+	err = input.OracleKeeper.SetPriceForCurrencyPair(ctx, btcCp, oracletypes.QuotePrice{
+		Price:          math.NewInt(1000_000_000),
+		BlockTimestamp: ctx.BlockTime(),
+		BlockHeight:    uint64(ctx.BlockHeight()),
+	})
+	require.NoError(t, err)
+	// set ETH/USD price to 100
+	ethCp, err := connecttypes.CurrencyPairFromString("ETH/USD")
+	require.NoError(t, err)
+	err = input.OracleKeeper.SetPriceForCurrencyPair(ctx, ethCp, oracletypes.QuotePrice{
+		Price:          math.NewInt(100_000_000),
+		BlockTimestamp: ctx.BlockTime(),
+		BlockHeight:    uint64(ctx.BlockHeight()),
+	})
+	require.NoError(t, err)
+
+	// compute id and nonce
+	btcId, ok := input.OracleKeeper.GetIDForCurrencyPair(ctx, btcCp)
+	require.True(t, ok)
+	btcNonce, err := input.OracleKeeper.GetNonceForCurrencyPair(ctx, btcCp)
+	require.NoError(t, err)
+	ethId, ok := input.OracleKeeper.GetIDForCurrencyPair(ctx, ethCp)
+	require.True(t, ok)
+	ethNonce, err := input.OracleKeeper.GetNonceForCurrencyPair(ctx, ethCp)
+	require.NoError(t, err)
+
+	abi, err := connect_oracle.ConnectOracleMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// try get price
+	inputBz, err := abi.Pack("get_price", `BTC/USD`)
+	require.NoError(t, err)
+
+	oracleAddr, err := input.EVMKeeper.GetConnectOracleAddr(ctx)
+	require.NoError(t, err)
+
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	unpackedRet, err := abi.Methods["get_price"].Outputs.Unpack(ret)
+	require.NoError(t, err)
+
+	res := *abiapi.ConvertType(unpackedRet[0], new(connect_oracle.ConnectOraclePrice)).(*connect_oracle.ConnectOraclePrice)
+	require.Equal(t, connect_oracle.ConnectOraclePrice{
+		Price:     big.NewInt(1000_000_000),
+		Timestamp: big.NewInt(ctx.BlockTime().UnixNano()),
+		Height:    uint64(ctx.BlockHeight()),
+		Nonce:     btcNonce,
+		Decimal:   6,
+		Id:        btcId,
+	}, res)
+
+	// try get prices
+	inputBz, err = abi.Pack("get_prices", []string{`BTC/USD`, `ETH/USD`})
+	require.NoError(t, err)
+
+	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	unpackedRet, err = abi.Methods["get_prices"].Outputs.Unpack(ret)
+	require.NoError(t, err)
+
+	resArr := *abiapi.ConvertType(unpackedRet[0], new([]connect_oracle.ConnectOraclePrice)).(*[]connect_oracle.ConnectOraclePrice)
+	require.Equal(t, []connect_oracle.ConnectOraclePrice{
+		{
+			Price:     big.NewInt(1000_000_000),
+			Timestamp: big.NewInt(ctx.BlockTime().UnixNano()),
+			Height:    uint64(ctx.BlockHeight()),
+			Nonce:     btcNonce,
+			Decimal:   6,
+			Id:        btcId,
+		},
+		{
+			Price:     big.NewInt(100_000_000),
+			Timestamp: big.NewInt(ctx.BlockTime().UnixNano()),
+			Height:    uint64(ctx.BlockHeight()),
+			Nonce:     ethNonce,
+			Decimal:   6,
+			Id:        ethId,
+		},
+	}, resArr)
 }

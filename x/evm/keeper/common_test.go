@@ -46,6 +46,10 @@ import (
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	marketmaptypes "github.com/skip-mev/connect/v2/x/marketmap/types"
+	oraclekeeper "github.com/skip-mev/connect/v2/x/oracle/keeper"
+	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
 )
 
 var ModuleBasics = module.NewBasicManager(
@@ -148,6 +152,8 @@ type TestKeepers struct {
 	CommunityPoolKeeper *MockCommunityPoolKeeper
 	GasPriceKeeper      *MockGasPriceKeeper
 	EVMKeeper           evmkeeper.Keeper
+	MarketMapKeeper     *MockMarketMapKeeper
+	OracleKeeper        *oraclekeeper.Keeper
 	EncodingConfig      EncodingConfig
 	Faucet              *TestFaucet
 	MultiStore          storetypes.CommitMultiStore
@@ -182,7 +188,7 @@ func _createTestInput(
 ) (sdk.Context, TestKeepers) {
 	keys := storetypes.NewKVStoreKeys(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
-		distributiontypes.StoreKey, evmtypes.StoreKey,
+		distributiontypes.StoreKey, evmtypes.StoreKey, oracletypes.StoreKey,
 	)
 	ms := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
 	for _, v := range keys {
@@ -243,6 +249,16 @@ func _createTestInput(
 	)
 	require.NoError(t, bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
 
+	marketMapKeeper := &MockMarketMapKeeper{
+		MarketMap: map[string]marketmaptypes.Market{},
+	}
+	oracleKeeper := oraclekeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[oracletypes.StoreKey]),
+		appCodec,
+		marketMapKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName),
+	)
+
 	msgRouter := baseapp.NewMsgServiceRouter()
 	msgRouter.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
 
@@ -254,6 +270,7 @@ func _createTestInput(
 
 	// register bank query service to the router
 	banktypes.RegisterQueryServer(queryRouter, &bankKeeper)
+	oracletypes.RegisterQueryServer(queryRouter, oraclekeeper.NewQueryServer(oracleKeeper))
 
 	communityPoolKeeper := &MockCommunityPoolKeeper{}
 	ibcHookKeeper := &MockIBCHookKeeper{}
@@ -275,6 +292,14 @@ func _createTestInput(
 			"/cosmos.bank.v1beta1.Query/Balance": {
 				Request:  &banktypes.QueryBalanceRequest{},
 				Response: &banktypes.QueryBalanceResponse{},
+			},
+			"/connect.oracle.v2.Query/GetPrice": {
+				Request:  &oracletypes.GetPriceRequest{},
+				Response: &oracletypes.GetPriceResponse{},
+			},
+			"/connect.oracle.v2.Query/GetPrices": {
+				Request:  &oracletypes.GetPricesRequest{},
+				Response: &oracletypes.GetPricesResponse{},
 			},
 		},
 	)
@@ -304,6 +329,8 @@ func _createTestInput(
 		GasPriceKeeper:      gasPriceKeeper,
 		EVMKeeper:           *evmKeeper,
 		BankKeeper:          bankKeeper,
+		MarketMapKeeper:     marketMapKeeper,
+		OracleKeeper:        &oracleKeeper,
 		EncodingConfig:      encodingConfig,
 		Faucet:              faucet,
 		MultiStore:          ms,
@@ -340,4 +367,20 @@ type MockIBCHookKeeper struct{}
 
 func (k *MockIBCHookKeeper) SetAllowed(ctx context.Context, addr sdk.AccAddress, allowed bool) error {
 	return nil
+}
+
+var _ oracletypes.MarketMapKeeper = &MockMarketMapKeeper{}
+
+type MockMarketMapKeeper struct {
+	MarketMap map[string]marketmaptypes.Market
+}
+
+// GetMarket implements types.MarketMapKeeper.
+func (m *MockMarketMapKeeper) GetMarket(ctx context.Context, tickerStr string) (marketmaptypes.Market, error) {
+	market, ok := m.MarketMap[tickerStr]
+	if !ok {
+		return marketmaptypes.Market{}, nil
+	}
+
+	return market, nil
 }

@@ -5,7 +5,7 @@ pragma solidity ^0.8.25;
 
 import {IERC721, IERC721Metadata, IERC721Errors, IERC721Receiver} from "../i_erc721/IERC721.sol";
 import {IERC165, ERC165} from "../erc165/ERC165.sol";
-import {ERC721Utils} from "../utils/ERC721Utils.sol";
+import {ERC721Utils} from "./utils/ERC721Utils.sol";
 
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
@@ -26,7 +26,13 @@ abstract contract Context {
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Errors {
+abstract contract ERC721 is
+    Context,
+    ERC165,
+    IERC721,
+    IERC721Metadata,
+    IERC721Errors
+{
     using Strings for uint256;
 
     // Token name
@@ -41,7 +47,8 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
 
     mapping(uint256 tokenId => address) private _tokenApprovals;
 
-    mapping(address owner => mapping(address operator => bool)) private _operatorApprovals;
+    mapping(address owner => mapping(address operator => bool))
+        private _operatorApprovals;
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
@@ -54,7 +61,9 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC165, IERC165) returns (bool) {
         return
             interfaceId == type(IERC721).interfaceId ||
             interfaceId == type(IERC721Metadata).interfaceId ||
@@ -95,11 +104,16 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     /**
      * @dev See {IERC721Metadata-tokenURI}.
      */
-    function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public view virtual returns (string memory) {
         _requireOwned(tokenId);
 
         string memory baseURI = _baseURI();
-        return bytes(baseURI).length > 0 ? string.concat(baseURI, tokenId.toString()) : "";
+        return
+            bytes(baseURI).length > 0
+                ? string.concat(baseURI, tokenId.toString())
+                : "";
     }
 
     /**
@@ -121,7 +135,9 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     /**
      * @dev See {IERC721-getApproved}.
      */
-    function getApproved(uint256 tokenId) public view virtual returns (address) {
+    function getApproved(
+        uint256 tokenId
+    ) public view virtual returns (address) {
         _requireOwned(tokenId);
 
         return _getApproved(tokenId);
@@ -137,14 +153,21 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     /**
      * @dev See {IERC721-isApprovedForAll}.
      */
-    function isApprovedForAll(address owner, address operator) public view virtual returns (bool) {
+    function isApprovedForAll(
+        address owner,
+        address operator
+    ) public view virtual returns (bool) {
         return _operatorApprovals[owner][operator];
     }
 
     /**
      * @dev See {IERC721-transferFrom}.
      */
-    function transferFrom(address from, address to, uint256 tokenId) public virtual {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public virtual {
         if (to == address(0)) {
             revert ERC721InvalidReceiver(address(0));
         }
@@ -159,16 +182,31 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     /**
      * @dev See {IERC721-safeTransferFrom}.
      */
-    function safeTransferFrom(address from, address to, uint256 tokenId) public {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public {
         safeTransferFrom(from, to, tokenId, "");
     }
 
     /**
      * @dev See {IERC721-safeTransferFrom}.
      */
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public virtual {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) public virtual {
         transferFrom(from, to, tokenId);
-        ERC721Utils.checkOnERC721Received(_msgSender(), from, to, tokenId, data);
+        ERC721Utils.checkOnERC721Received(
+            _msgSender(),
+            from,
+            to,
+            tokenId,
+            data
+        );
     }
 
     /**
@@ -186,7 +224,9 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     /**
      * @dev Returns the approved address for `tokenId`. Returns 0 if `tokenId` is not minted.
      */
-    function _getApproved(uint256 tokenId) internal view virtual returns (address) {
+    function _getApproved(
+        uint256 tokenId
+    ) internal view virtual returns (address) {
         return _tokenApprovals[tokenId];
     }
 
@@ -197,10 +237,16 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * WARNING: This function assumes that `owner` is the actual owner of `tokenId` and does not verify this
      * assumption.
      */
-    function _isAuthorized(address owner, address spender, uint256 tokenId) internal view virtual returns (bool) {
+    function _isAuthorized(
+        address owner,
+        address spender,
+        uint256 tokenId
+    ) internal view virtual returns (bool) {
         return
             spender != address(0) &&
-            (owner == spender || isApprovedForAll(owner, spender) || _getApproved(tokenId) == spender);
+            (owner == spender ||
+                isApprovedForAll(owner, spender) ||
+                _getApproved(tokenId) == spender);
     }
 
     /**
@@ -211,7 +257,11 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * WARNING: This function assumes that `owner` is the actual owner of `tokenId` and does not verify this
      * assumption.
      */
-    function _checkAuthorized(address owner, address spender, uint256 tokenId) internal view virtual {
+    function _checkAuthorized(
+        address owner,
+        address spender,
+        uint256 tokenId
+    ) internal view virtual {
         if (!_isAuthorized(owner, spender, tokenId)) {
             if (owner == address(0)) {
                 revert ERC721NonexistentToken(tokenId);
@@ -248,7 +298,11 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      *
      * NOTE: If overriding this function in a way that tracks balances, see also {_increaseBalance}.
      */
-    function _update(address to, uint256 tokenId, address auth) internal virtual returns (address) {
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal virtual returns (address) {
         address from = _ownerOf(tokenId);
 
         // Perform (optional) operator check
@@ -319,9 +373,19 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * @dev Same as {xref-ERC721-_safeMint-address-uint256-}[`_safeMint`], with an additional `data` parameter which is
      * forwarded in {IERC721Receiver-onERC721Received} to contract recipients.
      */
-    function _safeMint(address to, uint256 tokenId, bytes memory data) internal virtual {
+    function _safeMint(
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) internal virtual {
         _mint(to, tokenId);
-        ERC721Utils.checkOnERC721Received(_msgSender(), address(0), to, tokenId, data);
+        ERC721Utils.checkOnERC721Received(
+            _msgSender(),
+            address(0),
+            to,
+            tokenId,
+            data
+        );
     }
 
     /**
@@ -392,9 +456,20 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * @dev Same as {xref-ERC721-_safeTransfer-address-address-uint256-}[`_safeTransfer`], with an additional `data` parameter which is
      * forwarded in {IERC721Receiver-onERC721Received} to contract recipients.
      */
-    function _safeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal virtual {
+    function _safeTransfer(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) internal virtual {
         _transfer(from, to, tokenId);
-        ERC721Utils.checkOnERC721Received(_msgSender(), from, to, tokenId, data);
+        ERC721Utils.checkOnERC721Received(
+            _msgSender(),
+            from,
+            to,
+            tokenId,
+            data
+        );
     }
 
     /**
@@ -415,13 +490,22 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * @dev Variant of `_approve` with an optional flag to enable or disable the {Approval} event. The event is not
      * emitted in the context of transfers.
      */
-    function _approve(address to, uint256 tokenId, address auth, bool emitEvent) internal virtual {
+    function _approve(
+        address to,
+        uint256 tokenId,
+        address auth,
+        bool emitEvent
+    ) internal virtual {
         // Avoid reading the owner unless necessary
         if (emitEvent || auth != address(0)) {
             address owner = _requireOwned(tokenId);
 
             // We do not use _isAuthorized because single-token approvals should not be able to call approve
-            if (auth != address(0) && owner != auth && !isApprovedForAll(owner, auth)) {
+            if (
+                auth != address(0) &&
+                owner != auth &&
+                !isApprovedForAll(owner, auth)
+            ) {
                 revert ERC721InvalidApprover(auth);
             }
 
@@ -441,7 +525,11 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      *
      * Emits an {ApprovalForAll} event.
      */
-    function _setApprovalForAll(address owner, address operator, bool approved) internal virtual {
+    function _setApprovalForAll(
+        address owner,
+        address operator,
+        bool approved
+    ) internal virtual {
         if (operator == address(0)) {
             revert ERC721InvalidOperator(operator);
         }
@@ -463,8 +551,6 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
         return owner;
     }
 }
-
-
 
 /**
  * @dev String operations.
@@ -506,8 +592,14 @@ library Strings {
     /**
      * @dev Converts a `int256` to its ASCII `string` decimal representation.
      */
-    function toStringSigned(int256 value) internal pure returns (string memory) {
-        return string.concat(value < 0 ? "-" : "", toString(SignedMath.abs(value)));
+    function toStringSigned(
+        int256 value
+    ) internal pure returns (string memory) {
+        return
+            string.concat(
+                value < 0 ? "-" : "",
+                toString(SignedMath.abs(value))
+            );
     }
 
     /**
@@ -522,7 +614,10 @@ library Strings {
     /**
      * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
      */
-    function toHexString(uint256 value, uint256 length) internal pure returns (string memory) {
+    function toHexString(
+        uint256 value,
+        uint256 length
+    ) internal pure returns (string memory) {
         uint256 localValue = value;
         bytes memory buffer = new bytes(2 * length + 2);
         buffer[0] = "0";
@@ -548,8 +643,13 @@ library Strings {
     /**
      * @dev Returns true if the two strings are equal.
      */
-    function equal(string memory a, string memory b) internal pure returns (bool) {
-        return bytes(a).length == bytes(b).length && keccak256(bytes(a)) == keccak256(bytes(b));
+    function equal(
+        string memory a,
+        string memory b
+    ) internal pure returns (bool) {
+        return
+            bytes(a).length == bytes(b).length &&
+            keccak256(bytes(a)) == keccak256(bytes(b));
     }
 }
 
@@ -567,7 +667,10 @@ library Math {
     /**
      * @dev Returns the addition of two unsigned integers, with an success flag (no overflow).
      */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool success, uint256 result) {
+    function tryAdd(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool success, uint256 result) {
         unchecked {
             uint256 c = a + b;
             if (c < a) return (false, 0);
@@ -578,7 +681,10 @@ library Math {
     /**
      * @dev Returns the subtraction of two unsigned integers, with an success flag (no overflow).
      */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool success, uint256 result) {
+    function trySub(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool success, uint256 result) {
         unchecked {
             if (b > a) return (false, 0);
             return (true, a - b);
@@ -588,7 +694,10 @@ library Math {
     /**
      * @dev Returns the multiplication of two unsigned integers, with an success flag (no overflow).
      */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool success, uint256 result) {
+    function tryMul(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool success, uint256 result) {
         unchecked {
             // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
             // benefit is lost if 'b' is also tested.
@@ -603,7 +712,10 @@ library Math {
     /**
      * @dev Returns the division of two unsigned integers, with a success flag (no division by zero).
      */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool success, uint256 result) {
+    function tryDiv(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool success, uint256 result) {
         unchecked {
             if (b == 0) return (false, 0);
             return (true, a / b);
@@ -613,7 +725,10 @@ library Math {
     /**
      * @dev Returns the remainder of dividing two unsigned integers, with a success flag (no division by zero).
      */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool success, uint256 result) {
+    function tryMod(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (bool success, uint256 result) {
         unchecked {
             if (b == 0) return (false, 0);
             return (true, a % b);
@@ -627,7 +742,11 @@ library Math {
      * However, the compiler may optimize Solidity ternary operations (i.e. `a ? b : c`) to only compute
      * one branch when needed, making this function more expensive.
      */
-    function ternary(bool condition, uint256 a, uint256 b) internal pure returns (uint256) {
+    function ternary(
+        bool condition,
+        uint256 a,
+        uint256 b
+    ) internal pure returns (uint256) {
         unchecked {
             // branchless ternary works because:
             // b ^ (a ^ b) == a
@@ -688,7 +807,11 @@ library Math {
      * Original credit to Remco Bloemen under MIT license (https://xn--2-umb.com/21/muldiv) with further edits by
      * Uniswap Labs also under MIT license.
      */
-    function mulDiv(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 result) {
+    function mulDiv(
+        uint256 x,
+        uint256 y,
+        uint256 denominator
+    ) internal pure returns (uint256 result) {
         unchecked {
             // 512-bit multiply [prod1 prod0] = x * y. Compute the product mod 2²⁵⁶ and mod 2²⁵⁶ - 1, then use
             // use the Chinese Remainder Theorem to reconstruct the 512 bit result. The result is stored in two 256
@@ -710,7 +833,13 @@ library Math {
 
             // Make sure the result is less than 2²⁵⁶. Also prevents denominator == 0.
             if (denominator <= prod1) {
-                Panic.panic(ternary(denominator == 0, Panic.DIVISION_BY_ZERO, Panic.UNDER_OVERFLOW));
+                Panic.panic(
+                    ternary(
+                        denominator == 0,
+                        Panic.DIVISION_BY_ZERO,
+                        Panic.UNDER_OVERFLOW
+                    )
+                );
             }
 
             ///////////////////////////////////////////////
@@ -772,8 +901,17 @@ library Math {
     /**
      * @dev Calculates x * y / denominator with full precision, following the selected rounding direction.
      */
-    function mulDiv(uint256 x, uint256 y, uint256 denominator, Rounding rounding) internal pure returns (uint256) {
-        return mulDiv(x, y, denominator) + SafeCast.toUint(unsignedRoundsUp(rounding) && mulmod(x, y, denominator) > 0);
+    function mulDiv(
+        uint256 x,
+        uint256 y,
+        uint256 denominator,
+        Rounding rounding
+    ) internal pure returns (uint256) {
+        return
+            mulDiv(x, y, denominator) +
+            SafeCast.toUint(
+                unsignedRoundsUp(rounding) && mulmod(x, y, denominator) > 0
+            );
     }
 
     /**
@@ -848,7 +986,11 @@ library Math {
      * the underlying function will succeed given the lack of a revert, but the result may be incorrectly
      * interpreted as 0.
      */
-    function modExp(uint256 b, uint256 e, uint256 m) internal view returns (uint256) {
+    function modExp(
+        uint256 b,
+        uint256 e,
+        uint256 m
+    ) internal view returns (uint256) {
         (bool success, uint256 result) = tryModExp(b, e, m);
         if (!success) {
             Panic.panic(Panic.DIVISION_BY_ZERO);
@@ -866,7 +1008,11 @@ library Math {
      * https://eips.ethereum.org/EIPS/eip-198[EIP-198]. Otherwise, the underlying function will succeed given the lack
      * of a revert, but the result may be incorrectly interpreted as 0.
      */
-    function tryModExp(uint256 b, uint256 e, uint256 m) internal view returns (bool success, uint256 result) {
+    function tryModExp(
+        uint256 b,
+        uint256 e,
+        uint256 m
+    ) internal view returns (bool success, uint256 result) {
         if (m == 0) return (false, 0);
         /// @solidity memory-safe-assembly
         assembly {
@@ -896,7 +1042,11 @@ library Math {
     /**
      * @dev Variant of {modExp} that supports inputs of arbitrary length.
      */
-    function modExp(bytes memory b, bytes memory e, bytes memory m) internal view returns (bytes memory) {
+    function modExp(
+        bytes memory b,
+        bytes memory e,
+        bytes memory m
+    ) internal view returns (bytes memory) {
         (bool success, bytes memory result) = tryModExp(b, e, m);
         if (!success) {
             Panic.panic(Panic.DIVISION_BY_ZERO);
@@ -923,7 +1073,14 @@ library Math {
         assembly {
             let dataPtr := add(result, 0x20)
             // Write result on top of args to avoid allocating extra memory.
-            success := staticcall(gas(), 0x05, dataPtr, mload(result), dataPtr, mLen)
+            success := staticcall(
+                gas(),
+                0x05,
+                dataPtr,
+                mload(result),
+                dataPtr,
+                mLen
+            )
             // Overwrite the length.
             // result.length > returndatasize() is guaranteed because returndatasize() == m.length
             mstore(result, mLen)
@@ -1060,10 +1217,17 @@ library Math {
     /**
      * @dev Calculates sqrt(a), following the selected rounding direction.
      */
-    function sqrt(uint256 a, Rounding rounding) internal pure returns (uint256) {
+    function sqrt(
+        uint256 a,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = sqrt(a);
-            return result + SafeCast.toUint(unsignedRoundsUp(rounding) && result * result < a);
+            return
+                result +
+                SafeCast.toUint(
+                    unsignedRoundsUp(rounding) && result * result < a
+                );
         }
     }
 
@@ -1112,10 +1276,17 @@ library Math {
      * @dev Return the log in base 2, following the selected rounding direction, of a positive value.
      * Returns 0 if given 0.
      */
-    function log2(uint256 value, Rounding rounding) internal pure returns (uint256) {
+    function log2(
+        uint256 value,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = log2(value);
-            return result + SafeCast.toUint(unsignedRoundsUp(rounding) && 1 << result < value);
+            return
+                result +
+                SafeCast.toUint(
+                    unsignedRoundsUp(rounding) && 1 << result < value
+                );
         }
     }
 
@@ -1161,10 +1332,17 @@ library Math {
      * @dev Return the log in base 10, following the selected rounding direction, of a positive value.
      * Returns 0 if given 0.
      */
-    function log10(uint256 value, Rounding rounding) internal pure returns (uint256) {
+    function log10(
+        uint256 value,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = log10(value);
-            return result + SafeCast.toUint(unsignedRoundsUp(rounding) && 10 ** result < value);
+            return
+                result +
+                SafeCast.toUint(
+                    unsignedRoundsUp(rounding) && 10 ** result < value
+                );
         }
     }
 
@@ -1203,10 +1381,17 @@ library Math {
      * @dev Return the log in base 256, following the selected rounding direction, of a positive value.
      * Returns 0 if given 0.
      */
-    function log256(uint256 value, Rounding rounding) internal pure returns (uint256) {
+    function log256(
+        uint256 value,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = log256(value);
-            return result + SafeCast.toUint(unsignedRoundsUp(rounding) && 1 << (result << 3) < value);
+            return
+                result +
+                SafeCast.toUint(
+                    unsignedRoundsUp(rounding) && 1 << (result << 3) < value
+                );
         }
     }
 
@@ -2444,7 +2629,11 @@ library SignedMath {
      * However, the compiler may optimize Solidity ternary operations (i.e. `a ? b : c`) to only compute
      * one branch when needed, making this function more expensive.
      */
-    function ternary(bool condition, int256 a, int256 b) internal pure returns (int256) {
+    function ternary(
+        bool condition,
+        int256 a,
+        int256 b
+    ) internal pure returns (int256) {
         unchecked {
             // branchless terinary works because:
             // b ^ (a ^ b) == a

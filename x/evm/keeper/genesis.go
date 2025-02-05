@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
+	"github.com/initia-labs/minievm/x/evm/contracts/connect_oracle"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_wrapper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -43,6 +44,12 @@ func (k Keeper) InitializeWithDecimals(ctx context.Context, decimals uint8) erro
 
 	// 3. Deploy and store the ERC20 wrapper factory contract for IBC transfers.
 	err = k.DeployERC20Wrapper(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 4. Deploy and store the ConnectOracle contract.
+	err = k.DeployConnectOracle(ctx)
 	if err != nil {
 		return err
 	}
@@ -116,6 +123,23 @@ func (k Keeper) DeployERC20Wrapper(ctx context.Context) error {
 	return nil
 }
 
+// DeployConnectOracle deploys the ConnectOracle contract and stores the address in the keeper.
+func (k Keeper) DeployConnectOracle(ctx context.Context) error {
+	oracleCode, err := hexutil.Decode(connect_oracle.ConnectOracleBin)
+	if err != nil {
+		return err
+	}
+	_, oracleAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, oracleCode, nil, types.ConnectOracleSalt, nil)
+	if err != nil {
+		return err
+	}
+	if err = k.ConnectOracleAddr.Set(ctx, oracleAddr.Bytes()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) error {
 	if err := k.Params.Set(ctx, genState.Params); err != nil {
 		return err
@@ -131,6 +155,9 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 			return err
 		}
 		if err := k.ERC20WrapperAddr.Set(ctx, genState.Erc20Wrapper); err != nil {
+			return err
+		}
+		if err := k.ConnectOracleAddr.Set(ctx, genState.ConnectOracle); err != nil {
 			return err
 		}
 	}
@@ -287,6 +314,11 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		panic(err)
 	}
 
+	oracleAddr, err := k.ConnectOracleAddr.Get(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	return &types.GenesisState{
 		Params:         params,
 		KeyValues:      kvs,
@@ -296,6 +328,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		ClassTraces:    classTraces,
 		Erc20Factory:   factoryAddr,
 		Erc20Wrapper:   wrapperAddr,
+		ConnectOracle:  oracleAddr,
 		EVMBlockHashes: evmBlockHashes,
 	}
 }

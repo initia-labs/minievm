@@ -12,9 +12,12 @@ var NullAddress common.Address = common.HexToAddress("0x0")
 // 0x1 std address
 var StdAddress common.Address = common.HexToAddress("0x1")
 
-// ERC20FactorySalt is the salt used to create the ERC20 factory address
-var ERC20FactorySalt = uint64(1)
-var ERC20WrapperSalt = uint64(2)
+// salt for precompiled contracts
+var (
+	ERC20FactorySalt  uint64 = 1
+	ERC20WrapperSalt  uint64 = 2
+	ConnectOracleSalt uint64 = 3
+)
 
 // 0xf1 Cosmos precompile address
 var CosmosPrecompileAddress common.Address = common.HexToAddress("0xf1")

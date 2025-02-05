@@ -89,7 +89,7 @@ func Test_Query_ERC721ClassIdByContractAddr(t *testing.T) {
 	classId := "test-class-id"
 	classUri := "test-class-uri"
 
-	contractAddr := crypto.CreateAddress(types.StdAddress, 2)
+	contractAddr := crypto.CreateAddress(types.StdAddress, 3)
 
 	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, "")
 	require.NoError(t, err)

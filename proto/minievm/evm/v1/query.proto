@@ -32,6 +32,10 @@ service Query {
     option (google.api.http).get = "/minievm/evm/v1/contracts/erc20_wrapper";
   }
 
+  rpc ConnectOracle(QueryConnectOracleRequest) returns (QueryConnectOracleResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/connect_oracle";
+  }
+
   // ContractAddrByDenom gets the contract address by denom.
   rpc ContractAddrByDenom(QueryContractAddrByDenomRequest) returns (QueryContractAddrByDenomResponse) {
     option (google.api.http).get = "/minievm/evm/v1/contracts/by_denom";
@@ -116,6 +120,18 @@ message QueryERC20WrapperRequest {}
 // QueryERC20WrapperResponse is the response type for the Query/ERC20Wrapper RPC
 // method
 message QueryERC20WrapperResponse {
+  option (gogoproto.equal) = true;
+  // 0x prefixed hex address
+  string address = 1;
+}
+
+// QueryConnectOracleRequest is the request type for the Query/ConnectOracle RPC
+// method
+message QueryConnectOracleRequest {}
+
+// QueryConnectOracleResponse is the response type for the Query/ConnectOracle RPC
+// method
+message QueryConnectOracleResponse {
   option (gogoproto.equal) = true;
   // 0x prefixed hex address
   string address = 1;

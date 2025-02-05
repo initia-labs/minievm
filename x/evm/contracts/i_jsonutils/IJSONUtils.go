@@ -29,9 +29,20 @@ var (
 	_ = abi.ConvertType
 )
 
+// IJSONUtilsJSONElement is an auto generated low-level Go binding around an user-defined struct.
+type IJSONUtilsJSONElement struct {
+	Key   string
+	Value []byte
+}
+
+// IJSONUtilsJSONObject is an auto generated low-level Go binding around an user-defined struct.
+type IJSONUtilsJSONObject struct {
+	Elements []IJSONUtilsJSONElement
+}
+
 // IJsonutilsMetaData contains all meta data concerning the IJsonutils contract.
 var IJsonutilsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"dst_json\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"src_json\",\"type\":\"string\"}],\"name\":\"merge_json\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"json\",\"type\":\"string\"}],\"name\":\"stringify_json\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"dst_json\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"src_json\",\"type\":\"string\"}],\"name\":\"merge_json\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"json\",\"type\":\"string\"}],\"name\":\"stringify_json\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"json_bytes\",\"type\":\"bytes\"}],\"name\":\"unmarshal_iso_to_unix\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"json_bytes\",\"type\":\"bytes\"}],\"name\":\"unmarshal_to_array\",\"outputs\":[{\"internalType\":\"bytes[]\",\"name\":\"\",\"type\":\"bytes[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"json_bytes\",\"type\":\"bytes\"}],\"name\":\"unmarshal_to_bool\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"json_bytes\",\"type\":\"bytes\"}],\"name\":\"unmarshal_to_object\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"key\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"value\",\"type\":\"bytes\"}],\"internalType\":\"structIJSONUtils.JSONElement[]\",\"name\":\"elements\",\"type\":\"tuple[]\"}],\"internalType\":\"structIJSONUtils.JSONObject\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"json_bytes\",\"type\":\"bytes\"}],\"name\":\"unmarshal_to_string\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"json_bytes\",\"type\":\"bytes\"}],\"name\":\"unmarshal_to_uint\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // IJsonutilsABI is the input ABI used to generate the binding from.
@@ -240,4 +251,190 @@ func (_IJsonutils *IJsonutilsSession) StringifyJson(json string) (string, error)
 // Solidity: function stringify_json(string json) view returns(string)
 func (_IJsonutils *IJsonutilsCallerSession) StringifyJson(json string) (string, error) {
 	return _IJsonutils.Contract.StringifyJson(&_IJsonutils.CallOpts, json)
+}
+
+// UnmarshalIsoToUnix is a free data retrieval call binding the contract method 0x5922f631.
+//
+// Solidity: function unmarshal_iso_to_unix(bytes json_bytes) view returns(uint256)
+func (_IJsonutils *IJsonutilsCaller) UnmarshalIsoToUnix(opts *bind.CallOpts, json_bytes []byte) (*big.Int, error) {
+	var out []interface{}
+	err := _IJsonutils.contract.Call(opts, &out, "unmarshal_iso_to_unix", json_bytes)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// UnmarshalIsoToUnix is a free data retrieval call binding the contract method 0x5922f631.
+//
+// Solidity: function unmarshal_iso_to_unix(bytes json_bytes) view returns(uint256)
+func (_IJsonutils *IJsonutilsSession) UnmarshalIsoToUnix(json_bytes []byte) (*big.Int, error) {
+	return _IJsonutils.Contract.UnmarshalIsoToUnix(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalIsoToUnix is a free data retrieval call binding the contract method 0x5922f631.
+//
+// Solidity: function unmarshal_iso_to_unix(bytes json_bytes) view returns(uint256)
+func (_IJsonutils *IJsonutilsCallerSession) UnmarshalIsoToUnix(json_bytes []byte) (*big.Int, error) {
+	return _IJsonutils.Contract.UnmarshalIsoToUnix(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToArray is a free data retrieval call binding the contract method 0x7e8fa9cd.
+//
+// Solidity: function unmarshal_to_array(bytes json_bytes) view returns(bytes[])
+func (_IJsonutils *IJsonutilsCaller) UnmarshalToArray(opts *bind.CallOpts, json_bytes []byte) ([][]byte, error) {
+	var out []interface{}
+	err := _IJsonutils.contract.Call(opts, &out, "unmarshal_to_array", json_bytes)
+
+	if err != nil {
+		return *new([][]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([][]byte)).(*[][]byte)
+
+	return out0, err
+
+}
+
+// UnmarshalToArray is a free data retrieval call binding the contract method 0x7e8fa9cd.
+//
+// Solidity: function unmarshal_to_array(bytes json_bytes) view returns(bytes[])
+func (_IJsonutils *IJsonutilsSession) UnmarshalToArray(json_bytes []byte) ([][]byte, error) {
+	return _IJsonutils.Contract.UnmarshalToArray(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToArray is a free data retrieval call binding the contract method 0x7e8fa9cd.
+//
+// Solidity: function unmarshal_to_array(bytes json_bytes) view returns(bytes[])
+func (_IJsonutils *IJsonutilsCallerSession) UnmarshalToArray(json_bytes []byte) ([][]byte, error) {
+	return _IJsonutils.Contract.UnmarshalToArray(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToBool is a free data retrieval call binding the contract method 0x75d58a65.
+//
+// Solidity: function unmarshal_to_bool(bytes json_bytes) view returns(bool)
+func (_IJsonutils *IJsonutilsCaller) UnmarshalToBool(opts *bind.CallOpts, json_bytes []byte) (bool, error) {
+	var out []interface{}
+	err := _IJsonutils.contract.Call(opts, &out, "unmarshal_to_bool", json_bytes)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// UnmarshalToBool is a free data retrieval call binding the contract method 0x75d58a65.
+//
+// Solidity: function unmarshal_to_bool(bytes json_bytes) view returns(bool)
+func (_IJsonutils *IJsonutilsSession) UnmarshalToBool(json_bytes []byte) (bool, error) {
+	return _IJsonutils.Contract.UnmarshalToBool(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToBool is a free data retrieval call binding the contract method 0x75d58a65.
+//
+// Solidity: function unmarshal_to_bool(bytes json_bytes) view returns(bool)
+func (_IJsonutils *IJsonutilsCallerSession) UnmarshalToBool(json_bytes []byte) (bool, error) {
+	return _IJsonutils.Contract.UnmarshalToBool(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToObject is a free data retrieval call binding the contract method 0x48ad3c3a.
+//
+// Solidity: function unmarshal_to_object(bytes json_bytes) view returns(((string,bytes)[]))
+func (_IJsonutils *IJsonutilsCaller) UnmarshalToObject(opts *bind.CallOpts, json_bytes []byte) (IJSONUtilsJSONObject, error) {
+	var out []interface{}
+	err := _IJsonutils.contract.Call(opts, &out, "unmarshal_to_object", json_bytes)
+
+	if err != nil {
+		return *new(IJSONUtilsJSONObject), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(IJSONUtilsJSONObject)).(*IJSONUtilsJSONObject)
+
+	return out0, err
+
+}
+
+// UnmarshalToObject is a free data retrieval call binding the contract method 0x48ad3c3a.
+//
+// Solidity: function unmarshal_to_object(bytes json_bytes) view returns(((string,bytes)[]))
+func (_IJsonutils *IJsonutilsSession) UnmarshalToObject(json_bytes []byte) (IJSONUtilsJSONObject, error) {
+	return _IJsonutils.Contract.UnmarshalToObject(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToObject is a free data retrieval call binding the contract method 0x48ad3c3a.
+//
+// Solidity: function unmarshal_to_object(bytes json_bytes) view returns(((string,bytes)[]))
+func (_IJsonutils *IJsonutilsCallerSession) UnmarshalToObject(json_bytes []byte) (IJSONUtilsJSONObject, error) {
+	return _IJsonutils.Contract.UnmarshalToObject(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToString is a free data retrieval call binding the contract method 0x532478ad.
+//
+// Solidity: function unmarshal_to_string(bytes json_bytes) view returns(string)
+func (_IJsonutils *IJsonutilsCaller) UnmarshalToString(opts *bind.CallOpts, json_bytes []byte) (string, error) {
+	var out []interface{}
+	err := _IJsonutils.contract.Call(opts, &out, "unmarshal_to_string", json_bytes)
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// UnmarshalToString is a free data retrieval call binding the contract method 0x532478ad.
+//
+// Solidity: function unmarshal_to_string(bytes json_bytes) view returns(string)
+func (_IJsonutils *IJsonutilsSession) UnmarshalToString(json_bytes []byte) (string, error) {
+	return _IJsonutils.Contract.UnmarshalToString(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToString is a free data retrieval call binding the contract method 0x532478ad.
+//
+// Solidity: function unmarshal_to_string(bytes json_bytes) view returns(string)
+func (_IJsonutils *IJsonutilsCallerSession) UnmarshalToString(json_bytes []byte) (string, error) {
+	return _IJsonutils.Contract.UnmarshalToString(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToUint is a free data retrieval call binding the contract method 0x85989f68.
+//
+// Solidity: function unmarshal_to_uint(bytes json_bytes) view returns(uint256)
+func (_IJsonutils *IJsonutilsCaller) UnmarshalToUint(opts *bind.CallOpts, json_bytes []byte) (*big.Int, error) {
+	var out []interface{}
+	err := _IJsonutils.contract.Call(opts, &out, "unmarshal_to_uint", json_bytes)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// UnmarshalToUint is a free data retrieval call binding the contract method 0x85989f68.
+//
+// Solidity: function unmarshal_to_uint(bytes json_bytes) view returns(uint256)
+func (_IJsonutils *IJsonutilsSession) UnmarshalToUint(json_bytes []byte) (*big.Int, error) {
+	return _IJsonutils.Contract.UnmarshalToUint(&_IJsonutils.CallOpts, json_bytes)
+}
+
+// UnmarshalToUint is a free data retrieval call binding the contract method 0x85989f68.
+//
+// Solidity: function unmarshal_to_uint(bytes json_bytes) view returns(uint256)
+func (_IJsonutils *IJsonutilsCallerSession) UnmarshalToUint(json_bytes []byte) (*big.Int, error) {
+	return _IJsonutils.Contract.UnmarshalToUint(&_IJsonutils.CallOpts, json_bytes)
 }

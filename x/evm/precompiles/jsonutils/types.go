@@ -13,9 +13,14 @@ type StringifyArguments struct {
 	JSON string `abi:"json"`
 }
 
+type UnmarshalJSONArguments struct {
+	JSONBytes []byte `abi:"json_bytes"`
+}
+
 const (
 	MERGE_GAS          storetypes.Gas = 100
 	STRINGIFY_JSON_GAS storetypes.Gas = 100
+	UNMARSHAL_JSON_GAS storetypes.Gas = 100
 
 	GAS_PER_BYTE storetypes.Gas = 1
 

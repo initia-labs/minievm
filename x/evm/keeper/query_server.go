@@ -168,6 +168,18 @@ func (qs *queryServerImpl) ERC20Wrapper(ctx context.Context, req *types.QueryERC
 	}, nil
 }
 
+// ConnectOracle implements types.QueryServer.
+func (qs *queryServerImpl) ConnectOracle(ctx context.Context, req *types.QueryConnectOracleRequest) (*types.QueryConnectOracleResponse, error) {
+	oracle, err := qs.Keeper.GetConnectOracleAddr(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryConnectOracleResponse{
+		Address: oracle.Hex(),
+	}, nil
+}
+
 // ContractAddrByDenom implements types.QueryServer.
 func (qs *queryServerImpl) ContractAddrByDenom(ctx context.Context, req *types.QueryContractAddrByDenomRequest) (*types.QueryContractAddrByDenomResponse, error) {
 	contractAddr, err := types.DenomToContractAddr(ctx, qs, req.Denom)

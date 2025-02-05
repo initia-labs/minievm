@@ -49,9 +49,11 @@ type Keeper struct {
 	Params  collections.Item[types.Params]
 	VMStore collections.Map[[]byte, []byte]
 
+	ERC20FactoryAddr  collections.Item[[]byte]
+	ERC20WrapperAddr  collections.Item[[]byte]
+	ConnectOracleAddr collections.Item[[]byte]
+
 	// erc20 stores of users
-	ERC20FactoryAddr          collections.Item[[]byte]
-	ERC20WrapperAddr          collections.Item[[]byte]
 	ERC20s                    collections.KeySet[[]byte]
 	ERC20Stores               collections.KeySet[collections.Pair[[]byte, []byte]]
 	ERC20DenomsByContractAddr collections.Map[[]byte, string]
@@ -117,8 +119,10 @@ func NewKeeper(
 		Params:  collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		VMStore: collections.NewMap(sb, types.VMStorePrefix, "vm_store", collections.BytesKey, collections.BytesValue),
 
-		ERC20WrapperAddr:          collections.NewItem(sb, types.ERC20WrapperAddrKey, "erc20_wrapper_addr", collections.BytesValue),
-		ERC20FactoryAddr:          collections.NewItem(sb, types.ERC20FactoryAddrKey, "erc20_factory_addr", collections.BytesValue),
+		ERC20WrapperAddr:  collections.NewItem(sb, types.ERC20WrapperAddrKey, "erc20_wrapper_addr", collections.BytesValue),
+		ERC20FactoryAddr:  collections.NewItem(sb, types.ERC20FactoryAddrKey, "erc20_factory_addr", collections.BytesValue),
+		ConnectOracleAddr: collections.NewItem(sb, types.ConnectOracleAddrKey, "connect_oracle_addr", collections.BytesValue),
+
 		ERC20s:                    collections.NewKeySet(sb, types.ERC20sPrefix, "erc20s", collections.BytesKey),
 		ERC20Stores:               collections.NewKeySet(sb, types.ERC20StoresPrefix, "erc20_stores", collections.PairKeyCodec(collections.BytesKey, collections.BytesKey)),
 		ERC20DenomsByContractAddr: collections.NewMap(sb, types.ERC20DenomsByContractAddrPrefix, "erc20_denoms_by_contract_addr", collections.BytesKey, collections.StringValue),
@@ -265,6 +269,15 @@ func (k Keeper) GetERC20WrapperAddr(ctx context.Context) (common.Address, error)
 	}
 
 	return common.BytesToAddress(wrapperAddr), nil
+}
+
+func (k Keeper) GetConnectOracleAddr(ctx context.Context) (common.Address, error) {
+	connectOracleAddr, err := k.ConnectOracleAddr.Get(ctx)
+	if err != nil {
+		return common.Address{}, types.ErrFailedToGetConnectOracleAddr.Wrap(err.Error())
+	}
+
+	return common.BytesToAddress(connectOracleAddr), nil
 }
 
 // keep track recent `NumRetainBlockHashes` block hashes
