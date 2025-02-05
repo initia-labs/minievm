@@ -158,6 +158,9 @@ func (e *JSONUtilsPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, s
 			i++
 		}
 
+		// charge sort cost
+		ctx.GasMeter().ConsumeGas(storetypes.Gas(len(jsonElements))*GAS_PER_SORT_ITEM, "sort items")
+
 		// sort by key
 		slices.SortFunc(jsonElements, func(a, b i_jsonutils.IJSONUtilsJSONElement) int {
 			return strings.Compare(a.Key, b.Key)

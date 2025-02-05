@@ -22,7 +22,8 @@ const (
 	STRINGIFY_JSON_GAS storetypes.Gas = 100
 	UNMARSHAL_JSON_GAS storetypes.Gas = 100
 
-	GAS_PER_BYTE storetypes.Gas = 1
+	GAS_PER_BYTE      storetypes.Gas = 1
+	GAS_PER_SORT_ITEM storetypes.Gas = 10
 
 	MaxDepth    = 16
 	MaxJSONSize = 10 * 1024

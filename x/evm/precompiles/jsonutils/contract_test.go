@@ -225,7 +225,7 @@ func Test_JSONUtilsPrecompile_UnmarshalToObject(t *testing.T) {
 			_, _, err = contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
 			require.ErrorIs(t, err, vm.ErrOutOfGas)
 
-			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz)), false)
+			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz))+100, false)
 			if tc.expectedErr {
 				require.Error(t, err)
 				return
