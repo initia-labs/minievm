@@ -3312,6 +3312,782 @@ func (x *fastReflection_QueryERC20WrapperResponse) ProtoMethods() *protoiface.Me
 }
 
 var (
+	md_QueryConnectOracleRequest protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_query_proto_init()
+	md_QueryConnectOracleRequest = File_minievm_evm_v1_query_proto.Messages().ByName("QueryConnectOracleRequest")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryConnectOracleRequest)(nil)
+
+type fastReflection_QueryConnectOracleRequest QueryConnectOracleRequest
+
+func (x *QueryConnectOracleRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryConnectOracleRequest)(x)
+}
+
+func (x *QueryConnectOracleRequest) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryConnectOracleRequest_messageType fastReflection_QueryConnectOracleRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryConnectOracleRequest_messageType{}
+
+type fastReflection_QueryConnectOracleRequest_messageType struct{}
+
+func (x fastReflection_QueryConnectOracleRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryConnectOracleRequest)(nil)
+}
+func (x fastReflection_QueryConnectOracleRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryConnectOracleRequest)
+}
+func (x fastReflection_QueryConnectOracleRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryConnectOracleRequest
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryConnectOracleRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryConnectOracleRequest
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryConnectOracleRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryConnectOracleRequest_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryConnectOracleRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryConnectOracleRequest)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryConnectOracleRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryConnectOracleRequest)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryConnectOracleRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryConnectOracleRequest) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleRequest) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryConnectOracleRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleRequest does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryConnectOracleRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryConnectOracleRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.QueryConnectOracleRequest", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryConnectOracleRequest) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleRequest) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryConnectOracleRequest) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryConnectOracleRequest) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryConnectOracleRequest)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryConnectOracleRequest)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryConnectOracleRequest)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryConnectOracleRequest: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryConnectOracleRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_QueryConnectOracleResponse         protoreflect.MessageDescriptor
+	fd_QueryConnectOracleResponse_address protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_query_proto_init()
+	md_QueryConnectOracleResponse = File_minievm_evm_v1_query_proto.Messages().ByName("QueryConnectOracleResponse")
+	fd_QueryConnectOracleResponse_address = md_QueryConnectOracleResponse.Fields().ByName("address")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryConnectOracleResponse)(nil)
+
+type fastReflection_QueryConnectOracleResponse QueryConnectOracleResponse
+
+func (x *QueryConnectOracleResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryConnectOracleResponse)(x)
+}
+
+func (x *QueryConnectOracleResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryConnectOracleResponse_messageType fastReflection_QueryConnectOracleResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryConnectOracleResponse_messageType{}
+
+type fastReflection_QueryConnectOracleResponse_messageType struct{}
+
+func (x fastReflection_QueryConnectOracleResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryConnectOracleResponse)(nil)
+}
+func (x fastReflection_QueryConnectOracleResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryConnectOracleResponse)
+}
+func (x fastReflection_QueryConnectOracleResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryConnectOracleResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryConnectOracleResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryConnectOracleResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryConnectOracleResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryConnectOracleResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryConnectOracleResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryConnectOracleResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryConnectOracleResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryConnectOracleResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryConnectOracleResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Address != "" {
+		value := protoreflect.ValueOfString(x.Address)
+		if !f(fd_QueryConnectOracleResponse_address, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryConnectOracleResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryConnectOracleResponse.address":
+		return x.Address != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryConnectOracleResponse.address":
+		x.Address = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryConnectOracleResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.QueryConnectOracleResponse.address":
+		value := x.Address
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryConnectOracleResponse.address":
+		x.Address = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryConnectOracleResponse.address":
+		panic(fmt.Errorf("field address of message minievm.evm.v1.QueryConnectOracleResponse is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryConnectOracleResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryConnectOracleResponse.address":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryConnectOracleResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryConnectOracleResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryConnectOracleResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.QueryConnectOracleResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryConnectOracleResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryConnectOracleResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryConnectOracleResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryConnectOracleResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryConnectOracleResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Address)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryConnectOracleResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.Address) > 0 {
+			i -= len(x.Address)
+			copy(dAtA[i:], x.Address)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Address)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryConnectOracleResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryConnectOracleResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryConnectOracleResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Address = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
 	md_QueryContractAddrByDenomRequest       protoreflect.MessageDescriptor
 	fd_QueryContractAddrByDenomRequest_denom protoreflect.FieldDescriptor
 )
@@ -3331,7 +4107,7 @@ func (x *QueryContractAddrByDenomRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryContractAddrByDenomRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[8]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3751,7 +4527,7 @@ func (x *QueryContractAddrByDenomResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryContractAddrByDenomResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[9]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4171,7 +4947,7 @@ func (x *QueryDenomRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryDenomRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[10]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4591,7 +5367,7 @@ func (x *QueryDenomResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryDenomResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[11]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5019,7 +5795,7 @@ func (x *QueryCallRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryCallRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[12]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5708,7 +6484,7 @@ func (x *TraceOptions) ProtoReflect() protoreflect.Message {
 }
 
 func (x *TraceOptions) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[13]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6333,7 +7109,7 @@ func (x *QueryCallResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryCallResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[14]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6989,6 +7765,1884 @@ func (x *fastReflection_QueryCallResponse) ProtoMethods() *protoiface.Methods {
 }
 
 var (
+	md_QueryERC721ClassIdByContractAddrRequest               protoreflect.MessageDescriptor
+	fd_QueryERC721ClassIdByContractAddrRequest_contract_addr protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_query_proto_init()
+	md_QueryERC721ClassIdByContractAddrRequest = File_minievm_evm_v1_query_proto.Messages().ByName("QueryERC721ClassIdByContractAddrRequest")
+	fd_QueryERC721ClassIdByContractAddrRequest_contract_addr = md_QueryERC721ClassIdByContractAddrRequest.Fields().ByName("contract_addr")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryERC721ClassIdByContractAddrRequest)(nil)
+
+type fastReflection_QueryERC721ClassIdByContractAddrRequest QueryERC721ClassIdByContractAddrRequest
+
+func (x *QueryERC721ClassIdByContractAddrRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryERC721ClassIdByContractAddrRequest)(x)
+}
+
+func (x *QueryERC721ClassIdByContractAddrRequest) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType{}
+
+type fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType struct{}
+
+func (x fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryERC721ClassIdByContractAddrRequest)(nil)
+}
+func (x fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721ClassIdByContractAddrRequest)
+}
+func (x fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721ClassIdByContractAddrRequest
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721ClassIdByContractAddrRequest
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryERC721ClassIdByContractAddrRequest_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721ClassIdByContractAddrRequest)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryERC721ClassIdByContractAddrRequest)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ContractAddr != "" {
+		value := protoreflect.ValueOfString(x.ContractAddr)
+		if !f(fd_QueryERC721ClassIdByContractAddrRequest_contract_addr, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest.contract_addr":
+		return x.ContractAddr != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest.contract_addr":
+		x.ContractAddr = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest.contract_addr":
+		value := x.ContractAddr
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest.contract_addr":
+		x.ContractAddr = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest.contract_addr":
+		panic(fmt.Errorf("field contract_addr of message minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest.contract_addr":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrRequest) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryERC721ClassIdByContractAddrRequest)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.ContractAddr)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721ClassIdByContractAddrRequest)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.ContractAddr) > 0 {
+			i -= len(x.ContractAddr)
+			copy(dAtA[i:], x.ContractAddr)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ContractAddr)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721ClassIdByContractAddrRequest)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721ClassIdByContractAddrRequest: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721ClassIdByContractAddrRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ContractAddr", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ContractAddr = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_QueryERC721ClassIdByContractAddrResponse          protoreflect.MessageDescriptor
+	fd_QueryERC721ClassIdByContractAddrResponse_class_id protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_query_proto_init()
+	md_QueryERC721ClassIdByContractAddrResponse = File_minievm_evm_v1_query_proto.Messages().ByName("QueryERC721ClassIdByContractAddrResponse")
+	fd_QueryERC721ClassIdByContractAddrResponse_class_id = md_QueryERC721ClassIdByContractAddrResponse.Fields().ByName("class_id")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryERC721ClassIdByContractAddrResponse)(nil)
+
+type fastReflection_QueryERC721ClassIdByContractAddrResponse QueryERC721ClassIdByContractAddrResponse
+
+func (x *QueryERC721ClassIdByContractAddrResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryERC721ClassIdByContractAddrResponse)(x)
+}
+
+func (x *QueryERC721ClassIdByContractAddrResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType{}
+
+type fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType struct{}
+
+func (x fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryERC721ClassIdByContractAddrResponse)(nil)
+}
+func (x fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721ClassIdByContractAddrResponse)
+}
+func (x fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721ClassIdByContractAddrResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721ClassIdByContractAddrResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryERC721ClassIdByContractAddrResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721ClassIdByContractAddrResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryERC721ClassIdByContractAddrResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ClassId != "" {
+		value := protoreflect.ValueOfString(x.ClassId)
+		if !f(fd_QueryERC721ClassIdByContractAddrResponse_class_id, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse.class_id":
+		return x.ClassId != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse.class_id":
+		x.ClassId = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse.class_id":
+		value := x.ClassId
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse.class_id":
+		x.ClassId = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse.class_id":
+		panic(fmt.Errorf("field class_id of message minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse.class_id":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryERC721ClassIdByContractAddrResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryERC721ClassIdByContractAddrResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.ClassId)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721ClassIdByContractAddrResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.ClassId) > 0 {
+			i -= len(x.ClassId)
+			copy(dAtA[i:], x.ClassId)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ClassId)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721ClassIdByContractAddrResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721ClassIdByContractAddrResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721ClassIdByContractAddrResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClassId", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ClassId = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var _ protoreflect.List = (*_QueryERC721OriginTokenInfosRequest_2_list)(nil)
+
+type _QueryERC721OriginTokenInfosRequest_2_list struct {
+	list *[]string
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfString((*x.list)[i])
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message QueryERC721OriginTokenInfosRequest at list field TokenIds as it is not of Message kind"))
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) Truncate(n int) {
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) NewElement() protoreflect.Value {
+	v := ""
+	return protoreflect.ValueOfString(v)
+}
+
+func (x *_QueryERC721OriginTokenInfosRequest_2_list) IsValid() bool {
+	return x.list != nil
+}
+
+var (
+	md_QueryERC721OriginTokenInfosRequest           protoreflect.MessageDescriptor
+	fd_QueryERC721OriginTokenInfosRequest_class_id  protoreflect.FieldDescriptor
+	fd_QueryERC721OriginTokenInfosRequest_token_ids protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_query_proto_init()
+	md_QueryERC721OriginTokenInfosRequest = File_minievm_evm_v1_query_proto.Messages().ByName("QueryERC721OriginTokenInfosRequest")
+	fd_QueryERC721OriginTokenInfosRequest_class_id = md_QueryERC721OriginTokenInfosRequest.Fields().ByName("class_id")
+	fd_QueryERC721OriginTokenInfosRequest_token_ids = md_QueryERC721OriginTokenInfosRequest.Fields().ByName("token_ids")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryERC721OriginTokenInfosRequest)(nil)
+
+type fastReflection_QueryERC721OriginTokenInfosRequest QueryERC721OriginTokenInfosRequest
+
+func (x *QueryERC721OriginTokenInfosRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryERC721OriginTokenInfosRequest)(x)
+}
+
+func (x *QueryERC721OriginTokenInfosRequest) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryERC721OriginTokenInfosRequest_messageType fastReflection_QueryERC721OriginTokenInfosRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryERC721OriginTokenInfosRequest_messageType{}
+
+type fastReflection_QueryERC721OriginTokenInfosRequest_messageType struct{}
+
+func (x fastReflection_QueryERC721OriginTokenInfosRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryERC721OriginTokenInfosRequest)(nil)
+}
+func (x fastReflection_QueryERC721OriginTokenInfosRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721OriginTokenInfosRequest)
+}
+func (x fastReflection_QueryERC721OriginTokenInfosRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721OriginTokenInfosRequest
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721OriginTokenInfosRequest
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryERC721OriginTokenInfosRequest_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721OriginTokenInfosRequest)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryERC721OriginTokenInfosRequest)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ClassId != "" {
+		value := protoreflect.ValueOfString(x.ClassId)
+		if !f(fd_QueryERC721OriginTokenInfosRequest_class_id, value) {
+			return
+		}
+	}
+	if len(x.TokenIds) != 0 {
+		value := protoreflect.ValueOfList(&_QueryERC721OriginTokenInfosRequest_2_list{list: &x.TokenIds})
+		if !f(fd_QueryERC721OriginTokenInfosRequest_token_ids, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.class_id":
+		return x.ClassId != ""
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.token_ids":
+		return len(x.TokenIds) != 0
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.class_id":
+		x.ClassId = ""
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.token_ids":
+		x.TokenIds = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.class_id":
+		value := x.ClassId
+		return protoreflect.ValueOfString(value)
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.token_ids":
+		if len(x.TokenIds) == 0 {
+			return protoreflect.ValueOfList(&_QueryERC721OriginTokenInfosRequest_2_list{})
+		}
+		listValue := &_QueryERC721OriginTokenInfosRequest_2_list{list: &x.TokenIds}
+		return protoreflect.ValueOfList(listValue)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosRequest does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.class_id":
+		x.ClassId = value.Interface().(string)
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.token_ids":
+		lv := value.List()
+		clv := lv.(*_QueryERC721OriginTokenInfosRequest_2_list)
+		x.TokenIds = *clv.list
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.token_ids":
+		if x.TokenIds == nil {
+			x.TokenIds = []string{}
+		}
+		value := &_QueryERC721OriginTokenInfosRequest_2_list{list: &x.TokenIds}
+		return protoreflect.ValueOfList(value)
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.class_id":
+		panic(fmt.Errorf("field class_id of message minievm.evm.v1.QueryERC721OriginTokenInfosRequest is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.class_id":
+		return protoreflect.ValueOfString("")
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosRequest.token_ids":
+		list := []string{}
+		return protoreflect.ValueOfList(&_QueryERC721OriginTokenInfosRequest_2_list{list: &list})
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosRequest"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.QueryERC721OriginTokenInfosRequest", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryERC721OriginTokenInfosRequest) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryERC721OriginTokenInfosRequest)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.ClassId)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if len(x.TokenIds) > 0 {
+			for _, s := range x.TokenIds {
+				l = len(s)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721OriginTokenInfosRequest)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.TokenIds) > 0 {
+			for iNdEx := len(x.TokenIds) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.TokenIds[iNdEx])
+				copy(dAtA[i:], x.TokenIds[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TokenIds[iNdEx])))
+				i--
+				dAtA[i] = 0x12
+			}
+		}
+		if len(x.ClassId) > 0 {
+			i -= len(x.ClassId)
+			copy(dAtA[i:], x.ClassId)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ClassId)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721OriginTokenInfosRequest)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721OriginTokenInfosRequest: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721OriginTokenInfosRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClassId", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ClassId = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenIds", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TokenIds = append(x.TokenIds, string(dAtA[iNdEx:postIndex]))
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var _ protoreflect.List = (*_QueryERC721OriginTokenInfosResponse_1_list)(nil)
+
+type _QueryERC721OriginTokenInfosResponse_1_list struct {
+	list *[]*ERC721OriginTokenInfo
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*ERC721OriginTokenInfo)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*ERC721OriginTokenInfo)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) AppendMutable() protoreflect.Value {
+	v := new(ERC721OriginTokenInfo)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) NewElement() protoreflect.Value {
+	v := new(ERC721OriginTokenInfo)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_QueryERC721OriginTokenInfosResponse_1_list) IsValid() bool {
+	return x.list != nil
+}
+
+var (
+	md_QueryERC721OriginTokenInfosResponse             protoreflect.MessageDescriptor
+	fd_QueryERC721OriginTokenInfosResponse_token_infos protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_query_proto_init()
+	md_QueryERC721OriginTokenInfosResponse = File_minievm_evm_v1_query_proto.Messages().ByName("QueryERC721OriginTokenInfosResponse")
+	fd_QueryERC721OriginTokenInfosResponse_token_infos = md_QueryERC721OriginTokenInfosResponse.Fields().ByName("token_infos")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryERC721OriginTokenInfosResponse)(nil)
+
+type fastReflection_QueryERC721OriginTokenInfosResponse QueryERC721OriginTokenInfosResponse
+
+func (x *QueryERC721OriginTokenInfosResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryERC721OriginTokenInfosResponse)(x)
+}
+
+func (x *QueryERC721OriginTokenInfosResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryERC721OriginTokenInfosResponse_messageType fastReflection_QueryERC721OriginTokenInfosResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryERC721OriginTokenInfosResponse_messageType{}
+
+type fastReflection_QueryERC721OriginTokenInfosResponse_messageType struct{}
+
+func (x fastReflection_QueryERC721OriginTokenInfosResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryERC721OriginTokenInfosResponse)(nil)
+}
+func (x fastReflection_QueryERC721OriginTokenInfosResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721OriginTokenInfosResponse)
+}
+func (x fastReflection_QueryERC721OriginTokenInfosResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721OriginTokenInfosResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryERC721OriginTokenInfosResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryERC721OriginTokenInfosResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryERC721OriginTokenInfosResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryERC721OriginTokenInfosResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.TokenInfos) != 0 {
+		value := protoreflect.ValueOfList(&_QueryERC721OriginTokenInfosResponse_1_list{list: &x.TokenInfos})
+		if !f(fd_QueryERC721OriginTokenInfosResponse_token_infos, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosResponse.token_infos":
+		return len(x.TokenInfos) != 0
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosResponse.token_infos":
+		x.TokenInfos = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosResponse.token_infos":
+		if len(x.TokenInfos) == 0 {
+			return protoreflect.ValueOfList(&_QueryERC721OriginTokenInfosResponse_1_list{})
+		}
+		listValue := &_QueryERC721OriginTokenInfosResponse_1_list{list: &x.TokenInfos}
+		return protoreflect.ValueOfList(listValue)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosResponse.token_infos":
+		lv := value.List()
+		clv := lv.(*_QueryERC721OriginTokenInfosResponse_1_list)
+		x.TokenInfos = *clv.list
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosResponse.token_infos":
+		if x.TokenInfos == nil {
+			x.TokenInfos = []*ERC721OriginTokenInfo{}
+		}
+		value := &_QueryERC721OriginTokenInfosResponse_1_list{list: &x.TokenInfos}
+		return protoreflect.ValueOfList(value)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.QueryERC721OriginTokenInfosResponse.token_infos":
+		list := []*ERC721OriginTokenInfo{}
+		return protoreflect.ValueOfList(&_QueryERC721OriginTokenInfosResponse_1_list{list: &list})
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.QueryERC721OriginTokenInfosResponse"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.QueryERC721OriginTokenInfosResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.QueryERC721OriginTokenInfosResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryERC721OriginTokenInfosResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryERC721OriginTokenInfosResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if len(x.TokenInfos) > 0 {
+			for _, e := range x.TokenInfos {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721OriginTokenInfosResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.TokenInfos) > 0 {
+			for iNdEx := len(x.TokenInfos) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.TokenInfos[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0xa
+			}
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryERC721OriginTokenInfosResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721OriginTokenInfosResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryERC721OriginTokenInfosResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenInfos", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TokenInfos = append(x.TokenInfos, &ERC721OriginTokenInfo{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TokenInfos[len(x.TokenInfos)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
 	md_QueryParamsRequest protoreflect.MessageDescriptor
 )
 
@@ -7006,7 +9660,7 @@ func (x *QueryParamsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryParamsRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[15]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7364,7 +10018,7 @@ func (x *QueryParamsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryParamsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_minievm_evm_v1_query_proto_msgTypes[16]
+	mi := &file_minievm_evm_v1_query_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8084,6 +10738,72 @@ func (x *QueryERC20WrapperResponse) GetAddress() string {
 	return ""
 }
 
+// QueryConnectOracleRequest is the request type for the Query/ConnectOracle RPC
+// method
+type QueryConnectOracleRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *QueryConnectOracleRequest) Reset() {
+	*x = QueryConnectOracleRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryConnectOracleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryConnectOracleRequest) ProtoMessage() {}
+
+// Deprecated: Use QueryConnectOracleRequest.ProtoReflect.Descriptor instead.
+func (*QueryConnectOracleRequest) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{8}
+}
+
+// QueryConnectOracleResponse is the response type for the Query/ConnectOracle RPC
+// method
+type QueryConnectOracleResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// 0x prefixed hex address
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+}
+
+func (x *QueryConnectOracleResponse) Reset() {
+	*x = QueryConnectOracleResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryConnectOracleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryConnectOracleResponse) ProtoMessage() {}
+
+// Deprecated: Use QueryConnectOracleResponse.ProtoReflect.Descriptor instead.
+func (*QueryConnectOracleResponse) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *QueryConnectOracleResponse) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
 // QueryContractAddrByDenomRequest is the request type for the Query/ContractAddrByDenom RPC
 // method
 type QueryContractAddrByDenomRequest struct {
@@ -8097,7 +10817,7 @@ type QueryContractAddrByDenomRequest struct {
 func (x *QueryContractAddrByDenomRequest) Reset() {
 	*x = QueryContractAddrByDenomRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[8]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8111,7 +10831,7 @@ func (*QueryContractAddrByDenomRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryContractAddrByDenomRequest.ProtoReflect.Descriptor instead.
 func (*QueryContractAddrByDenomRequest) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{8}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *QueryContractAddrByDenomRequest) GetDenom() string {
@@ -8135,7 +10855,7 @@ type QueryContractAddrByDenomResponse struct {
 func (x *QueryContractAddrByDenomResponse) Reset() {
 	*x = QueryContractAddrByDenomResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[9]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8149,7 +10869,7 @@ func (*QueryContractAddrByDenomResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryContractAddrByDenomResponse.ProtoReflect.Descriptor instead.
 func (*QueryContractAddrByDenomResponse) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{9}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *QueryContractAddrByDenomResponse) GetAddress() string {
@@ -8173,7 +10893,7 @@ type QueryDenomRequest struct {
 func (x *QueryDenomRequest) Reset() {
 	*x = QueryDenomRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[10]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8187,7 +10907,7 @@ func (*QueryDenomRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryDenomRequest.ProtoReflect.Descriptor instead.
 func (*QueryDenomRequest) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{10}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *QueryDenomRequest) GetContractAddr() string {
@@ -8210,7 +10930,7 @@ type QueryDenomResponse struct {
 func (x *QueryDenomResponse) Reset() {
 	*x = QueryDenomResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[11]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8224,7 +10944,7 @@ func (*QueryDenomResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryDenomResponse.ProtoReflect.Descriptor instead.
 func (*QueryDenomResponse) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{11}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *QueryDenomResponse) GetDenom() string {
@@ -8257,7 +10977,7 @@ type QueryCallRequest struct {
 func (x *QueryCallRequest) Reset() {
 	*x = QueryCallRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[12]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8271,7 +10991,7 @@ func (*QueryCallRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryCallRequest.ProtoReflect.Descriptor instead.
 func (*QueryCallRequest) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{12}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *QueryCallRequest) GetSender() string {
@@ -8328,7 +11048,7 @@ type TraceOptions struct {
 func (x *TraceOptions) Reset() {
 	*x = TraceOptions{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[13]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8342,7 +11062,7 @@ func (*TraceOptions) ProtoMessage() {}
 
 // Deprecated: Use TraceOptions.ProtoReflect.Descriptor instead.
 func (*TraceOptions) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{13}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *TraceOptions) GetWithMemory() bool {
@@ -8391,7 +11111,7 @@ type QueryCallResponse struct {
 func (x *QueryCallResponse) Reset() {
 	*x = QueryCallResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[14]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8405,7 +11125,7 @@ func (*QueryCallResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryCallResponse.ProtoReflect.Descriptor instead.
 func (*QueryCallResponse) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{14}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *QueryCallResponse) GetResponse() string {
@@ -8443,6 +11163,162 @@ func (x *QueryCallResponse) GetError() string {
 	return ""
 }
 
+// QueryERC721ClassIdsByContractAddrRequest is the request type for the Query/ERC721ClassIdsByContractAddr RPC
+// method
+type QueryERC721ClassIdByContractAddrRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ContractAddr string `protobuf:"bytes,1,opt,name=contract_addr,json=contractAddr,proto3" json:"contract_addr,omitempty"`
+}
+
+func (x *QueryERC721ClassIdByContractAddrRequest) Reset() {
+	*x = QueryERC721ClassIdByContractAddrRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryERC721ClassIdByContractAddrRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryERC721ClassIdByContractAddrRequest) ProtoMessage() {}
+
+// Deprecated: Use QueryERC721ClassIdByContractAddrRequest.ProtoReflect.Descriptor instead.
+func (*QueryERC721ClassIdByContractAddrRequest) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *QueryERC721ClassIdByContractAddrRequest) GetContractAddr() string {
+	if x != nil {
+		return x.ContractAddr
+	}
+	return ""
+}
+
+// QueryERC721ClassIdsByContractAddrResponse is the response type for the Query/ERC721ClassIdsByContractAddr RPC
+// method
+type QueryERC721ClassIdByContractAddrResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ClassId string `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+}
+
+func (x *QueryERC721ClassIdByContractAddrResponse) Reset() {
+	*x = QueryERC721ClassIdByContractAddrResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryERC721ClassIdByContractAddrResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryERC721ClassIdByContractAddrResponse) ProtoMessage() {}
+
+// Deprecated: Use QueryERC721ClassIdByContractAddrResponse.ProtoReflect.Descriptor instead.
+func (*QueryERC721ClassIdByContractAddrResponse) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *QueryERC721ClassIdByContractAddrResponse) GetClassId() string {
+	if x != nil {
+		return x.ClassId
+	}
+	return ""
+}
+
+// QueryERC721OriginTokenInfosRequest is the request type for the Query/ERC721OriginTokenInfos RPC
+// method
+type QueryERC721OriginTokenInfosRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ClassId  string   `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	TokenIds []string `protobuf:"bytes,2,rep,name=token_ids,json=tokenIds,proto3" json:"token_ids,omitempty"`
+}
+
+func (x *QueryERC721OriginTokenInfosRequest) Reset() {
+	*x = QueryERC721OriginTokenInfosRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryERC721OriginTokenInfosRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryERC721OriginTokenInfosRequest) ProtoMessage() {}
+
+// Deprecated: Use QueryERC721OriginTokenInfosRequest.ProtoReflect.Descriptor instead.
+func (*QueryERC721OriginTokenInfosRequest) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *QueryERC721OriginTokenInfosRequest) GetClassId() string {
+	if x != nil {
+		return x.ClassId
+	}
+	return ""
+}
+
+func (x *QueryERC721OriginTokenInfosRequest) GetTokenIds() []string {
+	if x != nil {
+		return x.TokenIds
+	}
+	return nil
+}
+
+// QueryERC721OriginTokenInfosResponse is the response type for the Query/ERC721OriginTokenInfos RPC
+// method
+type QueryERC721OriginTokenInfosResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TokenInfos []*ERC721OriginTokenInfo `protobuf:"bytes,1,rep,name=token_infos,json=tokenInfos,proto3" json:"token_infos,omitempty"`
+}
+
+func (x *QueryERC721OriginTokenInfosResponse) Reset() {
+	*x = QueryERC721OriginTokenInfosResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryERC721OriginTokenInfosResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryERC721OriginTokenInfosResponse) ProtoMessage() {}
+
+// Deprecated: Use QueryERC721OriginTokenInfosResponse.ProtoReflect.Descriptor instead.
+func (*QueryERC721OriginTokenInfosResponse) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *QueryERC721OriginTokenInfosResponse) GetTokenInfos() []*ERC721OriginTokenInfo {
+	if x != nil {
+		return x.TokenInfos
+	}
+	return nil
+}
+
 // QueryParamsRequest is the request type for the Query/Params RPC method.
 type QueryParamsRequest struct {
 	state         protoimpl.MessageState
@@ -8453,7 +11329,7 @@ type QueryParamsRequest struct {
 func (x *QueryParamsRequest) Reset() {
 	*x = QueryParamsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[15]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8467,7 +11343,7 @@ func (*QueryParamsRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryParamsRequest.ProtoReflect.Descriptor instead.
 func (*QueryParamsRequest) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{15}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{21}
 }
 
 // QueryParamsResponse is the response type for the Query/Params RPC method.
@@ -8483,7 +11359,7 @@ type QueryParamsResponse struct {
 func (x *QueryParamsResponse) Reset() {
 	*x = QueryParamsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_minievm_evm_v1_query_proto_msgTypes[16]
+		mi := &file_minievm_evm_v1_query_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8497,7 +11373,7 @@ func (*QueryParamsResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryParamsResponse.ProtoReflect.Descriptor instead.
 func (*QueryParamsResponse) Descriptor() ([]byte, []int) {
-	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{16}
+	return file_minievm_evm_v1_query_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *QueryParamsResponse) GetParams() *Params {
@@ -8544,99 +11420,136 @@ var file_minievm_evm_v1_query_proto_rawDesc = []byte{
 	0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x32, 0x30, 0x57, 0x72, 0x61, 0x70, 0x70, 0x65, 0x72, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65,
 	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0x37, 0x0a, 0x1f, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x42, 0x79, 0x44, 0x65,
-	0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65,
-	0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d,
-	0x22, 0x42, 0x0a, 0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63,
-	0x74, 0x41, 0x64, 0x64, 0x72, 0x42, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x3a, 0x04,
-	0xe8, 0xa0, 0x1f, 0x01, 0x22, 0x38, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x65, 0x6e,
-	0x6f, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e,
-	0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x22, 0x30,
-	0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01,
-	0x22, 0xe2, 0x01, 0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x23, 0x0a,
-	0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64,
-	0x64, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x05, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x12, 0x38, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75,
-	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x22, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
-	0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
-	0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x05, 0x76, 0x61, 0x6c,
-	0x75, 0x65, 0x12, 0x41, 0x0a, 0x0d, 0x74, 0x72, 0x61, 0x63, 0x65, 0x5f, 0x6f, 0x70, 0x74, 0x69,
-	0x6f, 0x6e, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6d, 0x69, 0x6e, 0x69,
-	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x72, 0x61, 0x63, 0x65,
-	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x0c, 0x74, 0x72, 0x61, 0x63, 0x65, 0x4f, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x9b, 0x01, 0x0a, 0x0c, 0x54, 0x72, 0x61, 0x63, 0x65, 0x4f,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x77, 0x69, 0x74, 0x68, 0x5f, 0x6d,
-	0x65, 0x6d, 0x6f, 0x72, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x77, 0x69, 0x74,
-	0x68, 0x4d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x12, 0x1d, 0x0a, 0x0a, 0x77, 0x69, 0x74, 0x68, 0x5f,
-	0x73, 0x74, 0x61, 0x63, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09, 0x77, 0x69, 0x74,
-	0x68, 0x53, 0x74, 0x61, 0x63, 0x6b, 0x12, 0x21, 0x0a, 0x0c, 0x77, 0x69, 0x74, 0x68, 0x5f, 0x73,
-	0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x77, 0x69,
-	0x74, 0x68, 0x53, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x12, 0x28, 0x0a, 0x10, 0x77, 0x69, 0x74,
-	0x68, 0x5f, 0x72, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x08, 0x52, 0x0e, 0x77, 0x69, 0x74, 0x68, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x44,
-	0x61, 0x74, 0x61, 0x22, 0xb7, 0x01, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x61, 0x6c,
-	0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x64, 0x5f, 0x67, 0x61,
-	0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x75, 0x73, 0x65, 0x64, 0x47, 0x61, 0x73,
-	0x12, 0x32, 0x0a, 0x04, 0x6c, 0x6f, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13,
+	0x73, 0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0x1b, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x22, 0x3c, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e,
+	0x6e, 0x65, 0x63, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x3a, 0x04, 0xe8, 0xa0,
+	0x1f, 0x01, 0x22, 0x37, 0x0a, 0x1f, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x74, 0x72,
+	0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x42, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x42, 0x0a, 0x20, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72,
+	0x42, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01, 0x22,
+	0x38, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
+	0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x6f, 0x6e,
+	0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x22, 0x30, 0x0a, 0x12, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x3a, 0x04, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0xe2, 0x01, 0x0a, 0x10,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74,
+	0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x12, 0x14, 0x0a,
+	0x05, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6e,
+	0x70, 0x75, 0x74, 0x12, 0x38, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x42, 0x22, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e,
+	0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x41, 0x0a,
+	0x0d, 0x74, 0x72, 0x61, 0x63, 0x65, 0x5f, 0x6f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x05,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65,
+	0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x72, 0x61, 0x63, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x52, 0x0c, 0x74, 0x72, 0x61, 0x63, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x22, 0x9b, 0x01, 0x0a, 0x0c, 0x54, 0x72, 0x61, 0x63, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x77, 0x69, 0x74, 0x68, 0x5f, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x77, 0x69, 0x74, 0x68, 0x4d, 0x65, 0x6d, 0x6f,
+	0x72, 0x79, 0x12, 0x1d, 0x0a, 0x0a, 0x77, 0x69, 0x74, 0x68, 0x5f, 0x73, 0x74, 0x61, 0x63, 0x6b,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09, 0x77, 0x69, 0x74, 0x68, 0x53, 0x74, 0x61, 0x63,
+	0x6b, 0x12, 0x21, 0x0a, 0x0c, 0x77, 0x69, 0x74, 0x68, 0x5f, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x77, 0x69, 0x74, 0x68, 0x53, 0x74, 0x6f,
+	0x72, 0x61, 0x67, 0x65, 0x12, 0x28, 0x0a, 0x10, 0x77, 0x69, 0x74, 0x68, 0x5f, 0x72, 0x65, 0x74,
+	0x75, 0x72, 0x6e, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0e,
+	0x77, 0x69, 0x74, 0x68, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x22, 0xb7,
+	0x01, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x19, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x64, 0x5f, 0x67, 0x61, 0x73, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x07, 0x75, 0x73, 0x65, 0x64, 0x47, 0x61, 0x73, 0x12, 0x32, 0x0a, 0x04, 0x6c,
+	0x6f, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x6d, 0x69, 0x6e, 0x69,
+	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x6f, 0x67, 0x42, 0x09,
+	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x6c, 0x6f, 0x67, 0x73, 0x12,
+	0x21, 0x0a, 0x0c, 0x74, 0x72, 0x61, 0x63, 0x65, 0x5f, 0x6f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x74, 0x72, 0x61, 0x63, 0x65, 0x4f, 0x75, 0x74, 0x70,
+	0x75, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x4e, 0x0a, 0x27, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x43, 0x6c, 0x61, 0x73, 0x73, 0x49, 0x64, 0x42, 0x79,
+	0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f,
+	0x61, 0x64, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x63, 0x6f, 0x6e, 0x74,
+	0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x22, 0x45, 0x0a, 0x28, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x43, 0x6c, 0x61, 0x73, 0x73, 0x49, 0x64, 0x42, 0x79,
+	0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x49, 0x64, 0x22,
+	0x5c, 0x0a, 0x22, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x4f, 0x72,
+	0x69, 0x67, 0x69, 0x6e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x49, 0x64,
+	0x12, 0x1b, 0x0a, 0x09, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20,
+	0x03, 0x28, 0x09, 0x52, 0x08, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x64, 0x73, 0x22, 0x6d, 0x0a,
+	0x23, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x4f, 0x72, 0x69, 0x67,
+	0x69, 0x6e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x46, 0x0a, 0x0b, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x69, 0x6e,
+	0x66, 0x6f, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x6d, 0x69, 0x6e, 0x69,
+	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x52, 0x43, 0x37, 0x32,
+	0x31, 0x4f, 0x72, 0x69, 0x67, 0x69, 0x6e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f,
+	0x52, 0x0a, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x73, 0x22, 0x14, 0x0a, 0x12,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x22, 0x4b, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x70, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x6d, 0x69, 0x6e, 0x69,
+	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x32,
+	0xe2, 0x0c, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x7a, 0x0a, 0x04, 0x43, 0x6f, 0x64,
+	0x65, 0x12, 0x20, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76,
+	0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x27, 0x12, 0x25,
+	0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f,
+	0x63, 0x6f, 0x64, 0x65, 0x73, 0x2f, 0x7b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f,
+	0x61, 0x64, 0x64, 0x72, 0x7d, 0x12, 0x84, 0x01, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12,
+	0x21, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x22, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x34, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2e, 0x12, 0x2c,
+	0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f,
+	0x73, 0x74, 0x61, 0x74, 0x65, 0x73, 0x2f, 0x7b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
+	0x5f, 0x61, 0x64, 0x64, 0x72, 0x7d, 0x2f, 0x7b, 0x6b, 0x65, 0x79, 0x7d, 0x12, 0x94, 0x01, 0x0a,
+	0x0c, 0x45, 0x52, 0x43, 0x32, 0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x28, 0x2e,
+	0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x32, 0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x79,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76,
+	0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52,
+	0x43, 0x32, 0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x2f, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x29, 0x12, 0x27, 0x2f, 0x6d, 0x69, 0x6e,
+	0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x74,
+	0x72, 0x61, 0x63, 0x74, 0x73, 0x2f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x5f, 0x66, 0x61, 0x63, 0x74,
+	0x6f, 0x72, 0x79, 0x12, 0x94, 0x01, 0x0a, 0x0c, 0x45, 0x52, 0x43, 0x32, 0x30, 0x57, 0x72, 0x61,
+	0x70, 0x70, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65,
+	0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x32, 0x30,
+	0x57, 0x72, 0x61, 0x70, 0x70, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29,
 	0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e,
-	0x4c, 0x6f, 0x67, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04,
-	0x6c, 0x6f, 0x67, 0x73, 0x12, 0x21, 0x0a, 0x0c, 0x74, 0x72, 0x61, 0x63, 0x65, 0x5f, 0x6f, 0x75,
-	0x74, 0x70, 0x75, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x74, 0x72, 0x61, 0x63,
-	0x65, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
-	0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x14, 0x0a,
-	0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x22, 0x4b, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61,
-	0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x70, 0x61,
-	0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61,
-	0x6d, 0x73, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x32, 0xc0, 0x08, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x7a, 0x0a, 0x04, 0x43, 0x6f,
-	0x64, 0x65, 0x12, 0x20, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d,
-	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65,
-	0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x27, 0x12,
-	0x25, 0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31,
-	0x2f, 0x63, 0x6f, 0x64, 0x65, 0x73, 0x2f, 0x7b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
-	0x5f, 0x61, 0x64, 0x64, 0x72, 0x7d, 0x12, 0x84, 0x01, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x65,
-	0x12, 0x21, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76,
-	0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x34, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2e, 0x12,
-	0x2c, 0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31,
-	0x2f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x73, 0x2f, 0x7b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63,
-	0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x7d, 0x2f, 0x7b, 0x6b, 0x65, 0x79, 0x7d, 0x12, 0x94, 0x01,
-	0x0a, 0x0c, 0x45, 0x52, 0x43, 0x32, 0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x28,
-	0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x32, 0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72,
-	0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65,
-	0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45,
-	0x52, 0x43, 0x32, 0x30, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x2f, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x29, 0x12, 0x27, 0x2f, 0x6d, 0x69,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x32, 0x30, 0x57, 0x72, 0x61, 0x70, 0x70, 0x65,
+	0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x82, 0xd3, 0xe4, 0x93, 0x02,
+	0x29, 0x12, 0x27, 0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f,
+	0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x73, 0x2f, 0x65, 0x72, 0x63,
+	0x32, 0x30, 0x5f, 0x77, 0x72, 0x61, 0x70, 0x70, 0x65, 0x72, 0x12, 0x8e, 0x01, 0x0a, 0x0d, 0x43,
+	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x12, 0x29, 0x2e, 0x6d,
+	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76,
+	0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f,
+	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x4f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x26, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x20, 0x12, 0x1e, 0x2f, 0x6d, 0x69,
 	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e,
-	0x74, 0x72, 0x61, 0x63, 0x74, 0x73, 0x2f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x5f, 0x66, 0x61, 0x63,
-	0x74, 0x6f, 0x72, 0x79, 0x12, 0x94, 0x01, 0x0a, 0x0c, 0x45, 0x52, 0x43, 0x32, 0x30, 0x57, 0x72,
-	0x61, 0x70, 0x70, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e,
-	0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x32,
-	0x30, 0x57, 0x72, 0x61, 0x70, 0x70, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x29, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x32, 0x30, 0x57, 0x72, 0x61, 0x70, 0x70,
-	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x82, 0xd3, 0xe4, 0x93,
-	0x02, 0x29, 0x12, 0x27, 0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d,
-	0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x73, 0x2f, 0x65, 0x72,
-	0x63, 0x32, 0x30, 0x5f, 0x77, 0x72, 0x61, 0x70, 0x70, 0x65, 0x72, 0x12, 0xa4, 0x01, 0x0a, 0x13,
+	0x6e, 0x65, 0x63, 0x74, 0x5f, 0x6f, 0x72, 0x61, 0x63, 0x6c, 0x65, 0x12, 0xa4, 0x01, 0x0a, 0x13,
 	0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x42, 0x79, 0x44, 0x65,
 	0x6e, 0x6f, 0x6d, 0x12, 0x2f, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76,
 	0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61,
@@ -8647,40 +11560,65 @@ var file_minievm_evm_v1_query_proto_rawDesc = []byte{
 	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2a, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12, 0x22,
 	0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f,
 	0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x73, 0x2f, 0x62, 0x79, 0x5f, 0x64, 0x65, 0x6e,
-	0x6f, 0x6d, 0x12, 0x7e, 0x0a, 0x05, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x21, 0x2e, 0x6d, 0x69,
+	0x6f, 0x6d, 0x12, 0xc9, 0x01, 0x0a, 0x1b, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x43, 0x6c, 0x61,
+	0x73, 0x73, 0x49, 0x64, 0x42, 0x79, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64,
+	0x64, 0x72, 0x12, 0x37, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x43,
+	0x6c, 0x61, 0x73, 0x73, 0x49, 0x64, 0x42, 0x79, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
+	0x41, 0x64, 0x64, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x38, 0x2e, 0x6d, 0x69,
 	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22,
-	0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x2e, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x28, 0x12, 0x26, 0x2f, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e, 0x6f,
-	0x6d, 0x73, 0x2f, 0x7b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x7d, 0x12, 0x6c, 0x0a, 0x04, 0x43, 0x61, 0x6c, 0x6c, 0x12, 0x20, 0x2e, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x6d,
+	0x72, 0x79, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x43, 0x6c, 0x61, 0x73, 0x73, 0x49, 0x64, 0x42,
+	0x79, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x41, 0x64, 0x64, 0x72, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x37, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x31, 0x12, 0x2f, 0x2f,
+	0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x65,
+	0x72, 0x63, 0x37, 0x32, 0x31, 0x2f, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x5f, 0x69, 0x64, 0x2f, 0x7b,
+	0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x7d, 0x12, 0xc2,
+	0x01, 0x0a, 0x16, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x4f, 0x72, 0x69, 0x67, 0x69, 0x6e, 0x54,
+	0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x73, 0x12, 0x32, 0x2e, 0x6d, 0x69, 0x6e, 0x69,
+	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x4f, 0x72, 0x69, 0x67, 0x69, 0x6e, 0x54, 0x6f, 0x6b, 0x65,
+	0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e,
+	0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x4f, 0x72, 0x69, 0x67, 0x69, 0x6e,
+	0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x3f, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x39, 0x12, 0x37, 0x2f, 0x6d, 0x69, 0x6e,
+	0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x65, 0x72, 0x63, 0x37,
+	0x32, 0x31, 0x2f, 0x6f, 0x72, 0x69, 0x67, 0x69, 0x6e, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f,
+	0x69, 0x6e, 0x66, 0x6f, 0x73, 0x2f, 0x7b, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x5f, 0x69, 0x64, 0x3d,
+	0x2a, 0x2a, 0x7d, 0x12, 0x7e, 0x0a, 0x05, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x21, 0x2e, 0x6d,
 	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x1f, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x19, 0x3a, 0x01, 0x2a, 0x22, 0x14, 0x2f, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x61, 0x6c, 0x6c,
-	0x12, 0x71, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x22, 0x2e, 0x6d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23,
-	0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x1e, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x18, 0x12, 0x16, 0x2f, 0x6d, 0x69,
-	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x42, 0xa9, 0x01, 0xc8, 0xe1, 0x1e, 0x00, 0xa8, 0xe2, 0x1e, 0x00, 0x0a, 0x12,
-	0x63, 0x6f, 0x6d, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e,
-	0x76, 0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
-	0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61,
-	0x70, 0x69, 0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76,
-	0x31, 0x3b, 0x65, 0x76, 0x6d, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa, 0x02, 0x0e,
-	0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31, 0xca, 0x02,
-	0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0xe2,
-	0x02, 0x1a, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31,
-	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4d,
-	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x72, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x22, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x2e, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x28, 0x12, 0x26, 0x2f, 0x6d, 0x69,
+	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x64, 0x65, 0x6e,
+	0x6f, 0x6d, 0x73, 0x2f, 0x7b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x61, 0x64,
+	0x64, 0x72, 0x7d, 0x12, 0x6c, 0x0a, 0x04, 0x43, 0x61, 0x6c, 0x6c, 0x12, 0x20, 0x2e, 0x6d, 0x69,
+	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e,
+	0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x1f, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x19, 0x3a, 0x01, 0x2a, 0x22, 0x14, 0x2f, 0x6d, 0x69,
+	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x61, 0x6c,
+	0x6c, 0x12, 0x71, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x22, 0x2e, 0x6d, 0x69,
+	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x23, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x1e, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x18, 0x12, 0x16, 0x2f, 0x6d,
+	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x42, 0xa9, 0x01, 0xc8, 0xe1, 0x1e, 0x00, 0xa8, 0xe2, 0x1e, 0x00, 0x0a,
+	0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d,
+	0x2e, 0x76, 0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
+	0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f,
+	0x76, 0x31, 0x3b, 0x65, 0x76, 0x6d, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa, 0x02,
+	0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31, 0xca,
+	0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31,
+	0xe2, 0x02, 0x1a, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56,
+	0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10,
+	0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56, 0x31,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -8695,53 +11633,67 @@ func file_minievm_evm_v1_query_proto_rawDescGZIP() []byte {
 	return file_minievm_evm_v1_query_proto_rawDescData
 }
 
-var file_minievm_evm_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_minievm_evm_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_minievm_evm_v1_query_proto_goTypes = []interface{}{
-	(*QueryCodeRequest)(nil),                 // 0: minievm.evm.v1.QueryCodeRequest
-	(*QueryCodeResponse)(nil),                // 1: minievm.evm.v1.QueryCodeResponse
-	(*QueryStateRequest)(nil),                // 2: minievm.evm.v1.QueryStateRequest
-	(*QueryStateResponse)(nil),               // 3: minievm.evm.v1.QueryStateResponse
-	(*QueryERC20FactoryRequest)(nil),         // 4: minievm.evm.v1.QueryERC20FactoryRequest
-	(*QueryERC20FactoryResponse)(nil),        // 5: minievm.evm.v1.QueryERC20FactoryResponse
-	(*QueryERC20WrapperRequest)(nil),         // 6: minievm.evm.v1.QueryERC20WrapperRequest
-	(*QueryERC20WrapperResponse)(nil),        // 7: minievm.evm.v1.QueryERC20WrapperResponse
-	(*QueryContractAddrByDenomRequest)(nil),  // 8: minievm.evm.v1.QueryContractAddrByDenomRequest
-	(*QueryContractAddrByDenomResponse)(nil), // 9: minievm.evm.v1.QueryContractAddrByDenomResponse
-	(*QueryDenomRequest)(nil),                // 10: minievm.evm.v1.QueryDenomRequest
-	(*QueryDenomResponse)(nil),               // 11: minievm.evm.v1.QueryDenomResponse
-	(*QueryCallRequest)(nil),                 // 12: minievm.evm.v1.QueryCallRequest
-	(*TraceOptions)(nil),                     // 13: minievm.evm.v1.TraceOptions
-	(*QueryCallResponse)(nil),                // 14: minievm.evm.v1.QueryCallResponse
-	(*QueryParamsRequest)(nil),               // 15: minievm.evm.v1.QueryParamsRequest
-	(*QueryParamsResponse)(nil),              // 16: minievm.evm.v1.QueryParamsResponse
-	(*Log)(nil),                              // 17: minievm.evm.v1.Log
-	(*Params)(nil),                           // 18: minievm.evm.v1.Params
+	(*QueryCodeRequest)(nil),                         // 0: minievm.evm.v1.QueryCodeRequest
+	(*QueryCodeResponse)(nil),                        // 1: minievm.evm.v1.QueryCodeResponse
+	(*QueryStateRequest)(nil),                        // 2: minievm.evm.v1.QueryStateRequest
+	(*QueryStateResponse)(nil),                       // 3: minievm.evm.v1.QueryStateResponse
+	(*QueryERC20FactoryRequest)(nil),                 // 4: minievm.evm.v1.QueryERC20FactoryRequest
+	(*QueryERC20FactoryResponse)(nil),                // 5: minievm.evm.v1.QueryERC20FactoryResponse
+	(*QueryERC20WrapperRequest)(nil),                 // 6: minievm.evm.v1.QueryERC20WrapperRequest
+	(*QueryERC20WrapperResponse)(nil),                // 7: minievm.evm.v1.QueryERC20WrapperResponse
+	(*QueryConnectOracleRequest)(nil),                // 8: minievm.evm.v1.QueryConnectOracleRequest
+	(*QueryConnectOracleResponse)(nil),               // 9: minievm.evm.v1.QueryConnectOracleResponse
+	(*QueryContractAddrByDenomRequest)(nil),          // 10: minievm.evm.v1.QueryContractAddrByDenomRequest
+	(*QueryContractAddrByDenomResponse)(nil),         // 11: minievm.evm.v1.QueryContractAddrByDenomResponse
+	(*QueryDenomRequest)(nil),                        // 12: minievm.evm.v1.QueryDenomRequest
+	(*QueryDenomResponse)(nil),                       // 13: minievm.evm.v1.QueryDenomResponse
+	(*QueryCallRequest)(nil),                         // 14: minievm.evm.v1.QueryCallRequest
+	(*TraceOptions)(nil),                             // 15: minievm.evm.v1.TraceOptions
+	(*QueryCallResponse)(nil),                        // 16: minievm.evm.v1.QueryCallResponse
+	(*QueryERC721ClassIdByContractAddrRequest)(nil),  // 17: minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest
+	(*QueryERC721ClassIdByContractAddrResponse)(nil), // 18: minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse
+	(*QueryERC721OriginTokenInfosRequest)(nil),       // 19: minievm.evm.v1.QueryERC721OriginTokenInfosRequest
+	(*QueryERC721OriginTokenInfosResponse)(nil),      // 20: minievm.evm.v1.QueryERC721OriginTokenInfosResponse
+	(*QueryParamsRequest)(nil),                       // 21: minievm.evm.v1.QueryParamsRequest
+	(*QueryParamsResponse)(nil),                      // 22: minievm.evm.v1.QueryParamsResponse
+	(*Log)(nil),                                      // 23: minievm.evm.v1.Log
+	(*ERC721OriginTokenInfo)(nil),                    // 24: minievm.evm.v1.ERC721OriginTokenInfo
+	(*Params)(nil),                                   // 25: minievm.evm.v1.Params
 }
 var file_minievm_evm_v1_query_proto_depIdxs = []int32{
-	13, // 0: minievm.evm.v1.QueryCallRequest.trace_options:type_name -> minievm.evm.v1.TraceOptions
-	17, // 1: minievm.evm.v1.QueryCallResponse.logs:type_name -> minievm.evm.v1.Log
-	18, // 2: minievm.evm.v1.QueryParamsResponse.params:type_name -> minievm.evm.v1.Params
-	0,  // 3: minievm.evm.v1.Query.Code:input_type -> minievm.evm.v1.QueryCodeRequest
-	2,  // 4: minievm.evm.v1.Query.State:input_type -> minievm.evm.v1.QueryStateRequest
-	4,  // 5: minievm.evm.v1.Query.ERC20Factory:input_type -> minievm.evm.v1.QueryERC20FactoryRequest
-	6,  // 6: minievm.evm.v1.Query.ERC20Wrapper:input_type -> minievm.evm.v1.QueryERC20WrapperRequest
-	8,  // 7: minievm.evm.v1.Query.ContractAddrByDenom:input_type -> minievm.evm.v1.QueryContractAddrByDenomRequest
-	10, // 8: minievm.evm.v1.Query.Denom:input_type -> minievm.evm.v1.QueryDenomRequest
-	12, // 9: minievm.evm.v1.Query.Call:input_type -> minievm.evm.v1.QueryCallRequest
-	15, // 10: minievm.evm.v1.Query.Params:input_type -> minievm.evm.v1.QueryParamsRequest
-	1,  // 11: minievm.evm.v1.Query.Code:output_type -> minievm.evm.v1.QueryCodeResponse
-	3,  // 12: minievm.evm.v1.Query.State:output_type -> minievm.evm.v1.QueryStateResponse
-	5,  // 13: minievm.evm.v1.Query.ERC20Factory:output_type -> minievm.evm.v1.QueryERC20FactoryResponse
-	7,  // 14: minievm.evm.v1.Query.ERC20Wrapper:output_type -> minievm.evm.v1.QueryERC20WrapperResponse
-	9,  // 15: minievm.evm.v1.Query.ContractAddrByDenom:output_type -> minievm.evm.v1.QueryContractAddrByDenomResponse
-	11, // 16: minievm.evm.v1.Query.Denom:output_type -> minievm.evm.v1.QueryDenomResponse
-	14, // 17: minievm.evm.v1.Query.Call:output_type -> minievm.evm.v1.QueryCallResponse
-	16, // 18: minievm.evm.v1.Query.Params:output_type -> minievm.evm.v1.QueryParamsResponse
-	11, // [11:19] is the sub-list for method output_type
-	3,  // [3:11] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	15, // 0: minievm.evm.v1.QueryCallRequest.trace_options:type_name -> minievm.evm.v1.TraceOptions
+	23, // 1: minievm.evm.v1.QueryCallResponse.logs:type_name -> minievm.evm.v1.Log
+	24, // 2: minievm.evm.v1.QueryERC721OriginTokenInfosResponse.token_infos:type_name -> minievm.evm.v1.ERC721OriginTokenInfo
+	25, // 3: minievm.evm.v1.QueryParamsResponse.params:type_name -> minievm.evm.v1.Params
+	0,  // 4: minievm.evm.v1.Query.Code:input_type -> minievm.evm.v1.QueryCodeRequest
+	2,  // 5: minievm.evm.v1.Query.State:input_type -> minievm.evm.v1.QueryStateRequest
+	4,  // 6: minievm.evm.v1.Query.ERC20Factory:input_type -> minievm.evm.v1.QueryERC20FactoryRequest
+	6,  // 7: minievm.evm.v1.Query.ERC20Wrapper:input_type -> minievm.evm.v1.QueryERC20WrapperRequest
+	8,  // 8: minievm.evm.v1.Query.ConnectOracle:input_type -> minievm.evm.v1.QueryConnectOracleRequest
+	10, // 9: minievm.evm.v1.Query.ContractAddrByDenom:input_type -> minievm.evm.v1.QueryContractAddrByDenomRequest
+	17, // 10: minievm.evm.v1.Query.ERC721ClassIdByContractAddr:input_type -> minievm.evm.v1.QueryERC721ClassIdByContractAddrRequest
+	19, // 11: minievm.evm.v1.Query.ERC721OriginTokenInfos:input_type -> minievm.evm.v1.QueryERC721OriginTokenInfosRequest
+	12, // 12: minievm.evm.v1.Query.Denom:input_type -> minievm.evm.v1.QueryDenomRequest
+	14, // 13: minievm.evm.v1.Query.Call:input_type -> minievm.evm.v1.QueryCallRequest
+	21, // 14: minievm.evm.v1.Query.Params:input_type -> minievm.evm.v1.QueryParamsRequest
+	1,  // 15: minievm.evm.v1.Query.Code:output_type -> minievm.evm.v1.QueryCodeResponse
+	3,  // 16: minievm.evm.v1.Query.State:output_type -> minievm.evm.v1.QueryStateResponse
+	5,  // 17: minievm.evm.v1.Query.ERC20Factory:output_type -> minievm.evm.v1.QueryERC20FactoryResponse
+	7,  // 18: minievm.evm.v1.Query.ERC20Wrapper:output_type -> minievm.evm.v1.QueryERC20WrapperResponse
+	9,  // 19: minievm.evm.v1.Query.ConnectOracle:output_type -> minievm.evm.v1.QueryConnectOracleResponse
+	11, // 20: minievm.evm.v1.Query.ContractAddrByDenom:output_type -> minievm.evm.v1.QueryContractAddrByDenomResponse
+	18, // 21: minievm.evm.v1.Query.ERC721ClassIdByContractAddr:output_type -> minievm.evm.v1.QueryERC721ClassIdByContractAddrResponse
+	20, // 22: minievm.evm.v1.Query.ERC721OriginTokenInfos:output_type -> minievm.evm.v1.QueryERC721OriginTokenInfosResponse
+	13, // 23: minievm.evm.v1.Query.Denom:output_type -> minievm.evm.v1.QueryDenomResponse
+	16, // 24: minievm.evm.v1.Query.Call:output_type -> minievm.evm.v1.QueryCallResponse
+	22, // 25: minievm.evm.v1.Query.Params:output_type -> minievm.evm.v1.QueryParamsResponse
+	15, // [15:26] is the sub-list for method output_type
+	4,  // [4:15] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_minievm_evm_v1_query_proto_init() }
@@ -8848,7 +11800,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryContractAddrByDenomRequest); i {
+			switch v := v.(*QueryConnectOracleRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8860,7 +11812,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryContractAddrByDenomResponse); i {
+			switch v := v.(*QueryConnectOracleResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8872,7 +11824,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryDenomRequest); i {
+			switch v := v.(*QueryContractAddrByDenomRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8884,7 +11836,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryDenomResponse); i {
+			switch v := v.(*QueryContractAddrByDenomResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8896,7 +11848,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryCallRequest); i {
+			switch v := v.(*QueryDenomRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8908,7 +11860,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TraceOptions); i {
+			switch v := v.(*QueryDenomResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8920,7 +11872,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryCallResponse); i {
+			switch v := v.(*QueryCallRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8932,7 +11884,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryParamsRequest); i {
+			switch v := v.(*TraceOptions); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8944,6 +11896,78 @@ func file_minievm_evm_v1_query_proto_init() {
 			}
 		}
 		file_minievm_evm_v1_query_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryCallResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_query_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryERC721ClassIdByContractAddrRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_query_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryERC721ClassIdByContractAddrResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_query_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryERC721OriginTokenInfosRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_query_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryERC721OriginTokenInfosResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_query_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryParamsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_minievm_evm_v1_query_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryParamsResponse); i {
 			case 0:
 				return &v.state
@@ -8962,7 +11986,7 @@ func file_minievm_evm_v1_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_minievm_evm_v1_query_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
