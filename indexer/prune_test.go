@@ -133,6 +133,17 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 		}
 	}
 
+	// wait for pruning
+	for {
+		time.Sleep(100 * time.Millisecond)
+
+		if indexer.IsPruningRunning() {
+			continue
+		} else {
+			break
+		}
+	}
+
 	// create a new block to trigger bloom indexing
 	tests.IncreaseBlockHeight(t, app)
 
