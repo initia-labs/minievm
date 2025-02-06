@@ -311,9 +311,12 @@ func (f *Filter) searchLogs(ctx context.Context, begin, end int64) ([]*coretypes
 		}
 
 		header, err := f.backend.GetHeaderByNumber(rpc.BlockNumber(begin))
-		if header == nil || err != nil {
+		if header == nil {
+			continue
+		} else if err != nil {
 			return nil, err
 		}
+
 		found, err := f.blockLogs(header)
 		if err != nil {
 			return nil, err
