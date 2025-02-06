@@ -163,7 +163,9 @@ func (f *Filter) rangeLogsAsync(ctx context.Context) (chan *coretypes.Log, chan 
 func (f *Filter) unindexedLogs(ctx context.Context, end uint64, logChan chan *coretypes.Log) error {
 	for ; f.begin <= int64(end); f.begin++ {
 		header, err := f.backend.GetHeaderByNumber(rpc.BlockNumber(f.begin))
-		if header == nil || err != nil {
+		if header == nil {
+			continue
+		} else if err != nil {
 			return err
 		}
 		found, err := f.blockLogs(header)
