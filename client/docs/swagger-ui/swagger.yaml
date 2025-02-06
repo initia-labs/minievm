@@ -39691,6 +39691,47 @@ paths:
           type: string
       tags:
         - Query
+  /minievm/evm/v1/connect_oracle:
+    get:
+      operationId: ConnectOracle
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              address:
+                type: string
+                title: 0x prefixed hex address
+            title: >-
+              QueryConnectOracleResponse is the response type for the
+              Query/ConnectOracle RPC
+
+              method
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   /minievm/evm/v1/contracts/by_denom:
     get:
       summary: ContractAddrByDenom gets the contract address by denom.
@@ -69856,6 +69897,17 @@ definitions:
         type: string
     title: |-
       QueryCodeResponse is the response type for the Query/Code RPC
+      method
+  minievm.evm.v1.QueryConnectOracleResponse:
+    type: object
+    properties:
+      address:
+        type: string
+        title: 0x prefixed hex address
+    title: >-
+      QueryConnectOracleResponse is the response type for the
+      Query/ConnectOracle RPC
+
       method
   minievm.evm.v1.QueryContractAddrByDenomResponse:
     type: object

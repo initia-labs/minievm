@@ -21,7 +21,7 @@ func Test_CreateCollection(t *testing.T) {
 	classId := "test-class-id"
 	classUri := "test-class-uri"
 
-	contractAddr := crypto.CreateAddress(types.StdAddress, 2)
+	contractAddr := crypto.CreateAddress(types.StdAddress, 3)
 
 	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, "")
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func Test_GetContractAddrByClassId(t *testing.T) {
 	classUri := "test-class-uri"
 	classData := "test-class-data"
 
-	contractAddr := crypto.CreateAddress(types.StdAddress, 2)
+	contractAddr := crypto.CreateAddress(types.StdAddress, 3)
 
 	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, classData)
 	require.NoError(t, err)

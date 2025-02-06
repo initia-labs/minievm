@@ -52,8 +52,10 @@ func Test_PruneIndexer(t *testing.T) {
 
 	// wait for pruning
 	for {
+		time.Sleep(100 * time.Millisecond)
+
 		if indexer.IsPruningRunning() {
-			time.Sleep(100 * time.Millisecond)
+			continue
 		} else {
 			break
 		}
@@ -123,8 +125,20 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 
 	// wait for bloom indexing
 	for {
+		time.Sleep(100 * time.Millisecond)
 		if indexer.IsBloomIndexingRunning() {
-			time.Sleep(100 * time.Millisecond)
+			continue
+		} else {
+			break
+		}
+	}
+
+	// wait for pruning
+	for {
+		time.Sleep(100 * time.Millisecond)
+
+		if indexer.IsPruningRunning() {
+			continue
 		} else {
 			break
 		}
@@ -135,8 +149,9 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 
 	// wait for bloom indexing
 	for {
+		time.Sleep(100 * time.Millisecond)
 		if indexer.IsBloomIndexingRunning() {
-			time.Sleep(100 * time.Millisecond)
+			continue
 		} else {
 			break
 		}
@@ -144,8 +159,9 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 
 	// wait for pruning
 	for {
+		time.Sleep(100 * time.Millisecond)
 		if indexer.IsPruningRunning() {
-			time.Sleep(100 * time.Millisecond)
+			continue
 		} else {
 			break
 		}

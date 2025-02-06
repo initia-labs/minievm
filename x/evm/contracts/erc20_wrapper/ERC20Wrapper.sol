@@ -220,8 +220,13 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             )
         );
 
-        string memory merged_memo = JSONUTILS_CONTRACT.merge_json(memo, callback_memo);
-        string memory stringified_memo = JSONUTILS_CONTRACT.stringify_json(merged_memo);
+        string memory merged_memo = JSONUTILS_CONTRACT.merge_json(
+            memo,
+            callback_memo
+        );
+        string memory stringified_memo = JSONUTILS_CONTRACT.stringify_json(
+            merged_memo
+        );
 
         // Construct the IBC transfer message
         message = string(
@@ -249,7 +254,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 '",',
                 '"memo": ',
                 stringified_memo,
-                '}'
+                "}"
             )
         );
     }

@@ -48,7 +48,10 @@ contract InitiaERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
         address recipient,
         uint256 amount
     ) internal register_erc20_store(recipient) {
-        require(balanceOf[sender] >= amount, "ERC20: transfer amount exceeds balance");
+        require(
+            balanceOf[sender] >= amount,
+            "ERC20: transfer amount exceeds balance"
+        );
         balanceOf[sender] -= amount;
         balanceOf[recipient] += amount;
         emit Transfer(sender, recipient, amount);
@@ -64,7 +67,10 @@ contract InitiaERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
     }
 
     function _burn(address from, uint256 amount) internal {
-        require(balanceOf[from] >= amount, "ERC20: burn amount exceeds balance");
+        require(
+            balanceOf[from] >= amount,
+            "ERC20: burn amount exceeds balance"
+        );
         balanceOf[from] -= amount;
         totalSupply -= amount;
         emit Transfer(from, address(0), amount);
@@ -89,7 +95,10 @@ contract InitiaERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
         address recipient,
         uint256 amount
     ) external transferable(recipient) returns (bool) {
-        require(allowance[sender][msg.sender] >= amount, "ERC20: transfer amount exceeds allowance");
+        require(
+            allowance[sender][msg.sender] >= amount,
+            "ERC20: transfer amount exceeds allowance"
+        );
         allowance[sender][msg.sender] -= amount;
         _transfer(sender, recipient, amount);
         return true;
@@ -99,9 +108,7 @@ contract InitiaERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
         _mint(to, amount);
     }
 
-    function burn(
-        uint256 amount
-    ) external burnable(msg.sender) {
+    function burn(uint256 amount) external burnable(msg.sender) {
         _burn(msg.sender, amount);
     }
 
@@ -109,7 +116,10 @@ contract InitiaERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
         address from,
         uint256 amount
     ) external burnable(from) returns (bool) {
-        require(allowance[from][msg.sender] >= amount, "ERC20: burn amount exceeds allowance");
+        require(
+            allowance[from][msg.sender] >= amount,
+            "ERC20: burn amount exceeds allowance"
+        );
         allowance[from][msg.sender] -= amount;
         _burn(from, amount);
         return true;

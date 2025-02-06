@@ -8,9 +8,8 @@ import (
 
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
-		Params:       DefaultParams(),
-		Erc20Factory: nil,
-		KeyValues:    []GenesisKeyValue{},
+		Params:    DefaultParams(),
+		KeyValues: []GenesisKeyValue{},
 	}
 }
 

@@ -33,9 +33,10 @@ var (
 
 	EVMBlockHashPrefix = []byte{0x71} // prefix for evm block hashes
 
-	ParamsKey           = []byte{0x51} // key of parameters for module x/evm
-	ERC20FactoryAddrKey = []byte{0x61} // key of erc20 factory contract address
-	ERC20WrapperAddrKey = []byte{0x62} // key of erc20 wrapper contract address
+	ParamsKey            = []byte{0x51} // key of parameters for module x/evm
+	ERC20FactoryAddrKey  = []byte{0x61} // key of erc20 factory contract address
+	ERC20WrapperAddrKey  = []byte{0x62} // key of erc20 wrapper contract address
+	ConnectOracleAddrKey = []byte{0x63} // key of connect oracle contract address
 )
 
 // ContextKey type for context key

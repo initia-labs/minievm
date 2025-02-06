@@ -2181,6 +2181,490 @@ func (x *fastReflection_AccessTuple) ProtoMethods() *protoiface.Methods {
 	}
 }
 
+var (
+	md_ERC721OriginTokenInfo                 protoreflect.MessageDescriptor
+	fd_ERC721OriginTokenInfo_token_origin_id protoreflect.FieldDescriptor
+	fd_ERC721OriginTokenInfo_token_uri       protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_minievm_evm_v1_types_proto_init()
+	md_ERC721OriginTokenInfo = File_minievm_evm_v1_types_proto.Messages().ByName("ERC721OriginTokenInfo")
+	fd_ERC721OriginTokenInfo_token_origin_id = md_ERC721OriginTokenInfo.Fields().ByName("token_origin_id")
+	fd_ERC721OriginTokenInfo_token_uri = md_ERC721OriginTokenInfo.Fields().ByName("token_uri")
+}
+
+var _ protoreflect.Message = (*fastReflection_ERC721OriginTokenInfo)(nil)
+
+type fastReflection_ERC721OriginTokenInfo ERC721OriginTokenInfo
+
+func (x *ERC721OriginTokenInfo) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ERC721OriginTokenInfo)(x)
+}
+
+func (x *ERC721OriginTokenInfo) slowProtoReflect() protoreflect.Message {
+	mi := &file_minievm_evm_v1_types_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ERC721OriginTokenInfo_messageType fastReflection_ERC721OriginTokenInfo_messageType
+var _ protoreflect.MessageType = fastReflection_ERC721OriginTokenInfo_messageType{}
+
+type fastReflection_ERC721OriginTokenInfo_messageType struct{}
+
+func (x fastReflection_ERC721OriginTokenInfo_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ERC721OriginTokenInfo)(nil)
+}
+func (x fastReflection_ERC721OriginTokenInfo_messageType) New() protoreflect.Message {
+	return new(fastReflection_ERC721OriginTokenInfo)
+}
+func (x fastReflection_ERC721OriginTokenInfo_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ERC721OriginTokenInfo
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ERC721OriginTokenInfo) Descriptor() protoreflect.MessageDescriptor {
+	return md_ERC721OriginTokenInfo
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ERC721OriginTokenInfo) Type() protoreflect.MessageType {
+	return _fastReflection_ERC721OriginTokenInfo_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ERC721OriginTokenInfo) New() protoreflect.Message {
+	return new(fastReflection_ERC721OriginTokenInfo)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ERC721OriginTokenInfo) Interface() protoreflect.ProtoMessage {
+	return (*ERC721OriginTokenInfo)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ERC721OriginTokenInfo) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.TokenOriginId != "" {
+		value := protoreflect.ValueOfString(x.TokenOriginId)
+		if !f(fd_ERC721OriginTokenInfo_token_origin_id, value) {
+			return
+		}
+	}
+	if x.TokenUri != "" {
+		value := protoreflect.ValueOfString(x.TokenUri)
+		if !f(fd_ERC721OriginTokenInfo_token_uri, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ERC721OriginTokenInfo) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_origin_id":
+		return x.TokenOriginId != ""
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_uri":
+		return x.TokenUri != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.ERC721OriginTokenInfo"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.ERC721OriginTokenInfo does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC721OriginTokenInfo) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_origin_id":
+		x.TokenOriginId = ""
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_uri":
+		x.TokenUri = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.ERC721OriginTokenInfo"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.ERC721OriginTokenInfo does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ERC721OriginTokenInfo) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_origin_id":
+		value := x.TokenOriginId
+		return protoreflect.ValueOfString(value)
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_uri":
+		value := x.TokenUri
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.ERC721OriginTokenInfo"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.ERC721OriginTokenInfo does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC721OriginTokenInfo) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_origin_id":
+		x.TokenOriginId = value.Interface().(string)
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_uri":
+		x.TokenUri = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.ERC721OriginTokenInfo"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.ERC721OriginTokenInfo does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC721OriginTokenInfo) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_origin_id":
+		panic(fmt.Errorf("field token_origin_id of message minievm.evm.v1.ERC721OriginTokenInfo is not mutable"))
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_uri":
+		panic(fmt.Errorf("field token_uri of message minievm.evm.v1.ERC721OriginTokenInfo is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.ERC721OriginTokenInfo"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.ERC721OriginTokenInfo does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ERC721OriginTokenInfo) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_origin_id":
+		return protoreflect.ValueOfString("")
+	case "minievm.evm.v1.ERC721OriginTokenInfo.token_uri":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: minievm.evm.v1.ERC721OriginTokenInfo"))
+		}
+		panic(fmt.Errorf("message minievm.evm.v1.ERC721OriginTokenInfo does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ERC721OriginTokenInfo) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in minievm.evm.v1.ERC721OriginTokenInfo", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ERC721OriginTokenInfo) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ERC721OriginTokenInfo) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ERC721OriginTokenInfo) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ERC721OriginTokenInfo) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ERC721OriginTokenInfo)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.TokenOriginId)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.TokenUri)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ERC721OriginTokenInfo)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.TokenUri) > 0 {
+			i -= len(x.TokenUri)
+			copy(dAtA[i:], x.TokenUri)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TokenUri)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.TokenOriginId) > 0 {
+			i -= len(x.TokenOriginId)
+			copy(dAtA[i:], x.TokenOriginId)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.TokenOriginId)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ERC721OriginTokenInfo)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ERC721OriginTokenInfo: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ERC721OriginTokenInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenOriginId", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TokenOriginId = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenUri", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.TokenUri = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -2392,6 +2876,49 @@ func (x *AccessTuple) GetStorageKeys() []string {
 	return nil
 }
 
+type ERC721OriginTokenInfo struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TokenOriginId string `protobuf:"bytes,1,opt,name=token_origin_id,json=tokenOriginId,proto3" json:"token_origin_id,omitempty"`
+	TokenUri      string `protobuf:"bytes,2,opt,name=token_uri,json=tokenUri,proto3" json:"token_uri,omitempty"`
+}
+
+func (x *ERC721OriginTokenInfo) Reset() {
+	*x = ERC721OriginTokenInfo{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_minievm_evm_v1_types_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ERC721OriginTokenInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ERC721OriginTokenInfo) ProtoMessage() {}
+
+// Deprecated: Use ERC721OriginTokenInfo.ProtoReflect.Descriptor instead.
+func (*ERC721OriginTokenInfo) Descriptor() ([]byte, []int) {
+	return file_minievm_evm_v1_types_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ERC721OriginTokenInfo) GetTokenOriginId() string {
+	if x != nil {
+		return x.TokenOriginId
+	}
+	return ""
+}
+
+func (x *ERC721OriginTokenInfo) GetTokenUri() string {
+	if x != nil {
+		return x.TokenUri
+	}
+	return ""
+}
+
 var File_minievm_evm_v1_types_proto protoreflect.FileDescriptor
 
 var file_minievm_evm_v1_types_proto_rawDesc = []byte{
@@ -2449,18 +2976,24 @@ var file_minievm_evm_v1_types_proto_rawDesc = []byte{
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x21, 0x0a,
 	0x0c, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x5f, 0x6b, 0x65, 0x79, 0x73, 0x18, 0x02, 0x20,
 	0x03, 0x28, 0x09, 0x52, 0x0b, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x4b, 0x65, 0x79, 0x73,
-	0x42, 0xa9, 0x01, 0xc8, 0xe1, 0x1e, 0x00, 0xa8, 0xe2, 0x1e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d,
-	0x2e, 0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x42,
-	0x0a, 0x54, 0x79, 0x70, 0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f,
-	0x6d, 0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x3b, 0x65,
-	0x76, 0x6d, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa, 0x02, 0x0e, 0x4d, 0x69, 0x6e,
-	0x69, 0x65, 0x76, 0x6d, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4d, 0x69,
-	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a, 0x4d,
-	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50,
-	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4d, 0x69, 0x6e, 0x69,
-	0x65, 0x76, 0x6d, 0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x5c, 0x0a, 0x15, 0x45, 0x52, 0x43, 0x37, 0x32, 0x31, 0x4f, 0x72, 0x69, 0x67, 0x69, 0x6e,
+	0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x26, 0x0a, 0x0f, 0x74, 0x6f, 0x6b,
+	0x65, 0x6e, 0x5f, 0x6f, 0x72, 0x69, 0x67, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0d, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x4f, 0x72, 0x69, 0x67, 0x69, 0x6e, 0x49,
+	0x64, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x75, 0x72, 0x69, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x55, 0x72, 0x69, 0x42, 0xa9,
+	0x01, 0xc8, 0xe1, 0x1e, 0x00, 0xa8, 0xe2, 0x1e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x6d,
+	0x69, 0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x54,
+	0x79, 0x70, 0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6d, 0x69,
+	0x6e, 0x69, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x76, 0x31, 0x3b, 0x65, 0x76, 0x6d,
+	0x76, 0x31, 0xa2, 0x02, 0x03, 0x4d, 0x45, 0x58, 0xaa, 0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69, 0x65,
+	0x76, 0x6d, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0e, 0x4d, 0x69, 0x6e, 0x69,
+	0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1a, 0x4d, 0x69, 0x6e,
+	0x69, 0x65, 0x76, 0x6d, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x4d, 0x69, 0x6e, 0x69, 0x65, 0x76,
+	0x6d, 0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -2475,11 +3008,12 @@ func file_minievm_evm_v1_types_proto_rawDescGZIP() []byte {
 	return file_minievm_evm_v1_types_proto_rawDescData
 }
 
-var file_minievm_evm_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_minievm_evm_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_minievm_evm_v1_types_proto_goTypes = []interface{}{
-	(*Params)(nil),      // 0: minievm.evm.v1.Params
-	(*Log)(nil),         // 1: minievm.evm.v1.Log
-	(*AccessTuple)(nil), // 2: minievm.evm.v1.AccessTuple
+	(*Params)(nil),                // 0: minievm.evm.v1.Params
+	(*Log)(nil),                   // 1: minievm.evm.v1.Log
+	(*AccessTuple)(nil),           // 2: minievm.evm.v1.AccessTuple
+	(*ERC721OriginTokenInfo)(nil), // 3: minievm.evm.v1.ERC721OriginTokenInfo
 }
 var file_minievm_evm_v1_types_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -2531,6 +3065,18 @@ func file_minievm_evm_v1_types_proto_init() {
 				return nil
 			}
 		}
+		file_minievm_evm_v1_types_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ERC721OriginTokenInfo); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2538,7 +3084,7 @@ func file_minievm_evm_v1_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_minievm_evm_v1_types_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -50,6 +50,9 @@ message GenesisState {
 
   // erc20 wrapper contract address
   bytes erc20_wrapper = 9;
+
+  // connect oracle contract address
+  bytes connect_oracle = 10;
 }
 
 // GenesisKeyValue defines store KV values.

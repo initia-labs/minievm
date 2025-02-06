@@ -19,14 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_Code_FullMethodName                = "/minievm.evm.v1.Query/Code"
-	Query_State_FullMethodName               = "/minievm.evm.v1.Query/State"
-	Query_ERC20Factory_FullMethodName        = "/minievm.evm.v1.Query/ERC20Factory"
-	Query_ERC20Wrapper_FullMethodName        = "/minievm.evm.v1.Query/ERC20Wrapper"
-	Query_ContractAddrByDenom_FullMethodName = "/minievm.evm.v1.Query/ContractAddrByDenom"
-	Query_Denom_FullMethodName               = "/minievm.evm.v1.Query/Denom"
-	Query_Call_FullMethodName                = "/minievm.evm.v1.Query/Call"
-	Query_Params_FullMethodName              = "/minievm.evm.v1.Query/Params"
+	Query_Code_FullMethodName                        = "/minievm.evm.v1.Query/Code"
+	Query_State_FullMethodName                       = "/minievm.evm.v1.Query/State"
+	Query_ERC20Factory_FullMethodName                = "/minievm.evm.v1.Query/ERC20Factory"
+	Query_ERC20Wrapper_FullMethodName                = "/minievm.evm.v1.Query/ERC20Wrapper"
+	Query_ConnectOracle_FullMethodName               = "/minievm.evm.v1.Query/ConnectOracle"
+	Query_ContractAddrByDenom_FullMethodName         = "/minievm.evm.v1.Query/ContractAddrByDenom"
+	Query_ERC721ClassIdByContractAddr_FullMethodName = "/minievm.evm.v1.Query/ERC721ClassIdByContractAddr"
+	Query_ERC721OriginTokenInfos_FullMethodName      = "/minievm.evm.v1.Query/ERC721OriginTokenInfos"
+	Query_Denom_FullMethodName                       = "/minievm.evm.v1.Query/Denom"
+	Query_Call_FullMethodName                        = "/minievm.evm.v1.Query/Call"
+	Query_Params_FullMethodName                      = "/minievm.evm.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
@@ -41,8 +44,13 @@ type QueryClient interface {
 	ERC20Factory(ctx context.Context, in *QueryERC20FactoryRequest, opts ...grpc.CallOption) (*QueryERC20FactoryResponse, error)
 	// ERC20Wrapper gets the ERC20Wrapper contract address.
 	ERC20Wrapper(ctx context.Context, in *QueryERC20WrapperRequest, opts ...grpc.CallOption) (*QueryERC20WrapperResponse, error)
+	ConnectOracle(ctx context.Context, in *QueryConnectOracleRequest, opts ...grpc.CallOption) (*QueryConnectOracleResponse, error)
 	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(ctx context.Context, in *QueryContractAddrByDenomRequest, opts ...grpc.CallOption) (*QueryContractAddrByDenomResponse, error)
+	// ERC721ClassIdByContractAddr gets the class id by contract address.
+	ERC721ClassIdByContractAddr(ctx context.Context, in *QueryERC721ClassIdByContractAddrRequest, opts ...grpc.CallOption) (*QueryERC721ClassIdByContractAddrResponse, error)
+	// ERC721OriginTokenInfos gets the origin token infos by class id and token ids.
+	ERC721OriginTokenInfos(ctx context.Context, in *QueryERC721OriginTokenInfosRequest, opts ...grpc.CallOption) (*QueryERC721OriginTokenInfosResponse, error)
 	// Denom gets the denom of the given contract address.
 	Denom(ctx context.Context, in *QueryDenomRequest, opts ...grpc.CallOption) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
@@ -95,9 +103,36 @@ func (c *queryClient) ERC20Wrapper(ctx context.Context, in *QueryERC20WrapperReq
 	return out, nil
 }
 
+func (c *queryClient) ConnectOracle(ctx context.Context, in *QueryConnectOracleRequest, opts ...grpc.CallOption) (*QueryConnectOracleResponse, error) {
+	out := new(QueryConnectOracleResponse)
+	err := c.cc.Invoke(ctx, Query_ConnectOracle_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) ContractAddrByDenom(ctx context.Context, in *QueryContractAddrByDenomRequest, opts ...grpc.CallOption) (*QueryContractAddrByDenomResponse, error) {
 	out := new(QueryContractAddrByDenomResponse)
 	err := c.cc.Invoke(ctx, Query_ContractAddrByDenom_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ERC721ClassIdByContractAddr(ctx context.Context, in *QueryERC721ClassIdByContractAddrRequest, opts ...grpc.CallOption) (*QueryERC721ClassIdByContractAddrResponse, error) {
+	out := new(QueryERC721ClassIdByContractAddrResponse)
+	err := c.cc.Invoke(ctx, Query_ERC721ClassIdByContractAddr_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ERC721OriginTokenInfos(ctx context.Context, in *QueryERC721OriginTokenInfosRequest, opts ...grpc.CallOption) (*QueryERC721OriginTokenInfosResponse, error) {
+	out := new(QueryERC721OriginTokenInfosResponse)
+	err := c.cc.Invoke(ctx, Query_ERC721OriginTokenInfos_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +178,13 @@ type QueryServer interface {
 	ERC20Factory(context.Context, *QueryERC20FactoryRequest) (*QueryERC20FactoryResponse, error)
 	// ERC20Wrapper gets the ERC20Wrapper contract address.
 	ERC20Wrapper(context.Context, *QueryERC20WrapperRequest) (*QueryERC20WrapperResponse, error)
+	ConnectOracle(context.Context, *QueryConnectOracleRequest) (*QueryConnectOracleResponse, error)
 	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error)
+	// ERC721ClassIdByContractAddr gets the class id by contract address.
+	ERC721ClassIdByContractAddr(context.Context, *QueryERC721ClassIdByContractAddrRequest) (*QueryERC721ClassIdByContractAddrResponse, error)
+	// ERC721OriginTokenInfos gets the origin token infos by class id and token ids.
+	ERC721OriginTokenInfos(context.Context, *QueryERC721OriginTokenInfosRequest) (*QueryERC721OriginTokenInfosResponse, error)
 	// Denom gets the denom of the given contract address.
 	Denom(context.Context, *QueryDenomRequest) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
@@ -170,8 +210,17 @@ func (UnimplementedQueryServer) ERC20Factory(context.Context, *QueryERC20Factory
 func (UnimplementedQueryServer) ERC20Wrapper(context.Context, *QueryERC20WrapperRequest) (*QueryERC20WrapperResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ERC20Wrapper not implemented")
 }
+func (UnimplementedQueryServer) ConnectOracle(context.Context, *QueryConnectOracleRequest) (*QueryConnectOracleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectOracle not implemented")
+}
 func (UnimplementedQueryServer) ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContractAddrByDenom not implemented")
+}
+func (UnimplementedQueryServer) ERC721ClassIdByContractAddr(context.Context, *QueryERC721ClassIdByContractAddrRequest) (*QueryERC721ClassIdByContractAddrResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ERC721ClassIdByContractAddr not implemented")
+}
+func (UnimplementedQueryServer) ERC721OriginTokenInfos(context.Context, *QueryERC721OriginTokenInfosRequest) (*QueryERC721OriginTokenInfosResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ERC721OriginTokenInfos not implemented")
 }
 func (UnimplementedQueryServer) Denom(context.Context, *QueryDenomRequest) (*QueryDenomResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Denom not implemented")
@@ -267,6 +316,24 @@ func _Query_ERC20Wrapper_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ConnectOracle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConnectOracleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConnectOracle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ConnectOracle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConnectOracle(ctx, req.(*QueryConnectOracleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_ContractAddrByDenom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryContractAddrByDenomRequest)
 	if err := dec(in); err != nil {
@@ -281,6 +348,42 @@ func _Query_ContractAddrByDenom_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).ContractAddrByDenom(ctx, req.(*QueryContractAddrByDenomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ERC721ClassIdByContractAddr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryERC721ClassIdByContractAddrRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ERC721ClassIdByContractAddr(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ERC721ClassIdByContractAddr_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ERC721ClassIdByContractAddr(ctx, req.(*QueryERC721ClassIdByContractAddrRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ERC721OriginTokenInfos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryERC721OriginTokenInfosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ERC721OriginTokenInfos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ERC721OriginTokenInfos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ERC721OriginTokenInfos(ctx, req.(*QueryERC721OriginTokenInfosRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -363,8 +466,20 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_ERC20Wrapper_Handler,
 		},
 		{
+			MethodName: "ConnectOracle",
+			Handler:    _Query_ConnectOracle_Handler,
+		},
+		{
 			MethodName: "ContractAddrByDenom",
 			Handler:    _Query_ContractAddrByDenom_Handler,
+		},
+		{
+			MethodName: "ERC721ClassIdByContractAddr",
+			Handler:    _Query_ERC721ClassIdByContractAddr_Handler,
+		},
+		{
+			MethodName: "ERC721OriginTokenInfos",
+			Handler:    _Query_ERC721OriginTokenInfos_Handler,
 		},
 		{
 			MethodName: "Denom",

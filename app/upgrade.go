@@ -22,7 +22,7 @@ import (
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 )
 
-const upgradeName = "0.7.0"
+const upgradeName = "0.7.1"
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
@@ -71,6 +71,13 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 				if err != nil {
 					return nil, err
 				}
+			}
+
+			// try to deploy and store connect oracle contract address
+			if err := app.EVMKeeper.DeployConnectOracle(ctx); err != nil &&
+				// ignore contract address collision error (contract already deployed)
+				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
+				return nil, err
 			}
 
 			return versionMap, nil
