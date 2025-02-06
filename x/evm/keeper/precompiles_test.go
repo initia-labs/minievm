@@ -289,11 +289,21 @@ func Test_JSONUnmarshalObject(t *testing.T) {
 		input       []byte
 		expected    i_jsonutils.IJSONUtilsJSONObject
 		expectedErr bool
-	}{
+	}{	
+		{
+			name:     "empty map",
+			input:    []byte(`{}`),
+			expected: i_jsonutils.IJSONUtilsJSONObject{Elements: []i_jsonutils.IJSONUtilsJSONElement{}},
+		},
 		{
 			name:     "simple map",
 			input:    []byte(`{"a": 1, "b": 2}`),
 			expected: i_jsonutils.IJSONUtilsJSONObject{Elements: []i_jsonutils.IJSONUtilsJSONElement{{Key: "a", Value: mustMarshalJSON(t, 1)}, {Key: "b", Value: mustMarshalJSON(t, 2)}}},
+		},
+		{
+			name:     "simple map sorted",
+			input:    []byte(`{"b": 1, "a": 2}`),
+			expected: i_jsonutils.IJSONUtilsJSONObject{Elements: []i_jsonutils.IJSONUtilsJSONElement{{Key: "a", Value: mustMarshalJSON(t, 2)}, {Key: "b", Value: mustMarshalJSON(t, 1)}}},
 		},
 		{
 			name:     "nested map",
@@ -354,6 +364,30 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 		ProviderConfigs: []marketmaptypes.ProviderConfig{},
 	}
 
+	abi, err := connect_oracle.ConnectOracleMetaData.GetAbi()
+	require.NoError(t, err)
+
+	oracleAddr, err := input.EVMKeeper.GetConnectOracleAddr(ctx)
+	require.NoError(t, err)
+
+	// 1. get price in error case
+	inputBz, err := abi.Pack("get_price", `BTC/USD`)
+	require.NoError(t, err)
+
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, "no price / nonce reported for CurrencyPair")
+
+	inputBz, err = abi.Pack("get_price", `Error`)
+	require.NoError(t, err)
+
+	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, "incorrectly formatted CurrencyPair")
+
+	// 2. get price in correct case
 	// set BTC/USD price to 1000
 	btcCp, err := connecttypes.CurrencyPairFromString("BTC/USD")
 	require.NoError(t, err)
@@ -383,17 +417,11 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	ethNonce, err := input.OracleKeeper.GetNonceForCurrencyPair(ctx, ethCp)
 	require.NoError(t, err)
 
-	abi, err := connect_oracle.ConnectOracleMetaData.GetAbi()
-	require.NoError(t, err)
-
 	// try get price
-	inputBz, err := abi.Pack("get_price", `BTC/USD`)
+	inputBz, err = abi.Pack("get_price", `BTC/USD`)
 	require.NoError(t, err)
 
-	oracleAddr, err := input.EVMKeeper.GetConnectOracleAddr(ctx)
-	require.NoError(t, err)
-
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["get_price"].Outputs.Unpack(ret)
