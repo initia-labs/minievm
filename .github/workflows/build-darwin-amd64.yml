@@ -44,7 +44,7 @@ jobs:
           echo "WASMVM_VERSION=${WASMVM_VERSION}"
           echo "MINIWASM_NETWORK_NAME=${MINIWASM_NETWORK_NAME}"
 
-      - name: Build and Package for Darwin ADM642
+      - name: Build and Package for Darwin AMD642
         run: |
           cd ../minievm \
           && make build \
