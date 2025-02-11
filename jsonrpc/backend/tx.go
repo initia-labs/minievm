@@ -75,10 +75,6 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 	senderHex := common.BytesToAddress(sender.Bytes()).Hex()
 
-	// hold mutex for each sender
-	accMut := b.acquireAccMut(senderHex)
-	defer b.releaseAccMut(senderHex, accMut)
-
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
@@ -93,9 +89,26 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 	txHash := tx.Hash()
 	b.queuedTxHashes.Store(txHash, cacheKey)
+
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
 	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
+	b.releaseAccMut(senderHex, accMut)
 
 	// check if there are queued txs which can be sent
+	if err = b.FlushQueuedTxs(senderHex, accSeq); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// flush the queued transactions for the given sender only if the sequence matches
+func (b *JSONRPCBackend) FlushQueuedTxs(senderHex string, accSeq uint64) error {
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
+	defer b.releaseAccMut(senderHex, accMut)
+
 	for {
 		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
 		if txQueueItem, ok := b.queuedTxs.Get(cacheKey); ok {

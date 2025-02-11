@@ -112,6 +112,38 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	done()
 }
 
+func Test_ListenFinalizeBlock_FlushQueuedTxs(t *testing.T) {
+	app, addrs, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
+	defer app.Close()
+
+	received := make(map[string]uint64)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	indexer.RegisterFlushQueuedTxs(func(senderHex string, accSeq uint64) error {
+		received[senderHex] = accSeq
+		wg.Done()
+		return nil
+	})
+
+	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+
+	// load current sequence
+	ctx, err := app.CreateQueryContext(0, false)
+	require.NoError(t, err)
+	seq, err := app.AccountKeeper.GetSequence(ctx, addrs[0].Bytes())
+	require.NoError(t, err)
+
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	wg.Wait()
+
+	require.Len(t, received, 1)
+	require.Equal(t, uint64(seq+1), received[addrs[0].Hex()])
+}
+
 func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
 	app, _, privKeys := tests.CreateApp(t)
 	indexer := app.EVMIndexer()
