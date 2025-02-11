@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -75,10 +77,6 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 	senderHex := common.BytesToAddress(sender.Bytes()).Hex()
 
-	// hold mutex for each sender
-	accMut := b.acquireAccMut(senderHex)
-	defer b.releaseAccMut(senderHex, accMut)
-
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
@@ -93,27 +91,54 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 	txHash := tx.Hash()
 	b.queuedTxHashes.Store(txHash, cacheKey)
+
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
 	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
+	b.releaseAccMut(senderHex, accMut)
 
 	// check if there are queued txs which can be sent
+	if err = b.FlushQueuedTxs(senderHex, accSeq); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// flush the queued transactions for the given sender only if the sequence matches
+func (b *JSONRPCBackend) FlushQueuedTxs(senderHex string, accSeq uint64) error {
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
+	defer b.releaseAccMut(senderHex, accMut)
+
 	for {
 		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
-		if txQueueItem, ok := b.queuedTxs.Get(cacheKey); ok {
-			_ = b.queuedTxs.Remove(cacheKey)
-
-			b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
-			res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
-			if err != nil {
-				return err
-			}
-			if res.Code != 0 {
-				return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
-			}
-		} else {
+		txQueueItem, ok := b.queuedTxs.Get(cacheKey)
+		if !ok {
 			break
 		}
 
+		b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
+
+		// increase the sequence number for the next lookup
 		accSeq++
+
+		// remove the tx from the queue
+		_ = b.queuedTxs.Remove(cacheKey)
+
+		// broadcast the tx
+		res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
+		if err != nil && strings.Contains(err.Error(), sdkerrors.ErrWrongSequence.Error()) {
+			// ignore wrong sequence error
+			continue
+		} else if err != nil {
+			return err
+		}
+
+		// ignore wrong sequence error
+		if res.Code != 0 && res.Code != sdkerrors.ErrWrongSequence.ABCICode() {
+			return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+		}
 	}
 
 	return nil
