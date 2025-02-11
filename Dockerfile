@@ -1,5 +1,5 @@
 # Stage 1: Build the Go project
-FROM golang:1.23-alpine3.19 AS go-builder
+FROM golang:1.23-alpine3.20 AS go-builder
 
 # Use build arguments for the target architecture
 ARG TARGETARCH
@@ -17,7 +17,7 @@ ENV MIMALLOC_RESERVE_HUGE_OS_PAGES=4
 
 RUN LEDGER_ENABLED=false GOARCH=${GOARCH} LDFLAGS="-linkmode=external -extldflags \"-L/code/mimalloc/build -lmimalloc -Wl,-z,muldefs -static\"" make build
 
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN addgroup minitia \
     && adduser -G minitia -D -h /minitia minitia

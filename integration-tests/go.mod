@@ -1,8 +1,6 @@
 module github.com/initia-labs/minievm/integration-tests
 
-go 1.23.3
-
-toolchain go1.23.5
+go 1.23.6
 
 require (
 	cosmossdk.io/math v1.4.0
@@ -146,11 +144,11 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v0.7.0 // indirect
 	github.com/initia-labs/OPinit/api v0.6.2 // indirect
-	github.com/initia-labs/kvindexer v0.1.10-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/block v0.1.1-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.7-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.3-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.2-0.20250201074115-b7f88dafd1ca // indirect
+	github.com/initia-labs/kvindexer v0.1.10 // indirect
+	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4 // indirect
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
 	github.com/initia-labs/movevm v0.6.1 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
