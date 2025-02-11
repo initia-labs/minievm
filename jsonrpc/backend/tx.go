@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -111,22 +113,32 @@ func (b *JSONRPCBackend) FlushQueuedTxs(senderHex string, accSeq uint64) error {
 
 	for {
 		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
-		if txQueueItem, ok := b.queuedTxs.Get(cacheKey); ok {
-			_ = b.queuedTxs.Remove(cacheKey)
-
-			b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
-			res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
-			if err != nil {
-				return err
-			}
-			if res.Code != 0 {
-				return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
-			}
-		} else {
+		txQueueItem, ok := b.queuedTxs.Get(cacheKey)
+		if !ok {
 			break
 		}
 
+		b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
+
+		// increase the sequence number for the next lookup
 		accSeq++
+
+		// remove the tx from the queue
+		_ = b.queuedTxs.Remove(cacheKey)
+
+		// broadcast the tx
+		res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
+		if err != nil && strings.Contains(err.Error(), sdkerrors.ErrWrongSequence.Error()) {
+			// ignore wrong sequence error
+			continue
+		} else if err != nil {
+			return err
+		}
+
+		// ignore wrong sequence error
+		if res.Code != 0 && res.Code != sdkerrors.ErrWrongSequence.ABCICode() {
+			return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+		}
 	}
 
 	return nil
