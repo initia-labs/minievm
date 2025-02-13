@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"sync/atomic"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -73,17 +75,13 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	accSeq := uint64(0)
 	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
+	txHash := tx.Hash()
 	senderHex := common.BytesToAddress(sender.Bytes()).Hex()
-
-	// hold mutex for each sender
-	accMut := b.acquireAccMut(senderHex)
-	defer b.releaseAccMut(senderHex, accMut)
 
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
 	}
-
 	if accSeq > txSeq {
 		return fmt.Errorf("%w: next nonce %v, tx nonce %v", core.ErrNonceTooLow, accSeq, txSeq)
 	}
@@ -91,29 +89,65 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
 	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
 
-	txHash := tx.Hash()
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
+
 	b.queuedTxHashes.Store(txHash, cacheKey)
+	rc, _ := b.queuedTxAccounts.LoadOrStore(senderHex, &atomic.Int64{})
+	rc.(*atomic.Int64).Add(1)
+
 	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
 
-	// check if there are queued txs which can be sent
-	for {
-		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
-		if txQueueItem, ok := b.queuedTxs.Get(cacheKey); ok {
-			_ = b.queuedTxs.Remove(cacheKey)
+	b.releaseAccMut(senderHex, accMut)
 
-			b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
-			res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
-			if err != nil {
-				return err
-			}
-			if res.Code != 0 {
-				return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
-			}
-		} else {
+	// check if there are queued txs which can be sent
+	if err = b.flushQueuedTxs(senderHex, accSeq); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// flush the queued transactions for the given sender only if the sequence matches
+func (b *JSONRPCBackend) flushQueuedTxs(senderHex string, accSeq uint64) error {
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
+	defer b.releaseAccMut(senderHex, accMut)
+
+	for {
+		select {
+		case <-b.ctx.Done():
+			return nil
+		default:
+		}
+
+		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
+		txQueueItem, ok := b.queuedTxs.Get(cacheKey)
+		if !ok {
 			break
 		}
 
+		b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
+
+		// increase the sequence number for the next lookup
 		accSeq++
+
+		// remove the tx from the queue
+		_ = b.queuedTxs.Remove(cacheKey)
+
+		// broadcast the tx
+		res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
+		if err != nil && strings.Contains(err.Error(), sdkerrors.ErrWrongSequence.Error()) {
+			// ignore wrong sequence error
+			continue
+		} else if err != nil {
+			return err
+		}
+
+		// ignore wrong sequence error
+		if res.Code != 0 && res.Code != sdkerrors.ErrWrongSequence.ABCICode() {
+			return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
+		}
 	}
 
 	return nil

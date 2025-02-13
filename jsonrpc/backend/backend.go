@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -16,6 +17,7 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/initia-labs/minievm/app"
 	"github.com/initia-labs/minievm/jsonrpc/config"
@@ -27,8 +29,9 @@ type JSONRPCBackend struct {
 	app    *app.MinitiaApp
 	logger log.Logger
 
-	queuedTxs      *lrucache.Cache[string, txQueueItem]
-	queuedTxHashes *sync.Map
+	queuedTxs        *lrucache.Cache[string, txQueueItem]
+	queuedTxHashes   *sync.Map
+	queuedTxAccounts *sync.Map
 
 	historyCache *lru.Cache[cacheKey, processedFees]
 
@@ -104,8 +107,17 @@ func NewJSONRPCBackend(
 	}
 
 	queuedTxHashes := new(sync.Map)
+	queuedTxAccounts := new(sync.Map)
 	queuedTxs, err := lrucache.NewWithEvict(cfg.QueuedTransactionCap, func(_ string, txCache txQueueItem) {
 		queuedTxHashes.Delete(txCache.hash)
+
+		// decrement the reference count of the sender account
+		// if the reference count reaches zero, then delete account from the map
+		if rc, ok := queuedTxAccounts.Load(txCache.sender); ok {
+			if rc := rc.(*atomic.Int64).Add(-1); rc == 0 {
+				queuedTxAccounts.Delete(txCache.sender)
+			}
+		}
 	})
 	if err != nil {
 		return nil, err
@@ -115,8 +127,9 @@ func NewJSONRPCBackend(
 		app:    app,
 		logger: logger,
 
-		queuedTxs:      queuedTxs,
-		queuedTxHashes: queuedTxHashes,
+		queuedTxs:        queuedTxs,
+		queuedTxHashes:   queuedTxHashes,
+		queuedTxAccounts: queuedTxAccounts,
 
 		historyCache: lru.NewCache[cacheKey, processedFees](feeHistoryCacheSize),
 
@@ -146,6 +159,9 @@ func NewJSONRPCBackend(
 	// start fee fetcher
 	go b.feeFetcher()
 
+	// start queued tx flusher
+	go b.queuedTxFlusher()
+
 	// Start the bloom bits servicing goroutines
 	b.startBloomHandlers(evmconfig.SectionSize)
 
@@ -170,6 +186,10 @@ func (b *JSONRPCBackend) feeFetcher() {
 				err = fmt.Errorf("feeFetcher panic: %v", r)
 			}
 		}()
+
+		if b.app.LastBlockHeight() <= 1 {
+			return nil
+		}
 
 		queryCtx, err := b.getQueryCtx()
 		if err != nil {
@@ -203,6 +223,57 @@ func (b *JSONRPCBackend) feeFetcher() {
 		case <-ticker.C:
 			if err := fetcher(); err != nil {
 				b.logger.Error("failed to fetch fee", "err", err)
+			}
+		case <-b.ctx.Done():
+			return
+		}
+	}
+}
+
+func (b *JSONRPCBackend) queuedTxFlusher() {
+	flusher := func() error {
+		// load all accounts in the queued txs
+		var accounts []string
+		b.queuedTxAccounts.Range(func(key, value interface{}) bool {
+			senderHex := key.(string)
+			accounts = append(accounts, senderHex)
+
+			return true
+		})
+
+		checkCtx := b.app.GetContextForCheckTx(nil)
+		for _, senderHex := range accounts {
+			select {
+			case <-b.ctx.Done():
+				return nil
+			default:
+			}
+
+			accSeq := uint64(0)
+			sender := sdk.AccAddress(common.HexToAddress(senderHex).Bytes())
+			if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
+				accSeq = acc.GetSequence()
+			}
+
+			// trigger the flush for each sender
+			go func(senderHex string, accSeq uint64) {
+				if err := b.flushQueuedTxs(senderHex, accSeq); err != nil {
+					b.logger.Error("failed to flush queued txs", "err", err)
+				}
+			}(senderHex, accSeq)
+		}
+
+		return nil
+	}
+
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := flusher(); err != nil {
+				b.logger.Error("failed to flush queued txs", "err", err)
 			}
 		case <-b.ctx.Done():
 			return
