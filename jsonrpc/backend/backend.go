@@ -231,6 +231,7 @@ func (b *JSONRPCBackend) feeFetcher() {
 }
 
 func (b *JSONRPCBackend) queuedTxFlusher() {
+	flushRunning := &sync.Map{}
 	flusher := func() error {
 		// load all accounts in the queued txs
 		var accounts []string
@@ -249,24 +250,31 @@ func (b *JSONRPCBackend) queuedTxFlusher() {
 			default:
 			}
 
-			accSeq := uint64(0)
-			sender := sdk.AccAddress(common.HexToAddress(senderHex).Bytes())
-			if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
-				accSeq = acc.GetSequence()
-			}
-
 			// trigger the flush for each sender
-			go func(senderHex string, accSeq uint64) {
+			go func(senderHex string) {
+				accSeq := uint64(0)
+				sender := sdk.AccAddress(common.HexToAddress(senderHex).Bytes())
+				if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
+					accSeq = acc.GetSequence()
+				}
+
+				running, _ := flushRunning.LoadOrStore(senderHex, &atomic.Bool{})
+				if running.(*atomic.Bool).Swap(true) {
+					return
+				}
+
 				if err := b.flushQueuedTxs(senderHex, accSeq); err != nil {
 					b.logger.Error("failed to flush queued txs", "err", err)
 				}
-			}(senderHex, accSeq)
+
+				running.(*atomic.Bool).Store(false)
+			}(senderHex)
 		}
 
 		return nil
 	}
 
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
 	for {
