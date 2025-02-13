@@ -43,7 +43,7 @@ func (m *MempoolWrapper) CountTx() int {
 // Insert implements mempool.Mempool.
 func (m *MempoolWrapper) Insert(ctx context.Context, tx sdk.Tx) error {
 	txUtils := evmkeeper.NewTxUtils(m.indexer.evmKeeper)
-	ethTx, sender, err := txUtils.ConvertCosmosTxToEthereumTx(ctx, tx)
+	ethTx, _, err := txUtils.ConvertCosmosTxToEthereumTx(ctx, tx)
 	if err != nil {
 		m.indexer.logger.Error("failed to convert CosmosTx to EthTx", "err", err)
 		return err
@@ -51,9 +51,6 @@ func (m *MempoolWrapper) Insert(ctx context.Context, tx sdk.Tx) error {
 
 	if ethTx != nil {
 		ethTxHash := ethTx.Hash()
-		senderHex := sender.Hex()
-		nonce := ethTx.Nonce()
-
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
 
 		m.indexer.logger.Debug("inserting tx into mempool", "pending len", m.indexer.txPendingMap.Len(), "ethTxHash", ethTxHash)
@@ -65,15 +62,6 @@ func (m *MempoolWrapper) Insert(ctx context.Context, tx sdk.Tx) error {
 				pendingChan <- rpcTx
 			}
 		}()
-
-		if m.indexer.flushQueuedTxs != nil {
-			go func() {
-				// try to flush queued txs from the next nonce
-				if err := m.indexer.flushQueuedTxs(senderHex, nonce+1); err != nil {
-					m.indexer.logger.Error("failed to flush queued txs", "err", err)
-				}
-			}()
-		}
 	}
 
 	return m.mempool.Insert(ctx, tx)

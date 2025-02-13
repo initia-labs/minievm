@@ -23,6 +23,7 @@ import (
 	"github.com/initia-labs/minievm/jsonrpc/backend"
 	"github.com/initia-labs/minievm/jsonrpc/config"
 	"github.com/initia-labs/minievm/tests"
+	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -122,4 +123,65 @@ func Test_FloodingQuery(t *testing.T) {
 
 	wg.Wait()
 	cancel()
+}
+
+func Test_flushQueuedTxs(t *testing.T) {
+	input := setupBackend(t)
+	app, _, backend, addrs, privKeys := input.app, input.addrs, input.backend, input.addrs, input.privKeys
+
+	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	events := finalizeRes.TxResults[0].Events
+	createEvent := events[len(events)-3]
+	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
+
+	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
+	require.NoError(t, err)
+
+	// mint 1_000_000 tokens to the first address
+	tx, _ = tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+	tx2, _ := tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000), tests.SetNonce(2))
+	_, finalizeRes = tests.ExecuteTxs(t, app, tx, tx2)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
+
+	ctx, err := app.CreateQueryContext(0, false)
+	require.NoError(t, err)
+
+	// Acc: 0, Nonce: 4
+	tx04, txHash04 := tests.GenerateTransferERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), tests.SetNonce(4))
+	evmTx04, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, tx04)
+	require.NoError(t, err)
+	require.NotNil(t, evmTx04)
+
+	txBz, err := evmTx04.MarshalBinary()
+	require.NoError(t, err)
+	_, err = backend.SendRawTransaction(txBz)
+	require.NoError(t, err)
+
+	// after tx flusher, nonce 4 should be in queued
+	// 0 in pending, and 1 in queued
+	txPool, err := backend.TxPoolContent()
+	require.NoError(t, err)
+	require.Len(t, txPool["pending"][addrs[0].Hex()], 0)
+	require.Len(t, txPool["queued"][addrs[0].Hex()], 1)
+	require.Equal(t, txPool["queued"][addrs[0].Hex()]["4"].Hash, txHash04)
+
+	// Acc: 0, Nonce: 3, directly broadcast to mempool
+	tx, _ = tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+	_, finalizeRes = tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	// wait tx flusher
+	time.Sleep(10 * time.Second)
+
+	// after tx flusher, nonce 4 should be in pending
+	// 1 in pending, and 0 in queued
+	txPool, err = backend.TxPoolContent()
+	require.NoError(t, err)
+	require.Len(t, txPool["pending"][addrs[0].Hex()], 1)
+	require.Equal(t, txPool["pending"][addrs[0].Hex()]["4"].Hash, txHash04)
+	require.Len(t, txPool["queued"][addrs[0].Hex()], 0)
 }

@@ -5,17 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -75,13 +75,13 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	accSeq := uint64(0)
 	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
+	txHash := tx.Hash()
 	senderHex := common.BytesToAddress(sender.Bytes()).Hex()
 
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
 	}
-
 	if accSeq > txSeq {
 		return fmt.Errorf("%w: next nonce %v, tx nonce %v", core.ErrNonceTooLow, accSeq, txSeq)
 	}
@@ -89,16 +89,19 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
 	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
 
-	txHash := tx.Hash()
-	b.queuedTxHashes.Store(txHash, cacheKey)
-
 	// hold mutex for each sender
 	accMut := b.acquireAccMut(senderHex)
+
+	b.queuedTxHashes.Store(txHash, cacheKey)
+	rc, _ := b.queuedTxAccounts.LoadOrStore(senderHex, &atomic.Int64{})
+	rc.(*atomic.Int64).Add(1)
+
 	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
+
 	b.releaseAccMut(senderHex, accMut)
 
 	// check if there are queued txs which can be sent
-	if err = b.FlushQueuedTxs(senderHex, accSeq); err != nil {
+	if err = b.flushQueuedTxs(senderHex, accSeq); err != nil {
 		return err
 	}
 
@@ -106,12 +109,18 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 }
 
 // flush the queued transactions for the given sender only if the sequence matches
-func (b *JSONRPCBackend) FlushQueuedTxs(senderHex string, accSeq uint64) error {
+func (b *JSONRPCBackend) flushQueuedTxs(senderHex string, accSeq uint64) error {
 	// hold mutex for each sender
 	accMut := b.acquireAccMut(senderHex)
 	defer b.releaseAccMut(senderHex, accMut)
 
 	for {
+		select {
+		case <-b.ctx.Done():
+			return nil
+		default:
+		}
+
 		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
 		txQueueItem, ok := b.queuedTxs.Get(cacheKey)
 		if !ok {

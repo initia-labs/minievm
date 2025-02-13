@@ -48,7 +48,6 @@ func Test_PruneIndexer(t *testing.T) {
 	// wait for pruning
 	for {
 		time.Sleep(100 * time.Millisecond)
-
 		if indexer.IsPruningRunning() {
 			continue
 		} else {

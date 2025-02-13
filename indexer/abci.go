@@ -44,7 +44,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	cumulativeGasUsed := uint64(0)
 	ethTxs := make([]*coretypes.Transaction, 0, len(req.Txs))
 	receipts := make([]*coretypes.Receipt, 0, len(req.Txs))
-	senderNonceMap := make(map[string]uint64)
 	for idx, txBytes := range req.Txs {
 		tx, err := e.txConfig.TxDecoder()(txBytes)
 		if err != nil {
@@ -52,7 +51,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			continue
 		}
 
-		ethTx, sender, err := keeper.NewTxUtils(e.evmKeeper).ConvertCosmosTxToEthereumTx(sdkCtx, tx)
+		ethTx, _, err := keeper.NewTxUtils(e.evmKeeper).ConvertCosmosTxToEthereumTx(sdkCtx, tx)
 		if err != nil {
 			e.logger.Error("failed to convert CosmosTx to EthTx", "err", err)
 			return err
@@ -83,7 +82,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 
 		txIndex++
 		ethTxs = append(ethTxs, ethTx)
-		senderNonceMap[sender.Hex()] = ethTx.Nonce()
 
 		// extract logs and contract address from tx results
 		ethLogs, contractAddr, err := extractLogsAndContractAddr(txStatus, txResult.Data, ethTx.To() == nil)
@@ -202,18 +200,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			e.logger.Error("block event emitter timed out")
 		}
 	}()
-
-	// flush queued txs to mempool
-	if e.flushQueuedTxs != nil {
-		go func() {
-			for senderHex, nonce := range senderNonceMap {
-				// try to flush queued txs from the next nonce
-				if err := e.flushQueuedTxs(senderHex, nonce+1); err != nil {
-					e.logger.Error("failed to flush queued txs", "err", err)
-				}
-			}
-		}()
-	}
 
 	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm preblocker.
 	// - https://github.com/cosmos/cosmos-sdk/issues/22246

@@ -54,9 +54,6 @@ type EVMIndexer interface {
 	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
 	TxInMempool(hash common.Hash) *rpctypes.RPCTransaction
 
-	// register flush queued txs function to
-	RegisterFlushQueuedTxs(f FlushQueuedTxs)
-
 	// bloom
 	ReadBloomBits(ctx context.Context, section uint64, index uint32) ([]byte, error)
 	PeekBloomBitsNextSection(ctx context.Context) (uint64, error)
@@ -65,9 +62,6 @@ type EVMIndexer interface {
 	// Stop
 	Stop()
 }
-
-// FlushQueuedTxs is a function to flush queued transactions.
-type FlushQueuedTxs = func(senderHex string, accSeq uint64) error
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
@@ -108,9 +102,6 @@ type EVMIndexerImpl struct {
 
 	// txPendingMap is a map to store tx hashes in pending state.
 	txPendingMap *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
-
-	// flushQueuedTxs is a function to flush queued transactions to mempool.
-	flushQueuedTxs FlushQueuedTxs
 }
 
 func NewEVMIndexer(
@@ -172,8 +163,6 @@ func NewEVMIndexer(
 			// pending tx lifetime is 1 minute in indexer
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
-
-		flushQueuedTxs: nil,
 	}
 
 	schema, err := sb.Build()
@@ -198,11 +187,6 @@ func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.
 	e.logsChans = append(e.logsChans, logsChan)
 	e.pendingChans = append(e.pendingChans, pendingChan)
 	return blockChan, logsChan, pendingChan
-}
-
-// RegisterFlushQueuedTxs registers a function to flush queued transactions.
-func (e *EVMIndexerImpl) RegisterFlushQueuedTxs(f FlushQueuedTxs) {
-	e.flushQueuedTxs = f
 }
 
 // blockEvents is a struct to emit block events.
