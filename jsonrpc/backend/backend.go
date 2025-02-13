@@ -232,6 +232,8 @@ func (b *JSONRPCBackend) feeFetcher() {
 
 func (b *JSONRPCBackend) queuedTxFlusher() {
 	flushRunning := &sync.Map{}
+	workerPool := make(chan struct{}, 16)
+
 	flusher := func() error {
 		// load all accounts in the queued txs
 		var accounts []string
@@ -247,11 +249,17 @@ func (b *JSONRPCBackend) queuedTxFlusher() {
 			select {
 			case <-b.ctx.Done():
 				return nil
+			case workerPool <- struct{}{}: // Acquire worker slot
 			default:
+				// Skip if worker pool is full
+				b.logger.Debug("skipping flush due to worker pool full", "sender", senderHex)
+				continue
 			}
 
 			// trigger the flush for each sender
 			go func(senderHex string) {
+				defer func() { <-workerPool }() // Release worker slot
+
 				accSeq := uint64(0)
 				sender := sdk.AccAddress(common.HexToAddress(senderHex).Bytes())
 				if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
