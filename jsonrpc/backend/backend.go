@@ -149,9 +149,6 @@ func NewJSONRPCBackend(
 	// Start the bloom bits servicing goroutines
 	b.startBloomHandlers(evmconfig.SectionSize)
 
-	// Register flush queued txs function
-	b.app.EVMIndexer().RegisterFlushQueuedTxs(b.FlushQueuedTxs)
-
 	return b, nil
 }
 

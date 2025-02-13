@@ -55,40 +55,6 @@ func Test_Mempool_Subscribe(t *testing.T) {
 	done()
 }
 
-func Test_Mempool_TriggerFlushQueuedTxs(t *testing.T) {
-	app, addrs, privKeys := tests.CreateApp(t)
-	indexer := app.EVMIndexer()
-	defer app.Close()
-
-	received := make(map[string]uint64)
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	indexer.RegisterFlushQueuedTxs(func(senderHex string, accSeq uint64) error {
-		received[senderHex] = accSeq
-		wg.Done()
-		return nil
-	})
-
-	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
-
-	noopMempool := &mempool.NoOpMempool{}
-	mempool := indexer.MempoolWrapper(noopMempool)
-
-	// insert tx into mempool
-	ctx, err := app.CreateQueryContext(0, false)
-	require.NoError(t, err)
-	seq, err := app.AccountKeeper.GetSequence(ctx, addrs[0].Bytes())
-	require.NoError(t, err)
-	err = mempool.Insert(ctx, tx)
-	require.NoError(t, err)
-
-	wg.Wait()
-
-	require.Len(t, received, 1)
-	require.Equal(t, uint64(seq+1), received[addrs[0].Hex()])
-}
-
 func consumeBlockLogsChan(blockCh <-chan *coretypes.Header, logChan <-chan []*coretypes.Log, duration int) {
 	timer := time.NewTimer(time.Second * time.Duration(duration))
 

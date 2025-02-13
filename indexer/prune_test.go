@@ -45,17 +45,6 @@ func Test_PruneIndexer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
-	// wait for pruning
-	for {
-		time.Sleep(100 * time.Millisecond)
-
-		if indexer.IsPruningRunning() {
-			continue
-		} else {
-			break
-		}
-	}
-
 	// mint 1_000_000 tokens to the first address
 	tx, evmTxHash2 := tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
 	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
