@@ -12,12 +12,12 @@ INDEXER_URL=github.com/initia-labs/kvindexer
 CONNECT_URL=github.com/skip-mev/connect
 CONNECT_V=v2
 
-COSMOS_SDK_VERSION=$(cat ./go.mod | grep "$COSMOS_URL v" | sed -n -e "s/^.* //p")
-IBC_VERSION=$(cat ./go.mod | grep "$IBC_URL/$IBC_V v" | sed -n -e "s/^.* //p")
-INITIA_VERSION=$(cat ./go.mod | grep "$INITIA_URL v" | sed -n -e "s/^.* //p")
-OPINIT_VERSION=$(cat ./go.mod | grep "$OPINIT_URL v" | sed -n -e "s/^.* //p")
-INDEXER_VERSION=$(cat ./go.mod | grep "$INDEXER_URL v" | sed -n -e "s/^.* //p")
-CONNECT_VERSION=$(cat ./go.mod | grep "$CONNECT_URL/$CONNECT_V v" | sed -n -e "s/^.* //p")
+COSMOS_SDK_VERSION=$(grep -o "$COSMOS_URL v[^\ ]*" ./go.mod)
+IBC_VERSION=$(grep -o "$IBC_URL/$IBC_V v[^\ ]*" ./go.mod)
+INITIA_VERSION=$(grep -o "$INITIA_URL v[^\ ]*" ./go.mod)
+OPINIT_VERSION=$(grep -o "$OPINIT_URL v[^\ ]*" ./go.mod)
+INDEXER_VERSION=$(grep -o "$INDEXER_URL v[^\ ]*" ./go.mod)
+CONNECT_VERSION=$(grep -o "$CONNECT_URL/$CONNECT_V v[^\ ]*" ./go.mod)
 
 mkdir -p ./third_party
 cd third_party
