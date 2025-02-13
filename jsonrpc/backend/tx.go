@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 
 	"cosmossdk.io/collections"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -73,17 +74,13 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	accSeq := uint64(0)
 	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
 
-	senderHex := hexutil.Encode(sender.Bytes())
-
-	// hold mutex for each sender
-	accMut := b.acquireAccMut(senderHex)
-	defer b.releaseAccMut(senderHex, accMut)
+	txHash := tx.Hash()
+	senderHex := common.BytesToAddress(sender.Bytes()).Hex()
 
 	checkCtx := b.app.GetContextForCheckTx(nil)
 	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
 		accSeq = acc.GetSequence()
 	}
-
 	if accSeq > txSeq {
 		return fmt.Errorf("%w: next nonce %v, tx nonce %v", core.ErrNonceTooLow, accSeq, txSeq)
 	}
@@ -91,12 +88,38 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
 	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
 
-	txHash := tx.Hash()
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
+
 	b.queuedTxHashes.Store(txHash, cacheKey)
+	rc, _ := b.queuedTxAccounts.LoadOrStore(senderHex, &atomic.Int64{})
+	rc.(*atomic.Int64).Add(1)
+
 	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
 
+	b.releaseAccMut(senderHex, accMut)
+
 	// check if there are queued txs which can be sent
+	if err = b.flushQueuedTxs(senderHex, accSeq); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// flush the queued transactions for the given sender only if the sequence matches
+func (b *JSONRPCBackend) flushQueuedTxs(senderHex string, accSeq uint64) error {
+	// hold mutex for each sender
+	accMut := b.acquireAccMut(senderHex)
+	defer b.releaseAccMut(senderHex, accMut)
+
 	for {
+		select {
+		case <-b.ctx.Done():
+			return nil
+		default:
+		}
+
 		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
 		if txQueueItem, ok := b.queuedTxs.Get(cacheKey); ok {
 			_ = b.queuedTxs.Remove(cacheKey)
