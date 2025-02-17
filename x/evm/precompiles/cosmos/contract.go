@@ -148,7 +148,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 
 		// convert shorthand account to original address
-		addr, err := e.originAddress(ctx, isBlockedAddressArguments.Address.Bytes())
+		addr, err := e.originAddress(ctx, isBlockedAddressArguments.Account.Bytes())
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
@@ -169,7 +169,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 
 		// convert shorthand account to original address
-		addr, err := e.originAddress(ctx, isModuleAddressArguments.Address.Bytes())
+		addr, err := e.originAddress(ctx, isModuleAddressArguments.Account.Bytes())
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
@@ -192,7 +192,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 
 		// convert shorthand account to original address
-		addr, err := e.originAddress(ctx, isAuthorityAddressArguments.Address.Bytes())
+		addr, err := e.originAddress(ctx, isAuthorityAddressArguments.Account.Bytes())
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}

@@ -8,17 +8,17 @@ import (
 
 // IsBlockedAddressArguments is the arguments for the is_blocked_address method.
 type IsBlockedAddressArguments struct {
-	Address common.Address `abi:"address"`
+	Account common.Address `abi:"account"`
 }
 
 // IsModuleAddressArguments is the arguments for the is_module_address method.
 type IsModuleAddressArguments struct {
-	Address common.Address `abi:"address"`
+	Account common.Address `abi:"account"`
 }
 
 // IsAuthorityAddressArguments is the arguments for the is_authority_address method.
 type IsAuthorityAddressArguments struct {
-	Address common.Address `abi:"address"`
+	Account common.Address `abi:"account"`
 }
 
 // ToCosmosAddressArguments is the arguments for the to_cosmos_address method.

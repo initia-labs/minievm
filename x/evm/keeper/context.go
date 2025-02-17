@@ -217,7 +217,7 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 
 // prepare SDK context for EVM execution
 // 1. set cosmos messages to context
-// 2. check recursive depth and increment it (the maximum depth is 16)
+// 2. check recursive depth and increment it (the maximum depth is 8)
 func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
 	// set cosmos messages to context
 	ctx = ctx.WithValue(types.CONTEXT_KEY_EXECUTE_REQUESTS, &[]types.ExecuteRequest{})
@@ -498,7 +498,13 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 	ctx, commit := parentCtx.CacheContext()
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("panic: %v", r)
+			switch r.(type) {
+			case storetypes.ErrorOutOfGas:
+				// propagate out of gas error
+				panic(r)
+			default:
+				err = fmt.Errorf("panic: %v", r)
+			}
 		}
 
 		success := err == nil
