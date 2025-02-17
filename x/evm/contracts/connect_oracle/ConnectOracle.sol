@@ -18,13 +18,13 @@ contract ConnectOracle {
 
     function get_price(string memory pair_id) external returns (Price memory) {
         string memory path = "/connect.oracle.v2.Query/GetPrice";
-
-        string[] memory join_strs = new string[](3);
-        join_strs[0] = '{"currency_pair": "';
-        join_strs[1] = pair_id;
-        join_strs[2] = '"}';
-        string memory req = join(join_strs, "");
-        string memory queryRes = COSMOS_CONTRACT.query_cosmos(path, req);
+        string memory queryRes = COSMOS_CONTRACT.query_cosmos(path, string(
+            abi.encodePacked(
+                '{"currency_pair": ',
+                JSONUTILS_CONTRACT.stringify_json(pair_id),
+                '}'
+            )
+        ));
 
         IJSONUtils.JSONObject memory obj = JSONUTILS_CONTRACT
             .unmarshal_to_object(bytes(queryRes));
@@ -36,9 +36,12 @@ contract ConnectOracle {
         string[] memory pair_ids
     ) external returns (Price[] memory) {
         string memory path = "/connect.oracle.v2.Query/GetPrices";
-        string memory req = string.concat(
-            string.concat('{"currency_pair_ids":["', join(pair_ids, '","')),
-            '"]}'
+        string memory req = string(
+            abi.encodePacked(
+                '{"currency_pair_ids":',
+                marshal_string_array(pair_ids),
+                '}'
+            )
         );
 
         string memory queryRes = COSMOS_CONTRACT.query_cosmos(path, req);
@@ -58,16 +61,16 @@ contract ConnectOracle {
         return response;
     }
 
-    function join(
-        string[] memory strs,
-        string memory separator
-    ) internal pure returns (string memory) {
-        uint256 len = strs.length;
-        string memory res = strs[0];
+    function marshal_string_array(
+        string[] memory strArray
+    ) internal view returns (string memory) {
+        uint256 len = strArray.length;
+        string memory res = string.concat('[', JSONUTILS_CONTRACT.stringify_json(strArray[0]));
         for (uint256 i = 1; i < len; i++) {
-            res = string.concat(res, separator);
-            res = string.concat(res, strs[i]);
+            res = string.concat(res, ",");
+            res = string.concat(res, JSONUTILS_CONTRACT.stringify_json(strArray[i]));
         }
+        res = string.concat(res, ']');
 
         return res;
     }
