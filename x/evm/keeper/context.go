@@ -298,8 +298,13 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	)
 
 	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
-	if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
-		return nil, nil, types.ErrEVMCallFailed.Wrap(err.Error())
+	switch sdkCtx.ExecMode() {
+	case sdk.ExecModeSimulate, sdk.ExecModeReCheck, sdk.ExecModeCheck:
+		// return exact error instead of out of gas error
+		if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+			return nil, nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		}
+	default:
 	}
 
 	// London enforced
@@ -402,8 +407,13 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
-	if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
-		return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+	switch sdkCtx.ExecMode() {
+	case sdk.ExecModeSimulate, sdk.ExecModeReCheck, sdk.ExecModeCheck:
+		// return exact error instead of out of gas error
+		if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+			return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+		}
+	default:
 	}
 
 	// London enforced
