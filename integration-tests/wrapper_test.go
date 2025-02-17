@@ -33,21 +33,35 @@ func (suite *KeeperTestSuite) TestE2ETokenWrapper() {
 	bankKeeperA := getMinitiaApp(suite.chainA).BankKeeper
 	bankKeeperB := getMinitiaApp(suite.chainB).BankKeeper
 
-	amount, _ := new(big.Int).SetString("10000000000000000000", 10)
-	userA := pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
-	userB := pathA2B.EndpointB.Chain.SenderAccount.GetAddress()
-	tokenA := suite.createAndMintERC20(pathA2B.EndpointA, userA, amount)
-	balancesA := bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA)
-	balancesB := bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB)
-	// wrap
-	// tokenB: wrapped and ibc-transfered tokenA
-	tokenB, wrapperAddr := suite.wrap(pathA2B, tokenA, userA, userB, amount, big.NewInt(suite.chainB.CurrentHeader.Time.UnixNano()+1000000000000000000))
-	// unwrap
-	suite.unwrap(pathA2B, tokenA, tokenB, wrapperAddr, userB, userA)
+	var tokenA common.Address
+	var amount *big.Int
+	var initialBalancesA sdk.Coins
+	var initialBalancesB sdk.Coins
+	var userA sdk.AccAddress
+	var userB sdk.AccAddress
+	suite.Run("Mint tokenA 10 ether in A chain", func() {
+		amount, _ = new(big.Int).SetString("10000000000000000000", 10)
+		userA = pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
+		userB = pathA2B.EndpointB.Chain.SenderAccount.GetAddress()
+		tokenA = suite.createAndMintERC20(pathA2B.EndpointA, userA, amount)
+		initialBalancesA = bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA)
+		initialBalancesB = bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB)
+	})
 
-	// balance check
-	suite.Require().Equal(balancesB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
-	suite.Require().Equal(balancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	var tokenB sdk.Coin
+	var wrapperAddr common.Address
+	suite.Run("Wrap tokenA and transfer token from A chain to B chain", func() {
+		tokenB, wrapperAddr = suite.wrap(pathA2B, tokenA, userA, userB, amount, big.NewInt(suite.chainB.CurrentHeader.Time.UnixNano()+1000000000000000000))
+	})
+
+	suite.Run("Transfer tokenB from B chain to A chain, unwrap tokenB", func() {
+		suite.unwrap(pathA2B, tokenA, tokenB, wrapperAddr, userB, userA)
+	})
+
+	suite.Run("Have the same balance as the initial state", func() {
+		suite.Require().Equal(initialBalancesB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
+		suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	})
 }
 
 func (suite *KeeperTestSuite) createAndMintERC20(endpoint *ibctesting.Endpoint, to sdk.AccAddress, amount *big.Int) common.Address {
