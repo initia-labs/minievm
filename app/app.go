@@ -338,6 +338,16 @@ func NewMinitiaApp(
 		}
 	}
 
+	// register snapshot extension
+	if manager := app.SnapshotManager(); manager != nil && app.evmIndexer != nil {
+		err := manager.RegisterExtensions(
+			app.evmIndexer,
+		)
+		if err != nil {
+			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
+		}
+	}
+
 	// Load the latest state from disk if necessary, and initialize the base-app. From this point on
 	// no more modifications to the base-app can be made
 	if loadLatest {

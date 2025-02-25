@@ -11,6 +11,7 @@ import (
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	"cosmossdk.io/store/dbadapter"
+	snapshot "cosmossdk.io/store/snapshots/types"
 	storetypes "cosmossdk.io/store/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -28,6 +29,7 @@ import (
 
 // EVMIndexer is an interface to interact with the EVM indexer.
 type EVMIndexer interface {
+	snapshot.ExtensionSnapshotter
 	storetypes.ABCIListener
 
 	// tx
