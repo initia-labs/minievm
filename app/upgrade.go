@@ -22,7 +22,7 @@ import (
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 )
 
-const upgradeName = "0.7.1"
+const upgradeName = "0.7.3"
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
@@ -80,7 +80,7 @@ func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 				return nil, err
 			}
 
-			return versionMap, nil
+			return app.ModuleManager.RunMigrations(ctx, cfg, versionMap)
 		},
 	)
 }

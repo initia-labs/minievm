@@ -61,6 +61,8 @@ import (
 
 	// skip imports
 	blockchecktx "github.com/skip-mev/block-sdk/v2/abci/checktx"
+	"github.com/skip-mev/block-sdk/v2/block"
+	blockservice "github.com/skip-mev/block-sdk/v2/block/service"
 
 	// local imports
 	"github.com/initia-labs/minievm/app/keepers"
@@ -476,6 +478,9 @@ func (app *MinitiaApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.AP
 	// Register node gRPC service for grpc-gateway.
 	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
+	// Register the Block SDK mempool API routes.
+	blockservice.RegisterGRPCGatewayRoutes(apiSvr.ClientCtx, apiSvr.GRPCGatewayRouter)
+
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
@@ -496,6 +501,14 @@ func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 		app.BaseApp.GRPCQueryRouter(), clientCtx,
 		app.Simulate, app.interfaceRegistry,
 	)
+
+	// Register the Block SDK mempool transaction service.
+	mempool, ok := app.Mempool().(block.Mempool)
+	if !ok {
+		panic("mempool is not a block.Mempool")
+	}
+
+	blockservice.RegisterMempoolService(app.GRPCQueryRouter(), mempool)
 }
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
