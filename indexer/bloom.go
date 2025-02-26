@@ -50,7 +50,7 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		height := section*evmconfig.SectionSize + i
 		header, err := e.BlockHeaderByNumber(ctx, height)
 		if err != nil && errors.Is(err, collections.ErrNotFound) {
-			// pruned block, create a dummy header
+			// Pruned block, create a dummy header
 			header = &coretypes.Header{
 				Number: new(big.Int).SetUint64(height),
 				Bloom:  coretypes.Bloom{},
@@ -64,8 +64,8 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		}
 	}
 
-	// write the bloom bits to the store
-	for i := range coretypes.BloomBitLength {
+	// Write the bloom bits to the store
+	for i := 0; i < coretypes.BloomBitLength; i++ {
 		bits, err := gen.Bitset(uint(i))
 		if err != nil {
 			return err
@@ -76,7 +76,7 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		}
 	}
 
-	// increment the section number; if this fails, the section will be reprocessed
+	// Increment the section number; if this fails, the section will be reprocessed
 	if err := e.NextBloomBitsSection(ctx); err != nil {
 		return err
 	}
