@@ -13,6 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	coretype "github.com/ethereum/go-ethereum/core/types"
@@ -287,6 +288,21 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
+	intrinsicGas, err := core.IntrinsicGas(inputBz, accessList, true, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if gasBalance < intrinsicGas {
+		return nil, nil, fmt.Errorf("%w: have %d, want %d", core.ErrIntrinsicGas, gasBalance, intrinsicGas)
+	}
+	gasBalance -= intrinsicGas
+
+	if rules.IsEIP4762 {
+		evm.AccessEvents.AddTxOrigin(caller)
+		evm.AccessEvents.AddTxDestination(contractAddr, value.Sign() != 0)
+	}
+
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs(rules), accessList)
 
 	retBz, gasRemaining, err := evm.Call(
@@ -381,8 +397,21 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, k.precompileAddrs(rules), accessList)
+	intrinsicGas, err := core.IntrinsicGas(codeBz, accessList, true, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+	if err != nil {
+		return nil, common.Address{}, nil, err
+	}
 
+	if gasBalance < intrinsicGas {
+		return nil, common.Address{}, nil, fmt.Errorf("%w: have %d, want %d", core.ErrIntrinsicGas, gasBalance, intrinsicGas)
+	}
+	gasBalance -= intrinsicGas
+
+	if rules.IsEIP4762 {
+		evm.AccessEvents.AddTxOrigin(caller)
+	}
+	
+	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, k.precompileAddrs(rules), accessList)
 	var gasRemaining uint64
 	if salt == nil {
 		retBz, contractAddr, gasRemaining, err = evm.Create(
