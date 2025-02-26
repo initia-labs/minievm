@@ -17,7 +17,7 @@ type ERC20DenomKeeper interface {
 }
 
 func DenomToContractAddr(ctx context.Context, k ERC20DenomKeeper, denom string) (common.Address, error) {
-	if strings.HasPrefix(denom, DENOM_PREFIX) {
+	if IsERC20Denom(denom) {
 		contractAddrInString := strings.TrimPrefix(denom, DENOM_PREFIX)
 		if !common.IsHexAddress(contractAddrInString) {
 			return common.Address{}, ErrInvalidDenom
