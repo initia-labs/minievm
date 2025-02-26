@@ -90,7 +90,7 @@ func (b *JSONRPCBackend) BloomStatus() (uint64, uint64, error) {
 }
 
 func (b *JSONRPCBackend) ServiceFilter(session *bloombits.MatcherSession) {
-	for i := 0; i < bloomFilterThreads; i++ {
+	for range bloomFilterThreads {
 		go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.bloomRequests)
 	}
 }
@@ -98,7 +98,7 @@ func (b *JSONRPCBackend) ServiceFilter(session *bloombits.MatcherSession) {
 // startBloomHandlers starts a batch of goroutines to accept bloom bit database
 // retrievals from possibly a range of filters and serving the data to satisfy.
 func (b *JSONRPCBackend) startBloomHandlers(sectionSize uint64) {
-	for i := 0; i < bloomServiceThreads; i++ {
+	for range bloomServiceThreads {
 		go func() {
 			for {
 				select {

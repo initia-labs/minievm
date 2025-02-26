@@ -125,7 +125,7 @@ func NewJSONRPCBackend(
 
 	b := &JSONRPCBackend{
 		app:    app,
-		logger: logger,
+		logger: logger.With("module", "jsonrpc"),
 
 		queuedTxs:        queuedTxs,
 		queuedTxHashes:   queuedTxHashes,
@@ -234,10 +234,20 @@ func (b *JSONRPCBackend) queuedTxFlusher() {
 	flushRunning := &sync.Map{}
 	workerPool := make(chan struct{}, 16)
 
-	flusher := func() error {
+	flusher := func() (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("queuedTxFlusher panic: %v", r)
+			}
+		}()
+
+		if b.app.LastBlockHeight() <= 1 {
+			return nil
+		}
+
 		// load all accounts in the queued txs
 		var accounts []string
-		b.queuedTxAccounts.Range(func(key, value interface{}) bool {
+		b.queuedTxAccounts.Range(func(key, value any) bool {
 			senderHex := key.(string)
 			accounts = append(accounts, senderHex)
 
