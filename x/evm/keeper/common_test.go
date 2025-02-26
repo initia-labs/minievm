@@ -234,6 +234,7 @@ func _createTestInput(
 		sdk.GetConfig().GetBech32AccountAddrPrefix(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
+
 	blockedAddrs := make(map[string]bool)
 	for acc := range maccPerms {
 		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = true
@@ -272,7 +273,9 @@ func _createTestInput(
 	banktypes.RegisterQueryServer(queryRouter, &bankKeeper)
 	oracletypes.RegisterQueryServer(queryRouter, oraclekeeper.NewQueryServer(oracleKeeper))
 
-	communityPoolKeeper := &MockCommunityPoolKeeper{}
+	communityPoolKeeper := &MockCommunityPoolKeeper{
+		bk: bankKeeper,
+	}
 	ibcHookKeeper := &MockIBCHookKeeper{}
 	gasPriceKeeper := &MockGasPriceKeeper{GasPrices: map[string]math.LegacyDec{}}
 	evmKeeper := evmkeeper.NewKeeper(
@@ -340,13 +343,18 @@ func _createTestInput(
 
 var _ evmtypes.CommunityPoolKeeper = &MockCommunityPoolKeeper{}
 
+type mockBankKeeperForCommunityPoolKeeper interface {
+	SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
+}
+
 type MockCommunityPoolKeeper struct {
 	CommunityPool sdk.Coins
+	bk            mockBankKeeperForCommunityPoolKeeper
 }
 
 func (k *MockCommunityPoolKeeper) FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error {
 	k.CommunityPool = k.CommunityPool.Add(amount...)
-
+	k.bk.SendCoins(ctx, sender, sdk.AccAddress{}, k.CommunityPool)
 	return nil
 }
 

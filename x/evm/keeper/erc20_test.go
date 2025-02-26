@@ -230,52 +230,6 @@ func Test_BurnFromModuleAccount(t *testing.T) {
 	burnERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
 }
 
-func Test_BurnToCommunityPool(t *testing.T) {
-	ctx, input := createDefaultTestInput(t)
-	_, _, addr := keyPubAddr()
-	evmAddr := common.BytesToAddress(addr.Bytes())
-
-	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
-	require.NoError(t, err)
-
-	contractAddr0 := deployERC20(t, ctx, input, evmAddr, "foo")
-	denom0, _ := types.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr0)
-
-	contractAddr1 := deployERC20(t, ctx, input, evmAddr, "bar")
-	denom1, _ := types.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr1)
-
-	err = erc20Keeper.MintCoins(ctx, addr, sdk.NewCoins(
-		sdk.NewCoin(denom0, math.NewInt(100)),
-		sdk.NewCoin(denom1, math.NewInt(100)),
-	))
-	require.Error(t, err)
-
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(denom0, math.NewInt(100)), false)
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(denom1, math.NewInt(100)), false)
-
-	amount, err := erc20Keeper.GetBalance(ctx, addr, denom0)
-	require.NoError(t, err)
-	require.Equal(t, math.NewInt(100), amount)
-
-	amount, err = erc20Keeper.GetBalance(ctx, addr, denom1)
-	require.NoError(t, err)
-	require.Equal(t, math.NewInt(100), amount)
-
-	// Community pool should have 0 balance
-	require.Equal(t, math.NewInt(0), input.CommunityPoolKeeper.CommunityPool.AmountOf(denom0))
-	require.Equal(t, math.NewInt(0), input.CommunityPoolKeeper.CommunityPool.AmountOf(denom1))
-
-	// Burn 50 coins of each denom
-	err = erc20Keeper.BurnCoins(ctx, addr, sdk.NewCoins(
-		sdk.NewCoin(denom0, math.NewInt(50)),
-		sdk.NewCoin(denom1, math.NewInt(50)),
-	))
-	require.NoError(t, err)
-
-	require.Equal(t, math.NewInt(50), input.CommunityPoolKeeper.CommunityPool.AmountOf(denom0))
-	require.Equal(t, math.NewInt(50), input.CommunityPoolKeeper.CommunityPool.AmountOf(denom1))
-}
-
 func Test_MintBurn(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
@@ -326,11 +280,61 @@ func Test_MintBurn(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, sdk.NewCoins(
 		sdk.NewCoin("bar", math.NewInt(150)),
-		sdk.NewCoin(fooDenom, math.NewInt(100)),
+		sdk.NewCoin(fooDenom, math.NewInt(50)),
 	), res)
 
 	// check community pool
 	require.Equal(t, math.NewInt(50), input.CommunityPoolKeeper.CommunityPool.AmountOf(fooDenom))
+
+}
+
+func Test_BurnMultipleCoins(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
+	require.NoError(t, err)
+
+	contractAddr0 := deployERC20(t, ctx, input, evmAddr, "foo")
+	denom0, _ := types.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr0)
+
+	contractAddr1 := deployERC20(t, ctx, input, evmAddr, "bar")
+	denom1, _ := types.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr1)
+	// cannot mint erc20 from cosmos side
+	cacheCtx, _ := ctx.CacheContext()
+	err = erc20Keeper.MintCoins(cacheCtx, addr, sdk.NewCoins(
+		sdk.NewCoin(denom0, math.NewInt(100)),
+		sdk.NewCoin(denom1, math.NewInt(100)),
+	))
+	require.Error(t, err)
+
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(denom0, math.NewInt(100)), false)
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(denom1, math.NewInt(100)), false)
+
+	res, _, err := erc20Keeper.GetPaginatedBalances(ctx, nil, addr)
+	require.NoError(t, err)
+	require.Equal(t, sdk.NewCoins(
+		sdk.NewCoin(denom0, math.NewInt(100)),
+		sdk.NewCoin(denom1, math.NewInt(100)),
+	), res)
+
+	require.True(t, input.CommunityPoolKeeper.CommunityPool.IsZero())
+	err = erc20Keeper.BurnCoins(ctx, addr, sdk.NewCoins(
+		sdk.NewCoin(denom0, math.NewInt(50)),
+		sdk.NewCoin(denom1, math.NewInt(50)),
+	))
+	require.NoError(t, err)
+
+	require.Equal(t, math.NewInt(50), input.CommunityPoolKeeper.CommunityPool.AmountOf(denom0))
+	require.Equal(t, math.NewInt(50), input.CommunityPoolKeeper.CommunityPool.AmountOf(denom1))
+
+	res, _, err = erc20Keeper.GetPaginatedBalances(ctx, nil, addr)
+	require.NoError(t, err)
+	require.Equal(t, sdk.NewCoins(
+		sdk.NewCoin(denom0, math.NewInt(50)),
+		sdk.NewCoin(denom1, math.NewInt(50)),
+	), res)
 }
 
 func Test_SendCoins(t *testing.T) {
