@@ -39,7 +39,7 @@ require (
 	github.com/initia-labs/kvindexer v0.1.10
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.5
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.3
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/noble-assets/forwarding/v2 v2.0.0

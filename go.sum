@@ -1454,8 +1454,8 @@ github.com/initia-labs/kvindexer/submodules/block v0.1.2 h1:n28l1O0VEKGdX3OAIBeD
 github.com/initia-labs/kvindexer/submodules/block v0.1.2/go.mod h1:ZB1+2YkqKyE8RIJhyLULRz40GBcoeJCsmgfHd7PRX7M=
 github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 h1:xvvOoLDLpVPxgkO9IWwmppkBewp258NSeWwWeBQZ2Gg=
 github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8/go.mod h1:AE5lFkIvQRmBEAdqltZoyEJyqrgzrm1HQ2L41aGNHe4=
-github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4 h1:jtJAKBfIHUeh8QU/SkqQQYY6GtRvnm5QdmeQFBpm54M=
-github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4/go.mod h1:jXmkS5smeTptoBJL+ejcW8b3cCM+X96aCxmyFqL8wBg=
+github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.5 h1:11mzNoqLHx6g9Tvq0AwTWFFsLXBarAQPSHneSrdiQGI=
+github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.5/go.mod h1:jXmkS5smeTptoBJL+ejcW8b3cCM+X96aCxmyFqL8wBg=
 github.com/initia-labs/kvindexer/submodules/pair v0.1.3 h1:8M2w6ar0fiJjqlJmmyvkE6dyNpfdjsJ2C/ILiN2g45Q=
 github.com/initia-labs/kvindexer/submodules/pair v0.1.3/go.mod h1:kLERuZNOdmBtDUYjUhUhw6lHBU/tJM9EqW6cVT9Rg5U=
 github.com/initia-labs/movevm v0.6.1 h1:g+nUX289tou8HaHkwvZIE7KzhVAi+fykpGORItw8j0E=
