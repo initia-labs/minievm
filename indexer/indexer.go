@@ -140,7 +140,7 @@ func NewEVMIndexer(
 
 		db:       db,
 		store:    store,
-		logger:   logger,
+		logger:   logger.With("module", "indexer"),
 		txConfig: txConfig,
 		appCodec: appCodec,
 
