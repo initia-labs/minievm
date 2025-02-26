@@ -65,7 +65,7 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 	}
 
 	// write the bloom bits to the store
-	for i := 0; i < coretypes.BloomBitLength; i++ {
+	for i := range coretypes.BloomBitLength {
 		bits, err := gen.Bitset(uint(i))
 		if err != nil {
 			return err
