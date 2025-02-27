@@ -257,7 +257,7 @@ func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockN
 		return nil, err
 	}
 	if txs, ok := b.blockTxsCache.Get(blockNumber); ok {
-		if int(idx) >= len(txs) {
+		if uint(idx) >= uint(len(txs)) {
 			return nil, nil
 		}
 
