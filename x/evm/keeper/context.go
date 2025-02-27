@@ -34,7 +34,7 @@ func (k Keeper) NewStateDB(ctx context.Context, evm *vm.EVM, fee types.Fee) (*ev
 	)
 }
 
-func chargeIntrinsicGas(gasBalance uint64, isContractCreation bool, data []byte, list coretype.AccessList, rules params.Rules) (uint64, error) {
+func (k Keeper) chargeIntrinsicGas(gasBalance uint64, isContractCreation bool, data []byte, list coretype.AccessList, rules params.Rules) (uint64, error) {
 	intrinsicGas, err := core.IntrinsicGas(data, list, isContractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
 	if err != nil {
 		return 0, err
@@ -262,11 +262,11 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	gasRemaining, err := chargeIntrinsicGas(gasBalance, false, inputBz, accessList, rules)
+	gasRemaining, err := k.chargeIntrinsicGas(gasBalance, false, inputBz, accessList, rules)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if rules.IsEIP4762 {
 		evm.AccessEvents.AddTxOrigin(caller)
 	}
@@ -308,7 +308,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	gasRemaining, err := chargeIntrinsicGas(gasBalance, false, inputBz, accessList, rules)
+	gasRemaining, err := k.chargeIntrinsicGas(gasBalance, false, inputBz, accessList, rules)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -413,7 +413,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
 
-	gasRemaining, err := chargeIntrinsicGas(gasBalance, true, codeBz, accessList, rules)
+	gasRemaining, err := k.chargeIntrinsicGas(gasBalance, true, codeBz, accessList, rules)
 	if err != nil {
 		return nil, common.Address{}, nil, err
 	}
