@@ -67,7 +67,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 		Time:        defaultBlockCtx.Time,
 		Random:      defaultBlockCtx.Random,
 		BaseFee:     baseFee,
-		GasLimit:    k.computeGasLimit(sdkCtx),
+		GasLimit:    sdkCtx.BlockGasMeter().Limit(),
 		CanTransfer: func(sd vm.StateDB, a common.Address, i *uint256.Int) bool {
 			if i == nil || i.IsZero() {
 				return true
