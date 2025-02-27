@@ -211,7 +211,6 @@ func _createTestInput(
 		Height: 1,
 		Time:   time.Date(2020, time.April, 22, 12, 0, 0, 0, time.UTC),
 	}, isCheckTx, log.NewNopLogger()).WithHeaderHash(make([]byte, 32))
-	ctx = ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter())
 
 	encodingConfig := MakeEncodingConfig(t)
 	appCodec := encodingConfig.Codec

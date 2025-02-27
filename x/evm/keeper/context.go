@@ -62,17 +62,12 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 		return vm.BlockContext{}, err
 	}
 
-	meter := sdkCtx.BlockGasMeter()
-	if meter == nil {
-		return vm.BlockContext{}, fmt.Errorf("no block gas meter exist")
-	}
-
 	return vm.BlockContext{
 		BlockNumber: defaultBlockCtx.BlockNumber,
 		Time:        defaultBlockCtx.Time,
 		Random:      defaultBlockCtx.Random,
 		BaseFee:     baseFee,
-		GasLimit:    meter.Limit(),
+		GasLimit:    types.BlockGasLimit(sdkCtx),
 		CanTransfer: func(sd vm.StateDB, a common.Address, i *uint256.Int) bool {
 			if i == nil || i.IsZero() {
 				return true
