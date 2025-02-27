@@ -53,7 +53,7 @@ type QueryClient interface {
 	ERC721OriginTokenInfos(ctx context.Context, in *QueryERC721OriginTokenInfosRequest, opts ...grpc.CallOption) (*QueryERC721OriginTokenInfosResponse, error)
 	// Denom gets the denom of the given contract address.
 	Denom(ctx context.Context, in *QueryDenomRequest, opts ...grpc.CallOption) (*QueryDenomResponse, error)
-	// Call execute entry function and return  the function result
+	// Call execute entry function and return the function result
 	Call(ctx context.Context, in *QueryCallRequest, opts ...grpc.CallOption) (*QueryCallResponse, error)
 	// Params queries all parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
