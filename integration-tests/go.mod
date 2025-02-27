@@ -5,7 +5,7 @@ go 1.23.6
 require (
 	cosmossdk.io/math v1.4.0
 	github.com/cometbft/cometbft v0.38.17
-	github.com/cosmos/cosmos-sdk v0.50.11
+	github.com/cosmos/cosmos-sdk v0.50.12
 	github.com/cosmos/ibc-go/v8 v8.5.3
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/initia-labs/initia v0.7.0
@@ -65,17 +65,17 @@ require (
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
-	github.com/cosmos/cosmos-db v1.1.0 // indirect
+	github.com/cosmos/cosmos-db v1.1.1 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.0 // indirect
-	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.0.2 // indirect
+	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.1.1 // indirect
 	github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/interchain-security/v6 v6.3.0 // indirect
-	github.com/cosmos/ledger-cosmos-go v0.13.3 // indirect
+	github.com/cosmos/ledger-cosmos-go v0.14.0 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20240223125850-b1e8a79f509c // indirect
 	github.com/crate-crypto/go-kzg-4844 v1.0.0 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
@@ -142,14 +142,14 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.7.0 // indirect
+	github.com/initia-labs/OPinit v0.7.2 // indirect
 	github.com/initia-labs/OPinit/api v0.6.2 // indirect
 	github.com/initia-labs/kvindexer v0.1.10 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.6 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
-	github.com/initia-labs/movevm v0.6.1 // indirect
+	github.com/initia-labs/movevm v0.7.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -170,7 +170,7 @@ require (
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/noble-assets/forwarding/v2 v2.0.0 // indirect
+	github.com/noble-assets/forwarding/v2 v2.0.1 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
@@ -196,7 +196,7 @@ require (
 	github.com/skip-mev/connect/v2 v2.3.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
-	github.com/spf13/cast v1.7.0 // indirect
+	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0 // indirect

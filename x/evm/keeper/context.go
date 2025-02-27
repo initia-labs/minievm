@@ -544,7 +544,10 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 	allowFailure := request.AllowFailure
 	callbackId := request.CallbackId
 
+	gasLimit := request.GasLimit
+
 	ctx, commit := parentCtx.CacheContext()
+	ctx = ctx.WithGasMeter(storetypes.NewGasMeter(gasLimit))
 	defer func() {
 		if r := recover(); r != nil {
 			switch r.(type) {
@@ -575,6 +578,9 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 		} else {
 			// commit if success
 			commit()
+
+			// refund remaining gas
+			parentCtx.GasMeter().RefundGas(ctx.GasMeter().GasRemaining(), "refund gas from submsg")
 		}
 
 		// reset error because it's allowed to fail

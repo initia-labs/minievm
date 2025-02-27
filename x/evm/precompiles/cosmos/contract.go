@@ -3,12 +3,12 @@ package cosmosprecompile
 import (
 	"bytes"
 	"context"
-	"errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/pkg/errors"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 
@@ -105,9 +105,11 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case storetypes.ErrorOutOfGas:
-				// convert cosmos out of gas error to EVM out of gas error
+				// set the used gas to the supplied gas
 				usedGas = suppliedGas
-				err = vm.ErrOutOfGas
+
+				// convert cosmos out of gas error to normal error
+				err = errors.New("out of gas in precompile")
 			default:
 				panic(r)
 			}
@@ -115,10 +117,8 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 
 		if err != nil {
 			// convert cosmos error to EVM error
-			if err != vm.ErrOutOfGas {
-				resBz = types.NewRevertReason(err)
-				err = vm.ErrExecutionReverted
-			}
+			resBz = types.NewRevertReason(err)
+			err = vm.ErrExecutionReverted
 
 			// revert the stateDB to the snapshot
 			e.stateDB.RevertToSnapshot(snapshot)
@@ -254,8 +254,17 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 
 		var executeCosmosArguments ExecuteCosmos
-		if err := method.Inputs.Copy(&executeCosmosArguments, args); err != nil {
-			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		if method.Name == METHOD_EXECUTE_COSMOS {
+			if err := method.Inputs.Copy(&executeCosmosArguments, args); err != nil {
+				return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+			}
+		} else {
+			var executeCosmosArgumentsWithOptions ExecuteCosmosWithOptions
+			if err := method.Inputs.Copy(&executeCosmosArgumentsWithOptions, args); err != nil {
+				return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+			}
+
+			executeCosmosArguments = executeCosmosArgumentsWithOptions.ToExecuteCosmos()
 		}
 
 		var sdkMsg sdk.Msg
@@ -284,6 +293,9 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 			}
 		}
 
+		// pre-charge the gas for the execute cosmos
+		ctx.GasMeter().ConsumeGas(executeCosmosArguments.GasLimit, "pre-charge execute cosmos gas")
+
 		messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
 		*messages = append(*messages, types.ExecuteRequest{
 			Caller: caller,
@@ -291,6 +303,8 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 
 			AllowFailure: executeCosmosArguments.Options.AllowFailure,
 			CallbackId:   executeCosmosArguments.Options.CallbackId,
+
+			GasLimit: executeCosmosArguments.GasLimit,
 		})
 
 		// abi encode the response

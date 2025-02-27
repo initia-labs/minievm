@@ -60,7 +60,7 @@ func Test_ExecuteCosmosMessage(t *testing.T) {
 				}
 			]
 		}
-	`, addr, addr2))
+	`, addr, addr2), uint64(150_000))
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil)
@@ -264,6 +264,7 @@ func Test_PrecompileRevertError(t *testing.T) {
 			denom,
 			amount,
 		),
+		uint64(150_000),
 		false,
 	)
 	require.NoError(t, err)
@@ -289,7 +290,7 @@ func Test_JSONUnmarshalObject(t *testing.T) {
 		input       []byte
 		expected    i_jsonutils.IJSONUtilsJSONObject
 		expectedErr bool
-	}{	
+	}{
 		{
 			name:     "empty map",
 			input:    []byte(`{}`),

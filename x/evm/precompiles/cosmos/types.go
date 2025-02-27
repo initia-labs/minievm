@@ -32,8 +32,23 @@ type ToEVMAddressArguments struct {
 }
 
 type ExecuteCosmos struct {
-	Msg     string         `abi:"msg"`
-	Options ExecuteOptions `abi:"options"`
+	Msg      string `abi:"msg"`
+	GasLimit uint64 `abi:"gas_limit"`
+	Options  ExecuteOptions
+}
+
+type ExecuteCosmosWithOptions struct {
+	Msg      string         `abi:"msg"`
+	GasLimit uint64         `abi:"gas_limit"`
+	Options  ExecuteOptions `abi:"options"`
+}
+
+func (eco ExecuteCosmosWithOptions) ToExecuteCosmos() ExecuteCosmos {
+	return ExecuteCosmos{
+		Msg:      eco.Msg,
+		GasLimit: eco.GasLimit,
+		Options:  eco.Options,
+	}
 }
 
 type ExecuteOptions struct {

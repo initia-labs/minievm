@@ -59,7 +59,7 @@ interface ICosmos {
     //    ]
     // }
     //
-    function execute_cosmos(string memory msg) external returns (bool dummy);
+    function execute_cosmos(string memory msg, uint64 gas_limit) external returns (bool dummy);
 
     // @args
     // - `allow_failure`: if `true`, the transaction will not be reverted even if the execution fails.
@@ -88,6 +88,7 @@ interface ICosmos {
     // - function callback(uint64 callback_id, bool success) external;
     function execute_cosmos_with_options(
         string memory msg,
+        uint64 gas_limit,
         Options memory options
     ) external returns (bool dummy);
 

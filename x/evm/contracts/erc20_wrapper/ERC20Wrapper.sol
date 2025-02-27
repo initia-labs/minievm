@@ -66,6 +66,18 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         uint timeout,
         string memory memo
     ) public {
+        wrap(channel, token, receiver, amount, timeout, memo, 250_000);
+    }
+
+    function wrap(
+        string memory channel,
+        address token,
+        string memory receiver,
+        uint amount,
+        uint timeout,
+        string memory memo,
+        uint64 gas_limit
+    ) public {
         _ensureWrappedTokenExists(token);
 
         // lock origin token
@@ -95,8 +107,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             receiver,
             memo
         );
+
         // do ibc transfer wrapped token
-        COSMOS_CONTRACT.execute_cosmos(message);
+        COSMOS_CONTRACT.execute_cosmos(message, gas_limit);
     }
 
     /**

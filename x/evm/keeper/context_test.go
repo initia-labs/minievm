@@ -289,6 +289,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 			denom,
 			amount,
 		),
+		uint64(120_000),
 		true,
 	)
 	require.NoError(t, err)
@@ -309,6 +310,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 			denom,
 			amount,
 		),
+		uint64(120_000),
 		false,
 	)
 	require.NoError(t, err)
@@ -350,6 +352,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 			denom,
 			amount.AddRaw(1),
 		),
+		uint64(120_000),
 		true,
 		uint64(100),
 	)
@@ -390,6 +393,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 			denom,
 			amount.AddRaw(1),
 		),
+		uint64(120_000),
 		false,
 		uint64(101),
 	)
@@ -407,6 +411,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 			denom,
 			amount,
 		),
+		uint64(120_000),
 		true,
 		uint64(102),
 	)
