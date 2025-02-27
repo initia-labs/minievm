@@ -107,4 +107,20 @@ contract Counter is IIBCAsyncCallback {
             )
         );
     }
+
+    function recursive_revert(uint64 n) public {
+        emit recursive_called(n);
+
+        if (n == 0) {
+            return;
+        }
+
+        try this.nested_recursive_revert(n) {} catch {}
+    }
+
+    function nested_recursive_revert(uint64 n) external {
+        COSMOS_CONTRACT.execute_cosmos(_recursive(n));
+
+        revert();
+    }    
 }
