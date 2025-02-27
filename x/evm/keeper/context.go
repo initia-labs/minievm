@@ -19,6 +19,7 @@ import (
 	coretype "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie/utils"
 
 	evmstate "github.com/initia-labs/minievm/x/evm/state"
@@ -31,6 +32,17 @@ func (k Keeper) NewStateDB(ctx context.Context, evm *vm.EVM, fee types.Fee) (*ev
 		sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewInfiniteGasMeter()), k.cdc, k.Logger(ctx),
 		k.accountKeeper, k.VMStore, evm, k.ERC20Keeper().GetERC20ABI(), fee.Contract(),
 	)
+}
+
+func chargeIntrinsicGas(gasBalance uint64, isContractCreation bool, data []byte, list coretype.AccessList, rules params.Rules) (uint64, error) {
+	intrinsicGas, err := core.IntrinsicGas(data, list, isContractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+	if err != nil {
+		return 0, err
+	}
+	if gasBalance < intrinsicGas {
+		return 0, fmt.Errorf("%w: have %d, want %d", core.ErrIntrinsicGas, gasBalance, intrinsicGas)
+	}
+	return gasBalance - intrinsicGas, nil
 }
 
 func (k Keeper) computeGasLimit(sdkCtx sdk.Context) uint64 {
@@ -250,13 +262,21 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
+	gasRemaining, err := chargeIntrinsicGas(gasBalance, false, inputBz, accessList, rules)
+	if err != nil {
+		return nil, err
+	}
+	
+	if rules.IsEIP4762 {
+		evm.AccessEvents.AddTxOrigin(caller)
+	}
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs(rules), accessList)
 
 	retBz, gasRemaining, err := evm.StaticCall(
 		vm.AccountRef(caller),
 		contractAddr,
 		inputBz,
-		gasBalance,
+		gasRemaining,
 	)
 
 	// London enforced
@@ -288,15 +308,10 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	intrinsicGas, err := core.IntrinsicGas(inputBz, accessList, true, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+	gasRemaining, err := chargeIntrinsicGas(gasBalance, false, inputBz, accessList, rules)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	if gasBalance < intrinsicGas {
-		return nil, nil, fmt.Errorf("%w: have %d, want %d", core.ErrIntrinsicGas, gasBalance, intrinsicGas)
-	}
-	gasBalance -= intrinsicGas
 
 	if rules.IsEIP4762 {
 		evm.AccessEvents.AddTxOrigin(caller)
@@ -309,7 +324,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 		vm.AccountRef(caller),
 		contractAddr,
 		inputBz,
-		gasBalance,
+		gasRemaining,
 		value,
 	)
 
@@ -397,34 +412,29 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	rules := evm.ChainConfig().Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	intrinsicGas, err := core.IntrinsicGas(codeBz, accessList, true, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+
+	gasRemaining, err := chargeIntrinsicGas(gasBalance, true, codeBz, accessList, rules)
 	if err != nil {
 		return nil, common.Address{}, nil, err
 	}
 
-	if gasBalance < intrinsicGas {
-		return nil, common.Address{}, nil, fmt.Errorf("%w: have %d, want %d", core.ErrIntrinsicGas, gasBalance, intrinsicGas)
-	}
-	gasBalance -= intrinsicGas
-
 	if rules.IsEIP4762 {
 		evm.AccessEvents.AddTxOrigin(caller)
 	}
-	
+
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, k.precompileAddrs(rules), accessList)
-	var gasRemaining uint64
 	if salt == nil {
 		retBz, contractAddr, gasRemaining, err = evm.Create(
 			vm.AccountRef(caller),
 			codeBz,
-			gasBalance,
+			gasRemaining,
 			value,
 		)
 	} else {
 		retBz, contractAddr, gasRemaining, err = evm.Create2(
 			vm.AccountRef(caller),
 			codeBz,
-			gasBalance,
+			gasRemaining,
 			value,
 			uint256.NewInt(*salt),
 		)
