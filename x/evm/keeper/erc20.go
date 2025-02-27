@@ -79,14 +79,12 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		return err
 	}
 
+	communityPoolFunds := sdk.NewCoins()
 	for _, coin := range amount {
 		// if a coin is not generated from 0x1, then send the coin to community pool
 		// because we don't have burn capability.
 		if types.IsERC20Denom(coin.Denom) {
-			if err := k.communityPoolKeeper.FundCommunityPool(ctx, amount, evmAddr.Bytes()); err != nil {
-				return err
-			}
-
+			communityPoolFunds = communityPoolFunds.Add(coin)
 			continue
 		}
 
@@ -104,6 +102,12 @@ func (k ERC20Keeper) BurnCoins(ctx context.Context, addr sdk.AccAddress, amount 
 		// ignore the return values
 		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
 		if err != nil {
+			return err
+		}
+	}
+
+	if !communityPoolFunds.IsZero() {
+		if err := k.communityPoolKeeper.FundCommunityPool(ctx, communityPoolFunds, evmAddr.Bytes()); err != nil {
 			return err
 		}
 	}

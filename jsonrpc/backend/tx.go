@@ -483,8 +483,8 @@ func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.R
 }
 
 func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Receipt, error) {
-	if recepts, ok := b.blockReceiptsCache.Get(blockNumber); ok {
-		return recepts, nil
+	if receipt, ok := b.blockReceiptsCache.Get(blockNumber); ok {
+		return receipt, nil
 	}
 
 	queryCtx, err := b.getQueryCtx()
@@ -492,9 +492,9 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 		return nil, err
 	}
 
-	recepts := []*coretypes.Receipt{}
+	receipt := []*coretypes.Receipt{}
 	err = b.app.EVMIndexer().IterateBlockTxReceipts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
-		recepts = append(recepts, recept)
+		receipt = append(receipt, recept)
 		return false, nil
 	})
 	if err != nil {
@@ -503,8 +503,8 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 	}
 
 	// cache the receipts
-	_ = b.blockReceiptsCache.Add(blockNumber, recepts)
-	return recepts, nil
+	_ = b.blockReceiptsCache.Add(blockNumber, receipt)
+	return receipt, nil
 }
 
 // marshalReceipt marshals a transaction receipt into a JSON object.

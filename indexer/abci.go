@@ -117,6 +117,19 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	blockGasMeter := sdkCtx.BlockGasMeter()
 	blockHeight := sdkCtx.BlockHeight()
 
+	// load parent hash
+	parentHash := common.Hash{}
+	if blockHeight > 1 {
+		parentNumber := uint64(blockHeight - 1)
+		parentHeader, err := e.BlockHeaderByNumber(ctx, parentNumber)
+		if err != nil {
+			e.logger.Error("failed to get parent header", "err", err)
+			return err
+		}
+
+		parentHash = parentHeader.Hash()
+	}
+
 	hasher := trie.NewStackTrie(nil)
 	blockHeader := coretypes.Header{
 		TxHash:      coretypes.DeriveSha(coretypes.Transactions(ethTxs), hasher),
@@ -132,7 +145,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		Root:            coretypes.EmptyRootHash,
 		UncleHash:       coretypes.EmptyUncleHash,
 		WithdrawalsHash: &coretypes.EmptyWithdrawalsHash,
-		ParentHash:      common.Hash{},
+		ParentHash:      parentHash,
 		MixDigest:       common.Hash{},
 		Difficulty:      big.NewInt(0),
 		Nonce:           coretypes.EncodeNonce(0),
