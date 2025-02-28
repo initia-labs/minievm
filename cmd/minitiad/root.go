@@ -49,6 +49,8 @@ import (
 	kvindexerconfig "github.com/initia-labs/kvindexer/config"
 	kvindexerstore "github.com/initia-labs/kvindexer/store"
 	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
+
+	cmtcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
 )
 
 // NewRootCmd creates a new root command for initiad. It is called once in the
@@ -208,6 +210,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 	// add launch commands
 	rootCmd.AddCommand(LaunchCommand(a, encodingConfig, basicManager))
 	rootCmd.AddCommand(NewMultipleRollbackCmd(a.AppCreator()))
+	rootCmd.AddCommand(cmtcmd.FetchGenesisCmd)
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {

@@ -147,7 +147,7 @@ require (
 	github.com/initia-labs/kvindexer v0.1.10 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.5 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
 	github.com/initia-labs/movevm v0.6.1 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
@@ -265,7 +265,7 @@ require github.com/cosmos/iavl v1.2.4 // indirect
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250204072819-a4b3fcdff78f
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250228024240-2ac281ba6e0c
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250204081745-02cc37be3d29
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 
