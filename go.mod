@@ -280,7 +280,7 @@ require (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250204072819-a4b3fcdff78f
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250228024240-2ac281ba6e0c
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250204081745-02cc37be3d29
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 
