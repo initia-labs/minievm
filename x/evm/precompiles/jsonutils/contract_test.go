@@ -105,8 +105,9 @@ func Test_JSONUtilsPrecompile_Merge(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.MERGE_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.MERGE_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			// success
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.MERGE_GAS+uint64(len(bz)), false)
@@ -160,8 +161,9 @@ func Test_JSONUtilsPrecompile_Stringify(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.STRINGIFY_JSON_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.STRINGIFY_JSON_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			// success
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.STRINGIFY_JSON_GAS+uint64(len(bz)), false)
@@ -222,8 +224,9 @@ func Test_JSONUtilsPrecompile_UnmarshalToObject(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz))+100, false)
 			if tc.expectedErr {
@@ -281,8 +284,9 @@ func Test_JSONUtilsPrecompile_UnmarshalToString(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			// success
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz)), false)
@@ -339,8 +343,9 @@ func Test_JSONUtilsPrecompile_UnmarshalToUint(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			// success
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz)), false)
@@ -402,8 +407,9 @@ func Test_JSONUtilsPrecompile_UnmarshalToBool(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			// success
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz)), false)
@@ -475,8 +481,9 @@ func Test_JSONUtilsPrecompile_UnmarshalToArray(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			// success
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz)), false)
@@ -533,8 +540,9 @@ func Test_JSONUtilsPrecompile_UnmarshalISOToUnix(t *testing.T) {
 			require.NoError(t, err)
 
 			// out of gas error
-			_, _, err = contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
-			require.ErrorIs(t, err, vm.ErrOutOfGas)
+			output, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS-1, false)
+			require.ErrorIs(t, err, vm.ErrExecutionReverted)
+			require.Contains(t, string(output), "out of gas")
 
 			// success
 			resBz, _, err := contract.ExtendedRun(nil, bz, precompiles.UNMARSHAL_JSON_GAS+uint64(len(bz)), false)

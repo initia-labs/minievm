@@ -51,9 +51,11 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case storetypes.ErrorOutOfGas:
-				// convert cosmos out of gas error to EVM out of gas error
+				// set the used gas to the supplied gas
 				usedGas = suppliedGas
-				err = vm.ErrOutOfGas
+
+				// convert cosmos out of gas error to normal error
+				err = errors.New("out of gas in precompile")
 			default:
 				panic(r)
 			}
@@ -61,10 +63,8 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 
 		if err != nil {
 			// convert cosmos error to EVM error
-			if err != vm.ErrOutOfGas {
-				resBz = types.NewRevertReason(err)
-				err = vm.ErrExecutionReverted
-			}
+			resBz = types.NewRevertReason(err)
+			err = vm.ErrExecutionReverted
 
 			// revert the stateDB to the snapshot
 			e.stateDB.RevertToSnapshot(snapshot)

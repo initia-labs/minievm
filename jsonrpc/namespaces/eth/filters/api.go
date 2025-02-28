@@ -23,10 +23,14 @@ var (
 	errFilterNotFound    = errors.New("filter not found")
 	errInvalidBlockRange = errors.New("invalid block range params")
 	errExceedMaxTopics   = errors.New("exceed max topics")
+	errExceedMaxAddrs    = errors.New("exceed max addresses")
 )
 
 // The maximum number of topic criteria allowed, vm.LOG4 - vm.LOG0
 const maxTopics = 4
+
+// The maximum number of addresses allowed in a filter
+const maxAddresses = 32
 
 type filter struct {
 	hashes []common.Hash
@@ -288,6 +292,8 @@ func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
 func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) {
 	if len(crit.Topics) > maxTopics {
 		return "", errExceedMaxTopics
+	} else if len(crit.Addresses) > maxAddresses {
+		return "", errExceedMaxAddrs
 	}
 
 	var from, to rpc.BlockNumber
@@ -359,6 +365,8 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteria) ([]*coretypes.Log, error) {
 	if len(crit.Topics) > maxTopics {
 		return nil, errExceedMaxTopics
+	} else if len(crit.Addresses) > maxAddresses {
+		return nil, errExceedMaxAddrs
 	}
 	var filter *Filter
 	if crit.BlockHash != nil {

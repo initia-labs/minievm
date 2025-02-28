@@ -103,25 +103,25 @@ ICS20 is JSON native, so we use JSON for the memo format.
     "amount": "1000",
     "sender": "addr on counterparty chain", // will be transformed
     "receiver": "ModuleAddr::ModuleName::FunctionName",
-    "memo": {
-      "evm": {
+    "memo": "{
+      \"evm\": {
         // execute message on receive packet
-        "message": {
-          "contract_addr": "0x1",
-          "input": "hex encoded byte string",
-          "value": "0",
-          "access_list": {
-            "address" : "0x1", // contract address
-            "storage_keys":  ["0xabc","0xdef"] // storage keys of contract
+        \"message\": {
+          \"contract_addr\": \"0x1\",
+          \"input\": \"hex encoded byte string\",
+          \"value\": \"0\",
+          \"access_list\": {
+            \"address\" : \"0x1\", // contract address
+            \"storage_keys\":  [\"0xabc\",\"0xdef\"] // storage keys of contract
           }
         },
         // optional field to get async callback (ack and timeout)
-        "async_callback": {
-          "id": 1,
-          "contract_addr": "0x1"
+        \"async_callback\": {
+          \"id\": 1,
+          \"contract_addr\": \"0x1\"
         }
       }
-    }
+    }"
   }
 }
 ```

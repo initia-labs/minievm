@@ -230,7 +230,7 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 
 // prepare SDK context for EVM execution
 // 1. set cosmos messages to context
-// 2. check recursive depth and increment it (the maximum depth is 16)
+// 2. check recursive depth and increment it (the maximum depth is 8)
 func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
 	// set cosmos messages to context
 	ctx = ctx.WithValue(types.CONTEXT_KEY_EXECUTE_REQUESTS, &[]types.ExecuteRequest{})
@@ -329,8 +329,13 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	)
 
 	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
-	if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
-		return nil, nil, types.ErrEVMCallFailed.Wrap(err.Error())
+	switch sdkCtx.ExecMode() {
+	case sdk.ExecModeSimulate, sdk.ExecModeReCheck, sdk.ExecModeCheck:
+		// return exact error instead of out of gas error
+		if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+			return nil, nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		}
+	default:
 	}
 
 	// London enforced
@@ -441,8 +446,13 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	}
 
 	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
-	if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
-		return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+	switch sdkCtx.ExecMode() {
+	case sdk.ExecModeSimulate, sdk.ExecModeReCheck, sdk.ExecModeCheck:
+		// return exact error instead of out of gas error
+		if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+			return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
+		}
+	default:
 	}
 
 	// London enforced
@@ -534,10 +544,19 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 	allowFailure := request.AllowFailure
 	callbackId := request.CallbackId
 
+	gasLimit := request.GasLimit
+
 	ctx, commit := parentCtx.CacheContext()
+	ctx = ctx.WithGasMeter(storetypes.NewGasMeter(gasLimit))
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("panic: %v", r)
+			switch r.(type) {
+			case storetypes.ErrorOutOfGas:
+				// propagate out of gas error
+				panic(r)
+			default:
+				err = fmt.Errorf("panic: %v", r)
+			}
 		}
 
 		success := err == nil
@@ -559,6 +578,9 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 		} else {
 			// commit if success
 			commit()
+
+			// refund remaining gas
+			parentCtx.GasMeter().RefundGas(ctx.GasMeter().GasRemaining(), "refund gas from submsg")
 		}
 
 		// reset error because it's allowed to fail

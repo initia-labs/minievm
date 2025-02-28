@@ -150,6 +150,7 @@ message MsgCallResponse {
 // MsgUpdateParams defines a Msg for updating the x/evm module parameters.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "evm/MsgUpdateParams";
 
   // authority is the address that controls the module
   // (defaults to x/gov unless overwritten).

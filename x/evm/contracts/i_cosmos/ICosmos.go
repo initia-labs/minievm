@@ -37,7 +37,7 @@ type ICosmosOptions struct {
 
 // ICosmosMetaData contains all meta data concerning the ICosmos contract.
 var ICosmosMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"}],\"name\":\"execute_cosmos\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"allow_failure\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"callback_id\",\"type\":\"uint64\"}],\"internalType\":\"structICosmos.Options\",\"name\":\"options\",\"type\":\"tuple\"}],\"name\":\"execute_cosmos_with_options\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_authority_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"authority\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_blocked_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"blocked\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_module_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"module\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"name\":\"to_denom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"to_erc20\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"gas_limit\",\"type\":\"uint64\"}],\"name\":\"execute_cosmos\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"msg\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"gas_limit\",\"type\":\"uint64\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"allow_failure\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"callback_id\",\"type\":\"uint64\"}],\"internalType\":\"structICosmos.Options\",\"name\":\"options\",\"type\":\"tuple\"}],\"name\":\"execute_cosmos_with_options\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"dummy\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_authority_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"authority\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_blocked_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"blocked\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"is_module_address\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"module\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"path\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"req\",\"type\":\"string\"}],\"name\":\"query_cosmos\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"result\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"name\":\"to_cosmos_address\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"name\":\"to_denom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"to_erc20\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"erc20_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"cosmos_address\",\"type\":\"string\"}],\"name\":\"to_evm_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"evm_address\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // ICosmosABI is the input ABI used to generate the binding from.
@@ -279,46 +279,46 @@ func (_ICosmos *ICosmosCallerSession) IsModuleAddress(account common.Address) (b
 	return _ICosmos.Contract.IsModuleAddress(&_ICosmos.CallOpts, account)
 }
 
-// ExecuteCosmos is a paid mutator transaction binding the contract method 0xd46f64e6.
+// ExecuteCosmos is a paid mutator transaction binding the contract method 0x56c657a5.
 //
-// Solidity: function execute_cosmos(string msg) returns(bool dummy)
-func (_ICosmos *ICosmosTransactor) ExecuteCosmos(opts *bind.TransactOpts, msg string) (*types.Transaction, error) {
-	return _ICosmos.contract.Transact(opts, "execute_cosmos", msg)
+// Solidity: function execute_cosmos(string msg, uint64 gas_limit) returns(bool dummy)
+func (_ICosmos *ICosmosTransactor) ExecuteCosmos(opts *bind.TransactOpts, msg string, gas_limit uint64) (*types.Transaction, error) {
+	return _ICosmos.contract.Transact(opts, "execute_cosmos", msg, gas_limit)
 }
 
-// ExecuteCosmos is a paid mutator transaction binding the contract method 0xd46f64e6.
+// ExecuteCosmos is a paid mutator transaction binding the contract method 0x56c657a5.
 //
-// Solidity: function execute_cosmos(string msg) returns(bool dummy)
-func (_ICosmos *ICosmosSession) ExecuteCosmos(msg string) (*types.Transaction, error) {
-	return _ICosmos.Contract.ExecuteCosmos(&_ICosmos.TransactOpts, msg)
+// Solidity: function execute_cosmos(string msg, uint64 gas_limit) returns(bool dummy)
+func (_ICosmos *ICosmosSession) ExecuteCosmos(msg string, gas_limit uint64) (*types.Transaction, error) {
+	return _ICosmos.Contract.ExecuteCosmos(&_ICosmos.TransactOpts, msg, gas_limit)
 }
 
-// ExecuteCosmos is a paid mutator transaction binding the contract method 0xd46f64e6.
+// ExecuteCosmos is a paid mutator transaction binding the contract method 0x56c657a5.
 //
-// Solidity: function execute_cosmos(string msg) returns(bool dummy)
-func (_ICosmos *ICosmosTransactorSession) ExecuteCosmos(msg string) (*types.Transaction, error) {
-	return _ICosmos.Contract.ExecuteCosmos(&_ICosmos.TransactOpts, msg)
+// Solidity: function execute_cosmos(string msg, uint64 gas_limit) returns(bool dummy)
+func (_ICosmos *ICosmosTransactorSession) ExecuteCosmos(msg string, gas_limit uint64) (*types.Transaction, error) {
+	return _ICosmos.Contract.ExecuteCosmos(&_ICosmos.TransactOpts, msg, gas_limit)
 }
 
-// ExecuteCosmosWithOptions is a paid mutator transaction binding the contract method 0x6c4f6bd5.
+// ExecuteCosmosWithOptions is a paid mutator transaction binding the contract method 0xf1ed795d.
 //
-// Solidity: function execute_cosmos_with_options(string msg, (bool,uint64) options) returns(bool dummy)
-func (_ICosmos *ICosmosTransactor) ExecuteCosmosWithOptions(opts *bind.TransactOpts, msg string, options ICosmosOptions) (*types.Transaction, error) {
-	return _ICosmos.contract.Transact(opts, "execute_cosmos_with_options", msg, options)
+// Solidity: function execute_cosmos_with_options(string msg, uint64 gas_limit, (bool,uint64) options) returns(bool dummy)
+func (_ICosmos *ICosmosTransactor) ExecuteCosmosWithOptions(opts *bind.TransactOpts, msg string, gas_limit uint64, options ICosmosOptions) (*types.Transaction, error) {
+	return _ICosmos.contract.Transact(opts, "execute_cosmos_with_options", msg, gas_limit, options)
 }
 
-// ExecuteCosmosWithOptions is a paid mutator transaction binding the contract method 0x6c4f6bd5.
+// ExecuteCosmosWithOptions is a paid mutator transaction binding the contract method 0xf1ed795d.
 //
-// Solidity: function execute_cosmos_with_options(string msg, (bool,uint64) options) returns(bool dummy)
-func (_ICosmos *ICosmosSession) ExecuteCosmosWithOptions(msg string, options ICosmosOptions) (*types.Transaction, error) {
-	return _ICosmos.Contract.ExecuteCosmosWithOptions(&_ICosmos.TransactOpts, msg, options)
+// Solidity: function execute_cosmos_with_options(string msg, uint64 gas_limit, (bool,uint64) options) returns(bool dummy)
+func (_ICosmos *ICosmosSession) ExecuteCosmosWithOptions(msg string, gas_limit uint64, options ICosmosOptions) (*types.Transaction, error) {
+	return _ICosmos.Contract.ExecuteCosmosWithOptions(&_ICosmos.TransactOpts, msg, gas_limit, options)
 }
 
-// ExecuteCosmosWithOptions is a paid mutator transaction binding the contract method 0x6c4f6bd5.
+// ExecuteCosmosWithOptions is a paid mutator transaction binding the contract method 0xf1ed795d.
 //
-// Solidity: function execute_cosmos_with_options(string msg, (bool,uint64) options) returns(bool dummy)
-func (_ICosmos *ICosmosTransactorSession) ExecuteCosmosWithOptions(msg string, options ICosmosOptions) (*types.Transaction, error) {
-	return _ICosmos.Contract.ExecuteCosmosWithOptions(&_ICosmos.TransactOpts, msg, options)
+// Solidity: function execute_cosmos_with_options(string msg, uint64 gas_limit, (bool,uint64) options) returns(bool dummy)
+func (_ICosmos *ICosmosTransactorSession) ExecuteCosmosWithOptions(msg string, gas_limit uint64, options ICosmosOptions) (*types.Transaction, error) {
+	return _ICosmos.Contract.ExecuteCosmosWithOptions(&_ICosmos.TransactOpts, msg, gas_limit, options)
 }
 
 // QueryCosmos is a paid mutator transaction binding the contract method 0xcad23554.
