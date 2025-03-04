@@ -11,7 +11,7 @@ import (
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_ibc_async_callback"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
-	emvtypes "github.com/initia-labs/minievm/x/evm/types"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 var (
@@ -78,7 +78,7 @@ func (h EVMHooks) OnTimeoutPacketOverride(im ibchooks.IBCMiddleware, ctx sdk.Con
 }
 
 func (h EVMHooks) checkACL(im ibchooks.IBCMiddleware, ctx sdk.Context, addrStr string) (bool, error) {
-	addr, err := emvtypes.ContractAddressFromString(h.ac, addrStr)
+	addr, err := evmtypes.ContractAddressFromString(h.ac, addrStr)
 	if err != nil {
 		return false, err
 	}
