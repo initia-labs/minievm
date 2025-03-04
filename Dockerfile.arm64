@@ -9,7 +9,7 @@ RUN apt install -y vim
 WORKDIR /code
 COPY . /code/
 
-RUN LEDGER_ENABLED=false make build
+RUN VERSION=${VERSION} LEDGER_ENABLED=false make build
 
 FROM arm64v8/ubuntu:20.04
 
