@@ -67,7 +67,7 @@ So we detail where we want to get each of these fields from:
 
 - Sender: We cannot trust the sender of an IBC packet, the counter-party chain has full ability to lie about it.
   We cannot risk this sender being confused for a particular user or module address on Initia.
-  So we replace the sender with an account to represent the sender prefixed by the channel and a evm module prefix.
+  So we replace the sender with an account to represent the sender prefixed by the channel and an evm module prefix.
   This is done by setting the sender to `Bech32(Hash(Hash("ibc-evm-hook-intermediary") + channelID/sender))`, where the channelId is the channel id on the local chain.
 - ContractAddr: This field should be directly obtained from the ICS-20 packet metadata
 - Input: This field should be directly obtained from the ICS-20 packet metadata.
@@ -147,7 +147,7 @@ If an ICS20 packet is directed towards evmhooks, and is formatted incorrectly, t
 
 Pre evm hooks:
 
-- Ensure the incoming IBC packet is cryptogaphically valid
+- Ensure the incoming IBC packet is cryptographically valid
 - Ensure the incoming IBC packet is not timed out.
 
 In evm hooks, pre packet execution:
