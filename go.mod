@@ -35,7 +35,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.1
 	github.com/initia-labs/OPinit v0.7.2
-	github.com/initia-labs/initia v0.7.0
+	github.com/initia-labs/initia v0.7.3
 	github.com/initia-labs/kvindexer v0.1.10
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8
