@@ -43,7 +43,7 @@ contract Counter is IIBCAsyncCallback {
     function query_cosmos(
         string memory path,
         string memory req
-    ) external returns (string memory result) {
+    ) external view returns (string memory result) {
         return COSMOS_CONTRACT.query_cosmos(path, req);
     }
 
@@ -94,7 +94,7 @@ contract Counter is IIBCAsyncCallback {
         COSMOS_CONTRACT.execute_cosmos(_recursive(n), uint64(n * (2**(n+1)-1) * (30_000 + 10_000 * n)));
     }
 
-    function _recursive(uint64 n) internal returns (string memory message) {
+    function _recursive(uint64 n) internal view returns (string memory message) {
         message = string(
             abi.encodePacked(
                 '{"@type": "/minievm.evm.v1.MsgCall",',

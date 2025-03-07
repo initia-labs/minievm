@@ -50,9 +50,10 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 	sdkMsgs := []sdk.Msg{}
 	if args.To == nil {
 		sdkMsgs = append(sdkMsgs, &types.MsgCreate{
-			Sender: sender,
-			Code:   hexutil.Encode(args.GetData()),
-			Value:  math.NewIntFromBigInt(types.FromEthersUnit(feeDecimals, args.Value.ToInt())),
+			Sender:     sender,
+			Code:       hexutil.Encode(args.GetData()),
+			Value:      math.NewIntFromBigInt(types.FromEthersUnit(feeDecimals, args.Value.ToInt())),
+			AccessList: types.ConvertEthAccessListToCosmos(*args.AccessList),
 		})
 	} else {
 		sdkMsgs = append(sdkMsgs, &types.MsgCall{
@@ -60,6 +61,7 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 			ContractAddr: args.To.Hex(),
 			Input:        hexutil.Encode(args.GetData()),
 			Value:        math.NewIntFromBigInt(types.FromEthersUnit(feeDecimals, args.Value.ToInt())),
+			AccessList:   types.ConvertEthAccessListToCosmos(*args.AccessList),
 		})
 	}
 

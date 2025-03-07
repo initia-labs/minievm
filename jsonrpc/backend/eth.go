@@ -85,6 +85,7 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 		Sender:       sender,
 		ContractAddr: contractAddr,
 		Input:        hexutil.Encode(args.GetData()),
+		AccessList:   types.ConvertEthAccessListToCosmos(*args.AccessList),
 	})
 
 	if err != nil {
