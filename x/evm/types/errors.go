@@ -43,6 +43,7 @@ var (
 	ErrExceedMaxRecursiveDepth      = errorsmod.Register(ModuleName, 30, "Exceed max recursive depth")
 	ErrTxConversionFailed           = errorsmod.Register(ModuleName, 31, "Tx conversion failed")
 	ErrFailedToGetConnectOracleAddr = errorsmod.Register(ModuleName, 32, "Failed to get ConnectOracle address")
+	ErrInvalidSalt                  = errorsmod.Register(ModuleName, 33, "Invalid salt")
 )
 
 func NewRevertError(revert []byte) error {
