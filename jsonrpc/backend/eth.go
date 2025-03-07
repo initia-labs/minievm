@@ -81,11 +81,16 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 		contractAddr = args.To.Hex()
 	}
 
+	var list []types.AccessTuple
+	if args.AccessList != nil {
+		list = types.ConvertEthAccessListToCosmos(*args.AccessList)
+	}
+
 	res, err := keeper.NewQueryServer(b.app.EVMKeeper).Call(queryCtx, &types.QueryCallRequest{
 		Sender:       sender,
 		ContractAddr: contractAddr,
 		Input:        hexutil.Encode(args.GetData()),
-		AccessList:   types.ConvertEthAccessListToCosmos(*args.AccessList),
+		AccessList:   list,
 	})
 
 	if err != nil {

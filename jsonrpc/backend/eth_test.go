@@ -99,6 +99,19 @@ func Test_Call(t *testing.T) {
 		Input: (*hexutil.Bytes)(&inputBz),
 		Value: nil,
 		Nonce: nil,
+	}, nil, nil, nil)
+	require.NoError(t, err)
+	res, err := abi.Unpack("balanceOf", retBz)
+	
+	require.NoError(t, err)
+	require.Equal(t, new(big.Int).SetUint64(1_000_000), res[0].(*big.Int))
+
+	retBz, err = backend.Call(rpctypes.TransactionArgs{
+		From:  &addrs[0],
+		To:    &contractEVMAddr,
+		Input: (*hexutil.Bytes)(&inputBz),
+		Value: nil,
+		Nonce: nil,
 		AccessList: &types.AccessList{
 			types.AccessTuple{
 				Address: contractEVMAddr,
@@ -110,7 +123,7 @@ func Test_Call(t *testing.T) {
 	}, nil, nil, nil)
 	require.NoError(t, err)
 
-	res, err := abi.Unpack("balanceOf", retBz)
+	res, err = abi.Unpack("balanceOf", retBz)
 	require.NoError(t, err)
 
 	require.Equal(t, new(big.Int).SetUint64(1_000_000), res[0].(*big.Int))
