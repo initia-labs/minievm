@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // TransactionArgs represents the arguments to construct a new transaction
@@ -20,6 +21,8 @@ type TransactionArgs struct {
 	// Issue detail: https://github.com/ethereum/go-ethereum/issues/15628
 	Data  *hexutil.Bytes `json:"data"`
 	Input *hexutil.Bytes `json:"input"`
+
+	AccessList *types.AccessList `json:"accessList,omitempty"`
 }
 
 // from retrieves the transaction sender address.

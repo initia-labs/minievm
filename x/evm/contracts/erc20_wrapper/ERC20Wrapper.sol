@@ -221,7 +221,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         uint timeout,
         string memory receiver,
         string memory memo
-    ) internal returns (string memory message) {
+    ) internal view returns (string memory message) {
         // Construct the memo with the async callback
         string memory callback_memo = string(
             abi.encodePacked(

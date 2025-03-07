@@ -180,9 +180,14 @@ message QueryCallRequest {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // AccessList is a predefined list of Ethereum addresses and their corresponding storage slots that a transaction will interact with during its execution. can be none
+  repeated AccessTuple access_list = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
   // whether to trace the call
   // `nil` means no trace
-  TraceOptions trace_options = 5;
+  TraceOptions trace_options = 6;
 }
 
 // TraceOption is the option for tracing
