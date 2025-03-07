@@ -16,7 +16,7 @@ contract ConnectOracle {
 
     constructor() {}
 
-    function get_price(string memory pair_id) external returns (Price memory) {
+    function get_price(string memory pair_id) external view returns (Price memory) {
         string memory path = "/connect.oracle.v2.Query/GetPrice";
         string memory queryRes = COSMOS_CONTRACT.query_cosmos(path, string(
             abi.encodePacked(
@@ -34,7 +34,7 @@ contract ConnectOracle {
 
     function get_prices(
         string[] memory pair_ids
-    ) external returns (Price[] memory) {
+    ) external view returns (Price[] memory) {
         string memory path = "/connect.oracle.v2.Query/GetPrices";
         string memory req = string(
             abi.encodePacked(

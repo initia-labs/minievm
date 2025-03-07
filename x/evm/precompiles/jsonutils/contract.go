@@ -224,7 +224,7 @@ func (e *JSONUtilsPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, s
 		}
 
 		// try string first
-		var n math.Int
+		var n math.Uint
 		if err := json.Unmarshal(unmarshalJSONArguments.JSONBytes, &n); err != nil {
 			// try number
 			var n2 uint64
@@ -232,7 +232,7 @@ func (e *JSONUtilsPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, s
 				return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 			}
 
-			n = math.NewIntFromUint64(n2)
+			n = math.NewUint(n2)
 		}
 
 		resBz, err = method.Outputs.Pack(n.BigInt())

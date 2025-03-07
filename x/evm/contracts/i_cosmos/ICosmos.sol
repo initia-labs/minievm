@@ -26,22 +26,22 @@ interface ICosmos {
     // convert an EVM address to a Cosmos address
     function to_cosmos_address(
         address evm_address
-    ) external returns (string memory cosmos_address);
+    ) external view returns (string memory cosmos_address);
 
     // convert a Cosmos address to an EVM address
     function to_evm_address(
         string memory cosmos_address
-    ) external returns (address evm_address);
+    ) external view returns (address evm_address);
 
     // convert an ERC20 address to a Cosmos denom
     function to_denom(
         address erc20_address
-    ) external returns (string memory denom);
+    ) external view returns (string memory denom);
 
     // convert a Cosmos denom to an ERC20 address
     function to_erc20(
         string memory denom
-    ) external returns (address erc20_address);
+    ) external view returns (address erc20_address);
 
     // record a cosmos message to be executed after the current message execution.
     // - if execution fails, whole transaction will be reverted.
@@ -117,5 +117,5 @@ interface ICosmos {
     function query_cosmos(
         string memory path,
         string memory req
-    ) external returns (string memory result);
+    ) external view returns (string memory result);
 }
