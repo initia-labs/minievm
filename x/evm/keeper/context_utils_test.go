@@ -25,7 +25,7 @@ func Test_GasPrice(t *testing.T) {
 	fee, err := input.EVMKeeper.LoadFee(ctx, params)
 	require.NoError(t, err)
 
-	gasPriceInEthersUnit := types.ToEthersUint(0, big.NewInt(123))
+	gasPriceInEthersUnit := types.ToEthersUnit(0, big.NewInt(123))
 	gasPrice := types.FromEthersUnit(fee.Decimals(), gasPriceInEthersUnit)
 	ctx = ctx.WithValue(evmante.ContextKeyGasPrices, sdk.DecCoins{sdk.NewDecCoinFromDec(fee.Denom(), math.LegacyNewDecFromBigInt(gasPrice))})
 
@@ -46,7 +46,7 @@ func Test_BaseFee(t *testing.T) {
 	fee, err := input.EVMKeeper.LoadFee(ctx, params)
 	require.NoError(t, err)
 
-	gasPriceInEthersUnit := types.ToEthersUint(0, big.NewInt(123))
+	gasPriceInEthersUnit := types.ToEthersUnit(0, big.NewInt(123))
 	gasPrice := types.FromEthersUnit(fee.Decimals(), gasPriceInEthersUnit)
 	input.GasPriceKeeper.GasPrices[fee.Denom()] = math.LegacyNewDecFromBigInt(gasPrice)
 

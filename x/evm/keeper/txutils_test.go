@@ -49,9 +49,9 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	inputBz, err := abi.Pack("createERC20", "bar", "bar", uint8(6))
 	require.NoError(t, err)
 
-	gasFeeCap := types.ToEthersUint(decimals, feeAmount)
+	gasFeeCap := types.ToEthersUnit(decimals, feeAmount)
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
-	value := types.ToEthersUint(decimals, big.NewInt(100))
+	value := types.ToEthersUnit(decimals, big.NewInt(100))
 
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
 	ethTx := coretypes.NewTx(&coretypes.DynamicFeeTx{
@@ -169,9 +169,9 @@ func Test_AccessTxConversion(t *testing.T) {
 	inputBz, err := abi.Pack("createERC20", "bar", "bar", uint8(6))
 	require.NoError(t, err)
 
-	value := types.ToEthersUint(decimals, big.NewInt(100))
+	value := types.ToEthersUnit(decimals, big.NewInt(100))
 
-	gasFeeCap := types.ToEthersUint(decimals, feeAmount)
+	gasFeeCap := types.ToEthersUnit(decimals, feeAmount)
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
 
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
@@ -362,9 +362,9 @@ func Test_LegacyTxConversion(t *testing.T) {
 	inputBz, err := abi.Pack("createERC20", "bar", "bar", uint8(6))
 	require.NoError(t, err)
 
-	gasFeeCap := types.ToEthersUint(decimals, feeAmount)
+	gasFeeCap := types.ToEthersUnit(decimals, feeAmount)
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
-	value := types.ToEthersUint(decimals, big.NewInt(100))
+	value := types.ToEthersUnit(decimals, big.NewInt(100))
 
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
 	ethTx := coretypes.NewTx(&coretypes.LegacyTx{

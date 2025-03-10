@@ -132,7 +132,7 @@ func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {
 		return nil, NewInternalError("gas price overflow")
 	}
 
-	return (*hexutil.Big)(types.ToEthersUint(feeDecimals+9, gasPrice)), nil
+	return (*hexutil.Big)(types.ToEthersUnit(feeDecimals+9, gasPrice)), nil
 }
 
 func (b *JSONRPCBackend) MaxPriorityFeePerGas() (*hexutil.Big, error) {

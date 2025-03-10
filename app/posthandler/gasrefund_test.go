@@ -60,9 +60,9 @@ func (suite *PostHandlerTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {
 	inputBz, err := abi.Pack("createERC20", "bar", "bar", uint8(6))
 	suite.NoError(err)
 
-	gasFeeCap := types.ToEthersUint(decimals, feeAmount)
+	gasFeeCap := types.ToEthersUnit(decimals, feeAmount)
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
-	value := types.ToEthersUint(decimals, big.NewInt(100))
+	value := types.ToEthersUnit(decimals, big.NewInt(100))
 
 	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(suite.ctx.ChainID())
 	ethTx := coretypes.NewTx(&coretypes.DynamicFeeTx{

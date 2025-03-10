@@ -77,7 +77,7 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 	value := types.FromEthersUnit(decimals, ethTx.Value())
 
 	// check if the value is correctly converted without dropping any precision
-	if types.ToEthersUint(decimals, value).Cmp(ethTx.Value()) != 0 {
+	if types.ToEthersUnit(decimals, value).Cmp(ethTx.Value()) != 0 {
 		return nil, types.ErrInvalidValue.Wrap("failed to convert value to token unit without dropping precision")
 	}
 
@@ -300,7 +300,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// When ethereum tx is converted into cosmos tx by ConvertEthereumTxToCosmosTx,
 		// the value is converted to cosmos fee unit from wei.
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
-		value = types.ToEthersUint(decimals, callMsg.Value.BigInt())
+		value = types.ToEthersUnit(decimals, callMsg.Value.BigInt())
 		accessList = types.ConvertCosmosAccessListToEth(callMsg.AccessList)
 
 	case "/minievm.evm.v1.MsgCreate":
@@ -313,7 +313,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		to = nil
 		input = data
 		// Same as above (MsgCall)
-		value = types.ToEthersUint(decimals, createMsg.Value.BigInt())
+		value = types.ToEthersUnit(decimals, createMsg.Value.BigInt())
 		accessList = types.ConvertCosmosAccessListToEth(createMsg.AccessList)
 	case "/minievm.evm.v1.MsgCreate2":
 		// create2 is not supported
