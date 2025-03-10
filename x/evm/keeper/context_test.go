@@ -289,6 +289,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 			denom,
 			amount,
 		),
+		uint64(120_000),
 		true,
 	)
 	require.NoError(t, err)
@@ -309,6 +310,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 			denom,
 			amount,
 		),
+		uint64(120_000),
 		false,
 	)
 	require.NoError(t, err)
@@ -350,6 +352,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 			denom,
 			amount.AddRaw(1),
 		),
+		uint64(120_000),
 		true,
 		uint64(100),
 	)
@@ -390,6 +393,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 			denom,
 			amount.AddRaw(1),
 		),
+		uint64(120_000),
 		false,
 		uint64(101),
 	)
@@ -407,6 +411,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 			denom,
 			amount,
 		),
+		uint64(120_000),
 		true,
 		uint64(102),
 	)
@@ -433,4 +438,36 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	require.Equal(t, contractAddr.Hex(), log.Address)
 	require.Equal(t, parsed.Events["callback_received"].ID.Hex(), log.Topics[0])
 	require.Equal(t, "0x00000000000000000000000000000000000000000000000000000000000000660000000000000000000000000000000000000000000000000000000000000001", log.Data)
+}
+
+func Test_Recursive_Audit_ExecuteRequestsNotCleanedOnRevert(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	// deploy counter contract
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	// call recursive_revert function
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := parsed.Pack("recursive_revert", uint64(1))
+	require.NoError(t, err)
+
+	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, logs, 1)
+
+	// check logs
+	log := logs[0]
+	require.Equal(t, contractAddr.Hex(), log.Address)
+	require.Equal(t, parsed.Events["recursive_called"].ID.Hex(), log.Topics[0])
+	require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000001", log.Data)
 }

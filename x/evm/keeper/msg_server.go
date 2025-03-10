@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"errors"
+	gomath "math"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -71,6 +72,11 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	sender, err := ms.ac.StringToBytes(msg.Sender)
 	if err != nil {
 		return nil, err
+	}
+
+	// salt validation
+	if msg.Salt > gomath.MaxUint32 {
+		return nil, types.ErrInvalidSalt.Wrap("salt is out of range")
 	}
 
 	// handle cosmos<>evm different sequence increment logic

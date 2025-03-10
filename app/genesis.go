@@ -127,6 +127,7 @@ func (genState GenesisState) ConfigureMinGasPrices(cdc codec.JSONCodec) GenesisS
 	var opChildGenState opchildtypes.GenesisState
 	cdc.MustUnmarshalJSON(genState[opchildtypes.ModuleName], &opChildGenState)
 	opChildGenState.Params.MinGasPrices = nil
+	opChildGenState.Params.HookMaxGas = 3_000_000
 	genState[opchildtypes.ModuleName] = cdc.MustMarshalJSON(&opChildGenState)
 
 	return genState

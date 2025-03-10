@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"math/big"
-	"sync/atomic"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
@@ -97,8 +96,6 @@ func NewKeeper(
 		panic(err)
 	}
 
-	execIndex := &atomic.Uint64{}
-	execIndex.Store(0)
 	k := &Keeper{
 		ac:           ac,
 		cdc:          cdc,

@@ -11,13 +11,6 @@ on:
       - "**.go"
       - "go.mod"
       - "go.sum"
-  pull_request:
-    branches:
-      - "main"
-    paths:
-      - "**.go"
-      - "go.mod"
-      - "go.sum"
 
 env:
   REGISTRY: ghcr.io
@@ -64,3 +57,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha
+        env:
+          VERSION: ${{ github.ref_name }}

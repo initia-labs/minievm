@@ -12,7 +12,6 @@ import (
 
 var (
 	_ sdk.AccountI = (*ShorthandAccount)(nil)
-	_ sdk.AccountI = (*ShorthandAccount)(nil)
 
 	_ authtypes.GenesisAccount = (*ContractAccount)(nil)
 	_ authtypes.GenesisAccount = (*ShorthandAccount)(nil)

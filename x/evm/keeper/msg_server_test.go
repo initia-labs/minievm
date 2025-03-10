@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -77,6 +78,14 @@ func Test_MsgServer_Create2(t *testing.T) {
 	salt := uint256.NewInt(1)
 	expectedContractAddr := crypto.CreateAddress2(evmAddr, salt.Bytes32(), crypto.Keccak256Hash(hexutil.MustDecode(counter.CounterBin)).Bytes())
 	require.Equal(t, expectedContractAddr, common.HexToAddress(res.ContractAddr))
+
+	// slat out of range
+	_, err = msgServer.Create2(ctx, &types.MsgCreate2{
+		Sender: addr.String(),
+		Code:   counter.CounterBin,
+		Salt:   uint256.NewInt(math.MaxUint32 + 1).Uint64(),
+	})
+	require.ErrorIs(t, err, types.ErrInvalidSalt)
 }
 
 func Test_MsgServer_Call(t *testing.T) {

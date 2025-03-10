@@ -66,6 +66,18 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         uint timeout,
         string memory memo
     ) public {
+        wrap(channel, token, receiver, amount, timeout, memo, 250_000);
+    }
+
+    function wrap(
+        string memory channel,
+        address token,
+        string memory receiver,
+        uint amount,
+        uint timeout,
+        string memory memo,
+        uint64 gas_limit
+    ) public {
         _ensureWrappedTokenExists(token);
 
         // lock origin token
@@ -95,8 +107,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             receiver,
             memo
         );
+
         // do ibc transfer wrapped token
-        COSMOS_CONTRACT.execute_cosmos(message);
+        COSMOS_CONTRACT.execute_cosmos(message, gas_limit);
     }
 
     /**
@@ -208,7 +221,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         uint timeout,
         string memory receiver,
         string memory memo
-    ) internal returns (string memory message) {
+    ) internal view returns (string memory message) {
         // Construct the memo with the async callback
         string memory callback_memo = string(
             abi.encodePacked(
@@ -224,18 +237,15 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             memo,
             callback_memo
         );
-        string memory stringified_memo = JSONUTILS_CONTRACT.stringify_json(
-            merged_memo
-        );
 
         // Construct the IBC transfer message
         message = string(
             abi.encodePacked(
                 '{"@type": "/ibc.applications.transfer.v1.MsgTransfer",',
                 '"source_port": "transfer",',
-                '"source_channel": "',
-                channel,
-                '",',
+                '"source_channel": ',
+                JSONUTILS_CONTRACT.stringify_json(channel),
+                ',',
                 '"token": { "denom": "',
                 COSMOS_CONTRACT.to_denom(token),
                 '",',
@@ -245,15 +255,15 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 '"sender": "',
                 COSMOS_CONTRACT.to_cosmos_address(address(this)),
                 '",',
-                '"receiver": "',
-                receiver,
-                '",',
+                '"receiver": ',
+                JSONUTILS_CONTRACT.stringify_json(receiver),
+                ',',
                 '"timeout_height": {"revision_number": "0","revision_height": "0"},',
                 '"timeout_timestamp": "',
                 Strings.toString(timeout),
                 '",',
                 '"memo": ',
-                stringified_memo,
+                JSONUTILS_CONTRACT.stringify_json(merged_memo),
                 "}"
             )
         );

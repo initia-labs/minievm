@@ -8,17 +8,17 @@ import (
 
 // IsBlockedAddressArguments is the arguments for the is_blocked_address method.
 type IsBlockedAddressArguments struct {
-	Address common.Address `abi:"address"`
+	Account common.Address `abi:"account"`
 }
 
 // IsModuleAddressArguments is the arguments for the is_module_address method.
 type IsModuleAddressArguments struct {
-	Address common.Address `abi:"address"`
+	Account common.Address `abi:"account"`
 }
 
 // IsAuthorityAddressArguments is the arguments for the is_authority_address method.
 type IsAuthorityAddressArguments struct {
-	Address common.Address `abi:"address"`
+	Account common.Address `abi:"account"`
 }
 
 // ToCosmosAddressArguments is the arguments for the to_cosmos_address method.
@@ -32,8 +32,23 @@ type ToEVMAddressArguments struct {
 }
 
 type ExecuteCosmos struct {
-	Msg     string         `abi:"msg"`
-	Options ExecuteOptions `abi:"options"`
+	Msg      string `abi:"msg"`
+	GasLimit uint64 `abi:"gas_limit"`
+	Options  ExecuteOptions
+}
+
+type ExecuteCosmosWithOptions struct {
+	Msg      string         `abi:"msg"`
+	GasLimit uint64         `abi:"gas_limit"`
+	Options  ExecuteOptions `abi:"options"`
+}
+
+func (eco ExecuteCosmosWithOptions) ToExecuteCosmos() ExecuteCosmos {
+	return ExecuteCosmos{
+		Msg:      eco.Msg,
+		GasLimit: eco.GasLimit,
+		Options:  eco.Options,
+	}
 }
 
 type ExecuteOptions struct {

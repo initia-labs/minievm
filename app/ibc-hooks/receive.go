@@ -27,7 +27,7 @@ func (h EVMHooks) onRecvIcs20Packet(
 	data transfertypes.FungibleTokenPacketData,
 ) ibcexported.Acknowledgement {
 	isEVMRouted, hookData, err := validateAndParseMemo(data.GetMemo())
-	if !isEVMRouted || hookData.Message == nil {
+	if !isEVMRouted || (err == nil && hookData.Message == nil) {
 		return im.App.OnRecvPacket(ctx, packet, relayer)
 	} else if err != nil {
 		return newEmitErrorAcknowledgement(err)
@@ -111,7 +111,7 @@ func (h EVMHooks) onRecvIcs721Packet(
 	data nfttransfertypes.NonFungibleTokenPacketData,
 ) ibcexported.Acknowledgement {
 	isEVMRouted, hookData, err := validateAndParseMemo(data.GetMemo())
-	if !isEVMRouted || hookData.Message == nil {
+	if !isEVMRouted || (err == nil && hookData.Message == nil) {
 		return im.App.OnRecvPacket(ctx, packet, relayer)
 	} else if err != nil {
 		return newEmitErrorAcknowledgement(err)

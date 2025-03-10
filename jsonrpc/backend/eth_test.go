@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/holiman/uint256"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
@@ -79,6 +80,14 @@ func Test_Call(t *testing.T) {
 		Input: (*hexutil.Bytes)(&inputBz),
 		Value: nil,
 		Nonce: nil,
+		AccessList: &types.AccessList{
+			types.AccessTuple{
+				Address: contractEVMAddr,
+				StorageKeys: []common.Hash{
+					common.HexToHash("0x00"),
+				},
+			},
+		},
 	}, &genesisNumber, nil, nil)
 	require.NoError(t, err)
 	require.Empty(t, retBz)
@@ -92,8 +101,29 @@ func Test_Call(t *testing.T) {
 		Nonce: nil,
 	}, nil, nil, nil)
 	require.NoError(t, err)
-
 	res, err := abi.Unpack("balanceOf", retBz)
+	
+	require.NoError(t, err)
+	require.Equal(t, new(big.Int).SetUint64(1_000_000), res[0].(*big.Int))
+
+	retBz, err = backend.Call(rpctypes.TransactionArgs{
+		From:  &addrs[0],
+		To:    &contractEVMAddr,
+		Input: (*hexutil.Bytes)(&inputBz),
+		Value: nil,
+		Nonce: nil,
+		AccessList: &types.AccessList{
+			types.AccessTuple{
+				Address: contractEVMAddr,
+				StorageKeys: []common.Hash{
+					common.HexToHash("0x00"),
+				},
+			},
+		},
+	}, nil, nil, nil)
+	require.NoError(t, err)
+
+	res, err = abi.Unpack("balanceOf", retBz)
 	require.NoError(t, err)
 
 	require.Equal(t, new(big.Int).SetUint64(1_000_000), res[0].(*big.Int))

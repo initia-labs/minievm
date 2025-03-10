@@ -43,12 +43,16 @@ contract Counter is IIBCAsyncCallback {
     function query_cosmos(
         string memory path,
         string memory req
-    ) external returns (string memory result) {
+    ) external view returns (string memory result) {
         return COSMOS_CONTRACT.query_cosmos(path, req);
     }
 
-    function execute_cosmos(string memory exec_msg, bool call_revert) external {
-        COSMOS_CONTRACT.execute_cosmos(exec_msg);
+    function execute_cosmos(
+        string memory exec_msg, 
+        uint64 gas_limit,
+        bool call_revert
+    ) external {
+        COSMOS_CONTRACT.execute_cosmos(exec_msg, gas_limit);
 
         if (call_revert) {
             revert("revert reason dummy value for test");
@@ -57,11 +61,13 @@ contract Counter is IIBCAsyncCallback {
 
     function execute_cosmos_with_options(
         string memory exec_msg,
+        uint64 gas_limit,
         bool allow_failure,
         uint64 callback_id
     ) external {
         COSMOS_CONTRACT.execute_cosmos_with_options(
             exec_msg,
+            gas_limit,
             ICosmos.Options(allow_failure, callback_id)
         );
     }
@@ -81,13 +87,14 @@ contract Counter is IIBCAsyncCallback {
             return;
         }
 
-        COSMOS_CONTRACT.execute_cosmos(_recursive(n));
+        
+        COSMOS_CONTRACT.execute_cosmos(_recursive(n), uint64(n * (2**(n+1)-1) * (30_000 + 10_000 * n)));
 
         // to test branching
-        COSMOS_CONTRACT.execute_cosmos(_recursive(n));
+        COSMOS_CONTRACT.execute_cosmos(_recursive(n), uint64(n * (2**(n+1)-1) * (30_000 + 10_000 * n)));
     }
 
-    function _recursive(uint64 n) internal returns (string memory message) {
+    function _recursive(uint64 n) internal view returns (string memory message) {
         message = string(
             abi.encodePacked(
                 '{"@type": "/minievm.evm.v1.MsgCall",',
@@ -107,4 +114,20 @@ contract Counter is IIBCAsyncCallback {
             )
         );
     }
+
+    function recursive_revert(uint64 n) public {
+        emit recursive_called(n);
+
+        if (n == 0) {
+            return;
+        }
+
+        try this.nested_recursive_revert(n) {} catch {}
+    }
+
+    function nested_recursive_revert(uint64 n) external {
+        COSMOS_CONTRACT.execute_cosmos(_recursive(n), uint64(n * (2**(n+1)-1) * (30_000 + 10_000 * n)));
+
+        revert();
+    }    
 }

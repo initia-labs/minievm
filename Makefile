@@ -122,7 +122,7 @@ endif
 build-linux:
 	mkdir -p $(BUILDDIR)
 	docker build --no-cache --tag initia/minievm ./
-	docker create --name temp initia/minievm:latest
+	docker create --name temp initia/minievm:latest --env VERSION=$(VERSION)
 	docker cp temp:/usr/local/bin/minitiad $(BUILDDIR)/
 	docker rm temp
 

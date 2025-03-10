@@ -63,6 +63,8 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		return nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
 
+	list := types.ConvertCosmosAccessListToEth(req.AccessList)
+
 	var tracer *tracing.Hooks
 	tracerOutput := new(strings.Builder)
 	if req.TraceOptions != nil {
@@ -81,9 +83,9 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	var logs []types.Log
 	if contractAddr == (common.Address{}) {
 		// if contract address is not provided, then it's a contract creation
-		retBz, _, logs, err = qs.EVMCreateWithTracer(sdkCtx, caller, inputBz, value, nil, nil, tracer)
+		retBz, _, logs, err = qs.EVMCreateWithTracer(sdkCtx, caller, inputBz, value, nil, list, tracer)
 	} else {
-		retBz, logs, err = qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, value, nil, tracer)
+		retBz, logs, err = qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, value, list, tracer)
 
 	}
 

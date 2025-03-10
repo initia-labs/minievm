@@ -14,6 +14,9 @@ type ExecuteRequest struct {
 	// options
 	AllowFailure bool
 	CallbackId   uint64
+
+	// supplied gas
+	GasLimit uint64
 }
 
 // ExtractLogsFromResponse extracts msg response from the data

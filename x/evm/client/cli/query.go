@@ -2,9 +2,13 @@ package cli
 
 import (
 	"context"
+	"fmt"
+	"math/big"
 
 	"cosmossdk.io/core/address"
+	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -54,6 +58,15 @@ func GetCmdCall(ac address.Codec) *cobra.Command {
 				return err
 			}
 
+			value, err := cmd.Flags().GetString(FlagValue)
+			if err != nil {
+				return errors.Wrap(err, "failed to get value")
+			}
+			val, ok := new(big.Int).SetString(value, 10)
+			if !ok {
+				return fmt.Errorf("invalid value: %s", value)
+			}
+
 			trace, err := cmd.Flags().GetBool(FlagTrace)
 			if err != nil {
 				return err
@@ -92,6 +105,7 @@ func GetCmdCall(ac address.Codec) *cobra.Command {
 					Sender:       args[0],
 					ContractAddr: args[1],
 					Input:        args[2],
+					Value:        math.NewIntFromBigInt(val),
 					TraceOptions: traceOption,
 				},
 			)
@@ -103,6 +117,7 @@ func GetCmdCall(ac address.Codec) *cobra.Command {
 		},
 	}
 	cmd.Flags().AddFlagSet(FlagTraceOptions())
+	cmd.Flags().String(FlagValue, "0", "value")
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
