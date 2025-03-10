@@ -56,7 +56,7 @@ func (k Keeper) extractGasPriceFromContext(ctx context.Context, fee types.Fee) (
 		MulTruncate(math.LegacyNewDec(1e9)).
 		TruncateInt().BigInt()
 
-	return types.ToEthersUint(fee.Decimals()+9, gasPrice), nil
+	return types.ToEthersUnit(fee.Decimals()+9, gasPrice), nil
 }
 
 func (k Keeper) baseFee(ctx context.Context, fee types.Fee) (*big.Int, error) {
@@ -70,7 +70,7 @@ func (k Keeper) baseFee(ctx context.Context, fee types.Fee) (*big.Int, error) {
 		MulTruncate(math.LegacyNewDec(1e9)).
 		TruncateInt().BigInt()
 
-	return types.ToEthersUint(fee.Decimals()+9, gasPrice), nil
+	return types.ToEthersUnit(fee.Decimals()+9, gasPrice), nil
 }
 
 func (k Keeper) BaseFee(ctx context.Context) (*big.Int, error) {

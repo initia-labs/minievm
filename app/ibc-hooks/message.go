@@ -38,7 +38,7 @@ type AsyncCallback struct {
 // HookData defines a wrapper for evm execute message
 // and async callback.
 type HookData struct {
-	// Message is a evm execute message which will be executed
+	// Message is an evm execute message which will be executed
 	// at `OnRecvPacket` of receiver chain.
 	Message *evmtypes.MsgCall `json:"message,omitempty"`
 

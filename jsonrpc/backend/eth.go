@@ -35,7 +35,7 @@ func (b *JSONRPCBackend) GetBalance(address common.Address, blockNrOrHash rpc.Bl
 		return nil, err
 	}
 
-	return (*hexutil.Big)(types.ToEthersUint(feeDecimals, balance.BigInt())), nil
+	return (*hexutil.Big)(types.ToEthersUnit(feeDecimals, balance.BigInt())), nil
 }
 
 func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash, overrides *rpctypes.StateOverride, blockOverrides *rpctypes.BlockOverrides) (hexutil.Bytes, error) {

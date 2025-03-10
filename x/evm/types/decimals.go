@@ -7,7 +7,7 @@ const (
 	GweiDecimals  = uint8(9)
 )
 
-func ToEthersUint(decimals uint8, val *big.Int) *big.Int {
+func ToEthersUnit(decimals uint8, val *big.Int) *big.Int {
 	if decimals == EtherDecimals {
 		return new(big.Int).Set(val)
 	}
