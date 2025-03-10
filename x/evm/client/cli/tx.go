@@ -142,7 +142,7 @@ $ %s tx evm create2 100 ERC20.bin --input 0x1234 --value 100 --from mykey
 func CallCmd(ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "call [contract-addr] [input-hex-string]",
-		Short: "Call a evm contract",
+		Short: "Call an evm contract",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`
 Call a contract with input bytes.

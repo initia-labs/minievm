@@ -147,7 +147,7 @@ If an ICS20 packet is directed towards evmhooks, and is formatted incorrectly, t
 
 Pre evm hooks:
 
-- Ensure the incoming IBC packet is cryptogaphically valid
+- Ensure the incoming IBC packet is cryptographically valid
 - Ensure the incoming IBC packet is not timed out.
 
 In evm hooks, pre packet execution:
