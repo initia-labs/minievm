@@ -144,7 +144,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v1.0.0-beta.1 // indirect
 	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
-	github.com/initia-labs/kvindexer v0.1.10 // indirect
+	github.com/initia-labs/kvindexer v0.1.11 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.6 // indirect
