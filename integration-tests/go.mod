@@ -8,7 +8,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.12
 	github.com/cosmos/ibc-go/v8 v8.6.1
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/initia-labs/initia v0.7.3
+	github.com/initia-labs/initia v1.0.0-beta.0
 	github.com/initia-labs/minievm v0.6.11
 	github.com/stretchr/testify v1.10.0
 )
@@ -142,8 +142,8 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v0.7.2 // indirect
-	github.com/initia-labs/OPinit/api v0.6.2 // indirect
+	github.com/initia-labs/OPinit v1.0.0-beta.1 // indirect
+	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
 	github.com/initia-labs/kvindexer v0.1.10 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
@@ -261,11 +261,12 @@ replace (
 )
 
 // indirect custom dependencies
-require github.com/cosmos/iavl v1.2.4 // indirect
+// - https://github.com/cosmos/cosmos-sdk/issues/23740
+require github.com/cosmos/iavl v1.2.5-0.20250306174232-6cfb3dac2c71 // indirect
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250228024240-2ac281ba6e0c
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250310053630-8890d5b61b69
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250228050813-bf23e7e632de
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 

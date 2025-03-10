@@ -204,7 +204,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 		genesisCommand(encodingConfig, basicManager),
 		queryCommand(),
 		txCommand(),
-		keys.Commands(),
+		initiakeyring.OverrideDefaultKeyType(keys.Commands()),
 	)
 
 	// add launch commands
