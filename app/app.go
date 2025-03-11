@@ -512,12 +512,17 @@ func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 		app.Simulate, app.interfaceRegistry,
 	)
 
-	// Register the Block SDK mempool transaction service.
-	mempool, ok := app.Mempool().(block.Mempool)
+	mempoolWrapper, ok := app.Mempool().(*evmindexer.MempoolWrapper)
+	if !ok {
+		panic("mempool is not a evmindexer.MempoolWrapper")
+	}
+
+	mempool, ok := mempoolWrapper.Inner().(block.Mempool)
 	if !ok {
 		panic("mempool is not a block.Mempool")
 	}
 
+	// Register the Block SDK mempool transaction service.
 	blockservice.RegisterMempoolService(app.GRPCQueryRouter(), mempool)
 }
 
