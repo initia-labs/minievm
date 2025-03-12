@@ -35,7 +35,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.1
 	github.com/initia-labs/OPinit v1.0.0-beta.2
-	github.com/initia-labs/initia v1.0.0-beta.1
+	github.com/initia-labs/initia v1.0.0-beta.4
 	github.com/initia-labs/kvindexer v0.1.11
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8
@@ -281,9 +281,9 @@ require (
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250310053630-8890d5b61b69
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250312140451-ed182d8cf283
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250228050813-bf23e7e632de
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250312130112-7ccb00ef2e34
 
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
