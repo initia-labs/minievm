@@ -75,7 +75,24 @@ import (
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/initia-labs/minievm/client/docs/statik"
+
+	// goleveldb performance tuning
+	"github.com/syndtr/goleveldb/leveldb/opt"
 )
+
+const (
+	KiB = 1024
+	MiB = KiB * 1024
+	GiB = MiB * 1024
+)
+
+func init() {
+	// https://github.com/inon-man/cosmos-db/blob/854353e9526d8b52c3034b82fb98c50763bacb41/goleveldb.go
+	opt.DefaultBlockCacheCapacity = 512 * MiB
+	opt.DefaultWriteBuffer = 32 * MiB
+	opt.DefaultCompactionTableSize = 8 * MiB
+	opt.DefaultCompactionTableSizeMultiplier = 1.05
+}
 
 var (
 	// DefaultNodeHome default home directories for the application daemon
