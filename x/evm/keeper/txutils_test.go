@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -477,7 +478,21 @@ func Test_IsEthereumTx(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, ok)
 
-	// 4. wrong signature type
+	// 4. wrong cosmos type
+	txBuilder.SetMsgs(&banktypes.MsgMultiSend{})
+	txBuilder.SetMemo("{}")
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100))))
+	tx = txBuilder.GetTx()
+
+	ok, err = input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
+	require.NoError(t, err)
+	require.False(t, ok)
+
+	ethTx, _, err := input.EVMKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
+	require.NoError(t, err)
+	require.Nil(t, ethTx)
+
+	// 5. wrong signature type
 	txBuilder.SetMsgs(&types.MsgCreate{})
 	txBuilder.SetMemo("{}")
 	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100))))
