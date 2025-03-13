@@ -6,9 +6,9 @@ require (
 	cosmossdk.io/math v1.4.0
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-sdk v0.50.12
-	github.com/cosmos/ibc-go/v8 v8.6.1
+	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/initia-labs/initia v1.0.0-beta.1
+	github.com/initia-labs/initia v1.0.0-beta.6
 	github.com/initia-labs/minievm v0.6.11
 	github.com/stretchr/testify v1.10.0
 )
@@ -266,8 +266,8 @@ require github.com/cosmos/iavl v1.2.5-0.20250306174232-6cfb3dac2c71 // indirect
 
 // initia custom
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250310053630-8890d5b61b69
-	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250228050813-bf23e7e632de
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250313033747-7188455de356
+	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line
