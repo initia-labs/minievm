@@ -195,6 +195,12 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		return nil, nil, nil
 	}
 
+	msg := msgs[0]
+	typeUrl := sdk.MsgTypeURL(msg)
+	if typeUrl != "/minievm.evm.v1.MsgCall" && typeUrl != "/minievm.evm.v1.MsgCreate" {
+		return nil, nil, nil
+	}
+
 	authTx := sdkTx.(authsigning.Tx)
 	memo := authTx.GetMemo()
 	if len(memo) == 0 {
@@ -230,10 +236,6 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	}
 
 	var tx *coretypes.Transaction
-
-	msg := msgs[0]
-	gas := authTx.GetGas()
-	typeUrl := sdk.MsgTypeURL(msg)
 
 	sig := sigs[0]
 	cosmosSender := sig.PubKey.Address()
@@ -272,6 +274,7 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	}
 
 	// check if the fee amount is correctly converted
+	gas := authTx.GetGas()
 	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(gasFeeCap, gas, decimals))))
 	if !feeAmount.Equal(computedFeeAmount) {
 		u.Logger(ctx).Error("fee amount manipulation detected", "expected", computedFeeAmount, "actual", feeAmount)
@@ -315,9 +318,6 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 		// Same as above (MsgCall)
 		value = types.ToEthersUnit(decimals, createMsg.Value.BigInt())
 		accessList = types.ConvertCosmosAccessListToEth(createMsg.AccessList)
-	case "/minievm.evm.v1.MsgCreate2":
-		// create2 is not supported
-		return nil, nil, nil
 	}
 
 	chainID := sdk.UnwrapSDKContext(ctx).ChainID()
