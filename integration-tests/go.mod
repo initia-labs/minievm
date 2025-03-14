@@ -5,7 +5,7 @@ go 1.23.6
 require (
 	cosmossdk.io/math v1.4.0
 	github.com/cometbft/cometbft v0.38.17
-	github.com/cosmos/cosmos-sdk v0.50.12
+	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/initia-labs/initia v1.0.0-beta.6
