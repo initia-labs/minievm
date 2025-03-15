@@ -48,14 +48,15 @@ func (suite *KeeperTestSuite) TestE2ETokenWrapper() {
 		initialBalancesB = bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB)
 	})
 
+	var tokenARemoteDenom string // denom of wrapped tokenA in source chain
 	var tokenB sdk.Coin
 	var wrapperAddr common.Address
 	suite.Run("Wrap tokenA and transfer token from A chain to B chain", func() {
-		tokenB, wrapperAddr = suite.wrap(pathA2B, tokenA, userA, userB, amount, big.NewInt(suite.chainB.CurrentHeader.Time.UnixNano()+1000000000000000000))
+		tokenARemoteDenom, tokenB, wrapperAddr = suite.wrapLocal(pathA2B, tokenA, userA, userB, amount, big.NewInt(suite.chainB.CurrentHeader.Time.UnixNano()+1000000000000000000))
 	})
 
 	suite.Run("Transfer tokenB from B chain to A chain, unwrap tokenB", func() {
-		suite.unwrap(pathA2B, tokenA, tokenB, wrapperAddr, userB, userA)
+		suite.unwrapLocal(pathA2B, tokenARemoteDenom, tokenB, wrapperAddr, userB, userA)
 	})
 
 	suite.Run("Have the same balance as the initial state", func() {
@@ -97,14 +98,14 @@ func (suite *KeeperTestSuite) createAndMintERC20(endpoint *ibctesting.Endpoint, 
 }
 
 // wrap the tokens and transfer token from A to B
-func (suite *KeeperTestSuite) wrap(
+func (suite *KeeperTestSuite) wrapLocal(
 	path *ibctesting.Path,
 	tokenAddress common.Address,
 	sender sdk.AccAddress,
 	receiver sdk.AccAddress,
 	amount *big.Int,
 	timeout *big.Int,
-) (sdk.Coin, common.Address) {
+) (string, sdk.Coin, common.Address) {
 	fromEndpoint := path.EndpointA
 	toEndpoint := path.EndpointB
 	fromCtx := fromEndpoint.Chain.GetContext()
@@ -126,7 +127,7 @@ func (suite *KeeperTestSuite) wrap(
 	_, _, err = evmKeeper.EVMCall(fromCtx, senderAddr, tokenAddress, inputBz, nil, nil)
 	suite.Require().NoError(err)
 	// wrap
-	inputBz, err = erc20Keeper.GetERC20WrapperABI().Pack("wrap", fromEndpoint.ChannelID, tokenAddress, receiver.String(), amount, timeout)
+	inputBz, err = erc20Keeper.GetERC20WrapperABI().Pack("wrapLocal0", fromEndpoint.ChannelID, tokenAddress, receiver.String(), amount, timeout)
 	suite.Require().NoError(err)
 
 	senderStr, err := suite.chainA.Codec.InterfaceRegistry().SigningContext().AddressCodec().BytesToString(sender)
@@ -148,21 +149,20 @@ func (suite *KeeperTestSuite) wrap(
 	err = commitRecvPacket(fromEndpoint, toEndpoint, packet)
 	suite.Require().NoError(err)
 
-	// check balance of recevier after wrap and send tokens
+	// check balance of receiver after wrap and send tokens
 	coins = bankKeeper.GetAllBalances(toCtx, receiver)
 	suite.Require().Equal(2, coins.Len())
-	return coins[0], wrapperAddr
-
+	return data.Denom, coins[0], wrapperAddr
 }
 
-// Transfer token from B to A and unwrap the tokens
-func (suite *KeeperTestSuite) unwrap(
+// Transfer token from B to A and unwrap the local tokens
+func (suite *KeeperTestSuite) unwrapLocal(
 	path *ibctesting.Path,
-	tokenA common.Address,
+	tokenADenom string,
 	tokenB sdk.Coin,
 	wrapperAddr common.Address,
 	sender sdk.AccAddress,
-	recevier sdk.AccAddress,
+	receiver sdk.AccAddress,
 ) {
 	fromEndpoint := path.EndpointB
 	toEndpoint := path.EndpointA
@@ -171,7 +171,7 @@ func (suite *KeeperTestSuite) unwrap(
 	erc20Keeper := evmKeeper.ERC20Keeper()
 
 	// set hook message
-	inputBz, err := erc20Keeper.GetERC20WrapperABI().Pack("unwrap", tokenA, common.BytesToAddress(recevier))
+	inputBz, err := erc20Keeper.GetERC20WrapperABI().Pack("unwrapLocal", common.BytesToAddress(receiver), tokenADenom)
 	suite.Require().NoError(err)
 	hook, err := unwrapHook(UnwrapHookData{
 		EVM: struct {
