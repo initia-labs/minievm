@@ -16,6 +16,9 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
+// StaticGasForCosmos is some buffer for gas used in cosmos part of the tx
+const StaticGasForCosmos = 50_000
+
 func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash, overrides *rpctypes.StateOverride) (hexutil.Uint64, error) {
 	if overrides != nil {
 		return hexutil.Uint64(0), errors.New("state overrides are not supported")
@@ -98,7 +101,7 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 	}
 
 	// apply gas multiplier
-	gasUsed := b.gasMultiplier.MulInt(math.NewIntFromUint64(gasInfo.GasUsed)).TruncateInt().Uint64()
+	gasUsed := b.gasMultiplier.MulInt(math.NewIntFromUint64(gasInfo.GasUsed)).TruncateInt().Uint64() + StaticGasForCosmos
 	return hexutil.Uint64(gasUsed), nil
 }
 

@@ -20,7 +20,7 @@ const (
 	// DefaultHTTPIdleTimeout is the default idle timeout of http json-rpc server.
 	DefaultHTTPIdleTimeout = 120 * time.Second
 	// DefaultEnableUnsafeCORS defines the default value for enabling unsafe CORS.
-	DefaultEnableUnsafeCORS = false
+	DefaultEnableUnsafeCORS = true
 	// DefaultMaxOpenConnections is the default maximum number of simultaneous connections
 	// for the server listener.
 	DefaultMaxOpenConnections = 100
