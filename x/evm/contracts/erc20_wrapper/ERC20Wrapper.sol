@@ -24,9 +24,10 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     uint8 constant LOCAL_DECIMALS = 18;
     string constant NAME_PREFIX = "Wrapped";
     string constant SYMBOL_PREFIX = "W";
-    uint64 callBackId = 0;
+    uint64 callbackId = 0;
     ERC20Factory public factory;
     mapping(address => address) public remoteTokens; // localToken -> remoteToken
+    mapping(address => uint8) public remoteDecimals; // remoteToken -> remoteDecimals
     mapping(uint64 => IbcCallBack) private ibcCallBack; // id -> CallBackInfo
     mapping(address => mapping(uint8 => address)) public localTokens; // remoteToken -> decimals -> localToken
 
@@ -56,14 +57,14 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         address receiver,
         string memory remoteDenom,
         uint remoteAmount,
-        uint8 remoteDecimals
+        uint8 _remoteDecimals
     ) public {
         address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
 
         // if there is no local token for the remote token and decimals, create a new one
-        _ensureLocalTokenExists(remoteToken, remoteDecimals);
+        _ensureLocalTokenExists(remoteToken, _remoteDecimals);
 
-        address localToken = localTokens[remoteToken][remoteDecimals];
+        address localToken = localTokens[remoteToken][_remoteDecimals];
 
         // lock received token
         IERC20(remoteToken).transferFrom(
@@ -75,7 +76,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         // convert decimal
         uint localAmount = _convertDecimal(
             remoteAmount,
-            remoteDecimals,
+            _remoteDecimals,
             LOCAL_DECIMALS
         );
 
@@ -213,17 +214,17 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
         // mint wrapped token
         address remoteToken = remoteTokens[localToken];
-        uint8 remoteDecimals = IERC20(remoteToken).decimals();
+        uint8 _remoteDecimals = IERC20(remoteToken).decimals();
         ERC20(remoteToken).mint(address(this), remoteAmount);
 
-        callBackId += 1;
+        callbackId += 1;
 
         // store the callback data
-        ibcCallBack[callBackId] = IbcCallBack({
+        ibcCallBack[callbackId] = IbcCallBack({
             sender: msg.sender,
             remoteToken: remoteToken,
             remoteAmount: remoteAmount,
-            remoteDecimals: remoteDecimals,
+            remoteDecimals: _remoteDecimals,
             burnRemote: true
         });
 
@@ -309,21 +310,23 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         require(remoteToken != address(0), "remote token doesn't exist");
 
         // unlock origin token and transfer to receiver
-        uint8 remoteDecimals = IERC20(remoteToken).decimals();
+        uint8 _remoteDecimals = remoteDecimals[remoteToken];
+        require(localTokens[remoteToken][_remoteDecimals] != address(0), "local token doesn't exist");
+
         uint remoteAmount = _convertDecimal(
             localAmount,
             LOCAL_DECIMALS,
-            remoteDecimals
+            _remoteDecimals
         );
 
-        callBackId += 1;
+        callbackId += 1;
 
         // store the callback data
-        ibcCallBack[callBackId] = IbcCallBack({
+        ibcCallBack[callbackId] = IbcCallBack({
             sender: msg.sender,
             remoteToken: remoteToken,
             remoteAmount: remoteAmount,
-            remoteDecimals: remoteDecimals,
+            remoteDecimals: _remoteDecimals,
             burnRemote: false
         });
 
@@ -384,6 +387,8 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             // mint local token
             ERC20(localToken).mint(callback.sender, localAmount);
         }
+
+        delete ibcCallBack[callback_id];
     }
 
     function _ensureRemoteTokenExists(address localToken) internal {
@@ -394,22 +399,24 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 REMOTE_DECIMALS
             );
             remoteTokens[localToken] = remoteToken;
+            remoteDecimals[remoteToken] = REMOTE_DECIMALS;
             localTokens[remoteToken][REMOTE_DECIMALS] = localToken;
         }
     }
 
     function _ensureLocalTokenExists(
         address remoteToken,
-        uint8 remoteDecimals
+        uint8 _remoteDecimals
     ) internal {
-        if (localTokens[remoteToken][remoteDecimals] == address(0)) {
+        if (localTokens[remoteToken][_remoteDecimals] == address(0)) {
             address localToken = factory.createERC20(
                 string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
                 LOCAL_DECIMALS
             );
-            localTokens[remoteToken][remoteDecimals] = localToken;
+            localTokens[remoteToken][_remoteDecimals] = localToken;
             remoteTokens[localToken] = remoteToken;
+            remoteDecimals[remoteToken] = _remoteDecimals;
         }
     }
 
@@ -444,7 +451,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         string memory callback_memo = string(
             abi.encodePacked(
                 '{"evm": {"async_callback": {"id": ',
-                Strings.toString(callBackId),
+                Strings.toString(callbackId),
                 ',"contract_address":"',
                 Strings.toHexString(address(this)),
                 '"}}}'
