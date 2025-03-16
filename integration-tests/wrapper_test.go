@@ -109,7 +109,7 @@ func (suite *KeeperTestSuite) TestE2ERemoteTokenWrapper() {
 	var tokenA, tokenB sdk.Coin
 	var tokenBContractAddr common.Address
 	suite.Run("Wrap tokenA and transfer token from A chain to B chain", func() {
-		tokenA, tokenB, tokenBContractAddr = suite.wrapRemote(pathA2B, tokenAContractAddr, userA, userB, amount, true)
+		tokenA, tokenB, tokenBContractAddr = suite.wrapRemote(pathA2B, tokenAContractAddr, userA, userB, amount)
 	})
 
 	expectedBalanceA := initialBalancesA.Sub(tokenA)
@@ -327,7 +327,6 @@ func (suite *KeeperTestSuite) wrapRemote(
 	sender sdk.AccAddress,
 	receiver sdk.AccAddress,
 	amount *big.Int,
-	timeout bool,
 ) (sdk.Coin, sdk.Coin, common.Address) {
 	fromEndpoint := path.EndpointA
 	toEndpoint := path.EndpointB
@@ -350,7 +349,6 @@ func (suite *KeeperTestSuite) wrapRemote(
 	sendToken := sdk.NewCoin(denom, math.NewIntFromBigInt(amount))
 
 	// create wrap hook message
-	sendingToken := sdk.NewCoin(denom, math.NewIntFromBigInt(amount))
 	receivedToken := transfertypes.GetTransferCoin(toEndpoint.ChannelConfig.PortID, toEndpoint.ChannelID, denom, math.NewIntFromBigInt(amount))
 	inputBz, err := fromErc20Keeper.GetERC20WrapperABI().Pack("wrapRemote", receiverAddr, receivedToken.Denom, amount, uint8(6))
 	suite.Require().NoError(err)
@@ -410,7 +408,7 @@ func (suite *KeeperTestSuite) wrapRemote(
 	// compute received token contract address
 	contractAddr, err := types.DenomToContractAddr(toCtx, toEvmKeeper, coins[0].Denom)
 	suite.Require().NoError(err)
-	return sendingToken, coins[0], contractAddr
+	return sendToken, coins[0], contractAddr
 }
 
 // unwrap the remote tokens and transfer token from B to A
