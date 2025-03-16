@@ -350,7 +350,7 @@ func (suite *KeeperTestSuite) wrapRemote(
 
 	// create wrap hook message
 	receivedToken := transfertypes.GetTransferCoin(toEndpoint.ChannelConfig.PortID, toEndpoint.ChannelID, denom, math.NewIntFromBigInt(amount))
-	inputBz, err := fromErc20Keeper.GetERC20WrapperABI().Pack("wrapRemote", receiverAddr, receivedToken.Denom, amount, uint8(6))
+	inputBz, err := fromErc20Keeper.GetERC20WrapperABI().Pack("wrapRemote0", receiverAddr, receivedToken.Denom, amount, uint8(6))
 	suite.Require().NoError(err)
 
 	hook, err := unwrapHook(HookData{

@@ -56,6 +56,20 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     function wrapRemote(
         address receiver,
         string memory remoteDenom,
+        uint8 _remoteDecimals
+    ) public {
+        address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
+        uint remoteAmount = ERC20(remoteToken).balanceOf(msg.sender);
+        wrapRemote(receiver, remoteDenom, remoteAmount, _remoteDecimals);
+    }
+
+    /**
+     * @notice This function wraps the remote tokens to 18 decimals local token
+     * @dev This function requires sender approve to this contract to transfer the tokens.
+     */
+    function wrapRemote(
+        address receiver,
+        string memory remoteDenom,
         uint remoteAmount,
         uint8 _remoteDecimals
     ) public {
@@ -95,14 +109,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         uint localAmount,
         uint timeout
     ) public {
-        unwrapRemote(
-            channel,
-            localToken,
-            receiver,
-            localAmount,
-            timeout,
-            "{}"
-        );
+        unwrapRemote(channel, localToken, receiver, localAmount, timeout, "{}");
     }
 
     /**
@@ -311,7 +318,10 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
         // unlock origin token and transfer to receiver
         uint8 _remoteDecimals = remoteDecimals[remoteToken];
-        require(localTokens[remoteToken][_remoteDecimals] != address(0), "local token doesn't exist");
+        require(
+            localTokens[remoteToken][_remoteDecimals] != address(0),
+            "local token doesn't exist"
+        );
 
         uint remoteAmount = _convertDecimal(
             localAmount,
