@@ -146,11 +146,11 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v0.7.0 // indirect
 	github.com/initia-labs/OPinit/api v0.6.2 // indirect
-	github.com/initia-labs/kvindexer v0.1.10-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/block v0.1.1-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.7-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.3-0.20250201074115-b7f88dafd1ca // indirect
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.2-0.20250201074115-b7f88dafd1ca // indirect
+	github.com/initia-labs/kvindexer v0.1.10 // indirect
+	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.4 // indirect
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
 	github.com/initia-labs/movevm v0.6.1 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -270,6 +270,7 @@ replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250204072819-a4b3fcdff78f
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250204081745-02cc37be3d29
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
+	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
 
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
