@@ -34,7 +34,7 @@ type HookData struct {
 // AsyncCallback is data wrapper which is required
 // when we implement async callback.
 type AsyncCallback struct {
- // callback id should be issued form the executor contract
+ // callback id should be issued from the executor contract
  Id            uint64 `json:"id"`
  ContractAddr  string `json:"contract_addr"`
 }
@@ -67,7 +67,7 @@ So we detail where we want to get each of these fields from:
 
 - Sender: We cannot trust the sender of an IBC packet, the counter-party chain has full ability to lie about it.
   We cannot risk this sender being confused for a particular user or module address on Initia.
-  So we replace the sender with an account to represent the sender prefixed by the channel and a evm module prefix.
+  So we replace the sender with an account to represent the sender prefixed by the channel and an evm module prefix.
   This is done by setting the sender to `Bech32(Hash(Hash("ibc-evm-hook-intermediary") + channelID/sender))`, where the channelId is the channel id on the local chain.
 - ContractAddr: This field should be directly obtained from the ICS-20 packet metadata
 - Input: This field should be directly obtained from the ICS-20 packet metadata.
@@ -76,7 +76,7 @@ So our constructed evm call message that we execute will look like:
 
 ```go
 msg := MsgCall{
- // Sender is the that actor that signed the messages
+ // Sender is the actor that signed the messages
  Sender: "init1-hash-of-channel-and-sender",
  // ContractAddr is the contract address to be executed.
  // It can be cosmos address or hex encoded address.
@@ -84,7 +84,7 @@ msg := MsgCall{
  // Hex encoded execution input bytes.
  Input: packet.data.memo["evm"]["message"]["input"],
  // Value is the amount of fee denom token to transfer to the contract.
- Value: packet.data.memo["evm"]["message"]["value"]
+ Value: packet.data.memo["evm"]["message"]["value"],
  // Value is the amount of fee denom token to transfer to the contract.
  AccessList: packet.data.memo["evm"]["message"]["access_list"]
 }
@@ -166,7 +166,7 @@ In evm hooks, post packet execution:
 
 A contract that sends an IBC transfer, may need to listen for the ACK from that packet.
 To allow contracts to listen on the ack of specific packets, we provide Ack callbacks.
-The contract, which wants to receive ack callback, have to implement two functions.
+The contract, which wants to receive ack callback, has to implement two functions.
 
 - ibc_ack
 - ibc_timeout
@@ -178,7 +178,7 @@ interface IIBCAsyncCallback {
 }
 ```
 
-Also when a contract make IBC transfer request, it should provide async callback data through memo field.
+Also when a contract makes an IBC transfer request, it should provide async callback data through memo field.
 
 - `memo['evm']['async_callback']['id']`: the async callback id is assigned from the contract. so later it will be passed as argument of `ibc_ack` and `ibc_timeout`.
 - `memo['evm']['async_callback']['contract_addr']`: The address of contract which defines the callback function.
@@ -187,7 +187,7 @@ Also when a contract make IBC transfer request, it should provide async callback
 
 `src -> dst`: Execute the ERC20Wrapper contract to wrap and do ibc-transfer
 
-`dst -> src`: ibc-trasfer and execute the ERC20Wrapper contract via ibc-hook
+`dst -> src`: ibc-transfer and execute the ERC20Wrapper contract via ibc-hook
 
 - data example
 
@@ -207,8 +207,8 @@ Also when a contract make IBC transfer request, it should provide async callback
           "input": "pack(unwrap, denom, recipient, amount)", // function selector(fc078758) + abiCoder.encode([string,address,address],denom,recipient,amount) ref) https://docs.ethers.org/v6/api/abi/abi-coder/#AbiCoder-encode
           "value": "0",
           "access_list": {
-            "address" : "...", // contract address
-            "storage_keys":  ["...","..."] // storage keys of contract
+            "address": "...", // contract address
+            "storage_keys":  ["...", "..."] // storage keys of contract
           }
         }
       }

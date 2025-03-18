@@ -9,7 +9,7 @@ import (
 // A contract that sends an IBC transfer, may need to listen for the ACK from that packet.
 // To allow contracts to listen on the ack of specific packets, we provide Ack callbacks.
 //
-// The contract, which wants to receive ack callback, have to implement two functions
+// The contract, which wants to receive ack callback, has to implement two functions
 // - ibc_ack
 // - ibc_timeout
 //
@@ -30,7 +30,7 @@ const (
 // AsyncCallback is data wrapper which is required
 // when we implement async callback.
 type AsyncCallback struct {
-	// callback id should be issued form the executor contract
+	// callback id should be issued from the executor contract
 	Id              uint64 `json:"id"`
 	ContractAddress string `json:"contract_address"`
 }
@@ -48,7 +48,7 @@ type HookData struct {
 
 // asyncCallback is same as AsyncCallback.
 type asyncCallback struct {
-	// callback id should be issued form the executor contract
+	// callback id should be issued from the executor contract
 	Id              uint64 `json:"id"`
 	ContractAddress string `json:"contract_address"`
 }
@@ -56,7 +56,7 @@ type asyncCallback struct {
 // asyncCallbackStringID is same as AsyncCallback but
 // it has Id as string.
 type asyncCallbackStringID struct {
-	// callback id should be issued form the executor contract
+	// callback id should be issued from the executor contract
 	Id              uint64 `json:"id,string"`
 	ContractAddress string `json:"contract_address"`
 }
