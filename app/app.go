@@ -411,20 +411,6 @@ func (app *MinitiaApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
 	return app.ModuleManager.EndBlock(ctx)
 }
 
-// FinalizeBlock overrides the default FinalizeBlock to recover from panic
-func (app *MinitiaApp) FinalizeBlock(req *abci.RequestFinalizeBlock) (res *abci.ResponseFinalizeBlock, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			// cosmos sdk has a bug to panic when we have abci listener and met error at FinalizeBlock
-			// so we need to recover the panic and return the error
-			err = fmt.Errorf("panic in FinalizeBlock: %v", r)
-		}
-	}()
-
-	res, err = app.BaseApp.FinalizeBlock(req)
-	return
-}
-
 // InitChainer application update at chain initialization
 func (app *MinitiaApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	var genesisState GenesisState

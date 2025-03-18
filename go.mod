@@ -19,7 +19,7 @@ require (
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
-	github.com/cosmos/cosmos-sdk v0.50.13
+	github.com/cosmos/cosmos-sdk v0.50.13-0.20250312145125-59c15d73cc4a
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.7.0
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0
@@ -34,7 +34,6 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.1
-	github.com/huandu/skiplist v1.2.0
 	github.com/initia-labs/OPinit v1.0.0-beta.2
 	github.com/initia-labs/initia v1.0.0-beta.6
 	github.com/initia-labs/kvindexer v0.1.11
@@ -168,6 +167,7 @@ require (
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/hdevalence/ed25519consensus v0.1.0 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
+	github.com/huandu/skiplist v1.2.0 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
