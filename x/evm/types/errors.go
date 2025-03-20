@@ -44,6 +44,7 @@ var (
 	ErrTxConversionFailed           = errorsmod.Register(ModuleName, 31, "Tx conversion failed")
 	ErrFailedToGetConnectOracleAddr = errorsmod.Register(ModuleName, 32, "Failed to get ConnectOracle address")
 	ErrInvalidSalt                  = errorsmod.Register(ModuleName, 33, "Invalid salt")
+	ErrExecuteCosmosDisabled        = errorsmod.Register(ModuleName, 34, "Execute cosmos is disabled")
 )
 
 func NewRevertError(revert []byte) error {

@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"errors"
-	gomath "math"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -75,7 +74,11 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// salt validation
-	if msg.Salt > gomath.MaxUint32 {
+	if msg.Salt.IsNegative() {
+		return nil, types.ErrInvalidSalt.Wrap("salt is negative")
+	}
+	salt, overflow := uint256.FromBig(msg.Salt.BigInt())
+	if overflow {
 		return nil, types.ErrInvalidSalt.Wrap("salt is out of range")
 	}
 
@@ -98,7 +101,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, msg.Salt, accessList)
+	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, salt, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}

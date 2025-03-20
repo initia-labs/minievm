@@ -468,3 +468,46 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 		},
 	}, resArr)
 }
+
+func Test_ExecuteCosmosMessage_Disabled(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	// deploy counter contract
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	// call execute cosmos function
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	denom := sdk.DefaultBondDenom
+	amount := math.NewInt(1000000000)
+	input.Faucet.Mint(ctx, contractAddr.Bytes(), sdk.NewCoin(denom, amount))
+
+	// call execute_cosmos with revert
+	inputBz, err := parsed.Pack("disable_execute_cosmos",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			addr.String(), // try to call with wrong signer
+			addr.String(), // caller
+			denom,
+			amount,
+		),
+		uint64(150_000),
+	)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, types.ErrExecuteCosmosDisabled.Error())
+
+	// check balance
+	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
+	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+}

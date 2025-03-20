@@ -68,21 +68,17 @@ func (m *MockStateDB) RevertToSnapshot(i int) {
 	m.ctx = snap.Context()
 
 	// clear the snapshots after the given id
-	m.snaps = m.snaps[:i]
-}
-
-// ContextOfSnapshot implements types.StateDB.
-func (m *MockStateDB) ContextOfSnapshot(i int) sdk.Context {
-	if i == -1 {
-		return m.initialCtx.Context
-	}
-
-	return m.snaps[i].Context().Context
+	m.snaps = m.snaps[:i+1]
 }
 
 // Context implements types.StateDB.
 func (m *MockStateDB) Context() sdk.Context {
 	return m.ctx.Context
+}
+
+// SetContextValue implements types.StateDB.
+func (m *MockStateDB) SetContextValue(key, value any) {
+	m.ctx.Context = m.ctx.Context.WithValue(key, value)
 }
 
 //////////////////////// MOCKED METHODS ////////////////////////

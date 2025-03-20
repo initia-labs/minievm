@@ -43,6 +43,10 @@ interface ICosmos {
         string memory denom
     ) external view returns (address erc20_address);
 
+    // disable execute cosmos
+    // - if disabled, execute_cosmos will revert
+    function disable_execute_cosmos() external returns (bool dummy);
+
     // record a cosmos message to be executed after the current message execution.
     // - if execution fails, whole transaction will be reverted.
     //

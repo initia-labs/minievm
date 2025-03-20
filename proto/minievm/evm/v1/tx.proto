@@ -75,7 +75,12 @@ message MsgCreate2 {
   string code = 2;
 
   // Salt is a random value to distinguish contract creation.
-  uint64 salt = 3;
+  string salt = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
   // Value is the amount of fee denom token to transfer to the contract.
   string value = 4 [

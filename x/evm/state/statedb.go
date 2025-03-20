@@ -586,13 +586,9 @@ func (s *StateDB) RevertToSnapshot(i int) {
 	s.snaps = s.snaps[:i+1]
 }
 
-// ContextOfSnapshot returns the context of the snapshot with the given id
-func (s *StateDB) ContextOfSnapshot(i int) sdk.Context {
-	if i == -1 {
-		return s.initialCtx.Context
-	}
-
-	return s.snaps[i].ctx.Context
+// SetContextValue sets the value on the context
+func (s *StateDB) SetContextValue(key, value any) {
+	s.ctx.Context = s.ctx.Context.WithValue(key, value)
 }
 
 // Context returns the current context
