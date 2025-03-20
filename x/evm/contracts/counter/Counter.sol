@@ -72,6 +72,16 @@ contract Counter is IIBCAsyncCallback {
         );
     }
 
+    function disable_execute_cosmos(
+        string memory exec_msg, 
+        uint64 gas_limit
+    ) external {
+        COSMOS_CONTRACT.disable_execute_cosmos();
+
+        // execute cosmos will revert
+        COSMOS_CONTRACT.execute_cosmos(exec_msg, gas_limit);
+    }
+
     function callback(uint64 callback_id, bool success) external {
         emit callback_received(callback_id, success);
     }

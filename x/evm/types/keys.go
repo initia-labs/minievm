@@ -51,4 +51,7 @@ const (
 
 	// CONTEXT_KEY_RECURSIVE_DEPTH is a context key for recursive depth
 	CONTEXT_KEY_RECURSIVE_DEPTH
+
+	// CONTEXT_KEY_DISABLE_EXECUTE_COSMOS is a context key for disable execute cosmos
+	CONTEXT_KEY_DISABLE_EXECUTE_COSMOS
 )
