@@ -45,12 +45,12 @@ func Test_Create2(t *testing.T) {
 
 	caller := common.BytesToAddress(addr.Bytes())
 
-	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, 1, nil)
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, uint256.NewInt(1), nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
 
-	_, _, _, err = input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, 1, nil)
+	_, _, _, err = input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, uint256.NewInt(1), nil)
 	require.ErrorContains(t, err, vm.ErrContractAddressCollision.Error())
 }
 

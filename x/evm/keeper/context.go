@@ -397,14 +397,14 @@ func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []b
 }
 
 // EVMCreate creates a new contract with the given code.
-func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt uint64, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, &salt, accessList, nil)
+func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
+	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, salt, accessList, nil)
 }
 
 // EVMCreateWithTracer creates a new contract with the given code and tracer.
 // if salt is nil, it will create a contract with the CREATE opcode.
 // if salt is not nil, it will create a contract with the CREATE2 opcode.
-func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint64, accessList coretype.AccessList, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
+func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, common.Address{}, nil, err
@@ -441,7 +441,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 			codeBz,
 			gasRemaining,
 			value,
-			uint256.NewInt(*salt),
+			salt,
 		)
 	}
 
