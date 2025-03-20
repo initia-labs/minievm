@@ -28,10 +28,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup environmental variables
-        run: |
-          echo "COMMIT=$(git log -1 --format='%H')" >> $GITHUB_ENV
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -55,4 +51,4 @@ jobs:
           no-cache: true
           build-args: |
             VERSION=${{ github.ref_name }}
-            COMMIT=${{ env.COMMIT }}
+            COMMIT=${{ github.sha }}
