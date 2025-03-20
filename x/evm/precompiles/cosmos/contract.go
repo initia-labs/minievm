@@ -125,6 +125,9 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 	}()
 
+	// charge input gas
+	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")
+
 	method, err := e.ABI.MethodById(input)
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
@@ -134,9 +137,6 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}
-
-	// charge input gas
-	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")
 
 	switch method.Name {
 	case METHOD_IS_BLOCKED_ADDRESS:
