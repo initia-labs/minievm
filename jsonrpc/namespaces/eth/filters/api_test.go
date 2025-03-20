@@ -57,7 +57,7 @@ func setupFilterAPI(t *testing.T) testInput {
 	cfg.Enable = true
 	cfg.FilterTimeout = 10 * time.Second
 
-	mockCometRPC := tests.NewMockCometRPC(app.BaseApp)
+	mockCometRPC := tests.NewMockCometRPC(app)
 	clientCtx = clientCtx.WithClient(mockCometRPC)
 
 	backend, err := backend.NewJSONRPCBackend(ctx, app, app.Logger(), svrCtx, clientCtx, cfg)

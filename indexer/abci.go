@@ -176,8 +176,9 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			return err
 		}
 
-		// remove tx from the pending map after indexing
-		e.txPendingMap.Delete(ethTx.Hash())
+		// remove tx from the pending and queued after indexing
+		e.pendingTxs.Delete(ethTx.Hash())
+		e.queuedTxs.Delete(ethTx.Hash())
 
 		if len(e.logsChans) > 0 && len(receipt.Logs) > 0 {
 			for idx, log := range receipt.Logs {

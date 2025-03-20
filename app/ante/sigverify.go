@@ -22,9 +22,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
 	forwardingtypes "github.com/noble-assets/forwarding/v2/types"
+
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // SigVerificationDecorator verifies all signatures for a tx and return an error if any are invalid. Note,
@@ -85,12 +86,9 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		}
 
 		skipSequenceCheck := false
-		if simulate && len(sigs) == 1 {
-			if sigData, ok := sig.Data.(*signing.SingleSignatureData); ok {
-				if sigData.SignMode == evmkeeper.SignMode_SIGN_MODE_ETHEREUM {
-					skipSequenceCheck = true
-				}
-			}
+		if simulate {
+			ethTx, ok := ctx.Value(ContextKeyEthTx).(*coretypes.Transaction)
+			skipSequenceCheck = ok && ethTx != nil
 		}
 
 		// Check account sequence number.
