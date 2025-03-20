@@ -84,6 +84,10 @@ contract Counter is IIBCAsyncCallback {
 
     function callback(uint64 callback_id, bool success) external {
         emit callback_received(callback_id, success);
+
+        if (callback_id == 7) {
+            revert("revert reason dummy value for test");
+        }
     }
 
     function get_blockhash(uint64 n) external view returns (bytes32) {

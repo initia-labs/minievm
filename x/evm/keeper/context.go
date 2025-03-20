@@ -591,7 +591,8 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 
 		// if callback exists, execute it with parent context because it's already committed
 		if callbackId > 0 {
-			inputBz, err := k.cosmosCallbackABI.Pack("callback", callbackId, success)
+			var inputBz []byte
+			inputBz, err = k.cosmosCallbackABI.Pack("callback", callbackId, success)
 			if err != nil {
 				return
 			}
