@@ -25,7 +25,7 @@ func (w *CheckTxWrapper) moveToPending(
 		w.ei.PushPendingTx(ethTx)
 	}
 
-	return res, nil
+	return res, err
 }
 
 // updateFeeDenomCache updates the fee denom cache.
@@ -106,15 +106,15 @@ func (w *CheckTxWrapper) flushQueue(sender *common.Address, nonce uint64) {
 			Tx:   txItem.Value().txBytes,
 			Type: abci.CheckTxType_New,
 		}, ethTx); err != nil {
-			w.responses[txHash] = sdkerrors.ResponseCheckTxWithEvents(err, 0, 0, nil, false)
+			w.responses.Store(txHash, sdkerrors.ResponseCheckTxWithEvents(err, 0, 0, nil, false))
 			w.logger.Error("failed to check tx", "error", err)
 			break
 		} else if res.Code != abci.CodeTypeOK {
-			w.responses[txHash] = res
+			w.responses.Store(txHash, res)
 			w.logger.Error("failed to check tx", "code", res.Code, "log", res.Log)
 			break
 		} else {
-			w.responses[txHash] = res
+			w.responses.Store(txHash, res)
 		}
 
 		nonce++

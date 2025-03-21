@@ -1,6 +1,7 @@
 package checktx
 
 import (
+	"sync"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -48,7 +49,7 @@ type CheckTxWrapper struct {
 
 	txQueue *ttlcache.Cache[txKey, txItem]
 
-	responses       map[common.Hash]*abci.ResponseCheckTx
+	responses       *sync.Map
 	responsesHeight uint64
 }
 
@@ -92,7 +93,7 @@ func NewCheckTxWrapper(
 
 		txQueue: ttlcache.New(ttlcache.WithTTL[txKey, txItem](time.Minute)),
 
-		responses:       make(map[common.Hash]*abci.ResponseCheckTx),
+		responses:       new(sync.Map),
 		responsesHeight: 0,
 	}
 
@@ -134,12 +135,12 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 		// refresh responses map
 		if w.responsesHeight != blockHeight {
 			w.responsesHeight = blockHeight
-			w.responses = make(map[common.Hash]*abci.ResponseCheckTx)
+			w.responses.Clear()
 		}
 
 		// check responses first
-		if res, ok := w.responses[ethTx.Hash()]; ok {
-			return res, nil
+		if res, ok := w.responses.Load(ethTx.Hash()); ok {
+			return res.(*abci.ResponseCheckTx), nil
 		}
 
 		isTxInQueue := false
@@ -173,8 +174,8 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 		w.flushQueue(sender, accNonce)
 
 		// check responses
-		if res, ok := w.responses[ethTx.Hash()]; ok {
-			return res, nil
+		if res, ok := w.responses.Load(ethTx.Hash()); ok {
+			return res.(*abci.ResponseCheckTx), nil
 		}
 
 		// response okay to keep the tx in the mempool for recheck triggered by cometbft

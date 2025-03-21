@@ -172,11 +172,11 @@ func NewEVMIndexer(
 
 		// Use ttlcache to cope with abnormal cases like tx not included in a block
 		pendingTxs: ttlcache.New(
-			// pending tx lifetime is 10 minutes in indexer
+			// pending tx lifetime is 1 minutes in indexer
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
 		queuedTxs: ttlcache.New(
-			// queued tx lifetime is 10 minutes in indexer
+			// queued tx lifetime is 1 minutes in indexer
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
 	}
