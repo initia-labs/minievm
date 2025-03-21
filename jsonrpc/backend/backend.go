@@ -44,9 +44,6 @@ type JSONRPCBackend struct {
 	feeDecimals uint8
 	feeMutex    sync.RWMutex
 
-	mut     sync.Mutex // mutex for accMuts
-	accMuts map[string]*AccMut
-
 	ctx       context.Context
 	svrCtx    *server.Context
 	clientCtx client.Context
@@ -56,14 +53,6 @@ type JSONRPCBackend struct {
 
 	// Channel receiving bloom data retrieval requests
 	bloomRequests chan chan *bloombits.Retrieval
-}
-
-type txQueueItem struct {
-	hash  common.Hash
-	bytes []byte
-
-	sender string
-	body   *coretypes.Transaction
 }
 
 const (
@@ -112,8 +101,6 @@ func NewJSONRPCBackend(
 		// per tx caches
 		txLookupCache: lru.NewCache[common.Hash, *rpctypes.RPCTransaction](txLookupCacheLimit),
 		receiptCache:  lru.NewCache[common.Hash, *coretypes.Receipt](txLookupCacheLimit),
-
-		accMuts: make(map[string]*AccMut),
 
 		ctx:       ctx,
 		svrCtx:    svrCtx,
@@ -194,45 +181,6 @@ func (b *JSONRPCBackend) feeFetcher() {
 			return
 		}
 	}
-}
-
-type AccMut struct {
-	mut sync.Mutex
-	rc  int // reference count
-}
-
-// acquireAccMut acquires the mutex for the account with the given senderHex
-// and increments the reference count. If the mutex does not exist, it is created.
-func (b *JSONRPCBackend) acquireAccMut(senderHex string) *AccMut {
-	// critical section for rc and create
-	b.mut.Lock()
-	accMut, ok := b.accMuts[senderHex]
-	if !ok {
-		accMut = &AccMut{rc: 0}
-		b.accMuts[senderHex] = accMut
-	}
-	accMut.rc++
-	b.mut.Unlock()
-	// critical section end
-
-	accMut.mut.Lock()
-	return accMut
-}
-
-// releaseAccMut releases the mutex for the account with the given senderHex
-// and decrements the reference count. If the reference count reaches zero,
-// the mutex is deleted.
-func (b *JSONRPCBackend) releaseAccMut(senderHex string, accMut *AccMut) {
-	accMut.mut.Unlock()
-
-	// critical section for rc and delete
-	b.mut.Lock()
-	accMut.rc--
-	if accMut.rc == 0 {
-		delete(b.accMuts, senderHex)
-	}
-	b.mut.Unlock()
-	// critical section end
 }
 
 func (b *JSONRPCBackend) FilterTimeout() time.Duration {

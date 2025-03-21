@@ -23,9 +23,6 @@ import (
 )
 
 const (
-	txTimeoutCode     = 999
-	txTimeoutDuration = time.Minute * 10
-
 	maxQueueTxs = 1024
 )
 
