@@ -81,9 +81,6 @@ func NewJSONRPCBackend(
 	clientCtx client.Context,
 	cfg config.JSONRPCConfig,
 ) (*JSONRPCBackend, error) {
-	if cfg.QueuedTransactionCap == 0 {
-		cfg.QueuedTransactionCap = config.DefaultQueuedTransactionCap
-	}
 	if cfg.LogCacheSize == 0 {
 		cfg.LogCacheSize = config.DefaultLogCacheSize
 	}
