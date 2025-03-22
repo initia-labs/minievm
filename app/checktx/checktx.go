@@ -22,10 +22,6 @@ import (
 	blockchecktx "github.com/skip-mev/block-sdk/v2/abci/checktx"
 )
 
-const (
-	maxQueueTxs = 1024
-)
-
 type CheckTxWrapper struct {
 	logger   log.Logger
 	txConfig client.TxConfig
@@ -95,23 +91,9 @@ func NewCheckTxWrapper(
 	}
 
 	// start the tx queue to evict expired txs
-	go w.txQueueLoop()
+	go w.txQueue.Start()
 
 	return w
-}
-
-func (w *CheckTxWrapper) txQueueLoop() {
-	for {
-		time.Sleep(time.Second * 3)
-
-		w.txQueue.DeleteExpired()
-		if w.txQueue.Len() > maxQueueTxs {
-			w.txQueue.RangeBackwards(func(item *ttlcache.Item[txKey, txItem]) bool {
-				w.txQueue.Delete(item.Key())
-				return true
-			})
-		}
-	}
 }
 
 // WrapCheckTx wrap the default checkTx handler to check the transaction is evm tx.
