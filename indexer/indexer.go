@@ -17,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/mempool"
 
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -53,8 +52,16 @@ type EVMIndexer interface {
 	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction)
 
 	// mempool
-	MempoolWrapper(mempool mempool.Mempool) mempool.Mempool
-	TxInMempool(hash common.Hash) *rpctypes.RPCTransaction
+	TxInPending(hash common.Hash) *rpctypes.RPCTransaction
+	TxInQueued(hash common.Hash) *rpctypes.RPCTransaction
+	PushPendingTx(tx *coretypes.Transaction)
+	PushQueuedTx(tx *coretypes.Transaction)
+	PendingTxs() []*rpctypes.RPCTransaction
+	QueuedTxs() []*rpctypes.RPCTransaction
+	NumPendingTxs() int
+	NumQueuedTxs() int
+	RemovePendingTx(hash common.Hash)
+	RemoveQueuedTx(hash common.Hash)
 
 	// bloom
 	ReadBloomBits(ctx context.Context, section uint64, index uint32) ([]byte, error)
@@ -102,8 +109,11 @@ type EVMIndexerImpl struct {
 	logsChans    []chan []*coretypes.Log
 	pendingChans []chan *rpctypes.RPCTransaction
 
-	// txPendingMap is a map to store tx hashes in pending state.
-	txPendingMap *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
+	// pendingTxs is a map to store tx hashes in pending state.
+	pendingTxs *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
+
+	// queuedTxs is a map to store tx hashes in queued state.
+	queuedTxs *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
 }
 
 func NewEVMIndexer(
@@ -161,8 +171,12 @@ func NewEVMIndexer(
 		pendingChans: nil,
 
 		// Use ttlcache to cope with abnormal cases like tx not included in a block
-		txPendingMap: ttlcache.New(
-			// pending tx lifetime is 1 minute in indexer
+		pendingTxs: ttlcache.New(
+			// pending tx lifetime is 1 minutes in indexer
+			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
+		),
+		queuedTxs: ttlcache.New(
+			// queued tx lifetime is 1 minutes in indexer
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
 	}
@@ -174,7 +188,8 @@ func NewEVMIndexer(
 	indexer.schema = schema
 
 	// expire pending tx
-	go indexer.txPendingMap.Start()
+	go indexer.pendingTxs.Start()
+	go indexer.queuedTxs.Start()
 
 	return indexer, nil
 }
@@ -220,7 +235,10 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan 
 
 // Stop stops the indexer.
 func (e *EVMIndexerImpl) Stop() {
-	if e.txPendingMap != nil {
-		e.txPendingMap.Stop()
+	if e.pendingTxs != nil {
+		e.pendingTxs.Stop()
+	}
+	if e.queuedTxs != nil {
+		e.queuedTxs.Stop()
 	}
 }

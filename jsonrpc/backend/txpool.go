@@ -3,12 +3,10 @@ package backend
 import (
 	"fmt"
 
-	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
-	"github.com/initia-labs/minievm/x/evm/keeper"
 )
 
 func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpctypes.RPCTransaction, error) {
@@ -17,57 +15,27 @@ func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpct
 		"queued":  make(map[string]map[string]*rpctypes.RPCTransaction),
 	}
 
-	limit := int(100)
-	pending, err := b.clientCtx.Client.(rpcclient.MempoolClient).UnconfirmedTxs(b.ctx, &limit)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	txUtils := keeper.NewTxUtils(b.app.EVMKeeper)
-	for _, tx := range pending.Txs {
-		cosmosTx, err := b.app.TxDecode(tx)
-		if err != nil {
-			return nil, err
-		}
-
-		ethTx, account, err := txUtils.ConvertCosmosTxToEthereumTx(ctx, cosmosTx)
-		if err != nil {
-			return nil, err
-		}
-		if ethTx == nil {
-			continue
-		}
-
-		dump, ok := content["pending"][account.Hex()]
+	pendingTxs := b.app.EVMIndexer().PendingTxs()
+	for _, tx := range pendingTxs {
+		dump, ok := content["pending"][tx.From.Hex()]
 		if !ok {
 			dump = make(map[string]*rpctypes.RPCTransaction)
-			content["pending"][account.Hex()] = dump
+			content["pending"][tx.From.Hex()] = dump
 		}
 
-		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
+		dump[fmt.Sprintf("%d", tx.Nonce)] = tx
 	}
 
 	// load queued txs
-	b.mut.Lock()
-	queuedTxs := b.queuedTxs.Values()
-	b.mut.Unlock()
-
-	for _, txQueueItem := range queuedTxs {
-		ethTx := txQueueItem.body
-		sender := txQueueItem.sender
-
-		dump, ok := content["queued"][sender]
+	queuedTxs := b.app.EVMIndexer().QueuedTxs()
+	for _, tx := range queuedTxs {
+		dump, ok := content["queued"][tx.From.Hex()]
 		if !ok {
 			dump = make(map[string]*rpctypes.RPCTransaction)
-			content["queued"][sender] = dump
+			content["queued"][tx.From.Hex()] = dump
 		}
 
-		dump[fmt.Sprintf("%d", ethTx.Nonce())] = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
+		dump[fmt.Sprintf("%d", tx.Nonce)] = tx
 	}
 
 	return content, nil
@@ -88,17 +56,11 @@ func (b *JSONRPCBackend) TxPoolContentFrom(addr common.Address) (map[string]map[
 
 // Status returns the number of pending and queued transaction in the pool.
 func (b *JSONRPCBackend) TxPoolStatus() (map[string]hexutil.Uint, error) {
-	numPendingTxs, err := b.clientCtx.Client.(rpcclient.MempoolClient).NumUnconfirmedTxs(b.ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	b.mut.Lock()
-	numQueuedTxs := b.queuedTxs.Len()
-	b.mut.Unlock()
+	numPendingTxs := b.app.EVMIndexer().NumPendingTxs()
+	numQueuedTxs := b.app.EVMIndexer().NumQueuedTxs()
 
 	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(numPendingTxs.Count),
+		"pending": hexutil.Uint(numPendingTxs),
 		"queued":  hexutil.Uint(numQueuedTxs),
 	}, nil
 }

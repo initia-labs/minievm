@@ -65,7 +65,7 @@ func CreateAppWithJSONRPC(t *testing.T) TestInput {
 	cfg.Address = fmt.Sprintf("localhost:%d", getFreePort(t))
 	cfg.AddressWS = fmt.Sprintf("localhost:%d", getFreePort(t))
 
-	mockCometRPC := NewMockCometRPC(app.BaseApp)
+	mockCometRPC := NewMockCometRPC(app)
 	clientCtx = clientCtx.WithClient(mockCometRPC)
 
 	backend, err := backend.NewJSONRPCBackend(ctx, app, app.Logger(), svrCtx, clientCtx, cfg)

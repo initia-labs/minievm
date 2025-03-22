@@ -3,19 +3,13 @@ package backend
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strings"
-	"sync/atomic"
 
 	"cosmossdk.io/collections"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -59,95 +53,11 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 		return err
 	}
 
-	authTx, ok := cosmosTx.(authsigning.Tx)
-	if !ok {
-		return NewInternalError("failed to convert cosmosTx to authsigning.Tx")
-	}
-
-	sigs, err := authTx.GetSignaturesV2()
-	if err != nil || len(sigs) != 1 {
-		b.logger.Error("failed to get signatures from authsigning.Tx", "err", err)
-		return NewInternalError("failed to get signatures from authsigning.Tx")
-	}
-
-	sig := sigs[0]
-	txSeq := sig.Sequence
-	accSeq := uint64(0)
-	sender := sdk.AccAddress(sig.PubKey.Address().Bytes())
-
-	txHash := tx.Hash()
-	senderHex := common.BytesToAddress(sender.Bytes()).Hex()
-
-	checkCtx := b.app.GetContextForCheckTx(nil)
-	if acc := b.app.AccountKeeper.GetAccount(checkCtx, sender); acc != nil {
-		accSeq = acc.GetSequence()
-	}
-	if accSeq > txSeq {
-		return fmt.Errorf("%w: next nonce %v, tx nonce %v", core.ErrNonceTooLow, accSeq, txSeq)
-	}
-
-	b.logger.Debug("enqueue tx", "sender", senderHex, "txSeq", txSeq, "accSeq", accSeq)
-	cacheKey := fmt.Sprintf("%s-%d", senderHex, txSeq)
-
-	// hold mutex for each sender
-	accMut := b.acquireAccMut(senderHex)
-
-	b.queuedTxHashes.Store(txHash, cacheKey)
-	rc, _ := b.queuedTxAccounts.LoadOrStore(senderHex, &atomic.Int64{})
-	rc.(*atomic.Int64).Add(1)
-
-	_ = b.queuedTxs.Add(cacheKey, txQueueItem{hash: txHash, bytes: txBytes, body: tx, sender: senderHex})
-
-	b.releaseAccMut(senderHex, accMut)
-
-	// check if there are queued txs which can be sent
-	if err = b.flushQueuedTxs(senderHex, accSeq); err != nil {
+	res, err := b.clientCtx.BroadcastTxSync(txBytes)
+	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// flush the queued transactions for the given sender only if the sequence matches
-func (b *JSONRPCBackend) flushQueuedTxs(senderHex string, accSeq uint64) error {
-	// hold mutex for each sender
-	accMut := b.acquireAccMut(senderHex)
-	defer b.releaseAccMut(senderHex, accMut)
-
-	for {
-		select {
-		case <-b.ctx.Done():
-			return nil
-		default:
-		}
-
-		cacheKey := fmt.Sprintf("%s-%d", senderHex, accSeq)
-		txQueueItem, ok := b.queuedTxs.Get(cacheKey)
-		if !ok {
-			break
-		}
-
-		b.logger.Debug("broadcast queued tx", "sender", senderHex, "txSeq", accSeq)
-
-		// increase the sequence number for the next lookup
-		accSeq++
-
-		// remove the tx from the queue
-		_ = b.queuedTxs.Remove(cacheKey)
-
-		// broadcast the tx
-		res, err := b.clientCtx.BroadcastTxSync(txQueueItem.bytes)
-		if err != nil && strings.Contains(err.Error(), sdkerrors.ErrWrongSequence.Error()) {
-			// ignore wrong sequence error
-			continue
-		} else if err != nil {
-			return err
-		}
-
-		// ignore wrong sequence error
-		if res.Code != 0 && res.Code != sdkerrors.ErrWrongSequence.ABCICode() {
-			return sdkerrors.ErrInvalidRequest.Wrapf("tx failed with code: %d: raw_log: %s", res.Code, res.RawLog)
-		}
+	} else if res.Code != 0 {
+		return errors.New(res.RawLog)
 	}
 
 	return nil
@@ -406,15 +316,12 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 	}
 
 	// check if the transaction is in the queued txs
-	if cacheKey, ok := b.queuedTxHashes.Load(hash); ok {
-		if cacheItem, ok := b.queuedTxs.Get(cacheKey.(string)); ok {
-			rpcTx := rpctypes.NewRPCTransaction(cacheItem.body, common.Hash{}, 0, 0, cacheItem.body.ChainId())
-			return rpcTx, nil
-		}
+	if tx := b.app.EVMIndexer().TxInQueued(hash); tx != nil {
+		return tx, nil
 	}
 
 	// check if the transaction is in the pending txs
-	if tx := b.app.EVMIndexer().TxInMempool(hash); tx != nil {
+	if tx := b.app.EVMIndexer().TxInPending(hash); tx != nil {
 		return tx, nil
 	}
 

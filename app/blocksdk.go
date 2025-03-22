@@ -1,13 +1,16 @@
 package app
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 	cosmosante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	// OPinit imports
+	opchildante "github.com/initia-labs/OPinit/x/opchild/ante"
 	opchildlanes "github.com/initia-labs/OPinit/x/opchild/lanes"
 
 	// initia imports
@@ -23,6 +26,7 @@ import (
 
 	// local imports
 	appante "github.com/initia-labs/minievm/app/ante"
+	"github.com/initia-labs/minievm/app/checktx"
 )
 
 func setupBlockSDK(
@@ -85,6 +89,22 @@ func setupBlockSDK(
 		return nil, nil, nil, nil, nil, err
 	}
 
+	// create a custom fee checker for free lane
+	txFeeChecker := opchildante.NewMempoolFeeChecker(app.OPChildKeeper).CheckTxFeeWithMinGasPrices
+	freeLaneFeeChecker := func(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error) {
+		if !freeLane.Match(ctx, tx) {
+			return txFeeChecker(ctx, tx)
+		}
+
+		// return fee without fee check
+		feeTx, ok := tx.(sdk.FeeTx)
+		if !ok {
+			return nil, 0, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+		}
+
+		return feeTx.GetFee(), 1 /* FIFO */, nil
+	}
+
 	anteHandler, err := appante.NewAnteHandler(
 		appante.HandlerOptions{
 			HandlerOptions: cosmosante.HandlerOptions{
@@ -92,6 +112,7 @@ func setupBlockSDK(
 				BankKeeper:      app.BankKeeper,
 				FeegrantKeeper:  app.FeeGrantKeeper,
 				SignModeHandler: app.txConfig.SignModeHandler(),
+				TxFeeChecker:    freeLaneFeeChecker,
 			},
 			IBCkeeper:     app.IBCKeeper,
 			Codec:         app.appCodec,
@@ -99,7 +120,6 @@ func setupBlockSDK(
 			TxEncoder:     app.txConfig.TxEncoder(),
 			AuctionKeeper: app.AuctionKeeper,
 			MevLane:       mevLane,
-			FreeLane:      freeLane,
 			EVMKeeper:     app.EVMKeeper,
 		},
 	)
@@ -151,5 +171,19 @@ func setupBlockSDK(
 	prepareProposalHandler := proposalHandler.PrepareProposalHandler()
 	processProposalHandler := proposalHandler.ProcessProposalHandler()
 
-	return mempool, anteHandler, checkTx, prepareProposalHandler, processProposalHandler, nil
+	// wrap checkTx for unordered txs
+	app.checkTxWrapper = checktx.NewCheckTxWrapper(
+		app.Logger(),
+		app.txConfig,
+		app,
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.EVMKeeper,
+		app.EVMIndexer(),
+		app.EVMKeeper.TxUtils(),
+		checkTx,
+		freeLaneFeeChecker,
+	)
+
+	return mempool, anteHandler, app.checkTxWrapper.CheckTx(), prepareProposalHandler, processProposalHandler, nil
 }
