@@ -172,7 +172,7 @@ func setupBlockSDK(
 	processProposalHandler := proposalHandler.ProcessProposalHandler()
 
 	// wrap checkTx for unordered txs
-	checktxWrapper := checktx.NewCheckTxWrapper(
+	app.checkTxWrapper = checktx.NewCheckTxWrapper(
 		app.Logger(),
 		app.txConfig,
 		app,
@@ -185,5 +185,5 @@ func setupBlockSDK(
 		freeLaneFeeChecker,
 	)
 
-	return mempool, anteHandler, checktxWrapper.CheckTx(), prepareProposalHandler, processProposalHandler, nil
+	return mempool, anteHandler, app.checkTxWrapper.CheckTx(), prepareProposalHandler, processProposalHandler, nil
 }

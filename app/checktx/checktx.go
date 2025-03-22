@@ -96,6 +96,10 @@ func NewCheckTxWrapper(
 	return w
 }
 
+func (w *CheckTxWrapper) Stop() {
+	w.txQueue.Stop()
+}
+
 // WrapCheckTx wrap the default checkTx handler to check the transaction is evm tx.
 //
 // - If the transaction is not evm tx, it will be passed to the default handler.

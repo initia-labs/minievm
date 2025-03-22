@@ -65,6 +65,7 @@ import (
 	blockservice "github.com/skip-mev/block-sdk/v2/block/service"
 
 	// local imports
+	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
 	evmindexer "github.com/initia-labs/minievm/indexer"
@@ -125,6 +126,9 @@ type MinitiaApp struct {
 
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
+
+	// checktx wrapper
+	checkTxWrapper *checktx.CheckTxWrapper
 }
 
 // NewMinitiaApp returns a reference to an initialized Initia.
@@ -635,6 +639,10 @@ func (app *MinitiaApp) Close() error {
 
 	if app.evmIndexer != nil {
 		app.evmIndexer.Stop()
+	}
+
+	if app.checkTxWrapper != nil {
+		app.checkTxWrapper.Stop()
 	}
 
 	return nil
