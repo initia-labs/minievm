@@ -91,6 +91,12 @@ func (w *CheckTxWrapper) flushQueue(sender *common.Address, nonce uint64) {
 	}
 
 	for {
+		select {
+		case <-w.stop:
+			return
+		default:
+		}
+
 		txItem := w.txQueue.Get(txKey{sender: *sender, nonce: nonce})
 		if txItem == nil {
 			break

@@ -44,6 +44,8 @@ type CheckTxWrapper struct {
 
 	responses       *sync.Map
 	responsesHeight uint64
+
+	stop chan struct{}
 }
 
 type txKey struct {
@@ -88,6 +90,8 @@ func NewCheckTxWrapper(
 
 		responses:       new(sync.Map),
 		responsesHeight: 0,
+
+		stop: make(chan struct{}),
 	}
 
 	// start the tx queue to evict expired txs
@@ -98,6 +102,7 @@ func NewCheckTxWrapper(
 
 func (w *CheckTxWrapper) Stop() {
 	w.txQueue.Stop()
+	close(w.stop)
 }
 
 // WrapCheckTx wrap the default checkTx handler to check the transaction is evm tx.
