@@ -42,7 +42,8 @@ type CheckTxWrapper struct {
 
 	txQueue *ttlcache.Cache[txKey, txItem]
 
-	responses       *sync.Map
+	mut             sync.RWMutex
+	responses       map[common.Hash]*abci.ResponseCheckTx
 	responsesHeight uint64
 
 	stop chan struct{}
@@ -88,7 +89,7 @@ func NewCheckTxWrapper(
 
 		txQueue: ttlcache.New(ttlcache.WithTTL[txKey, txItem](time.Minute)),
 
-		responses:       new(sync.Map),
+		responses:       make(map[common.Hash]*abci.ResponseCheckTx),
 		responsesHeight: 0,
 
 		stop: make(chan struct{}),
@@ -121,14 +122,19 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 		}
 
 		// refresh responses map
+		w.mut.Lock()
 		if w.responsesHeight != blockHeight {
 			w.responsesHeight = blockHeight
-			w.responses.Clear()
+			w.responses = make(map[common.Hash]*abci.ResponseCheckTx)
 		}
+		w.mut.Unlock()
 
 		// check responses first
-		if res, ok := w.responses.Load(ethTx.Hash()); ok {
-			return res.(*abci.ResponseCheckTx), nil
+		w.mut.RLock()
+		res, ok := w.responses[ethTx.Hash()]
+		w.mut.RUnlock()
+		if ok {
+			return res, nil
 		}
 
 		isTxInQueue := false
@@ -162,8 +168,11 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 		w.flushQueue(sender, accNonce)
 
 		// check responses
-		if res, ok := w.responses.Load(ethTx.Hash()); ok {
-			return res.(*abci.ResponseCheckTx), nil
+		w.mut.RLock()
+		res, ok = w.responses[ethTx.Hash()]
+		w.mut.RUnlock()
+		if ok {
+			return res, nil
 		}
 
 		// response okay to keep the tx in the mempool for recheck triggered by cometbft

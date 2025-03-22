@@ -112,15 +112,23 @@ func (w *CheckTxWrapper) flushQueue(sender *common.Address, nonce uint64) {
 			Tx:   txItem.Value().txBytes,
 			Type: abci.CheckTxType_New,
 		}, ethTx); err != nil {
-			w.responses.Store(txHash, sdkerrors.ResponseCheckTxWithEvents(err, 0, 0, nil, false))
+			w.mut.Lock()
+			w.responses[txHash] = sdkerrors.ResponseCheckTxWithEvents(err, 0, 0, nil, false)
+			w.mut.Unlock()
+
 			w.logger.Error("failed to check tx", "error", err)
 			break
 		} else if res.Code != abci.CodeTypeOK {
-			w.responses.Store(txHash, res)
+			w.mut.Lock()
+			w.responses[txHash] = res
+			w.mut.Unlock()
+
 			w.logger.Error("failed to check tx", "code", res.Code, "log", res.Log)
 			break
 		} else {
-			w.responses.Store(txHash, res)
+			w.mut.Lock()
+			w.responses[txHash] = res
+			w.mut.Unlock()
 		}
 
 		nonce++
