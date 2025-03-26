@@ -254,8 +254,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 
 		// check if execute cosmos is disabled
-		disabled, ok := ctx.Value(types.CONTEXT_KEY_DISABLE_EXECUTE_COSMOS).(bool)
-		if ok && disabled {
+		if e.stateDB.EVM().GetDisallowCosmosDispatch() {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrExecuteCosmosDisabled.Wrap(method.Name)
 		}
 
@@ -397,7 +396,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 	case METHOD_DISABLE_EXECUTE_COSMOS:
 		ctx.GasMeter().ConsumeGas(DISABLE_EXECUTE_COSMOS_GAS, "disable_execute_cosmos")
-		e.stateDB.SetContextValue(types.CONTEXT_KEY_DISABLE_EXECUTE_COSMOS, true)
+		e.stateDB.EVM().SetDisallowCosmosDispatch(true)
 
 		resBz, err = method.Outputs.Pack(true)
 		if err != nil {

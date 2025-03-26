@@ -586,14 +586,14 @@ func (s *StateDB) RevertToSnapshot(i int) {
 	s.snaps = s.snaps[:i+1]
 }
 
-// SetContextValue sets the value on the context
-func (s *StateDB) SetContextValue(key, value any) {
-	s.ctx.Context = s.ctx.Context.WithValue(key, value)
-}
-
 // Context returns the current context
 func (s *StateDB) Context() sdk.Context {
 	return s.ctx.Context
+}
+
+// EVM returns the EVM instance
+func (s *StateDB) EVM() *vm.EVM {
+	return s.evm
 }
 
 // Prepare handles the preparatory steps for executing a state transition with.

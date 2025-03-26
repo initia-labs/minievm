@@ -301,11 +301,11 @@ func Test_ExecuteCosmos(t *testing.T) {
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 
 	// failed with disabled error
-	stateDB.SetContextValue(types.CONTEXT_KEY_DISABLE_EXECUTE_COSMOS, true)
+	stateDB.EVM().SetDisallowCosmosDispatch(true)
 	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, types.NewRevertError(ret).Error(), types.ErrExecuteCosmosDisabled.Error())
-	stateDB.SetContextValue(types.CONTEXT_KEY_DISABLE_EXECUTE_COSMOS, false)
+	stateDB.EVM().SetDisallowCosmosDispatch(false)
 
 	// succeed
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
@@ -604,6 +604,6 @@ func Test_DisableExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// check if execute cosmos is disabled
-	disabled := stateDB.Context().Value(types.CONTEXT_KEY_DISABLE_EXECUTE_COSMOS).(bool)
+	disabled := stateDB.EVM().GetDisallowCosmosDispatch()
 	require.True(t, disabled)
 }
