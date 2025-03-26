@@ -87,6 +87,8 @@ contract Counter is IIBCAsyncCallback {
         uint64 gas_limit
     ) external {
         COSMOS_CONTRACT.disable_execute_cosmos();
+
+        // execute_cosmos should be failed because the child context is affected
         ITest(test_addr).execute_cosmos(exec_msg, gas_limit);
     }
 
@@ -98,7 +100,7 @@ contract Counter is IIBCAsyncCallback {
         // execute other contract which is disabling execute cosmos
         ITest(test_addr).disable();
 
-        // execute cosmos should be successful because the child context is not affected
+        // execute_cosmos should be successful because the parent context is not affected
         COSMOS_CONTRACT.execute_cosmos(exec_msg, gas_limit);
     }
 
