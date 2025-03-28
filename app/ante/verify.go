@@ -48,9 +48,6 @@ func verifySignature(
 	signatureData signing.SignatureData,
 	handler *txsigning.HandlerMap,
 	txData txsigning.TxData,
-	// required to verify EVM signatures
-	ek EVMKeeper,
-	tx sdk.Tx,
 ) error {
 	switch data := signatureData.(type) {
 	case *signing.SingleSignatureData:

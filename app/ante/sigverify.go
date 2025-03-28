@@ -35,17 +35,14 @@ import (
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SigVerificationDecorator struct {
 	ak              authante.AccountKeeper
-	ek              EVMKeeper
 	signModeHandler *txsigning.HandlerMap
 }
 
 func NewSigVerificationDecorator(
 	ak authante.AccountKeeper,
-	ek EVMKeeper,
 	signModeHandler *txsigning.HandlerMap) SigVerificationDecorator {
 	return SigVerificationDecorator{
 		ak:              ak,
-		ek:              ek,
 		signModeHandler: signModeHandler,
 	}
 }
@@ -126,7 +123,7 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 				return ctx, fmt.Errorf("expected tx to implement V2AdaptableTx, got %T", tx)
 			}
 			txData := adaptableTx.GetSigningTxData()
-			err = verifySignature(ctx, pubKey, signerData, sig.Data, svd.signModeHandler, txData, svd.ek, tx)
+			err = verifySignature(ctx, pubKey, signerData, sig.Data, svd.signModeHandler, txData)
 			if err != nil {
 				var errMsg string
 				if authante.OnlyLegacyAminoSigners(sig.Data) {

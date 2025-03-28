@@ -39,7 +39,7 @@ func (suite *AnteTestSuite) Test_SkipSequenceCheck() {
 
 	// 1. simulate should skip sequence check
 	suite.ctx = suite.ctx.WithValue(ante.ContextKeyEthTx, &coretypes.Transaction{})
-	sigVerifyAnte := ante.NewSigVerificationDecorator(suite.app.AccountKeeper, suite.app.EVMKeeper, suite.app.TxConfig().SignModeHandler())
+	sigVerifyAnte := ante.NewSigVerificationDecorator(suite.app.AccountKeeper, suite.app.TxConfig().SignModeHandler())
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), true, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })
 	suite.NoError(err)
 

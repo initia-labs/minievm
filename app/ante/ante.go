@@ -15,7 +15,6 @@ import (
 	"github.com/initia-labs/initia/app/ante/accnum"
 	"github.com/initia-labs/initia/app/ante/sigverify"
 	evmante "github.com/initia-labs/minievm/x/evm/ante"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
 	auctionante "github.com/skip-mev/block-sdk/v2/x/auction/ante"
 	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
@@ -86,7 +85,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewSetPubKeyDecorator(options.AccountKeeper),
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
 		NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
-		NewSigVerificationDecorator(options.AccountKeeper, options.EVMKeeper, options.SignModeHandler),
+		NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
 		evmante.NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCkeeper),
 		auctionante.NewAuctionDecorator(options.AuctionKeeper, options.TxEncoder, options.MevLane),
@@ -96,13 +95,13 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	return sdk.ChainAnteDecorators(anteDecorators...), nil
 }
 
-func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, ek *evmkeeper.Keeper, signModeHandler *txsigning.HandlerMap) sdk.AnteHandler {
+func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, signModeHandler *txsigning.HandlerMap) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		ante.NewValidateBasicDecorator(),
 		ante.NewSetPubKeyDecorator(ak),
 		ante.NewValidateSigCountDecorator(ak),
 		ante.NewSigGasConsumeDecorator(ak, ante.DefaultSigVerificationGasConsumer),
-		NewSigVerificationDecorator(ak, ek, signModeHandler),
+		NewSigVerificationDecorator(ak, signModeHandler),
 		evmante.NewIncrementSequenceDecorator(ak),
 	)
 }
