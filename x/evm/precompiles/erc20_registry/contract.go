@@ -85,11 +85,12 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 
 	switch method.Name {
 	case METHOD_REGISTER:
-		ctx.GasMeter().ConsumeGas(REGISTER_GAS, "register_erc20")
-
 		if readOnly {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
+
+		// charge the gas for the register erc20
+		ctx.GasMeter().ConsumeGas(REGISTER_GAS, "register_erc20")
 
 		if err := e.k.Register(ctx, caller.Address()); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
@@ -100,11 +101,12 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_REGISTER_FROM_FACTORY:
-		ctx.GasMeter().ConsumeGas(REGISTER_FROM_FACTORY_GAS, "register_erc20_from_factory")
-
 		if readOnly {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
+
+		// charge the gas for the register erc20 from factory
+		ctx.GasMeter().ConsumeGas(REGISTER_FROM_FACTORY_GAS, "register_erc20_from_factory")
 
 		var registerArgs RegisterERC20FromFactoryArguments
 		if err := method.Inputs.Copy(&registerArgs, args); err != nil {
@@ -120,11 +122,12 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_REGISTER_STORE:
-		ctx.GasMeter().ConsumeGas(REGISTER_STORE_GAS, "register_erc20_store")
-
 		if readOnly {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
+
+		// charge the gas for the register erc20 store
+		ctx.GasMeter().ConsumeGas(REGISTER_STORE_GAS, "register_erc20_store")
 
 		var registerArgs RegisterStoreArguments
 		if err := method.Inputs.Copy(&registerArgs, args); err != nil {

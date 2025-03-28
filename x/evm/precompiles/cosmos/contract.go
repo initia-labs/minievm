@@ -247,8 +247,6 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_EXECUTE_COSMOS, METHOD_EXECUTE_COSMOS_WITH_OPTIONS:
-		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_GAS, "execute_cosmos")
-
 		if readOnly {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
@@ -257,6 +255,9 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		if e.stateDB.EVM().GetDisallowCosmosDispatch() {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrExecuteCosmosDisabled.Wrap(method.Name)
 		}
+
+		// charge the gas for the execute cosmos
+		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_GAS, "execute_cosmos")
 
 		var executeCosmosArguments ExecuteCosmos
 		if method.Name == METHOD_EXECUTE_COSMOS {
