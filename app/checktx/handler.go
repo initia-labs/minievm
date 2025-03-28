@@ -57,6 +57,7 @@ func (w *CheckTxWrapper) checkTxHandler(
 	ethTx *coretypes.Transaction,
 	sender *common.Address,
 	accSequence uint64,
+	checkReplace bool,
 ) (*abci.ResponseCheckTx, error) {
 	// normal cosmos tx, pass to the default checkTx handler
 	if ethTx == nil || sender == nil {
@@ -85,20 +86,21 @@ func (w *CheckTxWrapper) checkTxHandler(
 	}
 
 	// check if there's an existing transaction with the same sender and nonce
-	existingTx := w.txQueue.Get(txKey{sender: *sender, nonce: ethTx.Nonce()})
-	if existingTx != nil {
-		existingEthTx := existingTx.Value().ethTx
+	if checkReplace {
+		if existingTx, ok := w.getTxFromQueue(*sender, ethTx.Nonce()); ok {
+			existingEthTx := existingTx.ethTx
 
-		// compare gas prices - if the new tx has higher gas price, replace the old one
-		if ethTx.GasFeeCap().Cmp(existingEthTx.GasFeeCap()) > 0 {
-			// remove the old transaction
-			w.removeFromQueue(existingEthTx.Hash(), *sender, ethTx.Nonce())
-		} else {
-			// if the new tx has lower or equal gas price, reject it
-			return nil, errorsmod.Wrapf(
-				sdkerrors.ErrInsufficientFee,
-				"existing transaction with the same sequence has higher or equal gas price",
-			)
+			// compare gas prices - if the new tx has higher gas price, replace the old one
+			if ethTx.GasPrice().Cmp(existingEthTx.GasPrice()) > 0 {
+				// remove the old transaction
+				w.removeFromQueue(existingEthTx.Hash(), *sender, ethTx.Nonce())
+			} else {
+				// if the new tx has lower or equal gas price, reject it
+				return nil, errorsmod.Wrapf(
+					sdkerrors.ErrInsufficientFee,
+					"existing transaction with the same sequence has higher or equal gas price",
+				)
+			}
 		}
 	}
 

@@ -147,7 +147,7 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 
 		// if not recheck, then pass to checkTx handler
 		if !isEthTx || !isRecheck || !isTxInQueue {
-			res, err := w.checkTxHandler(req, sdkTx, ethTx, sender, accNonce)
+			res, err := w.checkTxHandler(req, sdkTx, ethTx, sender, accNonce, isTxInQueue)
 			if err != nil {
 				return sdkerrors.ResponseCheckTxWithEvents(err, 0, 0, nil, false), nil
 			} else if res.Code != abci.CodeTypeOK || !isEthTx {
@@ -187,6 +187,14 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 
 func (w *CheckTxWrapper) isTxInQueue(sender common.Address, nonce uint64) bool {
 	return w.txQueue.Has(txKey{sender: sender, nonce: nonce})
+}
+
+func (w *CheckTxWrapper) getTxFromQueue(sender common.Address, nonce uint64) (txItem, bool) {
+	item := w.txQueue.Get(txKey{sender: sender, nonce: nonce})
+	if item == nil {
+		return txItem{}, false
+	}
+	return item.Value(), true
 }
 
 func (w *CheckTxWrapper) appendToQueue(txBytes []byte, tx sdk.Tx, ethTx *coretypes.Transaction, sender common.Address) {
