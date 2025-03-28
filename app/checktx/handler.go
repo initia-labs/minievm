@@ -74,10 +74,37 @@ func (w *CheckTxWrapper) checkTxHandler(
 		return w.moveToPending(req, ethTx)
 	}
 
-	// if sequence is greater than account sequence, it means the transaction is not ready to be processed
-	// so we just do minimal check and return nil to keep the tx in the cometbft mempool and retry at recheck
+	// if the sequence is greater than the account sequence, check if we have a transaction
+	// with the same (sender, nonce) in the queue, and try to replace it with the new one if conditions are met
 	sdkCtx := w.cg.GetContextForCheckTx(req.Tx)
-	return w.validateAndAppendToQueue(sdkCtx, req.Tx, sdkTx, ethTx, *sender)
+	res, err := w.validateTx(sdkCtx, sdkTx, ethTx, *sender)
+	if err != nil {
+		return nil, err
+	} else if res.Code != abci.CodeTypeOK {
+		return res, nil
+	}
+
+	// check if there's an existing transaction with the same sender and nonce
+	existingTx := w.txQueue.Get(txKey{sender: *sender, nonce: ethTx.Nonce()})
+	if existingTx != nil {
+		existingEthTx := existingTx.Value().ethTx
+
+		// compare gas prices - if the new tx has higher gas price, replace the old one
+		if ethTx.GasFeeCap().Cmp(existingEthTx.GasFeeCap()) > 0 {
+			// remove the old transaction
+			w.removeFromQueue(existingEthTx.Hash(), *sender, ethTx.Nonce())
+		} else {
+			// if the new tx has lower or equal gas price, reject it
+			return nil, errorsmod.Wrapf(
+				sdkerrors.ErrInsufficientFee,
+				"existing transaction with the same sequence has higher or equal gas price",
+			)
+		}
+	}
+
+	// proceeds with appending tx to the queue
+	w.appendToQueue(req.Tx, sdkTx, ethTx, *sender)
+	return res, nil
 }
 
 // flushQueue flushes the queue of the sender.
@@ -135,7 +162,7 @@ func (w *CheckTxWrapper) flushQueue(sender *common.Address, nonce uint64) {
 	}
 }
 
-func (w *CheckTxWrapper) validateAndAppendToQueue(sdkCtx sdk.Context, txBytes []byte, tx sdk.Tx, ethTx *coretypes.Transaction, expectedSender common.Address) (*abci.ResponseCheckTx, error) {
+func (w *CheckTxWrapper) validateTx(sdkCtx sdk.Context, tx sdk.Tx, ethTx *coretypes.Transaction, expectedSender common.Address) (*abci.ResponseCheckTx, error) {
 	// check intrinsic gas
 	intrGas, err := core.IntrinsicGas(ethTx.Data(), ethTx.AccessList(), ethTx.To() == nil, true, true, true)
 	if err != nil {
@@ -175,9 +202,6 @@ func (w *CheckTxWrapper) validateAndAppendToQueue(sdkCtx sdk.Context, txBytes []
 	if balance.Amount.LT(sdkmath.NewIntFromBigInt(ethTx.Cost())) {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "insufficient balance for tx: %s", ethTx.Hash().Hex())
 	}
-
-	// push to queued txs
-	w.appendToQueue(txBytes, tx, ethTx, expectedSender)
 
 	return &abci.ResponseCheckTx{
 		Code:      abci.CodeTypeOK,
