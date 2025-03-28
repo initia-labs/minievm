@@ -130,21 +130,23 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 		w.mut.Unlock()
 
 		// check responses first
-		w.mut.RLock()
-		res, ok := w.responses[ethTx.Hash()]
-		w.mut.RUnlock()
-		if ok {
-			return res, nil
+		isEthTx := ethTx != nil && sender != nil
+		if isEthTx {
+			w.mut.RLock()
+			res, ok := w.responses[ethTx.Hash()]
+			w.mut.RUnlock()
+			if ok {
+				return res, nil
+			}
 		}
 
 		isTxInQueue := false
-		isEthTx := ethTx != nil && sender != nil
 		if isEthTx {
 			isTxInQueue = w.isTxInQueue(*sender, ethTx.Nonce())
 		}
 
 		// if not recheck, then pass to checkTx handler
-		if !isRecheck || !isTxInQueue {
+		if !isEthTx || !isRecheck || !isTxInQueue {
 			res, err := w.checkTxHandler(req, sdkTx, ethTx, sender, accNonce)
 			if err != nil {
 				return sdkerrors.ResponseCheckTxWithEvents(err, 0, 0, nil, false), nil
@@ -169,7 +171,7 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 
 		// check responses
 		w.mut.RLock()
-		res, ok = w.responses[ethTx.Hash()]
+		res, ok := w.responses[ethTx.Hash()]
 		w.mut.RUnlock()
 		if ok {
 			return res, nil
