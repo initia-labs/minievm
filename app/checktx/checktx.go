@@ -39,12 +39,13 @@ type CheckTxWrapper struct {
 
 	feeDenom       string
 	feeDenomHeight uint64
+	feeDenomMut    sync.Mutex
 
 	txQueue *ttlcache.Cache[txKey, txItem]
 
-	mut             sync.RWMutex
 	responses       map[common.Hash]*abci.ResponseCheckTx
 	responsesHeight uint64
+	responsesMut    sync.RWMutex
 
 	stop chan struct{}
 }
@@ -122,19 +123,19 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 		}
 
 		// refresh responses map
-		w.mut.Lock()
+		w.responsesMut.Lock()
 		if w.responsesHeight != blockHeight {
 			w.responsesHeight = blockHeight
 			w.responses = make(map[common.Hash]*abci.ResponseCheckTx)
 		}
-		w.mut.Unlock()
+		w.responsesMut.Unlock()
 
 		// check responses first
 		isEthTx := ethTx != nil && sender != nil
 		if isEthTx {
-			w.mut.RLock()
+			w.responsesMut.RLock()
 			res, ok := w.responses[ethTx.Hash()]
-			w.mut.RUnlock()
+			w.responsesMut.RUnlock()
 			if ok {
 				return res, nil
 			}
@@ -170,9 +171,9 @@ func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
 		w.flushQueue(sender, accNonce)
 
 		// check responses
-		w.mut.RLock()
+		w.responsesMut.RLock()
 		res, ok := w.responses[ethTx.Hash()]
-		w.mut.RUnlock()
+		w.responsesMut.RUnlock()
 		if ok {
 			return res, nil
 		}

@@ -33,7 +33,10 @@ func (w *CheckTxWrapper) moveToPending(
 // - If the fee denom height is not the same as the current block height, it will update the fee denom.
 // - It will then update the fee denom height.
 func (w *CheckTxWrapper) updateFeeDenomCache(sdkCtx sdk.Context) error {
-	if w.feeDenomHeight != uint64(sdkCtx.BlockHeight()) {
+	w.feeDenomMut.Lock()
+	defer w.feeDenomMut.Unlock()
+
+	if w.feeDenomHeight < uint64(sdkCtx.BlockHeight()) {
 		var err error
 		w.feeDenom, err = w.fdg.GetFeeDenom(sdkCtx)
 		if err != nil {
@@ -141,23 +144,23 @@ func (w *CheckTxWrapper) flushQueue(sender *common.Address, nonce uint64) {
 			Tx:   txItem.Value().txBytes,
 			Type: abci.CheckTxType_New,
 		}, ethTx); err != nil {
-			w.mut.Lock()
+			w.responsesMut.Lock()
 			w.responses[txHash] = sdkerrors.ResponseCheckTxWithEvents(err, 0, 0, nil, false)
-			w.mut.Unlock()
+			w.responsesMut.Unlock()
 
 			w.logger.Error("failed to check tx", "error", err)
 			break
 		} else if res.Code != abci.CodeTypeOK {
-			w.mut.Lock()
+			w.responsesMut.Lock()
 			w.responses[txHash] = res
-			w.mut.Unlock()
+			w.responsesMut.Unlock()
 
 			w.logger.Error("failed to check tx", "code", res.Code, "log", res.Log)
 			break
 		} else {
-			w.mut.Lock()
+			w.responsesMut.Lock()
 			w.responses[txHash] = res
-			w.mut.Unlock()
+			w.responsesMut.Unlock()
 		}
 
 		nonce++
