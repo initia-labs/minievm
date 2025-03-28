@@ -11,7 +11,7 @@ MiniEVM is an optimistic rollup consumer chain powered by EVM, designed to simpl
 
 ## Getting Started
 
-To get started with L2, please visit the [documentation](https://initia.gitbook.io/initia-docs-v2/).
+To get started with L2, please visit the [documentation](https://docs.initia.xyz).
 
 ## Features
 

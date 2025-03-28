@@ -300,11 +300,18 @@ func Test_ExecuteCosmos(t *testing.T) {
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 
+	// failed with disabled error
+	stateDB.EVM().SetDisallowCosmosDispatch(true)
+	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
+	require.Contains(t, types.NewRevertError(ret).Error(), types.ErrExecuteCosmosDisabled.Error())
+	stateDB.EVM().SetDisallowCosmosDispatch(false)
+
 	// succeed
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.NoError(t, err)
 
-	messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
+	messages := stateDB.Context().Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
 	require.Len(t, *messages, 1)
 	require.Equal(t, (*messages)[0], types.ExecuteRequest{
 		Caller: vm.AccountRef(evmAddr),
@@ -333,7 +340,7 @@ func Test_ExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// failed with unauthorized error
-	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	ret, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
 }
@@ -383,7 +390,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.NoError(t, err)
 
-	messages := ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
+	messages := stateDB.Context().Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
 	require.Len(t, *messages, 1)
 	require.Equal(t, (*messages)[0], types.ExecuteRequest{
 		Caller: vm.AccountRef(evmAddr),
@@ -568,4 +575,35 @@ func Test_ToErc20(t *testing.T) {
 	unpackedRet, err := abi.Methods["to_erc20"].Outputs.Unpack(retBz)
 	require.NoError(t, err)
 	require.Equal(t, erc20Addr, unpackedRet[0].(common.Address))
+}
+
+func Test_DisableExecuteCosmos(t *testing.T) {
+	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	stateDB := NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
+	require.NoError(t, err)
+
+	evmAddr := common.HexToAddress("0x1")
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// pack disable_execute_cosmos
+	inputBz, err := abi.Pack(precompiles.METHOD_DISABLE_EXECUTE_COSMOS)
+	require.NoError(t, err)
+
+	// out of gas error
+	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.DISABLE_EXECUTE_COSMOS_GAS-1, false)
+	require.ErrorIs(t, err, vm.ErrExecutionReverted)
+	require.Contains(t, string(output), "out of gas")
+
+	// success
+	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.DISABLE_EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	require.NoError(t, err)
+
+	// check if execute cosmos is disabled
+	disabled := stateDB.EVM().GetDisallowCosmosDispatch()
+	require.True(t, disabled)
 }

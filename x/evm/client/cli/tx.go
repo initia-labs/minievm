@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strconv"
 	"strings"
 
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/holiman/uint256"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -112,7 +112,7 @@ $ %s tx evm create2 100 ERC20.bin --input 0x1234 --value 100 --from mykey
 				return err
 			}
 
-			salt, err := strconv.ParseUint(args[0], 10, 64)
+			salt, err := uint256.FromDecimal(args[0])
 			if err != nil {
 				return errors.Wrap(err, "failed to parse salt")
 			}
@@ -124,7 +124,7 @@ $ %s tx evm create2 100 ERC20.bin --input 0x1234 --value 100 --from mykey
 
 			msg := &types.MsgCreate2{
 				Sender: sender,
-				Salt:   salt,
+				Salt:   math.NewIntFromBigInt(salt.ToBig()),
 				Code:   hexutil.Encode(codeBz),
 				Value:  math.NewIntFromBigInt(val),
 			}

@@ -43,6 +43,13 @@ interface ICosmos {
         string memory denom
     ) external view returns (address erc20_address);
 
+    /// @notice Disables execute_cosmos functionality for the current context and child contexts
+    /// @dev Once disabled, any calls to execute_cosmos will revert in this context and child contexts
+    /// @dev Parent contexts are not affected by this disable
+    /// @dev This can be used to ensure try/catch blocks work as expected by preventing execute_cosmos calls
+    /// @dev Refer this for more details: https://github.com/initia-labs/evm/commit/c2bb7bf52a31c8425a6f94bbbef9e3f33c64cbc3
+    function disable_execute_cosmos() external returns (bool dummy);
+
     // record a cosmos message to be executed after the current message execution.
     // - if execution fails, whole transaction will be reverted.
     //

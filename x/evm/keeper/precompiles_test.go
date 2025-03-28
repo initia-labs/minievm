@@ -20,6 +20,7 @@ import (
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_jsonutils"
+	"github.com/initia-labs/minievm/x/evm/contracts/test"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 
@@ -467,4 +468,91 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 			Id:        ethId,
 		},
 	}, resArr)
+}
+
+func Test_ExecuteCosmosMessage_Disabled(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+	testBz, err := hexutil.Decode(test.TestBin)
+	require.NoError(t, err)
+
+	// deploy counter contract
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	// deploy test contract
+	retBz, testAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, testBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, testAddr, 20)
+
+	// call execute cosmos function
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	denom := sdk.DefaultBondDenom
+	amount := math.NewInt(1000000000)
+	input.Faucet.Mint(ctx, contractAddr.Bytes(), sdk.NewCoin(denom, amount))
+
+	// call disable_and_execute
+	inputBz, err := parsed.Pack("disable_and_execute",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(),
+			denom,
+			amount,
+		),
+		uint64(150_000),
+	)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, types.ErrExecuteCosmosDisabled.Error())
+
+	// call disable_and_execute_in_child
+	inputBz, err = parsed.Pack("disable_and_execute_in_child",
+		testAddr,
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(),
+			denom,
+			amount,
+		),
+		uint64(150_000),
+	)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorContains(t, err, types.ErrExecuteCosmosDisabled.Error())
+
+	// check balance
+	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
+	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
+
+	// call disable_and_execute_in_parent
+	inputBz, err = parsed.Pack("disable_and_execute_in_parent",
+		testAddr,
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(),
+			denom,
+			amount,
+		),
+		uint64(150_000),
+	)
+	require.NoError(t, err)
+
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	// check balance
+	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
+	require.Equal(t, amount, input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
 }

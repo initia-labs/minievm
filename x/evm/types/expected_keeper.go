@@ -89,8 +89,8 @@ type IERC721Keeper interface {
 
 type StateDB interface {
 	vm.StateDB
-	ContextOfSnapshot(i int) sdk.Context
 	Context() sdk.Context
+	EVM() *vm.EVM
 }
 
 type GRPCRouter interface {

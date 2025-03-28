@@ -1,33 +1,17 @@
 package indexer
 
 import (
-	"context"
+	"github.com/ethereum/go-ethereum/common"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/jellydator/ttlcache/v3"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/mempool"
-	"github.com/ethereum/go-ethereum/common"
-
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 )
 
-var _ mempool.Mempool = (*MempoolWrapper)(nil)
-
-type MempoolWrapper struct {
-	mempool mempool.Mempool
-	indexer *EVMIndexerImpl
-}
-
-// MempoolWrapper returns a mempool wrapper that emits transactions to the filters.
-func (indexer *EVMIndexerImpl) MempoolWrapper(mempool mempool.Mempool) mempool.Mempool {
-	return &MempoolWrapper{mempool: mempool, indexer: indexer}
-}
-
-// TxInMempool returns true if the transaction with the given hash is in the mempool.
-func (indexer *EVMIndexerImpl) TxInMempool(hash common.Hash) *rpctypes.RPCTransaction {
-	item := indexer.txPendingMap.Get(hash)
+// TxInPending returns true if the transaction with the given hash is in the mempool.
+func (indexer *EVMIndexerImpl) TxInPending(hash common.Hash) *rpctypes.RPCTransaction {
+	item := indexer.pendingTxs.Get(hash)
 	if item == nil {
 		return nil
 	}
@@ -35,49 +19,66 @@ func (indexer *EVMIndexerImpl) TxInMempool(hash common.Hash) *rpctypes.RPCTransa
 	return item.Value()
 }
 
-// CountTx implements mempool.Mempool.
-func (m *MempoolWrapper) CountTx() int {
-	return m.mempool.CountTx()
-}
-
-// Insert implements mempool.Mempool.
-func (m *MempoolWrapper) Insert(ctx context.Context, tx sdk.Tx) error {
-	txUtils := evmkeeper.NewTxUtils(m.indexer.evmKeeper)
-	ethTx, _, err := txUtils.ConvertCosmosTxToEthereumTx(ctx, tx)
-	if err != nil {
-		m.indexer.logger.Error("failed to convert CosmosTx to EthTx", "err", err)
-		return err
+func (indexer *EVMIndexerImpl) TxInQueued(hash common.Hash) *rpctypes.RPCTransaction {
+	item := indexer.queuedTxs.Get(hash)
+	if item == nil {
+		return nil
 	}
 
-	if ethTx != nil {
-		ethTxHash := ethTx.Hash()
-		rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
+	return item.Value()
+}
 
-		m.indexer.logger.Debug("inserting tx into mempool", "pending len", m.indexer.txPendingMap.Len(), "ethTxHash", ethTxHash)
-		m.indexer.txPendingMap.Set(ethTxHash, rpcTx, ttlcache.DefaultTTL)
+func (e *EVMIndexerImpl) PushPendingTx(tx *coretypes.Transaction) {
+	rpcTx := rpctypes.NewRPCTransaction(tx, common.Hash{}, 0, 0, tx.ChainId())
 
-		go func() {
-			// emit the transaction to all pending channels
-			for _, pendingChan := range m.indexer.pendingChans {
-				pendingChan <- rpcTx
-			}
-		}()
+	// push to pending txs
+	e.pendingTxs.Set(tx.Hash(), rpcTx, ttlcache.DefaultTTL)
+
+	// emit the transaction to all pending channels
+	go func() {
+		for _, pendingChan := range e.pendingChans {
+			pendingChan <- rpcTx
+		}
+	}()
+}
+
+func (e *EVMIndexerImpl) PushQueuedTx(tx *coretypes.Transaction) {
+	rpcTx := rpctypes.NewRPCTransaction(tx, common.Hash{}, 0, 0, tx.ChainId())
+
+	// push to queued txs
+	e.queuedTxs.Set(tx.Hash(), rpcTx, ttlcache.DefaultTTL)
+}
+
+func (e *EVMIndexerImpl) PendingTxs() []*rpctypes.RPCTransaction {
+	items := e.pendingTxs.Items()
+	result := make([]*rpctypes.RPCTransaction, 0, len(items))
+	for _, item := range items {
+		result = append(result, item.Value())
 	}
-
-	return m.mempool.Insert(ctx, tx)
+	return result
 }
 
-// Remove implements mempool.Mempool.
-func (m *MempoolWrapper) Remove(tx sdk.Tx) error {
-	return m.mempool.Remove(tx)
+func (e *EVMIndexerImpl) QueuedTxs() []*rpctypes.RPCTransaction {
+	items := e.queuedTxs.Items()
+	result := make([]*rpctypes.RPCTransaction, 0, len(items))
+	for _, item := range items {
+		result = append(result, item.Value())
+	}
+	return result
 }
 
-// Select implements mempool.Mempool.
-func (m *MempoolWrapper) Select(ctx context.Context, txs [][]byte) mempool.Iterator {
-	return m.mempool.Select(ctx, txs)
+func (e *EVMIndexerImpl) NumPendingTxs() int {
+	return e.pendingTxs.Len()
 }
 
-// Inner returns the inner mempool.
-func (m *MempoolWrapper) Inner() mempool.Mempool {
-	return m.mempool
+func (e *EVMIndexerImpl) NumQueuedTxs() int {
+	return e.queuedTxs.Len()
+}
+
+func (e *EVMIndexerImpl) RemovePendingTx(hash common.Hash) {
+	e.pendingTxs.Delete(hash)
+}
+
+func (e *EVMIndexerImpl) RemoveQueuedTx(hash common.Hash) {
+	e.queuedTxs.Delete(hash)
 }
