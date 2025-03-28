@@ -97,12 +97,12 @@ func Test_Call(t *testing.T) {
 		From:  &addrs[0],
 		To:    &contractEVMAddr,
 		Input: (*hexutil.Bytes)(&inputBz),
-		Value: nil,
+		Value: (*hexutil.Big)(big.NewInt(0)),
 		Nonce: nil,
 	}, nil, nil, nil)
 	require.NoError(t, err)
 	res, err := abi.Unpack("balanceOf", retBz)
-	
+
 	require.NoError(t, err)
 	require.Equal(t, new(big.Int).SetUint64(1_000_000), res[0].(*big.Int))
 
