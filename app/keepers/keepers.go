@@ -244,7 +244,7 @@ func NewAppKeeper(
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		appKeepers.OracleKeeper,
-		ante.CreateAnteHandlerForOPinit(appKeepers.AccountKeeper, appKeepers.EVMKeeper, txConfig.SignModeHandler()),
+		ante.CreateAnteHandlerForOPinit(appKeepers.AccountKeeper, txConfig.SignModeHandler()),
 		txConfig.TxDecoder(),
 		bApp.MsgServiceRouter(),
 		authorityAddr,

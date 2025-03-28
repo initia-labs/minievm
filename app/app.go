@@ -65,6 +65,7 @@ import (
 	blockservice "github.com/skip-mev/block-sdk/v2/block/service"
 
 	// local imports
+	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
 	evmindexer "github.com/initia-labs/minievm/indexer"
@@ -125,6 +126,9 @@ type MinitiaApp struct {
 
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
+
+	// checktx wrapper
+	checkTxWrapper *checktx.CheckTxWrapper
 }
 
 // NewMinitiaApp returns a reference to an initialized Initia.
@@ -297,9 +301,6 @@ func NewMinitiaApp(
 	}
 
 	// override base-app's mempool
-	if app.evmIndexer != nil {
-		mempool = app.evmIndexer.MempoolWrapper(mempool)
-	}
 	app.SetMempool(mempool)
 
 	// override base-app's ante handler
@@ -512,12 +513,7 @@ func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 		app.Simulate, app.interfaceRegistry,
 	)
 
-	mempoolWrapper, ok := app.Mempool().(*evmindexer.MempoolWrapper)
-	if !ok {
-		panic("mempool is not a evmindexer.MempoolWrapper")
-	}
-
-	mempool, ok := mempoolWrapper.Inner().(block.Mempool)
+	mempool, ok := app.Mempool().(block.Mempool)
 	if !ok {
 		panic("mempool is not a block.Mempool")
 	}
@@ -629,6 +625,10 @@ func (app *MinitiaApp) Close() error {
 
 	if app.evmIndexer != nil {
 		app.evmIndexer.Stop()
+	}
+
+	if app.checkTxWrapper != nil {
+		app.checkTxWrapper.Stop()
 	}
 
 	return nil

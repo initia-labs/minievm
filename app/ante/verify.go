@@ -17,6 +17,7 @@ import (
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -47,20 +48,18 @@ func verifySignature(
 	signatureData signing.SignatureData,
 	handler *txsigning.HandlerMap,
 	txData txsigning.TxData,
-	// required to verify EVM signatures
-	ek EVMKeeper,
-	tx sdk.Tx,
 ) error {
 	switch data := signatureData.(type) {
 	case *signing.SingleSignatureData:
 		if data.SignMode == evmkeeper.SignMode_SIGN_MODE_ETHEREUM {
 			// eth sign mode
-			ethTx, expectedSender, err := ek.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
-			if err != nil {
-				return err
+			ethTx, ok := ctx.Value(ContextKeyEthTx).(*coretypes.Transaction)
+			if !ok || ethTx == nil {
+				return fmt.Errorf("failed to get ethereum tx from context")
 			}
-			if ethTx == nil {
-				return fmt.Errorf("failed to convert tx to ethereum tx")
+			expectedSender, ok := ctx.Value(ContextKeyEthTxSender).(*common.Address)
+			if !ok || expectedSender == nil {
+				return fmt.Errorf("failed to get expected sender from context")
 			}
 
 			sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -72,7 +71,7 @@ func verifySignature(
 			}
 
 			// check if the recovered sender matches the expected sender
-			if expectedSender == nil || *expectedSender != sender {
+			if *expectedSender != sender {
 				return errorsmod.Wrapf(sdkerrors.ErrorInvalidSigner, "expected sender %s, got %s", expectedSender, sender)
 			}
 

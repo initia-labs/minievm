@@ -22,9 +22,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
 	forwardingtypes "github.com/noble-assets/forwarding/v2/types"
+
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // SigVerificationDecorator verifies all signatures for a tx and return an error if any are invalid. Note,
@@ -34,17 +35,14 @@ import (
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SigVerificationDecorator struct {
 	ak              authante.AccountKeeper
-	ek              EVMKeeper
 	signModeHandler *txsigning.HandlerMap
 }
 
 func NewSigVerificationDecorator(
 	ak authante.AccountKeeper,
-	ek EVMKeeper,
 	signModeHandler *txsigning.HandlerMap) SigVerificationDecorator {
 	return SigVerificationDecorator{
 		ak:              ak,
-		ek:              ek,
 		signModeHandler: signModeHandler,
 	}
 }
@@ -85,12 +83,9 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		}
 
 		skipSequenceCheck := false
-		if simulate && len(sigs) == 1 {
-			if sigData, ok := sig.Data.(*signing.SingleSignatureData); ok {
-				if sigData.SignMode == evmkeeper.SignMode_SIGN_MODE_ETHEREUM {
-					skipSequenceCheck = true
-				}
-			}
+		if simulate {
+			ethTx, ok := ctx.Value(ContextKeyEthTx).(*coretypes.Transaction)
+			skipSequenceCheck = ok && ethTx != nil
 		}
 
 		// Check account sequence number.
@@ -128,7 +123,7 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 				return ctx, fmt.Errorf("expected tx to implement V2AdaptableTx, got %T", tx)
 			}
 			txData := adaptableTx.GetSigningTxData()
-			err = verifySignature(ctx, pubKey, signerData, sig.Data, svd.signModeHandler, txData, svd.ek, tx)
+			err = verifySignature(ctx, pubKey, signerData, sig.Data, svd.signModeHandler, txData)
 			if err != nil {
 				var errMsg string
 				if authante.OnlyLegacyAminoSigners(sig.Data) {

@@ -10,8 +10,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/cosmos/cosmos-sdk/types/mempool"
-
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -39,16 +37,15 @@ func Test_Mempool_Subscribe(t *testing.T) {
 		}
 	}()
 
-	noopMempool := &mempool.NoOpMempool{}
-	mempool := indexer.MempoolWrapper(noopMempool)
-
-	// insert tx into mempool
 	ctx, err := app.CreateQueryContext(0, false)
 	require.NoError(t, err)
-	err = mempool.Insert(ctx, tx)
-	require.NoError(t, err)
 
-	rpcTx := indexer.TxInMempool(evmTxHash)
+	ethTx, _, err := app.EVMKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
+	require.NoError(t, err)
+	indexer.PushPendingTx(ethTx)
+
+	// check tx into mempool
+	rpcTx := indexer.TxInPending(evmTxHash)
 	require.Equal(t, evmTxHash, rpcTx.Hash)
 
 	wg.Wait()
