@@ -19,7 +19,7 @@ require (
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
-	github.com/cosmos/cosmos-sdk v0.50.13-0.20250312145125-59c15d73cc4a
+	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.7.0
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0
@@ -34,8 +34,8 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.1
-	github.com/initia-labs/OPinit v1.0.0-beta.2
-	github.com/initia-labs/initia v1.0.0-beta.6
+	github.com/initia-labs/OPinit v1.0.0-rc.0
+	github.com/initia-labs/initia v1.0.0-rc.0
 	github.com/initia-labs/kvindexer v0.1.12
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8
@@ -280,8 +280,19 @@ require (
 )
 
 // initia custom
+// use custom version for
+//
+// cosmos-sdk
+// - https://github.com/initia-labs/cosmos-sdk/commit/2d8e8144a217545d4d4d35d4b82f0dcc711a2501
+//
+// ibc-go
+// - https://github.com/initia-labs/ibc-go/commit/36b81501adfc4506f5b3a19886c8f5b38dec47da
+//
+// connect
+// - https://github.com/initia-labs/connect/pull/1
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250324104146-d5b040bc2c3b
+	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250325094132-2d8e8144a217
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
