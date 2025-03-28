@@ -566,7 +566,8 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 			types.EventTypeSubmsg,
 			sdk.NewAttribute(types.AttributeKeySuccess, fmt.Sprintf("%v", success)),
 		)
-
+		// refund remaining gas
+		parentCtx.GasMeter().RefundGas(ctx.GasMeter().GasRemaining(), "refund gas from submsg")
 		if !success {
 			// return error if failed and not allowed to fail
 			if !allowFailure {
@@ -579,8 +580,6 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 			// commit if success
 			commit()
 
-			// refund remaining gas
-			parentCtx.GasMeter().RefundGas(ctx.GasMeter().GasRemaining(), "refund gas from submsg")
 		}
 
 		// reset error because it's allowed to fail
