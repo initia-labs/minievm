@@ -45,12 +45,12 @@ func Test_Create2(t *testing.T) {
 
 	caller := common.BytesToAddress(addr.Bytes())
 
-	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, 1, nil)
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, uint256.NewInt(1), nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
 
-	_, _, _, err = input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, 1, nil)
+	_, _, _, err = input.EVMKeeper.EVMCreate2(ctx, caller, counterBz, nil, uint256.NewInt(1), nil)
 	require.ErrorContains(t, err, vm.ErrContractAddressCollision.Error())
 }
 
@@ -470,4 +470,44 @@ func Test_Recursive_Audit_ExecuteRequestsNotCleanedOnRevert(t *testing.T) {
 	require.Equal(t, contractAddr.Hex(), log.Address)
 	require.Equal(t, parsed.Events["recursive_called"].ID.Hex(), log.Topics[0])
 	require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000001", log.Data)
+}
+
+func Test_Call_CallbackErrorPropagated(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	counterBz, err := hexutil.Decode(counter.CounterBin)
+	require.NoError(t, err)
+
+	// deploy counter contract
+	caller := common.BytesToAddress(addr.Bytes())
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, retBz)
+	require.Len(t, contractAddr, 20)
+
+	// call execute cosmos function
+	parsed, err := counter.CounterMetaData.GetAbi()
+	require.NoError(t, err)
+
+	denom := sdk.DefaultBondDenom
+	amount := math.NewInt(1000000000)
+	input.Faucet.Mint(ctx, contractAddr.Bytes(), sdk.NewCoin(denom, amount))
+
+	// call execute_cosmos_with_options with callback_id 7 to revert
+	inputBz, err := parsed.Pack("execute_cosmos_with_options",
+		fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"%s","to_address":"%s","amount":[{"denom":"%s","amount":"%s"}]}`,
+			sdk.AccAddress(contractAddr.Bytes()).String(),
+			addr.String(), // caller
+			denom,
+			amount,
+		),
+		uint64(120_000),
+		false,
+		uint64(7),
+	)
+	require.NoError(t, err)
+	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	require.Error(t, err)
+	require.Equal(t, 0, len(logs))
 }

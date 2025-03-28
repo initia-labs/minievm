@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/stateless"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie/utils"
 	"github.com/holiman/uint256"
@@ -29,6 +30,8 @@ type MockStateDB struct {
 
 	// Snapshot stack
 	snaps []*state.Snapshot
+
+	evm *vm.EVM
 }
 
 func NewMockStateDB(sdkCtx sdk.Context) *MockStateDB {
@@ -36,6 +39,7 @@ func NewMockStateDB(sdkCtx sdk.Context) *MockStateDB {
 	return &MockStateDB{
 		ctx:        ctx,
 		initialCtx: ctx,
+		evm:        &vm.EVM{},
 	}
 }
 
@@ -68,21 +72,16 @@ func (m *MockStateDB) RevertToSnapshot(i int) {
 	m.ctx = snap.Context()
 
 	// clear the snapshots after the given id
-	m.snaps = m.snaps[:i]
-}
-
-// ContextOfSnapshot implements types.StateDB.
-func (m *MockStateDB) ContextOfSnapshot(i int) sdk.Context {
-	if i == -1 {
-		return m.initialCtx.Context
-	}
-
-	return m.snaps[i].Context().Context
+	m.snaps = m.snaps[:i+1]
 }
 
 // Context implements types.StateDB.
 func (m *MockStateDB) Context() sdk.Context {
 	return m.ctx.Context
+}
+
+func (m *MockStateDB) EVM() *vm.EVM {
+	return m.evm
 }
 
 //////////////////////// MOCKED METHODS ////////////////////////
