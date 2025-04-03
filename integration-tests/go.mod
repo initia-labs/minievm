@@ -5,11 +5,11 @@ go 1.23.6
 require (
 	cosmossdk.io/math v1.4.0
 	github.com/cometbft/cometbft v0.38.17
-	github.com/cosmos/cosmos-sdk v0.50.13-0.20250312145125-59c15d73cc4a
+	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/initia-labs/initia v1.0.0-beta.6
-	github.com/initia-labs/minievm v0.6.11
+	github.com/initia-labs/initia v1.0.0-rc.1
+	github.com/initia-labs/minievm v1.0.0-rc.0
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -142,14 +142,14 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v1.0.0-beta.2 // indirect
+	github.com/initia-labs/OPinit v1.0.0-rc.0 // indirect
 	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
-	github.com/initia-labs/kvindexer v0.1.11 // indirect
+	github.com/initia-labs/kvindexer v0.1.12 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.6 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.7 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
-	github.com/initia-labs/movevm v1.0.0-beta.0 // indirect
+	github.com/initia-labs/movevm v1.0.0-rc.1 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -265,8 +265,19 @@ replace (
 require github.com/cosmos/iavl v1.2.5-0.20250306174232-6cfb3dac2c71 // indirect
 
 // initia custom
+// use custom version for
+//
+// cosmos-sdk
+// - https://github.com/initia-labs/cosmos-sdk/commit/2d8e8144a217545d4d4d35d4b82f0dcc711a2501
+//
+// ibc-go
+// - https://github.com/initia-labs/ibc-go/commit/36b81501adfc4506f5b3a19886c8f5b38dec47da
+//
+// connect
+// - https://github.com/initia-labs/connect/pull/1
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250324104146-d5b040bc2c3b
+	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250325094132-2d8e8144a217
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250326140709-c2bb7bf52a31
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
