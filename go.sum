@@ -1448,8 +1448,8 @@ github.com/initia-labs/iavl v0.0.0-20250223141407-caf697dd4712 h1:csPS5vbcRwdLRO
 github.com/initia-labs/iavl v0.0.0-20250223141407-caf697dd4712/go.mod h1:GiM43q0pB+uG53mLxLDzimxM9l/5N9UuSY3/D0huuVw=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc h1:fHVkBDhQl3uRtY2GMoYWt0rfh8vNZ+KKZlst+GrDxqc=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc/go.mod h1:G2z+Q6ZQSMcyHI2+BVcJdvfOupb09M2h/tgpXOEdY6k=
-github.com/initia-labs/initia v1.0.0-rc.0 h1:0TEeDj1uVmoqGxLCNYwJ7AYX7w5fMTT/bJI4XQf02Lo=
-github.com/initia-labs/initia v1.0.0-rc.0/go.mod h1:EW0fOqzdnk07a5r4ro8kRYKWYN2wo9cnHkWf1hltLY0=
+github.com/initia-labs/initia v1.0.0-rc.1 h1:HwTFJAHnsbJGxJtUnxY6i8cReBGH29ODShE6O1kc63A=
+github.com/initia-labs/initia v1.0.0-rc.1/go.mod h1:rJTWwsSR9mF5mjoKALI1UKwv/H7UpzFsrY6B+wU7Pos=
 github.com/initia-labs/kvindexer v0.1.12 h1:8styi0TyiVMFiHyxgBpKYBiKIx2MzSiibSeMQ/bd7AI=
 github.com/initia-labs/kvindexer v0.1.12/go.mod h1:T9u+bAPMra15W+4CRoMuvXXz2KvWZOROihrJ8Sr6b9A=
 github.com/initia-labs/kvindexer/submodules/block v0.1.2 h1:n28l1O0VEKGdX3OAIBeD72JRS21naq5Sj6bBYQ7sFDs=

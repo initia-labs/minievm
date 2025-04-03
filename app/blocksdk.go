@@ -56,7 +56,7 @@ func setupBlockSDK(
 	}, opchildlanes.SystemLaneMatchHandler())
 
 	factory := mevlane.NewDefaultAuctionFactory(app.txConfig.TxDecoder(), signerExtractor)
-	mevLane := mevlane.NewMEVLane(blockbase.LaneConfig{
+	mevLane := initialanes.NewMEVLane(blockbase.LaneConfig{
 		Logger:          app.Logger(),
 		TxEncoder:       app.txConfig.TxEncoder(),
 		TxDecoder:       app.txConfig.TxDecoder(),
