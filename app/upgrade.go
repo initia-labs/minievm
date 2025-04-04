@@ -22,7 +22,7 @@ import (
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 )
 
-const upgradeName = "v1.0.0-rc.0"
+const upgradeName = "1.0.0-rc.0"
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
