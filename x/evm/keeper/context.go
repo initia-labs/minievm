@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/holiman/uint256"
@@ -281,7 +282,7 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
-	sdkCtx.GasMeter().ConsumeGas(gasUsed, "EVM gas consumption")
+	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -340,7 +341,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
-	sdkCtx.GasMeter().ConsumeGas(gasUsed, "EVM gas consumption")
+	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
 	if err != nil {
 		if err == vm.ErrExecutionReverted {
 			err = types.NewRevertError(common.CopyBytes(retBz))
@@ -457,7 +458,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
-	sdkCtx.GasMeter().ConsumeGas(gasUsed, "EVM gas consumption")
+	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
 	if err != nil {
 		if err == vm.ErrExecutionReverted {
 			err = types.NewRevertError(common.CopyBytes(retBz))
@@ -632,4 +633,14 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 	logs = append(logs, dispatchLogs...)
 
 	return
+}
+
+// consumeGas consumes gas
+func consumeGas(ctx sdk.Context, gasUsed, gasRemaining uint64, description string) {
+	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
+	if ctx.GasMeter().Limit() == math.MaxUint64 && gasRemaining == 0 {
+		return
+	}
+
+	ctx.GasMeter().ConsumeGas(gasUsed, description)
 }
