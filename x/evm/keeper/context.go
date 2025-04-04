@@ -638,6 +638,10 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 // consumeGas consumes gas
 func consumeGas(ctx sdk.Context, gasUsed, gasRemaining uint64, description string) {
 	// evm sometimes return 0 gasRemaining, but it's not an out of gas error.
+	// cosmos use infinite gas meter at simulation and block operations.
+	//
+	// to prevent uint64 overflow, we don't consume gas when gas meter is infinite
+	// and gasRemaining is 0.
 	if ctx.GasMeter().Limit() == math.MaxUint64 && gasRemaining == 0 {
 		return
 	}
