@@ -14,7 +14,6 @@ import (
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/state"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
