@@ -274,8 +274,7 @@ replace (
 
 // indirect custom dependencies
 require (
-	// - https://github.com/cosmos/cosmos-sdk/issues/23740
-	github.com/cosmos/iavl v1.2.5-0.20250306174232-6cfb3dac2c71 // indirect
+	github.com/cosmos/iavl v1.2.6 // indirect
 	github.com/strangelove-ventures/cometbft-client v0.1.1 // indirect
 )
 
@@ -301,7 +300,3 @@ replace (
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
 	google.golang.org/grpc => google.golang.org/grpc v1.65.0
 )
-
-// temporal replace to fix statesync problem
-// - https://github.com/cosmos/cosmos-sdk/issues/23740
-replace github.com/cosmos/iavl => github.com/initia-labs/iavl v0.0.0-20250223141407-caf697dd4712
