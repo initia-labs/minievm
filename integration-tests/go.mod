@@ -252,8 +252,8 @@ replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 
 	// Use latest iavl version to fix following issue:
-	// https://github.com/cosmos/iavl/pull/943
-	github.com/cosmos/iavl => github.com/cosmos/iavl v1.1.4
+	// https://github.com/cosmos/iavl/pull/1007
+	github.com/cosmos/iavl => github.com/initia-labs/iavl v0.0.0-20250410091351-9660045ea31d
 
 	// dgrijalva/jwt-go is deprecated and doesn't receive security updates.
 	// TODO: remove it: https://github.com/cosmos/cosmos-sdk/issues/13134

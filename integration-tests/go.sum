@@ -976,8 +976,6 @@ github.com/cosmos/gogogateway v1.2.0/go.mod h1:iQpLkGWxYcnCdz5iAdLcRBSw3h7NXeOkZ
 github.com/cosmos/gogoproto v1.4.2/go.mod h1:cLxOsn1ljAHSV527CHOtaIP91kK6cCrZETRBrkzItWU=
 github.com/cosmos/gogoproto v1.7.0 h1:79USr0oyXAbxg3rspGh/m4SWNyoz/GLaAh0QlCe2fro=
 github.com/cosmos/gogoproto v1.7.0/go.mod h1:yWChEv5IUEYURQasfyBW5ffkMHR/90hiHgbNgrtp4j0=
-github.com/cosmos/iavl v1.1.4 h1:Z0cVVjeQqOUp78/nWt/uhQy83vYluWlAMGQ4zbH9G34=
-github.com/cosmos/iavl v1.1.4/go.mod h1:vCYmRQUJU1wwj0oRD3wMEtOM9sJNDP+GFMaXmIxZ/rU=
 github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.0.2 h1:dyLNlDElY6+5zW/BT/dO/3Ad9FpQblfh+9dQpYQodbA=
 github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.0.2/go.mod h1:82hPO/tRawbuFad2gPwChvpZ0JEIoNi91LwVneAYCeM=
 github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 h1:AQO9NIAP3RFqvBCj7IqM/V1LCxmuvcvGUdu0RIEz/c0=
@@ -1394,11 +1392,15 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
 github.com/initia-labs/OPinit v0.6.1 h1:G9ebeYeqPlV9Z2s3JdSWfwQAUgIM+nhkcA8xSJUMR7M=
+github.com/initia-labs/OPinit v0.6.1/go.mod h1:gDpCh4Zx94mihwgzP/PLav8eVHLroZBu3dFyzCy8iIs=
 github.com/initia-labs/OPinit/api v0.6.0 h1:Q3hDHpTd9EqlDfY/OryCKIwuXYWJxGJdGfJicV1RjL4=
-github.com/initia-labs/cometbft v0.0.0-20241113064430-a371e2dc387f h1:PpYBvJ0L58bAgH7KwS/7GBEUphLnhf4fnTLua9uOov8=
-github.com/initia-labs/cometbft v0.0.0-20241113064430-a371e2dc387f/go.mod h1:y7+6kPknafzWlkSMCekzXC81wpRf1pcVAUnO0wRy9lQ=
+github.com/initia-labs/OPinit/api v0.6.0/go.mod h1:gHK6DEWb3/DqQD5LjKirUx9jilAh2UioXanoQdgqVfU=
+github.com/initia-labs/cometbft v0.0.0-20250312140747-83f8ca69a4fd h1:X2CSpHQgYVJRbcR3fkkRgTC+rBCEQll+hupAG9Ddrak=
+github.com/initia-labs/cometbft v0.0.0-20250312140747-83f8ca69a4fd/go.mod h1:y7+6kPknafzWlkSMCekzXC81wpRf1pcVAUnO0wRy9lQ=
 github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb h1:oyH9gg/4f7uMCIJYnSpp7wa1NrGjSMsXTtypUfrsPLU=
 github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb/go.mod h1:+l/fr42Mma+xBnhefL/+z11/hcmJ2egl+ScIVPjhc7E=
+github.com/initia-labs/iavl v0.0.0-20250410091351-9660045ea31d h1:AE4CwvkU6Af6KdGRassYccDD37b+YxS5JzMrfnxZWiM=
+github.com/initia-labs/iavl v0.0.0-20250410091351-9660045ea31d/go.mod h1:vCYmRQUJU1wwj0oRD3wMEtOM9sJNDP+GFMaXmIxZ/rU=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d h1:TLq8lB1PtQ0pjGf+bN8YgGVeLMuytZ26SBGMOs1seKY=
 github.com/initia-labs/ibc-go/v8 v8.0.0-20240802003717-19c0b4ad450d/go.mod h1:zh6x1osR0hNvEcFrC/lhGD08sMfQmr9wHVvZ/mRWMCs=
 github.com/initia-labs/initia v0.6.1 h1:lJdaNp6UWwars+DCumF2L9vRmdcS+fRAMUG7f5SR6pA=
