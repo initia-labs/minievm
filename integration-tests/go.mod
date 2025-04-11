@@ -147,7 +147,7 @@ require (
 	github.com/initia-labs/kvindexer v0.1.12 // indirect
 	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.7 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.8 // indirect
 	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
 	github.com/initia-labs/movevm v1.0.0-rc.1 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
@@ -261,8 +261,7 @@ replace (
 )
 
 // indirect custom dependencies
-// - https://github.com/cosmos/cosmos-sdk/issues/23740
-require github.com/cosmos/iavl v1.2.5-0.20250306174232-6cfb3dac2c71 // indirect
+require github.com/cosmos/iavl v1.2.6 // indirect
 
 // initia custom
 // use custom version for
