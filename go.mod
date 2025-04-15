@@ -283,6 +283,7 @@ require (
 //
 // cosmos-sdk
 // - https://github.com/initia-labs/cosmos-sdk/commit/2d8e8144a217545d4d4d35d4b82f0dcc711a2501
+// - https://github.com/cosmos/cosmos-sdk/pull/24526
 //
 // ibc-go
 // - https://github.com/initia-labs/ibc-go/commit/36b81501adfc4506f5b3a19886c8f5b38dec47da
@@ -291,7 +292,7 @@ require (
 // - https://github.com/initia-labs/connect/pull/1
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250411163041-956fe82acaaf
-	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250325094132-2d8e8144a217
+	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250415174140-9fd233bcf847
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250326140709-c2bb7bf52a31
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
