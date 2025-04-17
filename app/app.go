@@ -265,8 +265,14 @@ func NewMinitiaApp(
 	// override base-app's streaming manager
 	app.SetStreamingManager(*streamingManager)
 
-	// register upgrade handler for later use
-	app.RegisterUpgradeHandlers(app.configurator)
+	// Only register upgrade handlers when loading the latest version of the app.
+	// This optimization skips unnecessary handler registration during app initialization.
+	//
+	// The cosmos upgrade handler attempts to create ${HOME}/.minitia/data to check for upgrade info,
+	// but this isn't required during initial encoding config setup.
+	if loadLatest {
+		app.RegisterUpgradeHandlers(app.configurator)
+	}
 
 	// register executor change plans for later use
 	err = app.RegisterExecutorChangePlans()
