@@ -43,7 +43,7 @@ func initAppConfig() (string, interface{}) {
 	// In simapp, we set the min gas prices to 0.
 	srvCfg.MinGasPrices = fmt.Sprintf("0%s", types.BaseDenom)
 	srvCfg.Mempool.MaxTxs = 2000
-	srvCfg.QueryGasLimit = 3000000
+	srvCfg.QueryGasLimit = 5000000
 	srvCfg.InterBlockCache = false
 
 	// Enable API and unsafe CORS (CORS allowed from any host)
@@ -55,9 +55,12 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.GRPC.Enable = true
 	srvCfg.GRPC.Address = "0.0.0.0:9090"
 
+	evmCfg := evmconfig.DefaultEVMConfig()
+	evmCfg.ContractSimulationGasLimit = 5000000
+
 	minitiaAppConfig := minitiaAppConfig{
 		Config:        *srvCfg,
-		EVMConfig:     evmconfig.DefaultEVMConfig(),
+		EVMConfig:     evmCfg,
 		IndexerConfig: indexerconfig.DefaultConfig(),
 		JSONRPCConfig: jsonrpcconfig.DefaultJSONRPCConfig(),
 	}
