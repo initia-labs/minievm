@@ -470,16 +470,18 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             IERC20(localToken).decimals()
         );
 
-        // The wrapped token has already been received to this contract.
-        // check if the remote token is owned by this contract
+        // The remote token is already held by this contract from the failed IBC transfer.
+        // If this contract owns the remote token, burn it directly.
+        // No transfer needed since we already have custody of the tokens.
         if (ERC20(callback.remoteToken).owner() == address(this)) {
             ERC20(callback.remoteToken).burn(callback.remoteAmount);
+        }
 
-            // unlock local token
-            ERC20(localToken).transfer(callback.sender, localAmount);
-        } else {
-            // mint local token
+        // check if this contract owns the local token to determine whether to mint or transfer
+        if (ERC20(localToken).owner() == address(this)) {
             ERC20(localToken).mint(callback.sender, localAmount);
+        } else {
+            ERC20(localToken).transfer(callback.sender, localAmount);
         }
 
         delete ibcCallBack[callback_id];
