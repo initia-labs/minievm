@@ -41,20 +41,20 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @dev This function is a convenience wrapper that uses the sender's full balance
      * @dev For wrapping a specific amount, use the overloaded toLocal function with amount parameter
      * @param receiver The address that will receive the wrapped local tokens
-     * @param _remoteDenom The denomination identifier of the remote token (e.g. "uatom", "uosmo")
+     * @param remoteDenom The denomination identifier of the remote token (e.g. "uatom", "uosmo")
      * @param _remoteDecimals The number of decimal places used by the remote token (typically 6)
      */
     function toLocal(
         address receiver,
-        string memory _remoteDenom,
+        string memory remoteDenom,
         uint8 _remoteDecimals
     ) public {
         // remoteDenom -> remoteToken
-        address remoteToken = COSMOS_CONTRACT.to_erc20(_remoteDenom);
+        address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
 
         // check balance of remote token
         uint remoteBalance = ERC20(remoteToken).balanceOf(msg.sender);
-        return toLocal(receiver, _remoteDenom, remoteBalance, _remoteDecimals);
+        return toLocal(receiver, remoteDenom, remoteBalance, _remoteDecimals);
     }
 
     /**
@@ -62,18 +62,18 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @notice The remote token must be approved for spending by this contract before calling
      * @dev This function handles both minting new wrapped tokens and transferring existing ones
      * @param receiver The address that will receive the wrapped local tokens
-     * @param _remoteDenom The denomination identifier of the remote token
+     * @param remoteDenom The denomination identifier of the remote token
      * @param remoteAmount The amount of remote tokens to wrap
      * @param _remoteDecimals The number of decimal places used by the remote token
      */
     function toLocal(
         address receiver,
-        string memory _remoteDenom,
+        string memory remoteDenom,
         uint remoteAmount,
         uint8 _remoteDecimals
     ) public {
         // remoteDenom -> remoteToken
-        address remoteToken = COSMOS_CONTRACT.to_erc20(_remoteDenom);
+        address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
 
         // ensure the local token exists if not create it
         _ensureLocalTokenExists(remoteToken, _remoteDecimals);
@@ -123,19 +123,19 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @notice The local token must be approved for spending by this contract before calling
      * @dev This function handles both burning existing wrapped tokens and transferring them to the receiver
      * @param receiver The address that will receive the unwrapped remote tokens
-     * @param _localDenom The denomination identifier of the local token
+     * @param localDenom The denomination identifier of the local token
      * @param localAmount The amount of local tokens to unwrap
      */
     function toRemote(
         address receiver,
-        string memory _localDenom,
+        string memory localDenom,
         uint localAmount
     )
         public
         returns (address remoteToken, uint remoteAmount, uint8 _remoteDecimals)
     {
         // localDenom -> localToken
-        address localToken = COSMOS_CONTRACT.to_erc20(_localDenom);
+        address localToken = COSMOS_CONTRACT.to_erc20(localDenom);
 
         // ensure the remote token exists if not create it
         _ensureRemoteTokenExists(localToken);
