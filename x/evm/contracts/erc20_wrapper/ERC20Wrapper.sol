@@ -270,7 +270,31 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             localDenom,
             localAmount
         );
-        _op_withdraw(receiver, remoteToken, remoteAmount);
+        
+        string memory message = _op_withdraw(receiver, remoteToken, remoteAmount);
+        COSMOS_CONTRACT.execute_cosmos(message, 250_000);
+    }
+
+    /// @notice Converts local tokens to remote tokens and initiates an OP withdraw using a specific amount of local tokens
+    /// @dev This is a convenience wrapper that automatically converts and withdraws the specified amount of local tokens
+    /// @param receiver The destination address that will receive the unwrapped remote tokens
+    /// @param localDenom The denomination identifier of the local wrapped token to convert
+    /// @param localAmount The amount of local tokens to convert
+    /// @param gasLimit The gas limit for the OP withdraw
+    function toRemoteAndOPWithdraw(
+        string memory receiver,
+        string memory localDenom,
+        uint localAmount,
+        uint64 gasLimit
+    ) public {
+        (address remoteToken, uint remoteAmount, ) = toRemote(
+            address(this),
+            localDenom,
+            localAmount
+        );
+        
+        string memory message = _op_withdraw(receiver, remoteToken, remoteAmount);
+        COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
     }
 
     function _op_withdraw(
@@ -288,8 +312,8 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 Strings.toString(amount),
                 '"},"sender": "',
                 COSMOS_CONTRACT.to_cosmos_address(address(this)),
-                '","to": ',
-                JSONUTILS_CONTRACT.stringify_json(receiver),
+                '","to": "',
+                receiver,
                 '"}'
             )
         );
@@ -487,9 +511,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             abi.encodePacked(
                 '{"@type": "/ibc.applications.transfer.v1.MsgTransfer",',
                 '"source_port": "transfer",',
-                '"source_channel": ',
-                JSONUTILS_CONTRACT.stringify_json(channel),
-                ",",
+                '"source_channel": "',
+                channel,
+                '",',
                 '"token": { "denom": "',
                 COSMOS_CONTRACT.to_denom(token),
                 '",',
@@ -499,9 +523,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 '"sender": "',
                 COSMOS_CONTRACT.to_cosmos_address(address(this)),
                 '",',
-                '"receiver": ',
-                JSONUTILS_CONTRACT.stringify_json(receiver),
-                ",",
+                '"receiver": "',
+                receiver,
+                '",',
                 '"timeout_height": {"revision_number": "0","revision_height": "0"},',
                 '"timeout_timestamp": "',
                 Strings.toString(timeout),
