@@ -139,10 +139,14 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
         // ensure the remote token exists if not create it
         _ensureRemoteTokenExists(localToken);
+        
+        // get the remote token
+        remoteToken = remoteTokens[localToken];
+        _remoteDecimals = remoteDecimals[localToken];
 
         // if the local amount is 0, do nothing
         if (localAmount == 0) {
-            return (address(0), 0, 0);
+            return (remoteToken, 0, _remoteDecimals);
         }
 
         // check if the local token is owned by this contract
@@ -158,12 +162,8 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             );
         }
 
-        // get the remote token
-        remoteToken = remoteTokens[localToken];
-        _remoteDecimals = remoteDecimals[localToken];
-        uint8 _localDecimals = IERC20(localToken).decimals();
-
         // convert the local amount to the remote amount
+        uint8 _localDecimals = IERC20(localToken).decimals();
         remoteAmount = _convertDecimal(
             localAmount,
             _localDecimals,
@@ -265,14 +265,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         string memory localDenom,
         uint localAmount
     ) public {
-        (address remoteToken, uint remoteAmount, ) = toRemote(
-            address(this),
-            localDenom,
-            localAmount
-        );
-        
-        string memory message = _op_withdraw(receiver, remoteToken, remoteAmount);
-        COSMOS_CONTRACT.execute_cosmos(message, 250_000);
+        toRemoteAndOPWithdraw(receiver, localDenom, localAmount, 250_000);
     }
 
     /// @notice Converts local tokens to remote tokens and initiates an OP withdraw using a specific amount of local tokens
@@ -292,7 +285,12 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             localDenom,
             localAmount
         );
-        
+
+        // if the remote amount is 0, do nothing
+        if (remoteAmount == 0) {
+            return;
+        }
+
         string memory message = _op_withdraw(receiver, remoteToken, remoteAmount);
         COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
     }
@@ -411,6 +409,11 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             uint remoteAmount,
             uint8 _remoteDecimals
         ) = toRemote(address(this), localDenom, localAmount);
+
+        // if the remote amount is 0, do nothing
+        if (remoteAmount == 0) {
+            return;
+        }
 
         callbackId += 1;
 
