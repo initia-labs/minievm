@@ -12,34 +12,14 @@ import "../i_jsonutils/IJSONUtils.sol";
 import {ERC165, IERC165} from "../erc165/ERC165.sol";
 
 contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
-    struct IbcCallBack {
-        address sender;
-        address remoteToken;
-        uint remoteAmount;
-        uint8 remoteDecimals;
-        bool burnRemote;
-    }
-
     uint8 constant REMOTE_DECIMALS = 6;
     uint8 constant LOCAL_DECIMALS = 18;
     string constant NAME_PREFIX = "Wrapped";
     string constant SYMBOL_PREFIX = "W";
-    uint64 callbackId = 0;
     ERC20Factory public factory;
     mapping(address => address) public remoteTokens; // localToken -> remoteToken
-    mapping(address => uint8) public remoteDecimals; // remoteToken -> remoteDecimals
-    mapping(uint64 => IbcCallBack) private ibcCallBack; // id -> CallBackInfo
+    mapping(address => uint8) public remoteDecimals; // localToken -> remoteDecimals
     mapping(address => mapping(uint8 => address)) public localTokens; // remoteToken -> decimals -> localToken
-
-    constructor(address erc20Factory) {
-        factory = ERC20Factory(erc20Factory);
-    }
-
-    // This function can only be called by the chain at upgrade.
-    function setFactory(address newFactory) external onlyChain {
-        require(newFactory != address(0), "invalid factory address");
-        factory = ERC20Factory(newFactory);
-    }
 
     modifier onlyContract() {
         require(
@@ -49,180 +29,309 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         _;
     }
 
+    constructor(address erc20Factory) {
+        factory = ERC20Factory(erc20Factory);
+    }
+
     /**
-     * @notice This function wraps the remote tokens to 18 decimals local token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
+     * @notice Sets the factory address for creating ERC20 tokens
+     * @param newFactory The address of the new factory to set
+     * @dev Only the chain can call this function at upgrade
      */
-    function wrapRemote(
+    function setFactory(address newFactory) external onlyChain {
+        require(newFactory != address(0), "invalid factory address");
+        factory = ERC20Factory(newFactory);
+    }
+
+    /**
+     * @notice Converts a remote token into a local ERC20 token with 18 decimals
+     * @notice The remote token must be approved for spending by this contract before calling
+     * @dev This function is a convenience wrapper that uses the sender's full balance
+     * @dev For wrapping a specific amount, use the overloaded toLocal function with amount parameter
+     * @param receiver The address that will receive the wrapped local tokens
+     * @param remoteDenom The denomination identifier of the remote token (e.g. "uatom", "uosmo")
+     * @param _remoteDecimals The number of decimal places used by the remote token (typically 6)
+     */
+    function toLocal(
         address receiver,
         string memory remoteDenom,
         uint8 _remoteDecimals
     ) public {
+        // remoteDenom -> remoteToken
         address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
-        uint remoteAmount = ERC20(remoteToken).balanceOf(msg.sender);
-        wrapRemote(receiver, remoteDenom, remoteAmount, _remoteDecimals);
+
+        // check balance of remote token
+        uint remoteBalance = ERC20(remoteToken).balanceOf(msg.sender);
+        return toLocal(receiver, remoteDenom, remoteBalance, _remoteDecimals);
     }
 
     /**
-     * @notice This function wraps the remote tokens to 18 decimals local token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
+     * @notice Converts a remote token into a local ERC20 token with 18 decimals
+     * @notice The remote token must be approved for spending by this contract before calling
+     * @dev This function handles both minting new wrapped tokens and transferring existing ones
+     * @param receiver The address that will receive the wrapped local tokens
+     * @param remoteDenom The denomination identifier of the remote token
+     * @param remoteAmount The amount of remote tokens to wrap
+     * @param _remoteDecimals The number of decimal places used by the remote token
      */
-    function wrapRemote(
+    function toLocal(
         address receiver,
         string memory remoteDenom,
         uint remoteAmount,
         uint8 _remoteDecimals
     ) public {
+        // remoteDenom -> remoteToken
         address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
 
-        // if there is no local token for the remote token and decimals, create a new one
-        _ensureLocalTokenExists(remoteToken, _remoteDecimals);
-
-        address localToken = localTokens[remoteToken][_remoteDecimals];
-
-        // lock received token
-        IERC20(remoteToken).transferFrom(
-            msg.sender,
-            address(this),
-            remoteAmount
+        // ensure the local token exists if not create it
+        address localToken = _ensureLocalTokenExists(
+            remoteToken,
+            _remoteDecimals
         );
 
-        // convert decimal
+        // if the remote amount is 0, do nothing
+        if (remoteAmount == 0) {
+            return;
+        }
+
+        // check if the remote token is owned by this contract
+        if (ERC20(remoteToken).owner() == address(this)) {
+            // burn the remote token from the msg.sender
+            ERC20(remoteToken).burnFrom(msg.sender, remoteAmount);
+        } else {
+            // (lock) transfer the remote token to this contract
+            ERC20(remoteToken).transferFrom(
+                msg.sender,
+                address(this),
+                remoteAmount
+            );
+        }
+
+        uint8 _localDecimals = ERC20(localToken).decimals();
+        // convert the remote amount to the local amount
         uint localAmount = _convertDecimal(
             remoteAmount,
             _remoteDecimals,
-            LOCAL_DECIMALS
+            _localDecimals
         );
 
-        // mint wrapped token to receiver
-        ERC20(localToken).mint(receiver, localAmount);
+        // check if the local token is owned by this contract
+        if (ERC20(localToken).owner() == address(this)) {
+            // mint the local token to receiver
+            ERC20(localToken).mint(receiver, localAmount);
+        } else {
+            // (unlock) transfer the local token to receiver from this contract
+            ERC20(localToken).transfer(receiver, localAmount);
+        }
     }
 
     /**
-     * @notice This function unwraps the remote tokens from 18 decimals local token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
+     * @notice Converts a local token into a remote token with arbitrary decimals
+     * @notice If the remote token does not exist, it will be created with 6 decimals
+     * @notice The local token must be approved for spending by this contract before calling
+     * @dev This function handles both burning existing wrapped tokens and transferring them to the receiver
+     * @param receiver The address that will receive the unwrapped remote tokens
+     * @param localDenom The denomination identifier of the local token
+     * @param localAmount The amount of local tokens to unwrap
      */
-    function unwrapRemote(
-        string memory channel,
-        address localToken,
+    function toRemote(
+        address receiver,
+        string memory localDenom,
+        uint localAmount
+    )
+        public
+        returns (address remoteToken, uint remoteAmount, uint8 _remoteDecimals)
+    {
+        // localDenom -> localToken
+        address localToken = COSMOS_CONTRACT.to_erc20(localDenom);
+
+        // ensure the remote token exists if not create it
+        remoteToken = _ensureRemoteTokenExists(localToken);
+        _remoteDecimals = remoteDecimals[localToken];
+
+        // if the local amount is 0, do nothing
+        if (localAmount == 0) {
+            return (remoteToken, 0, _remoteDecimals);
+        }
+
+        // check if the local token is owned by this contract
+        if (ERC20(localToken).owner() == address(this)) {
+            // burn the local token from the msg.sender
+            ERC20(localToken).burnFrom(msg.sender, localAmount);
+        } else {
+            // (lock) transfer the local token to this contract
+            ERC20(localToken).transferFrom(
+                msg.sender,
+                address(this),
+                localAmount
+            );
+        }
+
+        // convert the local amount to the remote amount
+        uint8 _localDecimals = IERC20(localToken).decimals();
+        remoteAmount = _convertDecimal(
+            localAmount,
+            _localDecimals,
+            _remoteDecimals
+        );
+
+        // check if the remote token is owned by this contract
+        if (ERC20(remoteToken).owner() == address(this)) {
+            // mint the remote token to receiver
+            ERC20(remoteToken).mint(receiver, remoteAmount);
+        } else {
+            // (unlock) transfer the remote token to receiver from this contract
+            ERC20(remoteToken).transfer(receiver, remoteAmount);
+        }
+
+        return (remoteToken, remoteAmount, _remoteDecimals);
+    }
+
+    /////////////////////////////
+    // Convert and OP Withdraw //
+    /////////////////////////////
+
+    /// @notice Converts local tokens to remote tokens and initiates an OP withdraw using a specific amount of local tokens
+    /// @dev This is a convenience wrapper that automatically converts and withdraws the specified amount of local tokens
+    /// @param receiver The destination address that will receive the unwrapped remote tokens
+    /// @param localDenom The denomination identifier of the local wrapped token to convert
+    /// @param localAmount The amount of local tokens to convert
+    function toRemoteAndOPWithdraw(
         string memory receiver,
+        string memory localDenom,
+        uint localAmount
+    ) public {
+        toRemoteAndOPWithdraw(receiver, localDenom, localAmount, 250_000);
+    }
+
+    /// @notice Converts local tokens to remote tokens and initiates an OP withdraw using a specific amount of local tokens
+    /// @dev This is a convenience wrapper that automatically converts and withdraws the specified amount of local tokens
+    /// @param receiver The destination address that will receive the unwrapped remote tokens
+    /// @param localDenom The denomination identifier of the local wrapped token to convert
+    /// @param localAmount The amount of local tokens to convert
+    /// @param gasLimit The gas limit for the OP withdraw
+    function toRemoteAndOPWithdraw(
+        string memory receiver,
+        string memory localDenom,
         uint localAmount,
+        uint64 gasLimit
+    ) public {
+        (address remoteToken, uint remoteAmount, ) = toRemote(
+            address(this),
+            localDenom,
+            localAmount
+        );
+
+        // if the remote amount is 0, do nothing
+        if (remoteAmount == 0) {
+            return;
+        }
+
+        string memory message = _op_withdraw(
+            receiver,
+            remoteToken,
+            remoteAmount
+        );
+        COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
+    }
+
+    //////////////////////////////
+    // Convert and IBC Transfer //
+    //////////////////////////////
+
+    struct IbcCallBack {
+        address sender;
+        address remoteToken;
+        uint remoteAmount;
+        uint8 remoteDecimals;
+    }
+
+    uint64 callbackId = 0;
+    mapping(uint64 => IbcCallBack) private ibcCallBack; // id -> CallBackInfo
+
+    /// @notice Converts local tokens to remote tokens and initiates an IBC transfer
+    /// @dev This is a convenience wrapper that automatically converts and transfers local tokens.
+    /// @param localDenom The denomination identifier of the local wrapped token to convert (e.g. "evm/123...")
+    /// @param localAmount The amount of local tokens to convert and transfer
+    /// @param channel The IBC channel identifier to use for the transfer (e.g. "channel-0")
+    /// @param receiver The destination address that will receive the unwrapped remote tokens on the target chain
+    /// @param timeout The Unix timestamp in nanoseconds after which the IBC transfer will timeout and revert
+    function toRemoteAndIBCTransfer(
+        string memory localDenom,
+        uint localAmount,
+        // args for IBC transfer
+        string memory channel,
+        string memory receiver,
         uint timeout
     ) public {
-        unwrapRemote(channel, localToken, receiver, localAmount, timeout, "{}");
+        toRemoteAndIBCTransfer(
+            localDenom,
+            localAmount,
+            channel,
+            receiver,
+            timeout,
+            "{}",
+            250_000
+        );
     }
 
-    /**
-     * @notice This function unwraps the remote tokens from 18 decimals local token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
-     */
-    function unwrapRemote(
-        string memory channel,
-        address localToken,
-        string memory receiver,
+    /// @notice Converts local tokens to remote tokens and initiates an IBC transfer
+    /// @dev This is a convenience wrapper that automatically converts and transfers local tokens.
+    /// @param localDenom The denomination identifier of the local wrapped token to convert (e.g. "evm/123...")
+    /// @param localAmount The amount of local tokens to convert and transfer
+    /// @param channel The IBC channel identifier to use for the transfer (e.g. "channel-0")
+    /// @param receiver The destination address that will receive the unwrapped remote tokens on the target chain
+    /// @param timeout The Unix timestamp in nanoseconds after which the IBC transfer will timeout and revert
+    /// @param memo Optional memo string to include with the IBC transfer
+    function toRemoteAndIBCTransfer(
+        string memory localDenom,
         uint localAmount,
+        // args for IBC transfer
+        string memory channel,
+        string memory receiver,
         uint timeout,
         string memory memo
     ) public {
-        unwrapRemote(
-            channel,
-            localToken,
-            receiver,
+        toRemoteAndIBCTransfer(
+            localDenom,
             localAmount,
+            channel,
+            receiver,
             timeout,
             memo,
             250_000
         );
     }
 
-    /**
-     * @notice This function unwraps the remote tokens from 18 decimals local token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
-     */
-    function unwrapRemote(
-        string memory channel,
-        address localToken,
-        string memory receiver,
+    /// @notice Converts local tokens to remote tokens and initiates an IBC transfer
+    /// @dev This is a convenience wrapper that automatically converts and transfers local tokens.
+    /// @param localDenom The denomination identifier of the local wrapped token to convert (e.g. "erc20/0x123...")
+    /// @param localAmount The amount of local tokens to convert and transfer
+    /// @param channel The IBC channel identifier to use for the transfer (e.g. "channel-0")
+    /// @param receiver The destination address that will receive the unwrapped remote tokens on the target chain
+    /// @param timeout The Unix timestamp in nanoseconds after which the IBC transfer will timeout and revert
+    /// @param memo Optional memo string to include with the IBC transfer
+    /// @param gasLimit The gas limit for the IBC transfer
+    function toRemoteAndIBCTransfer(
+        string memory localDenom,
         uint localAmount,
+        // args for IBC transfer
+        string memory channel,
+        string memory receiver,
         uint timeout,
         string memory memo,
         uint64 gasLimit
     ) public {
-        _unwrapRemote(
-            channel,
-            localToken,
-            receiver,
-            localAmount,
-            timeout,
-            memo,
-            gasLimit
-        );
-    }
+        (
+            address remoteToken,
+            uint remoteAmount,
+            uint8 _remoteDecimals
+        ) = toRemote(address(this), localDenom, localAmount);
 
-    /**
-     * @notice This function wraps the local tokens to 6 decimals remote token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
-     */
-    function wrapLocal(
-        string memory channel,
-        address localToken,
-        string memory receiver,
-        uint localAmount,
-        uint timeout
-    ) public {
-        wrapLocal(channel, localToken, receiver, localAmount, timeout, "{}");
-    }
-
-    /**
-     * @notice This function wraps the local tokens to 6 decimals remote token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
-     */
-    function wrapLocal(
-        string memory channel,
-        address localToken,
-        string memory receiver,
-        uint localAmount,
-        uint timeout,
-        string memory memo
-    ) public {
-        wrapLocal(
-            channel,
-            localToken,
-            receiver,
-            localAmount,
-            timeout,
-            memo,
-            250_000
-        );
-    }
-
-    /**
-     * @notice This function wraps the local tokens to 6 decimals remote token
-     * @dev This function requires sender approve to this contract to transfer the tokens.
-     */
-    function wrapLocal(
-        string memory channel,
-        address localToken,
-        string memory receiver,
-        uint localAmount,
-        uint timeout,
-        string memory memo,
-        uint64 gasLimit
-    ) public {
-        _ensureRemoteTokenExists(localToken);
-
-        // lock origin token
-        IERC20(localToken).transferFrom(msg.sender, address(this), localAmount);
-        uint remoteAmount = _convertDecimal(
-            localAmount,
-            IERC20(localToken).decimals(),
-            REMOTE_DECIMALS
-        );
-
-        // mint wrapped token
-        address remoteToken = remoteTokens[localToken];
-        uint8 _remoteDecimals = IERC20(remoteToken).decimals();
-        ERC20(remoteToken).mint(address(this), remoteAmount);
+        // if the remote amount is 0, do nothing
+        if (remoteAmount == 0) {
+            return;
+        }
 
         callbackId += 1;
 
@@ -231,8 +340,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             sender: msg.sender,
             remoteToken: remoteToken,
             remoteAmount: remoteAmount,
-            remoteDecimals: _remoteDecimals,
-            burnRemote: true
+            remoteDecimals: _remoteDecimals
         });
 
         string memory message = _ibc_transfer(
@@ -243,48 +351,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             receiver,
             memo
         );
-
-        // do ibc transfer wrapped token
         COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
-    }
-
-    /**
-     * @notice This function is executed as an IBC hook to unwrap the wrapped tokens.
-     * @dev This function is used by a hook and requires sender approve to this contract to burn wrapped tokens.
-     */
-    function unwrapLocal(address receiver, string memory remoteDenom) public {
-        address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
-        address localToken = localTokens[remoteToken][REMOTE_DECIMALS];
-        require(localToken != address(0), "local token doesn't exist");
-        uint remoteAmount = ERC20(remoteToken).balanceOf(msg.sender);
-        _unwrapLocal(
-            remoteToken,
-            localToken,
-            msg.sender,
-            receiver,
-            remoteAmount
-        );
-    }
-
-    /**
-     * @notice This function is executed as an IBC hook to unwrap the wrapped tokens.
-     * @dev This function is used by a hook and requires sender approve to this contract to burn wrapped tokens.
-     */
-    function unwrapLocal(
-        address receiver,
-        string memory remoteDenom,
-        uint remoteAmount
-    ) public {
-        address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
-        address localToken = localTokens[remoteToken][REMOTE_DECIMALS];
-        require(localToken != address(0), "local token doesn't exist");
-        _unwrapLocal(
-            remoteToken,
-            localToken,
-            msg.sender,
-            receiver,
-            remoteAmount
-        );
     }
 
     function ibc_ack(uint64 callback_id, bool success) external onlyContract {
@@ -299,80 +366,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         _handleFailedIbcTransfer(callback_id);
     }
 
-    // internal functions //
-    function _unwrapRemote(
-        string memory channel,
-        address localToken,
-        string memory receiver,
-        uint localAmount,
-        uint timeout,
-        string memory memo,
-        uint64 gasLimit
-    ) internal {
-        // burn wrapped token
-        ERC20(localToken).burnFrom(msg.sender, localAmount);
-
-        // unlock origin token and transfer to receiver
-        address remoteToken = remoteTokens[localToken];
-        require(remoteToken != address(0), "remote token doesn't exist");
-
-        // unlock origin token and transfer to receiver
-        uint8 _remoteDecimals = remoteDecimals[remoteToken];
-        require(
-            localTokens[remoteToken][_remoteDecimals] != address(0),
-            "local token doesn't exist"
-        );
-
-        uint remoteAmount = _convertDecimal(
-            localAmount,
-            LOCAL_DECIMALS,
-            _remoteDecimals
-        );
-
-        callbackId += 1;
-
-        // store the callback data
-        ibcCallBack[callbackId] = IbcCallBack({
-            sender: msg.sender,
-            remoteToken: remoteToken,
-            remoteAmount: remoteAmount,
-            remoteDecimals: _remoteDecimals,
-            burnRemote: false
-        });
-
-        string memory message = _ibc_transfer(
-            channel,
-            remoteToken,
-            remoteAmount,
-            timeout,
-            receiver,
-            memo
-        );
-
-        // do ibc transfer wrapped token
-        COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
-    }
-
-    function _unwrapLocal(
-        address remoteToken,
-        address localToken,
-        address sender,
-        address receiver,
-        uint remoteAmount
-    ) internal {
-        // burn wrapped token
-        ERC20(remoteToken).burnFrom(sender, remoteAmount);
-
-        // unlock origin token and transfer to receiver
-        uint localAmount = _convertDecimal(
-            remoteAmount,
-            REMOTE_DECIMALS,
-            IERC20(localToken).decimals()
-        );
-
-        ERC20(localToken).transfer(receiver, localAmount);
-    }
-
+    ////////////////////////
+    // Internal functions //
+    ////////////////////////
     function _handleFailedIbcTransfer(uint64 callback_id) internal {
         IbcCallBack memory callback = ibcCallBack[callback_id];
         address localToken = localTokens[callback.remoteToken][
@@ -387,68 +383,74 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             IERC20(localToken).decimals()
         );
 
-        // The wrapped token has already been received to this contract.
-        if (callback.burnRemote) {
+        // The remote token is already held by this contract from the failed IBC transfer.
+        // If this contract owns the remote token, burn it directly.
+        // No transfer needed since we already have custody of the tokens.
+        if (ERC20(callback.remoteToken).owner() == address(this)) {
             ERC20(callback.remoteToken).burn(callback.remoteAmount);
+        }
 
-            // unlock local token
-            ERC20(localToken).transfer(callback.sender, localAmount);
-        } else {
-            // mint local token
+        // check if this contract owns the local token to determine whether to mint or transfer
+        if (ERC20(localToken).owner() == address(this)) {
             ERC20(localToken).mint(callback.sender, localAmount);
+        } else {
+            ERC20(localToken).transfer(callback.sender, localAmount);
         }
 
         delete ibcCallBack[callback_id];
     }
 
-    function _ensureRemoteTokenExists(address localToken) internal {
-        if (remoteTokens[localToken] == address(0)) {
-            address remoteToken = factory.createERC20(
+    /**
+     * @notice Ensures that a remote token exists for the given local token
+     * @notice If no remote token exists, creates a new one with 6 decimals (REMOTE_DECIMALS)
+     * @param localToken The address of the local token to check/create remote token for
+     * @dev Updates remoteTokens, remoteDecimals, and localTokens mappings if a new token is created
+     */
+    function _ensureRemoteTokenExists(
+        address localToken
+    ) internal returns (address remoteToken) {
+        remoteToken = remoteTokens[localToken];
+        if (remoteToken == address(0)) {
+            remoteToken = factory.createERC20(
                 string.concat(NAME_PREFIX, IERC20(localToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
                 REMOTE_DECIMALS
             );
             remoteTokens[localToken] = remoteToken;
-            remoteDecimals[remoteToken] = REMOTE_DECIMALS;
+            remoteDecimals[localToken] = REMOTE_DECIMALS;
             localTokens[remoteToken][REMOTE_DECIMALS] = localToken;
         }
+
+        return remoteToken;
     }
 
+    /**
+     * @notice Ensures that a local token exists for the given remote token and decimal precision
+     * @notice If no local token exists, creates a new one with 18 decimals (LOCAL_DECIMALS)
+     * @param remoteToken The address of the remote token to check/create local token for
+     * @param _remoteDecimals The number of decimal places used by the remote token
+     * @dev Updates localTokens, remoteTokens, and remoteDecimals mappings if a new token is created
+     */
     function _ensureLocalTokenExists(
         address remoteToken,
         uint8 _remoteDecimals
-    ) internal {
-        if (localTokens[remoteToken][_remoteDecimals] == address(0)) {
-            address localToken = factory.createERC20(
+    ) internal returns (address localToken) {
+        localToken = localTokens[remoteToken][_remoteDecimals];
+        if (localToken == address(0)) {
+            localToken = factory.createERC20(
                 string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
                 LOCAL_DECIMALS
             );
             localTokens[remoteToken][_remoteDecimals] = localToken;
             remoteTokens[localToken] = remoteToken;
-            remoteDecimals[remoteToken] = _remoteDecimals;
-        }
-    }
-
-    function _convertDecimal(
-        uint amount,
-        uint8 decimal,
-        uint8 newDecimal
-    ) internal pure returns (uint convertedAmount) {
-        if (decimal > newDecimal) {
-            uint factor = 10 ** uint(decimal - newDecimal);
-            require(amount % factor == 0, "dust amount should be zero");
-            convertedAmount = amount / factor;
-        } else if (decimal < newDecimal) {
-            uint factor = 10 ** uint(newDecimal - decimal);
-            convertedAmount = amount * factor;
-        } else {
-            convertedAmount = amount;
+            remoteDecimals[localToken] = _remoteDecimals;
         }
 
-        require(convertedAmount != 0, "converted amount is zero");
+        return localToken;
     }
 
+    // view
     function _ibc_transfer(
         string memory channel,
         address token,
@@ -478,9 +480,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             abi.encodePacked(
                 '{"@type": "/ibc.applications.transfer.v1.MsgTransfer",',
                 '"source_port": "transfer",',
-                '"source_channel": ',
-                JSONUTILS_CONTRACT.stringify_json(channel),
-                ",",
+                '"source_channel": "',
+                channel,
+                '",',
                 '"token": { "denom": "',
                 COSMOS_CONTRACT.to_denom(token),
                 '",',
@@ -490,9 +492,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 '"sender": "',
                 COSMOS_CONTRACT.to_cosmos_address(address(this)),
                 '",',
-                '"receiver": ',
-                JSONUTILS_CONTRACT.stringify_json(receiver),
-                ",",
+                '"receiver": "',
+                receiver,
+                '",',
                 '"timeout_height": {"revision_number": "0","revision_height": "0"},',
                 '"timeout_timestamp": "',
                 Strings.toString(timeout),
@@ -502,5 +504,55 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 "}"
             )
         );
+    }
+
+    function _op_withdraw(
+        string memory receiver,
+        address token,
+        uint amount
+    ) internal view returns (string memory message) {
+        // Construct OPbridge withdraw message
+        message = string(
+            abi.encodePacked(
+                '{"@type": "/opinit.opchild.v1.MsgInitiateTokenWithdrawal"',
+                ',"amount": { "denom": "',
+                COSMOS_CONTRACT.to_denom(token),
+                '","amount": "',
+                Strings.toString(amount),
+                '"},"sender": "',
+                COSMOS_CONTRACT.to_cosmos_address(address(this)),
+                '","to": "',
+                receiver,
+                '"}'
+            )
+        );
+    }
+
+    // pure
+    /**
+     * @notice Converts an amount from one decimal precision to another by scaling up or down
+     * @param amount The amount to convert
+     * @param decimal The original decimal precision (e.g. 6 for USDC)
+     * @param newDecimal The desired decimal precision (e.g. 18 for wrapped USDC)
+     * @return convertedAmount The amount converted to the new decimal precision
+     * @dev When scaling down (decimal > newDecimal), checks for and prevents dust amounts
+     * @dev When scaling up (decimal < newDecimal), multiplies by the scaling factor
+     * @dev When decimal precisions match, returns original amount unchanged
+     */
+    function _convertDecimal(
+        uint amount,
+        uint8 decimal,
+        uint8 newDecimal
+    ) internal pure returns (uint convertedAmount) {
+        if (decimal > newDecimal) {
+            uint factor = 10 ** uint(decimal - newDecimal);
+            require(amount % factor == 0, "dust amount should be zero");
+            convertedAmount = amount / factor;
+        } else if (decimal < newDecimal) {
+            uint factor = 10 ** uint(newDecimal - decimal);
+            convertedAmount = amount * factor;
+        } else {
+            convertedAmount = amount;
+        }
     }
 }
