@@ -33,8 +33,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.3.1
-	github.com/initia-labs/OPinit v1.0.0-rc.0
-	github.com/initia-labs/initia v1.0.0-rc.1
+	github.com/initia-labs/OPinit v1.0.0
+	github.com/initia-labs/initia v1.0.0
 	github.com/initia-labs/kvindexer v0.1.13
 	github.com/initia-labs/kvindexer/submodules/block v0.1.3
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.9
@@ -173,7 +173,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
+	github.com/initia-labs/OPinit/api v1.0.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -291,7 +291,7 @@ require (
 // connect
 // - https://github.com/initia-labs/connect/pull/1
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250411163041-956fe82acaaf
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250418052104-edfb178d9ce8
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250415174140-9fd233bcf847
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250326140709-c2bb7bf52a31
