@@ -107,11 +107,12 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             );
         }
 
+        uint8 _localDecimals = ERC20(localToken).decimals();
         // convert the remote amount to the local amount
         uint localAmount = _convertDecimal(
             remoteAmount,
             _remoteDecimals,
-            LOCAL_DECIMALS
+            _localDecimals
         );
 
         // check if the local token is owned by this contract
