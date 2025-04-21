@@ -21,6 +21,14 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     mapping(address => uint8) public remoteDecimals; // localToken -> remoteDecimals
     mapping(address => mapping(uint8 => address)) public localTokens; // remoteToken -> decimals -> localToken
 
+    modifier onlyContract() {
+        require(
+            msg.sender == address(this),
+            "only the contract itself can call this function"
+        );
+        _;
+    }
+
     constructor(address erc20Factory) {
         factory = ERC20Factory(erc20Factory);
     }
@@ -76,7 +84,10 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
 
         // ensure the local token exists if not create it
-        _ensureLocalTokenExists(remoteToken, _remoteDecimals);
+        address localToken = _ensureLocalTokenExists(
+            remoteToken,
+            _remoteDecimals
+        );
 
         // if the remote amount is 0, do nothing
         if (remoteAmount == 0) {
@@ -96,15 +107,11 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             );
         }
 
-        // get the local token and its decimals
-        address localToken = localTokens[remoteToken][_remoteDecimals];
-        uint8 _localDecimals = IERC20(localToken).decimals();
-
         // convert the remote amount to the local amount
         uint localAmount = _convertDecimal(
             remoteAmount,
             _remoteDecimals,
-            _localDecimals
+            LOCAL_DECIMALS
         );
 
         // check if the local token is owned by this contract
@@ -138,10 +145,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         address localToken = COSMOS_CONTRACT.to_erc20(localDenom);
 
         // ensure the remote token exists if not create it
-        _ensureRemoteTokenExists(localToken);
-        
-        // get the remote token
-        remoteToken = remoteTokens[localToken];
+        remoteToken = _ensureRemoteTokenExists(localToken);
         _remoteDecimals = remoteDecimals[localToken];
 
         // if the local amount is 0, do nothing
@@ -180,75 +184,6 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         }
 
         return (remoteToken, remoteAmount, _remoteDecimals);
-    }
-
-    /**
-     * @notice Ensures that a remote token exists for the given local token
-     * @notice If no remote token exists, creates a new one with 6 decimals (REMOTE_DECIMALS)
-     * @param localToken The address of the local token to check/create remote token for
-     * @dev Updates remoteTokens, remoteDecimals, and localTokens mappings if a new token is created
-     */
-    function _ensureRemoteTokenExists(address localToken) internal {
-        if (remoteTokens[localToken] == address(0)) {
-            address remoteToken = factory.createERC20(
-                string.concat(NAME_PREFIX, IERC20(localToken).name()),
-                string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
-                REMOTE_DECIMALS
-            );
-            remoteTokens[localToken] = remoteToken;
-            remoteDecimals[localToken] = REMOTE_DECIMALS;
-            localTokens[remoteToken][REMOTE_DECIMALS] = localToken;
-        }
-    }
-
-    /**
-     * @notice Ensures that a local token exists for the given remote token and decimal precision
-     * @notice If no local token exists, creates a new one with 18 decimals (LOCAL_DECIMALS)
-     * @param remoteToken The address of the remote token to check/create local token for
-     * @param _remoteDecimals The number of decimal places used by the remote token
-     * @dev Updates localTokens, remoteTokens, and remoteDecimals mappings if a new token is created
-     */
-    function _ensureLocalTokenExists(
-        address remoteToken,
-        uint8 _remoteDecimals
-    ) internal {
-        if (localTokens[remoteToken][_remoteDecimals] == address(0)) {
-            address localToken = factory.createERC20(
-                string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
-                string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
-                LOCAL_DECIMALS
-            );
-            localTokens[remoteToken][_remoteDecimals] = localToken;
-            remoteTokens[localToken] = remoteToken;
-            remoteDecimals[localToken] = _remoteDecimals;
-        }
-    }
-
-    /**
-     * @notice Converts an amount from one decimal precision to another by scaling up or down
-     * @param amount The amount to convert
-     * @param decimal The original decimal precision (e.g. 6 for USDC)
-     * @param newDecimal The desired decimal precision (e.g. 18 for wrapped USDC)
-     * @return convertedAmount The amount converted to the new decimal precision
-     * @dev When scaling down (decimal > newDecimal), checks for and prevents dust amounts
-     * @dev When scaling up (decimal < newDecimal), multiplies by the scaling factor
-     * @dev When decimal precisions match, returns original amount unchanged
-     */
-    function _convertDecimal(
-        uint amount,
-        uint8 decimal,
-        uint8 newDecimal
-    ) internal pure returns (uint convertedAmount) {
-        if (decimal > newDecimal) {
-            uint factor = 10 ** uint(decimal - newDecimal);
-            require(amount % factor == 0, "dust amount should be zero");
-            convertedAmount = amount / factor;
-        } else if (decimal < newDecimal) {
-            uint factor = 10 ** uint(newDecimal - decimal);
-            convertedAmount = amount * factor;
-        } else {
-            convertedAmount = amount;
-        }
     }
 
     /////////////////////////////
@@ -291,30 +226,12 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             return;
         }
 
-        string memory message = _op_withdraw(receiver, remoteToken, remoteAmount);
-        COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
-    }
-
-    function _op_withdraw(
-        string memory receiver,
-        address token,
-        uint amount
-    ) internal view returns (string memory message) {
-        // Construct OPbridge withdraw message
-        message = string(
-            abi.encodePacked(
-                '{"@type": "/opinit.opchild.v1.MsgInitiateTokenWithdrawal"',
-                ',"amount": { "denom": "',
-                COSMOS_CONTRACT.to_denom(token),
-                '","amount": "',
-                Strings.toString(amount),
-                '"},"sender": "',
-                COSMOS_CONTRACT.to_cosmos_address(address(this)),
-                '","to": "',
-                receiver,
-                '"}'
-            )
+        string memory message = _op_withdraw(
+            receiver,
+            remoteToken,
+            remoteAmount
         );
+        COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
     }
 
     //////////////////////////////
@@ -333,7 +250,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
     /// @notice Converts local tokens to remote tokens and initiates an IBC transfer
     /// @dev This is a convenience wrapper that automatically converts and transfers local tokens.
-    /// @param localDenom The denomination identifier of the local wrapped token to convert (e.g. "erc20/0x123...")
+    /// @param localDenom The denomination identifier of the local wrapped token to convert (e.g. "evm/123...")
     /// @param localAmount The amount of local tokens to convert and transfer
     /// @param channel The IBC channel identifier to use for the transfer (e.g. "channel-0")
     /// @param receiver The destination address that will receive the unwrapped remote tokens on the target chain
@@ -359,7 +276,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
     /// @notice Converts local tokens to remote tokens and initiates an IBC transfer
     /// @dev This is a convenience wrapper that automatically converts and transfers local tokens.
-    /// @param localDenom The denomination identifier of the local wrapped token to convert (e.g. "erc20/0x123...")
+    /// @param localDenom The denomination identifier of the local wrapped token to convert (e.g. "evm/123...")
     /// @param localAmount The amount of local tokens to convert and transfer
     /// @param channel The IBC channel identifier to use for the transfer (e.g. "channel-0")
     /// @param receiver The destination address that will receive the unwrapped remote tokens on the target chain
@@ -436,14 +353,6 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         COSMOS_CONTRACT.execute_cosmos(message, gasLimit);
     }
 
-    modifier onlyContract() {
-        require(
-            msg.sender == address(this),
-            "only the contract itself can call this function"
-        );
-        _;
-    }
-
     function ibc_ack(uint64 callback_id, bool success) external onlyContract {
         if (success) {
             return;
@@ -456,6 +365,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         _handleFailedIbcTransfer(callback_id);
     }
 
+    ////////////////////////
+    // Internal functions //
+    ////////////////////////
     function _handleFailedIbcTransfer(uint64 callback_id) internal {
         IbcCallBack memory callback = ibcCallBack[callback_id];
         address localToken = localTokens[callback.remoteToken][
@@ -487,6 +399,57 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         delete ibcCallBack[callback_id];
     }
 
+    /**
+     * @notice Ensures that a remote token exists for the given local token
+     * @notice If no remote token exists, creates a new one with 6 decimals (REMOTE_DECIMALS)
+     * @param localToken The address of the local token to check/create remote token for
+     * @dev Updates remoteTokens, remoteDecimals, and localTokens mappings if a new token is created
+     */
+    function _ensureRemoteTokenExists(
+        address localToken
+    ) internal returns (address remoteToken) {
+        remoteToken = remoteTokens[localToken];
+        if (remoteToken == address(0)) {
+            remoteToken = factory.createERC20(
+                string.concat(NAME_PREFIX, IERC20(localToken).name()),
+                string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
+                REMOTE_DECIMALS
+            );
+            remoteTokens[localToken] = remoteToken;
+            remoteDecimals[localToken] = REMOTE_DECIMALS;
+            localTokens[remoteToken][REMOTE_DECIMALS] = localToken;
+        }
+
+        return remoteToken;
+    }
+
+    /**
+     * @notice Ensures that a local token exists for the given remote token and decimal precision
+     * @notice If no local token exists, creates a new one with 18 decimals (LOCAL_DECIMALS)
+     * @param remoteToken The address of the remote token to check/create local token for
+     * @param _remoteDecimals The number of decimal places used by the remote token
+     * @dev Updates localTokens, remoteTokens, and remoteDecimals mappings if a new token is created
+     */
+    function _ensureLocalTokenExists(
+        address remoteToken,
+        uint8 _remoteDecimals
+    ) internal returns (address localToken) {
+        localToken = localTokens[remoteToken][_remoteDecimals];
+        if (localToken == address(0)) {
+            localToken = factory.createERC20(
+                string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
+                string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
+                LOCAL_DECIMALS
+            );
+            localTokens[remoteToken][_remoteDecimals] = localToken;
+            remoteTokens[localToken] = remoteToken;
+            remoteDecimals[localToken] = _remoteDecimals;
+        }
+
+        return localToken;
+    }
+
+    // view
     function _ibc_transfer(
         string memory channel,
         address token,
@@ -540,5 +503,55 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 "}"
             )
         );
+    }
+
+    function _op_withdraw(
+        string memory receiver,
+        address token,
+        uint amount
+    ) internal view returns (string memory message) {
+        // Construct OPbridge withdraw message
+        message = string(
+            abi.encodePacked(
+                '{"@type": "/opinit.opchild.v1.MsgInitiateTokenWithdrawal"',
+                ',"amount": { "denom": "',
+                COSMOS_CONTRACT.to_denom(token),
+                '","amount": "',
+                Strings.toString(amount),
+                '"},"sender": "',
+                COSMOS_CONTRACT.to_cosmos_address(address(this)),
+                '","to": "',
+                receiver,
+                '"}'
+            )
+        );
+    }
+
+    // pure
+    /**
+     * @notice Converts an amount from one decimal precision to another by scaling up or down
+     * @param amount The amount to convert
+     * @param decimal The original decimal precision (e.g. 6 for USDC)
+     * @param newDecimal The desired decimal precision (e.g. 18 for wrapped USDC)
+     * @return convertedAmount The amount converted to the new decimal precision
+     * @dev When scaling down (decimal > newDecimal), checks for and prevents dust amounts
+     * @dev When scaling up (decimal < newDecimal), multiplies by the scaling factor
+     * @dev When decimal precisions match, returns original amount unchanged
+     */
+    function _convertDecimal(
+        uint amount,
+        uint8 decimal,
+        uint8 newDecimal
+    ) internal pure returns (uint convertedAmount) {
+        if (decimal > newDecimal) {
+            uint factor = 10 ** uint(decimal - newDecimal);
+            require(amount % factor == 0, "dust amount should be zero");
+            convertedAmount = amount / factor;
+        } else if (decimal < newDecimal) {
+            uint factor = 10 ** uint(newDecimal - decimal);
+            convertedAmount = amount * factor;
+        } else {
+            convertedAmount = amount;
+        }
     }
 }
