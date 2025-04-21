@@ -43069,7 +43069,7 @@ paths:
         - Query
   /indexer/tx/v1/txs/count:
     get:
-      summary: TxCCount queries the total number of transactions
+      summary: TxsCount queries the total number of transactions
       operationId: TxCount
       responses:
         '200':
