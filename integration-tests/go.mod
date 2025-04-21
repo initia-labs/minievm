@@ -8,8 +8,8 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/initia-labs/initia v1.0.0-rc.1
-	github.com/initia-labs/minievm v1.0.0-rc.0
+	github.com/initia-labs/initia v1.0.0
+	github.com/initia-labs/minievm v1.0.0-rc.2
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -142,14 +142,14 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v1.0.0-rc.0 // indirect
+	github.com/initia-labs/OPinit v1.0.0 // indirect
 	github.com/initia-labs/OPinit/api v1.0.0 // indirect
-	github.com/initia-labs/kvindexer v0.1.12 // indirect
-	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.8 // indirect
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
-	github.com/initia-labs/movevm v1.0.0-rc.1 // indirect
+	github.com/initia-labs/kvindexer v0.1.13 // indirect
+	github.com/initia-labs/kvindexer/submodules/block v0.1.3 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.9 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.2.1 // indirect
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.4 // indirect
+	github.com/initia-labs/movevm v1.0.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
