@@ -100,7 +100,7 @@ func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, signModeHandler *txsignin
 		ante.NewValidateBasicDecorator(),
 		ante.NewSetPubKeyDecorator(ak),
 		ante.NewValidateSigCountDecorator(ak),
-		ante.NewSigGasConsumeDecorator(ak, ante.DefaultSigVerificationGasConsumer),
+		NewSigGasConsumeDecorator(ak, sigverify.DefaultSigVerificationGasConsumer),
 		NewSigVerificationDecorator(ak, signModeHandler),
 		evmante.NewIncrementSequenceDecorator(ak),
 	)
