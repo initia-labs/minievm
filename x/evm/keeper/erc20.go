@@ -354,6 +354,18 @@ func (k ERC20Keeper) MintCoins(ctx context.Context, addr sdk.AccAddress, amount 
 	return nil
 }
 
+// TokenCreationFn is a helper function to create a new ERC20 token if it doesn't exist.
+func (k ERC20Keeper) TokenCreationFn(ctx context.Context, denom string, decimals uint8) error {
+	found, err := k.ERC20ContractAddrsByDenom.Has(ctx, denom)
+	if err != nil {
+		return err
+	} else if found {
+		return nil
+	}
+
+	return k.CreateERC20(ctx, denom, decimals)
+}
+
 func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string, decimals uint8) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	factoryAddr, err := k.GetERC20FactoryAddr(ctx)

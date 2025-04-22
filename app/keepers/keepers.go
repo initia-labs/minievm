@@ -566,6 +566,9 @@ func NewAppKeeper(
 	*erc20Keeper = *appKeepers.EVMKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
 	*erc721Keeper = *appKeepers.EVMKeeper.ERC721Keeper().(*evmkeeper.ERC721Keeper)
 
+	// register token creation function
+	appKeepers.OPChildKeeper.WithTokenCreationFn(erc20Keeper.TokenCreationFn)
+
 	// x/auction module keeper initialization
 
 	// initialize the keeper
