@@ -1438,8 +1438,8 @@ github.com/initia-labs/OPinit v1.0.1 h1:hMk9JUr1JuEnC1taH1S2qnbEN8oUa+CXHNVbaGjb
 github.com/initia-labs/OPinit v1.0.1/go.mod h1:nO24xmTxOPcIs5Zem5S/libjiKQkqItQ7dw4amcHC1I=
 github.com/initia-labs/OPinit/api v1.0.0 h1:l1WjRl8dK1HoEn+1mPXCmEnRqLwXrfoBA9CI1lAUnnU=
 github.com/initia-labs/OPinit/api v1.0.0/go.mod h1:Qz11o6zlTtJe495JO7FhEyLhJLPit0rEuLN4pweKL24=
-github.com/initia-labs/cometbft v0.0.0-20250423134602-c7711e3b5b34 h1:yjgVr62UIiE3H3kjPKLY5M0y2TOEnOaTkeBTeO/6P1Q=
-github.com/initia-labs/cometbft v0.0.0-20250423134602-c7711e3b5b34/go.mod h1:pX0eththSiU5rMgVpLPn2kK295Pz2/UQB427WWLequI=
+github.com/initia-labs/cometbft v0.0.0-20250423153228-2a8797de61ac h1:HUAeU6+G3Nk1BIZv4jAwEqoUMStVfhVjSy/PSJjlnLQ=
+github.com/initia-labs/cometbft v0.0.0-20250423153228-2a8797de61ac/go.mod h1:pX0eththSiU5rMgVpLPn2kK295Pz2/UQB427WWLequI=
 github.com/initia-labs/connect/v2 v2.3.1 h1:Y32LCwUHDBgUzzQHqPBJeWeItYoNu2oYD57JKbZCtjw=
 github.com/initia-labs/connect/v2 v2.3.1/go.mod h1:35hM7xSgI0h3GMUTgspzKY8Ff2yCXNGNwmAdjqo3z8s=
 github.com/initia-labs/cosmos-sdk v0.0.0-20250415174140-9fd233bcf847 h1:MUusHIRbaraL//dic8nCj7wXvVLT3LvKbS0k+Bj12oM=
