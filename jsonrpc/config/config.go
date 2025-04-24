@@ -40,6 +40,8 @@ const (
 	DefaultFilterTimeout = 5 * time.Minute
 	// DefaultFilterMaxBlockRange is the default maximum number of blocks that can be queried in a filter.
 	DefaultFilterMaxBlockRange = 1_000_000
+	// DefaultFilterMaxAddresses is the default maximum number of addresses that can be used in a log filter.
+	DefaultFilterMaxAddresses = 100
 	// DefaultLogCacheSize is the maximum number of cached blocks.
 	DefaultLogCacheSize = 32
 	// DefaultGasMultiplier is the default gas multiplier for the EVM state transition.
@@ -69,6 +71,7 @@ const (
 	flagJSONRPCLogCacheSize         = "json-rpc.log-cache-size"
 	flagJSONRPCGasMultiplier        = "json-rpc.gas-multiplier"
 	flagJSONRPCFilterMaxBlockRange  = "json-rpc.filter-max-block-range"
+	flagJSONRPCFilterMaxAddresses   = "json-rpc.filter-max-addresses"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -108,6 +111,8 @@ type JSONRPCConfig struct {
 	LogCacheSize int `mapstructure:"log-cache-size"`
 	// GasMultiplier is the gas multiplier for the EVM state transition.
 	GasMultiplier string `mapstructure:"gas-multiplier"`
+	// FilterMaxAddresses is the maximum number of addresses that can be used in a log filter.
+	FilterMaxAddresses int `mapstructure:"filter-max-addresses"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -133,8 +138,8 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 
 		FilterTimeout:       DefaultFilterTimeout,
 		FilterMaxBlockRange: DefaultFilterMaxBlockRange,
-
-		LogCacheSize: DefaultLogCacheSize,
+		FilterMaxAddresses:  DefaultFilterMaxAddresses,
+		LogCacheSize:        DefaultLogCacheSize,
 
 		GasMultiplier: DefaultGasMultiplier,
 	}
@@ -157,6 +162,7 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxBlocks, DefaultFeeHistoryMaxBlocks, "Maximum number of blocks used to lookup the fee history")
 	startCmd.Flags().Duration(flagJSONRPCFilterTimeout, DefaultFilterTimeout, "Duration how long filters stay active")
 	startCmd.Flags().Int(flagJSONRPCFilterMaxBlockRange, DefaultFilterMaxBlockRange, "Maximum number of blocks that can be queried in a filter")
+	startCmd.Flags().Int(flagJSONRPCFilterMaxAddresses, DefaultFilterMaxAddresses, "Maximum number of addresses that can be used in a log filter")
 	startCmd.Flags().Int(flagJSONRPCLogCacheSize, DefaultLogCacheSize, "Maximum number of cached blocks for the log filter")
 	startCmd.Flags().String(flagJSONRPCGasMultiplier, DefaultGasMultiplier, "Gas multiplier for the EVM state transition")
 }
@@ -179,6 +185,7 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		FeeHistoryMaxBlocks:  cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxBlocks)),
 		FilterTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCFilterTimeout)),
 		FilterMaxBlockRange:  cast.ToInt(appOpts.Get(flagJSONRPCFilterMaxBlockRange)),
+		FilterMaxAddresses:   cast.ToInt(appOpts.Get(flagJSONRPCFilterMaxAddresses)),
 		LogCacheSize:         cast.ToInt(appOpts.Get(flagJSONRPCLogCacheSize)),
 		GasMultiplier:        cast.ToString(appOpts.Get(flagJSONRPCGasMultiplier)),
 	}
@@ -238,6 +245,9 @@ filter-timeout = "{{ .JSONRPCConfig.FilterTimeout }}"
 
 # FilterMaxBlockRange is the maximum number of blocks that can be queried in a filter.
 filter-max-block-range = {{ .JSONRPCConfig.FilterMaxBlockRange }}
+
+# FilterMaxAddresses is the maximum number of addresses that can be used in a log filter.
+filter-max-addresses = {{ .JSONRPCConfig.FilterMaxAddresses }}
 
 # LogCacheSize is the maximum number of cached blocks for the log filter.
 log-cache-size = {{ .JSONRPCConfig.LogCacheSize }}

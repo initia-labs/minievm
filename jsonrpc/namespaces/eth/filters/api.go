@@ -29,9 +29,6 @@ var (
 // The maximum number of topic criteria allowed, vm.LOG4 - vm.LOG0
 const maxTopics = 4
 
-// The maximum number of addresses allowed in a filter
-const maxAddresses = 32
-
 type filter struct {
 	hashes []common.Hash
 	txs    []*rpctypes.RPCTransaction
@@ -292,7 +289,7 @@ func (api *FilterAPI) NewBlockFilter() (rpc.ID, error) {
 func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) {
 	if len(crit.Topics) > maxTopics {
 		return "", errExceedMaxTopics
-	} else if len(crit.Addresses) > maxAddresses {
+	} else if len(crit.Addresses) > api.backend.FilterMaxAddresses() {
 		return "", errExceedMaxAddrs
 	}
 
@@ -365,7 +362,7 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 func (api *FilterAPI) GetLogs(ctx context.Context, crit ethfilters.FilterCriteria) ([]*coretypes.Log, error) {
 	if len(crit.Topics) > maxTopics {
 		return nil, errExceedMaxTopics
-	} else if len(crit.Addresses) > maxAddresses {
+	} else if len(crit.Addresses) > api.backend.FilterMaxAddresses() {
 		return nil, errExceedMaxAddrs
 	}
 	var filter *Filter
