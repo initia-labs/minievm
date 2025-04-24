@@ -41,7 +41,7 @@ const (
 	// DefaultFilterMaxBlockRange is the default maximum number of blocks that can be queried in a filter.
 	DefaultFilterMaxBlockRange = 1_000_000
 	// DefaultFilterMaxAddresses is the default maximum number of addresses that can be used in a log filter.
-	DefaultFilterMaxAddresses = 32
+	DefaultFilterMaxAddresses = 100
 	// DefaultLogCacheSize is the maximum number of cached blocks.
 	DefaultLogCacheSize = 32
 	// DefaultGasMultiplier is the default gas multiplier for the EVM state transition.
