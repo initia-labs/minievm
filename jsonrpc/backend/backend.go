@@ -79,6 +79,9 @@ func NewJSONRPCBackend(
 	if cfg.FilterMaxBlockRange == 0 {
 		cfg.FilterMaxBlockRange = config.DefaultFilterMaxBlockRange
 	}
+	if cfg.FilterMaxAddresses == 0 {
+		cfg.FilterMaxAddresses = config.DefaultFilterMaxAddresses
+	}
 
 	gasMultiplier, err := math.LegacyNewDecFromStr(cfg.GasMultiplier)
 	if err != nil {
@@ -189,4 +192,8 @@ func (b *JSONRPCBackend) FilterTimeout() time.Duration {
 
 func (b *JSONRPCBackend) FilterMaxBlockRange() int {
 	return b.cfg.FilterMaxBlockRange
+}
+
+func (b *JSONRPCBackend) FilterMaxAddresses() int {
+	return b.cfg.FilterMaxAddresses
 }
