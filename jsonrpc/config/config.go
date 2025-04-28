@@ -23,7 +23,7 @@ const (
 	DefaultEnableUnsafeCORS = true
 	// DefaultMaxOpenConnections is the default maximum number of simultaneous connections
 	// for the server listener.
-	DefaultMaxOpenConnections = 100
+	DefaultMaxOpenConnections = 1000
 	// DefaultAddress defines the default HTTP server to listen on.
 	DefaultAddress = "127.0.0.1:8545"
 	// DefaultAddressWS defines the default WebSocket server address to bind to.
