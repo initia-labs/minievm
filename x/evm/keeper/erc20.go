@@ -199,6 +199,18 @@ func (k ERC20Keeper) GetMetadata(ctx context.Context, denom string) (banktypes.M
 	}, nil
 }
 
+// HasMetadata implements IERC20Keeper.
+func (k ERC20Keeper) HasMetadata(ctx context.Context, denom string) (bool, error) {
+	contractAddr, err := types.DenomToContractAddr(ctx, k, denom)
+	if err != nil && errors.Is(err, collections.ErrNotFound) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return k.ERC20s.Has(ctx, contractAddr.Bytes())
+}
+
 // GetPaginatedBalances implements IERC20Keeper.
 func (k ERC20Keeper) GetPaginatedBalances(ctx context.Context, pageReq *query.PageRequest, addr sdk.AccAddress) (sdk.Coins, *query.PageResponse, error) {
 	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
