@@ -24,8 +24,6 @@ import (
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 
 	forwardingtypes "github.com/noble-assets/forwarding/v2/types"
-
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // SigVerificationDecorator verifies all signatures for a tx and return an error if any are invalid. Note,
@@ -82,14 +80,8 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 			return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidPubKey, "pubkey on account is not set")
 		}
 
-		skipSequenceCheck := false
-		if simulate {
-			ethTx, ok := ctx.Value(ContextKeyEthTx).(*coretypes.Transaction)
-			skipSequenceCheck = ok && ethTx != nil
-		}
-
-		// Check account sequence number.
-		if !skipSequenceCheck && sig.Sequence != acc.GetSequence() {
+		// Check account sequence number if it is not a simulated tx
+		if !simulate && sig.Sequence != acc.GetSequence() {
 			return ctx, errorsmod.Wrapf(
 				sdkerrors.ErrWrongSequence,
 				"account sequence mismatch, expected %d, got %d", acc.GetSequence(), sig.Sequence,

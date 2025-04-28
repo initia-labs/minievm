@@ -43,12 +43,12 @@ func (suite *AnteTestSuite) Test_SkipSequenceCheck() {
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), true, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })
 	suite.NoError(err)
 
-	// 2. simulate should check sequence when it is not ethereum tx
+	// 2. simulate should not check sequence when it is not ethereum tx
 	suite.ctx = suite.ctx.WithValue(ante.ContextKeyEthTx, nil)
 	err = suite.txBuilder.SetSignatures(sigV2)
 	suite.NoError(err)
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), true, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })
-	suite.ErrorIs(err, sdkerrors.ErrWrongSequence)
+	suite.NoError(err)
 
 	// 3. non-simulate should check sequence
 	suite.ctx = suite.ctx.WithValue(ante.ContextKeyEthTx, &coretypes.Transaction{})
