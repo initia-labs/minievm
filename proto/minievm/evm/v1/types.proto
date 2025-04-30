@@ -84,3 +84,10 @@ message ERC721OriginTokenInfo {
   string token_origin_id = 1;
   string token_uri = 2;
 }
+
+message ERC721ClassInfo {
+  string class_id = 1;
+  string class_name = 2;
+  string class_uri = 3;
+  string class_descs = 4;
+}
