@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -149,4 +150,71 @@ func Test_Query_ERC721OriginTokenInfos(t *testing.T) {
 	}
 	require.Equal(t, tokenIds, actualTokenIds)
 	require.Equal(t, tokenUris, actualTokenUris)
+}
+
+func Test_Query_ERC721ClassInfos(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	evmKeeper := input.EVMKeeper
+	ierc721Keeper, err := keeper.NewERC721Keeper(&evmKeeper)
+	require.NoError(t, err)
+
+	erc721Keeper := ierc721Keeper.(*keeper.ERC721Keeper)
+
+	numClasses := 10
+	classIds := make([]string, 0)
+	classUris := make([]string, 0)
+	classDatas := make([]string, 0)
+	for i := range numClasses {
+		classIds = append(classIds, fmt.Sprintf("ibc/test-class-id-%d", i))
+		classUris = append(classUris, fmt.Sprintf("test-class-uri-%d", i))
+		classDatas = append(classDatas, fmt.Sprintf("test-class-data-%d", i))
+	}
+
+	for i := range numClasses {
+		classId := classIds[i]
+		classUri := classUris[i]
+		classData := classDatas[i]
+
+		err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, classData)
+		require.NoError(t, err)
+	}
+
+	qs := keeper.NewQueryServer(&input.EVMKeeper)
+	res, err := qs.ERC721ClassInfos(ctx, &types.QueryERC721ClassInfosRequest{})
+	require.NoError(t, err)
+
+	require.Equal(t, numClasses, len(res.ClassInfos))
+	for i := range numClasses {
+		require.Equal(t, classIds[i], res.ClassInfos[i].ClassId)
+		require.Equal(t, classUris[i], res.ClassInfos[i].ClassUri)
+		require.Equal(t, "", res.ClassInfos[i].ClassDescs)
+	}
+}
+
+func Test_Query_ERC721ClassInfo(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	evmKeeper := input.EVMKeeper
+	ierc721Keeper, err := keeper.NewERC721Keeper(&evmKeeper)
+	require.NoError(t, err)
+
+	erc721Keeper := ierc721Keeper.(*keeper.ERC721Keeper)
+
+	classId := "ibc/test-class-id"
+	classUri := "test-class-uri"
+	classData := "test-class-data"
+
+	err = erc721Keeper.CreateOrUpdateClass(ctx, classId, classUri, classData)
+	require.NoError(t, err)
+
+	qs := keeper.NewQueryServer(&input.EVMKeeper)
+	res, err := qs.ERC721ClassInfo(ctx, &types.QueryERC721ClassInfoRequest{
+		ClassId: classId,
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, classId, res.ClassInfo.ClassId)
+	require.Equal(t, classUri, res.ClassInfo.ClassUri)
+	require.Equal(t, "", res.ClassInfo.ClassDescs)
 }

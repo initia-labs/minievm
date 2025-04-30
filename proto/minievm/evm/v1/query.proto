@@ -2,6 +2,7 @@ syntax = "proto3";
 package minievm.evm.v1;
 
 import "amino/amino.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "minievm/evm/v1/types.proto";
@@ -49,6 +50,16 @@ service Query {
   // ERC721OriginTokenInfos gets the origin token infos by class id and token ids.
   rpc ERC721OriginTokenInfos(QueryERC721OriginTokenInfosRequest) returns (QueryERC721OriginTokenInfosResponse) {
     option (google.api.http).get = "/minievm/evm/v1/erc721/origin_token_infos/{class_id=**}";
+  }
+
+  // ERC721ClassInfos gets the class infos.
+  rpc ERC721ClassInfos(QueryERC721ClassInfosRequest) returns (QueryERC721ClassInfosResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/erc721/class_infos";
+  }
+
+  // ERC721ClassInfo gets the class info by class id.
+  rpc ERC721ClassInfo(QueryERC721ClassInfoRequest) returns (QueryERC721ClassInfoResponse) {
+    option (google.api.http).get = "/minievm/evm/v1/erc721/class_infos/{class_id=**}";
   }
 
   // Denom gets the denom of the given contract address.
@@ -239,6 +250,37 @@ message QueryERC721OriginTokenInfosRequest {
 // method
 message QueryERC721OriginTokenInfosResponse {
   repeated ERC721OriginTokenInfo token_infos = 1;
+}
+
+// QueryERC721ClassInfosRequest is the request type for the Query/ERC721ClassInfos RPC
+// method
+message QueryERC721ClassInfosRequest {
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = true;
+
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryERC721ClassInfosResponse is the response type for the Query/ERC721ClassInfos RPC
+// method
+message QueryERC721ClassInfosResponse {
+  repeated ERC721ClassInfo class_infos = 1 [(gogoproto.nullable) = false];
+
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryERC721ClassInfoRequest is the request type for the Query/ERC721ClassInfo RPC
+// method
+message QueryERC721ClassInfoRequest {
+  string class_id = 1;
+}
+
+// QueryERC721ClassInfoResponse is the response type for the Query/ERC721ClassInfo RPC
+// method
+message QueryERC721ClassInfoResponse {
+  ERC721ClassInfo class_info = 1;
 }
 
 // QueryParamsRequest is the request type for the Query/Params RPC method.
