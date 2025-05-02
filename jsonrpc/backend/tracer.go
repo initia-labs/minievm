@@ -153,5 +153,4 @@ func (b *JSONRPCBackend) runTxWithTracer(
 	msg := cosmosTx.GetMsgs()[0]
 	_, err = b.app.MsgServiceRouter().Handler(msg)(sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACER, tracer), msg)
 	_, err = b.app.PostHandler()(sdkCtx, cosmosTx, false, err == nil)
-	return
 }
