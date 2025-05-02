@@ -63,7 +63,6 @@ type IERC20Keeper interface {
 
 	// fungible asset
 	GetMetadata(ctx context.Context, denom string) (banktypes.Metadata, error)
-	HasMetadata(ctx context.Context, denom string) (bool, error)
 
 	// ABI
 	GetERC20ABI() *abi.ABI

@@ -443,7 +443,6 @@ func Test_GetSupply(t *testing.T) {
 func TestERC20Keeper_GetMetadata(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
-	evmAddr := common.BytesToAddress(addr.Bytes())
 
 	erc20Keeper, err := keeper.NewERC20Keeper(&input.EVMKeeper)
 	require.NoError(t, err)
@@ -476,31 +475,6 @@ func TestERC20Keeper_GetMetadata(t *testing.T) {
 			},
 		},
 	}, metadata)
-
-	factoryAbi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
-	require.NoError(t, err)
-
-	callBz, err := factoryAbi.Pack("createERC20", "hey", "hey", uint8(18))
-	require.NoError(t, err)
-
-	erc20WrapperAddr, err := input.EVMKeeper.ERC20FactoryAddr.Get(ctx)
-	require.NoError(t, err)
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, common.BytesToAddress(erc20WrapperAddr), callBz, nil, nil)
-	require.NoError(t, err)
-	require.NotEmpty(t, retBz)
-
-	ret, err := factoryAbi.Unpack("createERC20", retBz)
-	require.NoError(t, err)
-
-	contractAddr := ret[0].(common.Address)
-	denom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr)
-	require.NoError(t, err)
-
-	metadata, err = erc20Keeper.GetMetadata(ctx, denom)
-	require.NoError(t, err)
-	require.Equal(t, "hey", metadata.Name)
-	require.Equal(t, "hey", metadata.Symbol)
-	require.Equal(t, uint32(18), metadata.DenomUnits[1].Exponent)
 }
 
 func Test_IterateAccountBalances(t *testing.T) {

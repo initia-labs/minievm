@@ -173,13 +173,13 @@ func (k BaseKeeper) HasSupply(ctx context.Context, denom string) bool {
 // GetDenomMetaData retrieves the denomination metadata. returns the metadata and true if the denom exists,
 // false otherwise.
 func (k BaseKeeper) GetDenomMetaData(ctx context.Context, denom string) (types.Metadata, bool) {
-	m, err := k.EVMViewKeeper.GetDenomMetaData(ctx, denom)
+	m, err := k.EVMViewKeeper.DenomMetadata.Get(ctx, denom)
 	return m, err == nil
 }
 
 // HasDenomMetaData checks if the denomination metadata exists in store.
 func (k BaseKeeper) HasDenomMetaData(ctx context.Context, denom string) bool {
-	has, err := k.EVMViewKeeper.HasDenomMetaData(ctx, denom)
+	has, err := k.EVMViewKeeper.DenomMetadata.Has(ctx, denom)
 	return has && err == nil
 }
 

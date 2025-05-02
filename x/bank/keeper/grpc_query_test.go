@@ -10,11 +10,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -137,8 +132,6 @@ func TestQueryParams(t *testing.T) {
 
 func TestQueryDenomMetadata(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
-	_, _, addr := keyPubAddr()
-	evmAddr := common.BytesToAddress(addr.Bytes())
 
 	res, err := input.BankKeeper.DenomMetadata(ctx, &types.QueryDenomMetadataRequest{
 		Denom: bondDenom,
@@ -154,40 +147,4 @@ func TestQueryDenomMetadata(t *testing.T) {
 			Exponent: 18,
 		},
 	}, metadata.DenomUnits)
-
-	// test createERC20
-	factoryAbi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
-	require.NoError(t, err)
-
-	callBz, err := factoryAbi.Pack("createERC20", "hey", "hey", uint8(18))
-	require.NoError(t, err)
-
-	erc20WrapperAddr, err := input.EVMKeeper.ERC20FactoryAddr.Get(ctx)
-	require.NoError(t, err)
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, common.BytesToAddress(erc20WrapperAddr), callBz, nil, nil)
-	require.NoError(t, err)
-	require.NotEmpty(t, retBz)
-
-	ret, err := factoryAbi.Unpack("createERC20", retBz)
-	require.NoError(t, err)
-
-	contractAddr := ret[0].(common.Address)
-	denom, err := evmtypes.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr)
-	require.NoError(t, err)
-
-	res, err = input.BankKeeper.DenomMetadata(ctx, &types.QueryDenomMetadataRequest{
-		Denom: denom,
-	})
-	require.NoError(t, err)
-	require.Equal(t, "hey", res.Metadata.Name)
-	require.Equal(t, "hey", res.Metadata.Symbol)
-	require.Equal(t, uint32(18), res.Metadata.DenomUnits[1].Exponent)
-
-	res2, err := input.BankKeeper.DenomMetadataByQueryString(ctx, &types.QueryDenomMetadataByQueryStringRequest{
-		Denom: denom,
-	})
-	require.NoError(t, err)
-	require.Equal(t, "hey", res2.Metadata.Name)
-	require.Equal(t, "hey", res2.Metadata.Symbol)
-	require.Equal(t, uint32(18), res2.Metadata.DenomUnits[1].Exponent)
 }
