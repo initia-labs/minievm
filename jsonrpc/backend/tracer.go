@@ -24,11 +24,6 @@ const (
 	// defaultTraceTimeout is the amount of time a single transaction can execute
 	// by default before being forcefully aborted.
 	defaultTraceTimeout = 5 * time.Second
-
-	// defaultTraceReexec is the number of blocks the tracer is willing to go back
-	// and reexecute to produce missing historical state necessary to run a specific
-	// trace.
-	defaultTraceReexec = uint64(128)
 )
 
 // TraceBlockByNumber configures a new tracer according to the provided configuration, and
