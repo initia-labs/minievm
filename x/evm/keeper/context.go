@@ -99,8 +99,10 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 			}
 
 			// increase depth manually because it is not executed by interpreter
-			evm.IncreaseDepth()
-			defer func() { evm.DecreaseDepth() }()
+			if evm.Config.Tracer != nil {
+				evm.IncreaseDepth()
+				defer func() { evm.DecreaseDepth() }()
+			}
 
 			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), fee.Contract(), inputBz, 100000)
 			if err != nil {
@@ -131,8 +133,10 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 			}
 
 			// increase depth manually because it is not executed by interpreter
-			evm.IncreaseDepth()
-			defer func() { evm.DecreaseDepth() }()
+			if evm.Config.Tracer != nil {
+				evm.IncreaseDepth()
+				defer func() { evm.DecreaseDepth() }()
+			}
 
 			_, _, err = evm.Call(vm.AccountRef(a1), fee.Contract(), inputBz, 100000, uint256.NewInt(0))
 			if err != nil {

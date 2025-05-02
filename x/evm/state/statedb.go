@@ -135,8 +135,10 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 	}
 
 	// increase depth manually because it is not executed by interpreter
-	s.evm.IncreaseDepth()
-	defer func() { s.evm.DecreaseDepth() }()
+	if s.evm.Config.Tracer != nil {
+		s.evm.IncreaseDepth()
+		defer func() { s.evm.DecreaseDepth() }()
+	}
 
 	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
@@ -157,8 +159,10 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing
 	}
 
 	// increase depth manually because it is not executed by interpreter
-	s.evm.IncreaseDepth()
-	defer func() { s.evm.DecreaseDepth() }()
+	if s.evm.Config.Tracer != nil {
+		s.evm.IncreaseDepth()
+		defer func() { s.evm.DecreaseDepth() }()
+	}
 
 	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
@@ -175,8 +179,10 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 	}
 
 	// increase depth manually because it is not executed by interpreter
-	s.evm.IncreaseDepth()
-	defer func() { s.evm.DecreaseDepth() }()
+	if s.evm.Config.Tracer != nil {
+		s.evm.IncreaseDepth()
+		defer func() { s.evm.DecreaseDepth() }()
+	}
 
 	retBz, _, err := s.evm.StaticCall(vm.AccountRef(evmtypes.NullAddress), s.feeContractAddr, inputBz, erc20OpGasLimit)
 	if err != nil {
