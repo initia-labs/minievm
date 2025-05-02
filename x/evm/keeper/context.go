@@ -232,13 +232,17 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	evm.SetPrecompiles(precompiles)
 
 	if tracer != nil {
-		ethTx := ctx.Value(types.CONTEXT_KEY_ETH_TX).(*coretypes.Transaction)
-		if ethTx == nil {
+		var ethTx *coretypes.Transaction
+		if v := ctx.Value(types.CONTEXT_KEY_ETH_TX); v != nil {
+			ethTx = v.(*coretypes.Transaction)
+		} else {
 			ethTx = &coretypes.Transaction{}
 		}
 
 		// register vm context to tracer
-		tracer.OnTxStart(evm.GetVMContext(), ethTx, caller)
+		if tracer.OnTxStart != nil {
+			tracer.OnTxStart(evm.GetVMContext(), ethTx, caller)
+		}
 
 		// set tracer to stateDB
 		evm.StateDB.(types.StateDB).SetTracer(tracer)
@@ -301,7 +305,7 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
-	if tracer != nil {
+	if tracer != nil && tracer.OnTxEnd != nil {
 		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
 	}
 	if err != nil {
@@ -363,7 +367,7 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
-	if tracer != nil {
+	if tracer != nil && tracer.OnTxEnd != nil {
 		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
 	}
 	if err != nil {
@@ -483,7 +487,7 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
-	if tracer != nil {
+	if tracer != nil && tracer.OnTxEnd != nil {
 		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
 	}
 	if err != nil {
