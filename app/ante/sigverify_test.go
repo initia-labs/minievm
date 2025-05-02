@@ -8,6 +8,7 @@ import (
 
 	"github.com/initia-labs/minievm/app/ante"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -38,20 +39,20 @@ func (suite *AnteTestSuite) Test_SkipSequenceCheck() {
 	suite.NoError(err)
 
 	// 1. simulate should skip sequence check
-	suite.ctx = suite.ctx.WithValue(ante.ContextKeyEthTx, &coretypes.Transaction{})
+	suite.ctx = suite.ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX, &coretypes.Transaction{})
 	sigVerifyAnte := ante.NewSigVerificationDecorator(suite.app.AccountKeeper, suite.app.TxConfig().SignModeHandler())
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), true, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })
 	suite.NoError(err)
 
 	// 2. simulate should not check sequence when it is not ethereum tx
-	suite.ctx = suite.ctx.WithValue(ante.ContextKeyEthTx, nil)
+	suite.ctx = suite.ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX, nil)
 	err = suite.txBuilder.SetSignatures(sigV2)
 	suite.NoError(err)
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), true, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })
 	suite.NoError(err)
 
 	// 3. non-simulate should check sequence
-	suite.ctx = suite.ctx.WithValue(ante.ContextKeyEthTx, &coretypes.Transaction{})
+	suite.ctx = suite.ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX, &coretypes.Transaction{})
 	err = suite.txBuilder.SetSignatures(sigV2)
 	suite.NoError(err)
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), false, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })

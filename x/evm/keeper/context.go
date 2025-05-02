@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	coretype "github.com/ethereum/go-ethereum/core/types"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
@@ -97,6 +98,10 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 				return false
 			}
 
+			// increase depth manually because it is not executed by interpreter
+			evm.IncreaseDepth()
+			defer func() { evm.DecreaseDepth() }()
+
 			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), fee.Contract(), inputBz, 100000)
 			if err != nil {
 				k.Logger(ctx).Warn("failed to check balance", "error", err)
@@ -124,6 +129,10 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 			if err != nil {
 				panic(err)
 			}
+
+			// increase depth manually because it is not executed by interpreter
+			evm.IncreaseDepth()
+			defer func() { evm.DecreaseDepth() }()
 
 			_, _, err = evm.Call(vm.AccountRef(a1), fee.Contract(), inputBz, 100000, uint256.NewInt(0))
 			if err != nil {
@@ -214,6 +223,7 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	if err != nil {
 		return ctx, nil, err
 	}
+
 	rules := chainConfig.Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
 	precompiles, err := k.precompiles(rules, evm.StateDB.(types.StateDB))
 	if err != nil {
@@ -222,8 +232,16 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	evm.SetPrecompiles(precompiles)
 
 	if tracer != nil {
+		ethTx := ctx.Value(types.CONTEXT_KEY_ETH_TX).(*coretypes.Transaction)
+		if ethTx == nil {
+			ethTx = &coretypes.Transaction{}
+		}
+
 		// register vm context to tracer
-		tracer.OnTxStart(evm.GetVMContext(), nil, caller)
+		tracer.OnTxStart(evm.GetVMContext(), ethTx, caller)
+
+		// set tracer to stateDB
+		evm.StateDB.(types.StateDB).SetTracer(tracer)
 	}
 
 	return ctx, evm, nil
@@ -283,6 +301,9 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
+	if tracer != nil {
+		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
+	}
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -342,6 +363,9 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
+	if tracer != nil {
+		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
+	}
 	if err != nil {
 		if err == vm.ErrExecutionReverted {
 			err = types.NewRevertError(common.CopyBytes(retBz))
@@ -459,6 +483,9 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
+	if tracer != nil {
+		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
+	}
 	if err != nil {
 		if err == vm.ErrExecutionReverted {
 			err = types.NewRevertError(common.CopyBytes(retBz))

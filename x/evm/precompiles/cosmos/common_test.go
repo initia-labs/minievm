@@ -84,6 +84,8 @@ func (m *MockStateDB) EVM() *vm.EVM {
 	return m.evm
 }
 
+func (m *MockStateDB) SetTracer(tracer *tracing.Hooks) {}
+
 //////////////////////// MOCKED METHODS ////////////////////////
 
 // AddAddressToAccessList implements types.StateDB.
