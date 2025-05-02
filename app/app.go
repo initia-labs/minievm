@@ -129,6 +129,9 @@ type MinitiaApp struct {
 
 	// checktx wrapper
 	checkTxWrapper *checktx.CheckTxWrapper
+
+	// post handler for tracing
+	postHandler sdk.PostHandler
 }
 
 // NewMinitiaApp returns a reference to an initialized Initia.
@@ -381,11 +384,19 @@ func (app *MinitiaApp) SetCheckTx(handler blockchecktx.CheckTx) {
 	app.checkTxHandler = handler
 }
 
+// setPostHandler sets the post handler for the app.
 func (app *MinitiaApp) setPostHandler() {
-	app.SetPostHandler(posthandler.NewPostHandler(
+	app.postHandler = posthandler.NewPostHandler(
 		app.Logger(),
 		app.EVMKeeper,
-	))
+	)
+
+	app.SetPostHandler(app.postHandler)
+}
+
+// PostHandler returns the post handler for the app.
+func (app *MinitiaApp) PostHandler() sdk.PostHandler {
+	return app.postHandler
 }
 
 // SetKVIndexer sets the kvindexer keeper and module for the app and registers the services.

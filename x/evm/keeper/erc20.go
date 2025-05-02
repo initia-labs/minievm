@@ -566,7 +566,7 @@ func (k ERC20Keeper) Decimals(ctx context.Context, contractAddr common.Address) 
 
 	retBz, err := k.EVMStaticCall(
 		// set the context value to prevent infinite loop
-		sdk.UnwrapSDKContext(ctx).WithValue(types.ContextKeyLoadDecimals, true),
+		sdk.UnwrapSDKContext(ctx).WithValue(types.CONTEXT_KEY_LOAD_DECIMALS, true),
 		types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
 		return 0, err

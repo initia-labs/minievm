@@ -1,6 +1,10 @@
 package ante
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+)
 
 // EthTxDecorator is a decorator that sets ethereum tx to the context.
 //
@@ -15,11 +19,6 @@ func NewEthTxDecorator(ek EVMKeeper) EthTxDecorator {
 	}
 }
 
-const (
-	ContextKeyEthTx = iota
-	ContextKeyEthTxSender
-)
-
 func (d EthTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	ethTx, expectedSender, err := d.ek.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
 	if err != nil {
@@ -28,8 +27,8 @@ func (d EthTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 		return next(ctx, tx, simulate)
 	}
 
-	ctx = ctx.WithValue(ContextKeyEthTx, ethTx)
-	ctx = ctx.WithValue(ContextKeyEthTxSender, expectedSender)
+	ctx = ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX, ethTx)
+	ctx = ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX_SENDER, expectedSender)
 
 	return next(ctx, tx, simulate)
 }

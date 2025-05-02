@@ -3,6 +3,8 @@ package ante
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 // ConsumeTxSizeGasDecorator is a decorator that consumes gas for the tx size.
@@ -21,7 +23,7 @@ func NewConsumeTxSizeGasDecorator(ak ante.AccountKeeper) ConsumeTxSizeGasDecorat
 // AnteHandle consumes gas for the tx size.
 // It skips gas consumption for eth tx because we are handling this with eth intrinsic gas metering.
 func (d ConsumeTxSizeGasDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	ethTx := ctx.Value(ContextKeyEthTx)
+	ethTx := ctx.Value(evmtypes.CONTEXT_KEY_ETH_TX)
 	if ethTx != nil {
 		// skip gas consumption for eth tx
 		// we are handling this with eth intrinsic gas metering
@@ -45,7 +47,7 @@ func NewSigGasConsumeDecorator(ak ante.AccountKeeper, sigGasConsumer ante.Signat
 // AnteHandle consumes gas for the signature verification.
 // It skips gas consumption for eth tx because we are handling this with eth intrinsic gas metering.
 func (d SigGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	ethTx := ctx.Value(ContextKeyEthTx)
+	ethTx := ctx.Value(evmtypes.CONTEXT_KEY_ETH_TX)
 	if ethTx != nil {
 		// skip gas consumption for eth tx
 		// we are handling this with eth intrinsic gas metering

@@ -53,11 +53,11 @@ func verifySignature(
 	case *signing.SingleSignatureData:
 		if data.SignMode == evmkeeper.SignMode_SIGN_MODE_ETHEREUM {
 			// eth sign mode
-			ethTx, ok := ctx.Value(ContextKeyEthTx).(*coretypes.Transaction)
+			ethTx, ok := ctx.Value(evmtypes.CONTEXT_KEY_ETH_TX).(*coretypes.Transaction)
 			if !ok || ethTx == nil {
 				return fmt.Errorf("failed to get ethereum tx from context")
 			}
-			expectedSender, ok := ctx.Value(ContextKeyEthTxSender).(*common.Address)
+			expectedSender, ok := ctx.Value(evmtypes.CONTEXT_KEY_ETH_TX_SENDER).(*common.Address)
 			if !ok || expectedSender == nil {
 				return fmt.Errorf("failed to get expected sender from context")
 			}

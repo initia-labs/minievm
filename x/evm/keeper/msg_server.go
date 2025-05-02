@@ -53,8 +53,14 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 		return nil, err
 	}
 
+	var tracer *tracing.Hooks
+	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
+		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
+		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
+	}
+
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value, accessList)
+	retBz, contractAddr, logs, err := ms.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, accessList, tracer)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -100,8 +106,14 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 		return nil, err
 	}
 
+	var tracer *tracing.Hooks
+	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
+		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
+		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
+	}
+
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, salt, accessList)
+	retBz, contractAddr, logs, err := ms.EVMCreateWithTracer(ctx, caller, codeBz, value, salt, accessList, tracer)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -137,7 +149,14 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, err
 	}
 
-	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList)
+	var tracer *tracing.Hooks
+	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
+		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
+		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
+	}
+
+	// call a contract
+	retBz, logs, err := ms.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, accessList, tracer)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
