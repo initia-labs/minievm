@@ -3,7 +3,6 @@ package backend
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,12 +17,6 @@ import (
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
-)
-
-const (
-	// defaultTraceTimeout is the amount of time a single transaction can execute
-	// by default before being forcefully aborted.
-	defaultTraceTimeout = 5 * time.Second
 )
 
 // TraceBlockByNumber configures a new tracer according to the provided configuration, and
