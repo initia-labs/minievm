@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
@@ -91,6 +92,7 @@ type StateDB interface {
 	vm.StateDB
 	Context() sdk.Context
 	EVM() *vm.EVM
+	SetTracer(tracer *tracing.Hooks)
 }
 
 type GRPCRouter interface {
