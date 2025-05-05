@@ -1,8 +1,9 @@
 package backend
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
 
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -64,9 +65,10 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 		}
 		res, err := b.traceTx(sdkCtx, tx, txctx, config)
 		if err != nil {
-			return nil, err
+			results[i] = &rpctypes.TxTraceResult{TxHash: tx.Hash(), Result: res, Error: err.Error()}
+		} else {
+			results[i] = &rpctypes.TxTraceResult{TxHash: tx.Hash(), Result: res}
 		}
-		results[i] = &rpctypes.TxTraceResult{TxHash: tx.Hash(), Result: res}
 	}
 
 	return results, nil
@@ -122,19 +124,28 @@ func (b *JSONRPCBackend) traceTx(
 		return nil, err
 	}
 
-	b.runTxWithTracer(sdkCtx, cosmosTx, tracer.Hooks)
-	return tracer.GetResult()
+	execErr := b.runTxWithTracer(sdkCtx, cosmosTx, tracer.Hooks)
+	result, err := tracer.GetResult()
+	if err != nil {
+		if execErr != nil {
+			return nil, errors.Wrap(err, execErr.Error())
+		}
+
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (b *JSONRPCBackend) runTxWithTracer(
 	sdkCtx sdk.Context,
 	cosmosTx sdk.Tx,
 	tracer *tracing.Hooks,
-) {
+) (err error) {
 	// ante handler state changes should be applied always
-	sdkCtx, err := b.app.AnteHandler()(sdkCtx, cosmosTx, false)
+	sdkCtx, err = b.app.AnteHandler()(sdkCtx, cosmosTx, false)
 	if err != nil {
-		return
+		return err
 	}
 
 	// create cache context for message handler and post handler
@@ -152,5 +163,10 @@ func (b *JSONRPCBackend) runTxWithTracer(
 	// run msg with post handler
 	msg := cosmosTx.GetMsgs()[0]
 	_, err = b.app.MsgServiceRouter().Handler(msg)(sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACER, tracer), msg)
-	_, err = b.app.PostHandler()(sdkCtx, cosmosTx, false, err == nil)
+	_, postErr := b.app.PostHandler()(sdkCtx, cosmosTx, false, err == nil)
+	if err == nil && postErr != nil {
+		err = postErr
+	}
+
+	return err
 }
