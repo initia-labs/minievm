@@ -64,10 +64,9 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 			TxHash:      tx.Hash(),
 		}
 		res, err := b.traceTx(sdkCtx, tx, txctx, config)
+		results[i] = &rpctypes.TxTraceResult{TxHash: tx.Hash(), Result: res}
 		if err != nil {
-			results[i] = &rpctypes.TxTraceResult{TxHash: tx.Hash(), Result: res, Error: err.Error()}
-		} else {
-			results[i] = &rpctypes.TxTraceResult{TxHash: tx.Hash(), Result: res}
+			results[i].Error = err.Error()
 		}
 	}
 
