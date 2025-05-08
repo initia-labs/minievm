@@ -23,7 +23,7 @@ type CacheStoreWithBatch struct {
 	cache *bigcache.BigCache
 	batch dbm.Batch
 	db    dbm.DB
-	mtx   sync.Mutex
+	mtx   sync.RWMutex
 }
 
 func NewCacheStoreWithBatch(db dbm.DB, capacity int) *CacheStoreWithBatch {
@@ -52,6 +52,9 @@ func (c *CacheStoreWithBatch) Get(key []byte) ([]byte, error) {
 		return value, nil
 	}
 
+	c.mtx.RLock()
+	defer c.mtx.RUnlock()
+
 	// if not in cache, get from kvstore
 	value := c.store.Get(key)
 	if value == nil {
@@ -70,6 +73,9 @@ func (c *CacheStoreWithBatch) Has(key []byte) (bool, error) {
 	if err == nil {
 		return true, nil
 	}
+
+	c.mtx.RLock()
+	defer c.mtx.RUnlock()
 
 	value := c.store.Get(key)
 	if value == nil {
@@ -104,7 +110,7 @@ func (c *CacheStoreWithBatch) Set(key, value []byte) error {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
-		c.Write()
+		c.writeBatch()
 		c.batch = c.db.NewBatch()
 	}
 
@@ -133,7 +139,7 @@ func (c *CacheStoreWithBatch) Delete(key []byte) error {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
-		c.Write()
+		c.writeBatch()
 		c.batch = c.db.NewBatch()
 	}
 
@@ -172,6 +178,9 @@ func (i *cacheIterator) Value() []byte {
 // CONTRACT: No writes may happen within a domain while an iterator exists over it.
 // Exceptionally allowed for cachekv.Store, safe to write in the modules.
 func (c *CacheStoreWithBatch) Iterator(start, end []byte) (storetypes.Iterator, error) {
+	c.mtx.RLock()
+	defer c.mtx.RUnlock()
+
 	return &cacheIterator{
 		Iterator: c.store.Iterator(start, end),
 		cache:    c.cache,
@@ -184,6 +193,9 @@ func (c *CacheStoreWithBatch) Iterator(start, end []byte) (storetypes.Iterator, 
 // CONTRACT: No writes may happen within a domain while an iterator exists over it.
 // Exceptionally allowed for cachekv.Store, safe to write in the modules.
 func (c *CacheStoreWithBatch) ReverseIterator(start, end []byte) (storetypes.Iterator, error) {
+	c.mtx.RLock()
+	defer c.mtx.RUnlock()
+
 	return &cacheIterator{
 		Iterator: c.store.ReverseIterator(start, end),
 		cache:    c.cache,
@@ -195,6 +207,11 @@ func (c *CacheStoreWithBatch) Write() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
+	c.writeBatch()
+}
+
+// writeBatch writes the batch to persistent storage and clears the batch to prepare for later operations.
+func (c *CacheStoreWithBatch) writeBatch() {
 	if c.batch == nil {
 		return
 	}
