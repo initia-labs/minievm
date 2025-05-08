@@ -105,6 +105,7 @@ func (c *CacheStoreWithBatch) Set(key, value []byte) error {
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
 		c.Write()
+		c.batch = c.db.NewBatch()
 	}
 
 	// add to batch for persistence
@@ -133,6 +134,7 @@ func (c *CacheStoreWithBatch) Delete(key []byte) error {
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
 		c.Write()
+		c.batch = c.db.NewBatch()
 	}
 
 	// add to batch for persistence
