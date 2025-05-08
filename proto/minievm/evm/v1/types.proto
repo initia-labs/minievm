@@ -2,6 +2,7 @@ syntax = "proto3";
 package minievm.evm.v1;
 
 import "amino/amino.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/initia-labs/minievm/x/evm/types";
@@ -45,6 +46,7 @@ message Params {
     (gogoproto.moretags) = "yaml:\"gas_refund_ratio\"",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
+    (cosmos_proto.scalar) = "cosmos.Dec",
     (amino.dont_omitempty) = true
   ];
 
@@ -81,4 +83,11 @@ message AccessTuple {
 message ERC721OriginTokenInfo {
   string token_origin_id = 1;
   string token_uri = 2;
+}
+
+message ERC721ClassInfo {
+  string class_id = 1;
+  string class_name = 2;
+  string class_uri = 3;
+  string class_descs = 4;
 }

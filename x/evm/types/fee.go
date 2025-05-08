@@ -2,13 +2,6 @@ package types
 
 import "github.com/ethereum/go-ethereum/common"
 
-// private type creates an interface key for Context that cannot be accessed by any other package
-type contextKey int
-
-const (
-	ContextKeyLoadDecimals contextKey = iota
-)
-
 // Fee is a struct that represents a fee denom and a contract address
 type Fee struct {
 	denom    string

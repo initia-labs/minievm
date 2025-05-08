@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/holiman/uint256"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/connect_oracle"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
@@ -64,7 +65,7 @@ func (k Keeper) DeployERC20Factory(ctx context.Context) error {
 		return err
 	}
 
-	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, factoryCode, nil, types.ERC20FactorySalt, nil)
+	_, factoryAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, factoryCode, nil, uint256.NewInt(types.ERC20FactorySalt), nil)
 	if err != nil {
 		return err
 	}
@@ -107,7 +108,7 @@ func (k Keeper) DeployERC20Wrapper(ctx context.Context) error {
 		return err
 	}
 
-	_, wrapperAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, append(wrapperCode, wrapperConstructorArg...), nil, types.ERC20WrapperSalt, nil)
+	_, wrapperAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, append(wrapperCode, wrapperConstructorArg...), nil, uint256.NewInt(types.ERC20WrapperSalt), nil)
 	if err != nil {
 		return err
 	}
@@ -129,7 +130,7 @@ func (k Keeper) DeployConnectOracle(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, oracleAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, oracleCode, nil, types.ConnectOracleSalt, nil)
+	_, oracleAddr, _, err := k.EVMCreate2(ctx, types.StdAddress, oracleCode, nil, uint256.NewInt(types.ConnectOracleSalt), nil)
 	if err != nil {
 		return err
 	}

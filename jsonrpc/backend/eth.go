@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -81,6 +82,11 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 		contractAddr = args.To.Hex()
 	}
 
+	var value math.Int
+	if args.Value != nil {
+		value =  math.NewIntFromBigInt(args.Value.ToInt())
+	}
+
 	var list []types.AccessTuple
 	if args.AccessList != nil {
 		list = types.ConvertEthAccessListToCosmos(*args.AccessList)
@@ -90,6 +96,7 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 		Sender:       sender,
 		ContractAddr: contractAddr,
 		Input:        hexutil.Encode(args.GetData()),
+		Value:        value,
 		AccessList:   list,
 	})
 

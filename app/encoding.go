@@ -16,9 +16,22 @@ import (
 	"github.com/initia-labs/initia/app/params"
 )
 
+func tempApp() *MinitiaApp {
+	return NewMinitiaApp(
+		log.NewNopLogger(),
+		dbm.NewMemDB(),
+		dbm.NewMemDB(),
+		dbm.NewMemDB(),
+		nil,
+		false,
+		evmconfig.DefaultEVMConfig(),
+		EmptyAppOptions{},
+	)
+}
+
 // MakeEncodingConfig creates an EncodingConfig for testing
 func MakeEncodingConfig() params.EncodingConfig {
-	tempApp := NewMinitiaApp(log.NewNopLogger(), dbm.NewMemDB(), dbm.NewMemDB(), dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), EmptyAppOptions{})
+	tempApp := tempApp()
 	encodingConfig := params.EncodingConfig{
 		InterfaceRegistry: tempApp.InterfaceRegistry(),
 		Codec:             tempApp.AppCodec(),
@@ -30,7 +43,7 @@ func MakeEncodingConfig() params.EncodingConfig {
 }
 
 func AutoCliOpts() autocli.AppOptions {
-	tempApp := NewMinitiaApp(log.NewNopLogger(), dbm.NewMemDB(), dbm.NewMemDB(), dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), EmptyAppOptions{})
+	tempApp := tempApp()
 	modules := make(map[string]appmodule.AppModule, 0)
 	for _, m := range tempApp.ModuleManager.Modules {
 		if moduleWithName, ok := m.(module.HasName); ok {
@@ -51,7 +64,7 @@ func AutoCliOpts() autocli.AppOptions {
 }
 
 func BasicManager() module.BasicManager {
-	tempApp := NewMinitiaApp(log.NewNopLogger(), dbm.NewMemDB(), dbm.NewMemDB(), dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), EmptyAppOptions{})
+	tempApp := tempApp()
 	return tempApp.BasicModuleManager
 }
 

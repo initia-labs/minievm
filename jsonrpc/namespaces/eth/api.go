@@ -99,7 +99,7 @@ type EthEthereumAPI interface {
 	// // eth_submitHashrate (on Ethereum.org)
 }
 
-// EthAPI is the txpool namespace for the Ethereum JSON-RPC APIs.
+// EthAPI is the eth namespace for the Ethereum JSON-RPC APIs.
 type EthAPI struct {
 	ctx     context.Context
 	logger  log.Logger

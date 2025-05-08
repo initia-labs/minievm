@@ -54,7 +54,7 @@ const (
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
 func (e *JSONUtilsPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
 	snapshot := e.stateDB.Snapshot()
-	ctx := e.stateDB.ContextOfSnapshot(snapshot).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
+	ctx := e.stateDB.Context().WithGasMeter(storetypes.NewGasMeter(suppliedGas))
 
 	defer func() {
 		if r := recover(); r != nil {

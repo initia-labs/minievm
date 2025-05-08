@@ -7,6 +7,8 @@ ARG GOARCH
 ARG VERSION
 ARG COMMIT
 
+ENV MIMALLOC_VERSION=v2.2.2
+
 # Install necessary packages
 RUN set -eux; apk add --no-cache ca-certificates build-base git cmake
 
@@ -14,7 +16,7 @@ WORKDIR /code
 COPY . /code/
 
 # Install mimalloc
-RUN git clone --depth 1 https://github.com/microsoft/mimalloc; cd mimalloc; mkdir build; cd build; cmake ..; make -j$(nproc); make install
+RUN git clone -b ${MIMALLOC_VERSION} --depth 1 https://github.com/microsoft/mimalloc; cd mimalloc; mkdir build; cd build; cmake ..; make -j$(nproc); make install
 ENV MIMALLOC_RESERVE_HUGE_OS_PAGES=4
 
 RUN VERSION=${VERSION} COMMIT=${COMMIT} LEDGER_ENABLED=false GOARCH=${GOARCH} LDFLAGS="-linkmode=external -extldflags \"-L/code/mimalloc/build -lmimalloc -Wl,-z,muldefs -static\"" make build

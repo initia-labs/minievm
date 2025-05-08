@@ -15,9 +15,7 @@ import (
 	"github.com/initia-labs/initia/app/ante/accnum"
 	"github.com/initia-labs/initia/app/ante/sigverify"
 	evmante "github.com/initia-labs/minievm/x/evm/ante"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
-	"github.com/skip-mev/block-sdk/v2/block"
 	auctionante "github.com/skip-mev/block-sdk/v2/x/auction/ante"
 	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
 )
@@ -34,7 +32,6 @@ type HandlerOptions struct {
 
 	TxEncoder sdk.TxEncoder
 	MevLane   auctionante.MEVLane
-	FreeLane  block.Lane
 }
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
@@ -70,39 +67,25 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 
 	txFeeChecker := options.TxFeeChecker
 	if txFeeChecker == nil {
-		txFeeChecker = opchildante.NewMempoolFeeChecker(options.OPChildKeeper).CheckTxFeeWithMinGasPrices
-	}
-
-	freeLaneFeeChecker := func(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error) {
-		// skip fee checker if the tx is free lane tx.
-		if !options.FreeLane.Match(ctx, tx) {
-			return txFeeChecker(ctx, tx)
-		}
-
-		// return fee without fee check
-		feeTx, ok := tx.(sdk.FeeTx)
-		if !ok {
-			return nil, 0, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
-		}
-
-		return feeTx.GetFee(), 1 /* FIFO */, nil
+		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "tx fee checker is required for ante builder")
 	}
 
 	anteDecorators := []sdk.AnteDecorator{
 		accnum.NewAccountNumberDecorator(options.AccountKeeper),
 		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
+		NewEthTxDecorator(options.EVMKeeper),
 		evmante.NewGasPricesDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
-		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
-		NewGasFreeFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.EVMKeeper, freeLaneFeeChecker),
+		NewConsumeTxSizeGasDecorator(options.AccountKeeper),
+		NewGasFreeFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.EVMKeeper, txFeeChecker),
 		// SetPubKeyDecorator must be called before all signature verification decorators
 		ante.NewSetPubKeyDecorator(options.AccountKeeper),
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
-		ante.NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
-		NewSigVerificationDecorator(options.AccountKeeper, options.EVMKeeper, options.SignModeHandler),
+		NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
+		NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
 		evmante.NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCkeeper),
 		auctionante.NewAuctionDecorator(options.AuctionKeeper, options.TxEncoder, options.MevLane),
@@ -112,13 +95,13 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	return sdk.ChainAnteDecorators(anteDecorators...), nil
 }
 
-func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, ek *evmkeeper.Keeper, signModeHandler *txsigning.HandlerMap) sdk.AnteHandler {
+func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, signModeHandler *txsigning.HandlerMap) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		ante.NewValidateBasicDecorator(),
 		ante.NewSetPubKeyDecorator(ak),
 		ante.NewValidateSigCountDecorator(ak),
-		ante.NewSigGasConsumeDecorator(ak, ante.DefaultSigVerificationGasConsumer),
-		NewSigVerificationDecorator(ak, ek, signModeHandler),
+		NewSigGasConsumeDecorator(ak, sigverify.DefaultSigVerificationGasConsumer),
+		NewSigVerificationDecorator(ak, signModeHandler),
 		evmante.NewIncrementSequenceDecorator(ak),
 	)
 }

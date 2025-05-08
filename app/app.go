@@ -65,6 +65,7 @@ import (
 	blockservice "github.com/skip-mev/block-sdk/v2/block/service"
 
 	// local imports
+	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
 	evmindexer "github.com/initia-labs/minievm/indexer"
@@ -125,6 +126,12 @@ type MinitiaApp struct {
 
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
+
+	// checktx wrapper
+	checkTxWrapper *checktx.CheckTxWrapper
+
+	// post handler for tracing
+	postHandler sdk.PostHandler
 }
 
 // NewMinitiaApp returns a reference to an initialized Initia.
@@ -261,8 +268,14 @@ func NewMinitiaApp(
 	// override base-app's streaming manager
 	app.SetStreamingManager(*streamingManager)
 
-	// register upgrade handler for later use
-	app.RegisterUpgradeHandlers(app.configurator)
+	// Only register upgrade handlers when loading the latest version of the app.
+	// This optimization skips unnecessary handler registration during app initialization.
+	//
+	// The cosmos upgrade handler attempts to create ${HOME}/.minitia/data to check for upgrade info,
+	// but this isn't required during initial encoding config setup.
+	if loadLatest {
+		app.RegisterUpgradeHandlers(app.configurator)
+	}
 
 	// register executor change plans for later use
 	err = app.RegisterExecutorChangePlans()
@@ -297,9 +310,6 @@ func NewMinitiaApp(
 	}
 
 	// override base-app's mempool
-	if app.evmIndexer != nil {
-		mempool = app.evmIndexer.MempoolWrapper(mempool)
-	}
 	app.SetMempool(mempool)
 
 	// override base-app's ante handler
@@ -374,11 +384,19 @@ func (app *MinitiaApp) SetCheckTx(handler blockchecktx.CheckTx) {
 	app.checkTxHandler = handler
 }
 
+// setPostHandler sets the post handler for the app.
 func (app *MinitiaApp) setPostHandler() {
-	app.SetPostHandler(posthandler.NewPostHandler(
+	app.postHandler = posthandler.NewPostHandler(
 		app.Logger(),
 		app.EVMKeeper,
-	))
+	)
+
+	app.SetPostHandler(app.postHandler)
+}
+
+// PostHandler returns the post handler for the app.
+func (app *MinitiaApp) PostHandler() sdk.PostHandler {
+	return app.postHandler
 }
 
 // SetKVIndexer sets the kvindexer keeper and module for the app and registers the services.
@@ -512,12 +530,7 @@ func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 		app.Simulate, app.interfaceRegistry,
 	)
 
-	mempoolWrapper, ok := app.Mempool().(*evmindexer.MempoolWrapper)
-	if !ok {
-		panic("mempool is not a evmindexer.MempoolWrapper")
-	}
-
-	mempool, ok := mempoolWrapper.Inner().(block.Mempool)
+	mempool, ok := app.Mempool().(block.Mempool)
 	if !ok {
 		panic("mempool is not a block.Mempool")
 	}
@@ -629,6 +642,10 @@ func (app *MinitiaApp) Close() error {
 
 	if app.evmIndexer != nil {
 		app.evmIndexer.Stop()
+	}
+
+	if app.checkTxWrapper != nil {
+		app.checkTxWrapper.Stop()
 	}
 
 	return nil

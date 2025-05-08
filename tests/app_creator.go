@@ -34,7 +34,6 @@ func CreateApp(t *testing.T) (*minitiaapp.MinitiaApp, []common.Address, []*ecdsa
 	addrs, privKeys := GenerateKeys(t, 2)
 	genAccs := authtypes.GenesisAccounts{}
 	for _, addr := range addrs {
-
 		genAccs = append(genAccs, &authtypes.BaseAccount{Address: sdk.AccAddress(addr.Bytes()).String()})
 	}
 

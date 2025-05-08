@@ -51,4 +51,16 @@ const (
 
 	// CONTEXT_KEY_RECURSIVE_DEPTH is a context key for recursive depth
 	CONTEXT_KEY_RECURSIVE_DEPTH
+
+	// CONTEXT_KEY_LOAD_DECIMALS is a context key for load decimals
+	CONTEXT_KEY_LOAD_DECIMALS
+
+	// CONTEXT_KEY_TRACER is a context key for tracer
+	CONTEXT_KEY_TRACER
+
+	// CONTEXT_KEY_ETH_TX is a context key for ethereum tx
+	CONTEXT_KEY_ETH_TX
+
+	// CONTEXT_KEY_ETH_TX_SENDER is a context key for ethereum tx sender
+	CONTEXT_KEY_ETH_TX_SENDER
 )

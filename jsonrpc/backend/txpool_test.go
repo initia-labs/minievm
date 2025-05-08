@@ -98,6 +98,10 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
+	require.NoError(t, err)
+
 	// 2 in pending and 1 in queued
 	txPool, err = backend.TxPoolContentFrom(addrs[0])
 	require.NoError(t, err)
@@ -125,6 +129,10 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	txBz, err = evmTx05.MarshalBinary()
 	require.NoError(t, err)
 	_, err = backend.SendRawTransaction(txBz)
+	require.NoError(t, err)
+
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
 	// 4 in pending and 0 in queued
@@ -181,6 +189,10 @@ func Test_TxPoolStatus(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
+	require.NoError(t, err)
+
 	// Acc: 1, Nonce: 0
 	tx10, _ := tests.GenerateTransferERC20Tx(t, app, privKeys[1], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), tests.SetNonce(0))
 	evmTx10, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, tx10)
@@ -192,6 +204,10 @@ func Test_TxPoolStatus(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
+	require.NoError(t, err)
+
 	// Acc: 0, Nonce: 6
 	tx06, _ := tests.GenerateTransferERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), tests.SetNonce(6))
 	evmTx06, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, tx06)
@@ -201,6 +217,10 @@ func Test_TxPoolStatus(t *testing.T) {
 	txBz, err = evmTx06.MarshalBinary()
 	require.NoError(t, err)
 	_, err = backend.SendRawTransaction(txBz)
+	require.NoError(t, err)
+
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
 	// 2 in queued and 0 in pending
@@ -222,6 +242,10 @@ func Test_TxPoolStatus(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
+	require.NoError(t, err)
+
 	// 3 in pending and 1 in queued
 	status, err = backend.TxPoolStatus()
 	require.NoError(t, err)
@@ -239,6 +263,10 @@ func Test_TxPoolStatus(t *testing.T) {
 	txBz, err = evmTx05.MarshalBinary()
 	require.NoError(t, err)
 	_, err = backend.SendRawTransaction(txBz)
+	require.NoError(t, err)
+
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
 	// 5 in pending and 0 in queued
@@ -284,6 +312,10 @@ func Test_TxPoolInspect(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
+	require.NoError(t, err)
+
 	// Acc: 1, Nonce: 0
 	tx10, _ := tests.GenerateTransferERC20Tx(t, app, privKeys[1], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), tests.SetNonce(0))
 	evmTx10, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, tx10)
@@ -295,6 +327,10 @@ func Test_TxPoolInspect(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
+	require.NoError(t, err)
+
 	// Acc: 0, Nonce: 6
 	tx06, _ := tests.GenerateTransferERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), tests.SetNonce(6))
 	evmTx06, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, tx06)
@@ -304,6 +340,10 @@ func Test_TxPoolInspect(t *testing.T) {
 	txBz, err = evmTx06.MarshalBinary()
 	require.NoError(t, err)
 	_, err = backend.SendRawTransaction(txBz)
+	require.NoError(t, err)
+
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
 	// 1 in pending, and 2 in queued
@@ -325,6 +365,10 @@ func Test_TxPoolInspect(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
+	require.NoError(t, err)
+
 	// 3 in pending and 1 in queued
 	txPool, err = backend.TxPoolInspect()
 	require.NoError(t, err)
@@ -343,6 +387,10 @@ func Test_TxPoolInspect(t *testing.T) {
 	txBz, err = evmTx05.MarshalBinary()
 	require.NoError(t, err)
 	_, err = backend.SendRawTransaction(txBz)
+	require.NoError(t, err)
+
+	// execute recheck
+	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
 	// 5 in pending and 0 in queued

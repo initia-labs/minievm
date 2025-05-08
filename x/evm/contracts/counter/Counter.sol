@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import "../i_ibc_async_callback/IIBCAsyncCallback.sol";
 import "../i_cosmos/ICosmos.sol";
 import "../strings/Strings.sol";
+import "../test/Test.sol";
 
 contract Counter is IIBCAsyncCallback {
     uint256 public count;
@@ -72,8 +73,43 @@ contract Counter is IIBCAsyncCallback {
         );
     }
 
+    function disable_and_execute(
+        string memory exec_msg, 
+        uint64 gas_limit
+    ) external {
+        COSMOS_CONTRACT.disable_execute_cosmos();
+        COSMOS_CONTRACT.execute_cosmos(exec_msg, gas_limit);
+    }
+
+     function disable_and_execute_in_child(
+        address test_addr,
+        string memory exec_msg, 
+        uint64 gas_limit
+    ) external {
+        COSMOS_CONTRACT.disable_execute_cosmos();
+
+        // execute_cosmos should be failed because the child context is affected
+        ITest(test_addr).execute_cosmos(exec_msg, gas_limit);
+    }
+
+    function disable_and_execute_in_parent(
+        address test_addr,
+        string memory exec_msg, 
+        uint64 gas_limit
+    ) external {
+        // execute other contract which is disabling execute cosmos
+        ITest(test_addr).disable();
+
+        // execute_cosmos should be successful because the parent context is not affected
+        COSMOS_CONTRACT.execute_cosmos(exec_msg, gas_limit);
+    }
+
     function callback(uint64 callback_id, bool success) external {
         emit callback_received(callback_id, success);
+
+        if (callback_id == 7) {
+            revert("revert reason dummy value for test");
+        }
     }
 
     function get_blockhash(uint64 n) external view returns (bytes32) {

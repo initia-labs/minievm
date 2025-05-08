@@ -22,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
-	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
 	forwardingtypes "github.com/noble-assets/forwarding/v2/types"
 )
@@ -34,17 +33,14 @@ import (
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SigVerificationDecorator struct {
 	ak              authante.AccountKeeper
-	ek              EVMKeeper
 	signModeHandler *txsigning.HandlerMap
 }
 
 func NewSigVerificationDecorator(
 	ak authante.AccountKeeper,
-	ek EVMKeeper,
 	signModeHandler *txsigning.HandlerMap) SigVerificationDecorator {
 	return SigVerificationDecorator{
 		ak:              ak,
-		ek:              ek,
 		signModeHandler: signModeHandler,
 	}
 }
@@ -84,17 +80,8 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 			return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidPubKey, "pubkey on account is not set")
 		}
 
-		skipSequenceCheck := false
-		if simulate && len(sigs) == 1 {
-			if sigData, ok := sig.Data.(*signing.SingleSignatureData); ok {
-				if sigData.SignMode == evmkeeper.SignMode_SIGN_MODE_ETHEREUM {
-					skipSequenceCheck = true
-				}
-			}
-		}
-
-		// Check account sequence number.
-		if !skipSequenceCheck && sig.Sequence != acc.GetSequence() {
+		// Check account sequence number if it is not a simulated tx
+		if !simulate && sig.Sequence != acc.GetSequence() {
 			return ctx, errorsmod.Wrapf(
 				sdkerrors.ErrWrongSequence,
 				"account sequence mismatch, expected %d, got %d", acc.GetSequence(), sig.Sequence,
@@ -128,7 +115,7 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 				return ctx, fmt.Errorf("expected tx to implement V2AdaptableTx, got %T", tx)
 			}
 			txData := adaptableTx.GetSigningTxData()
-			err = verifySignature(ctx, pubKey, signerData, sig.Data, svd.signModeHandler, txData, svd.ek, tx)
+			err = verifySignature(ctx, pubKey, signerData, sig.Data, svd.signModeHandler, txData)
 			if err != nil {
 				var errMsg string
 				if authante.OnlyLegacyAminoSigners(sig.Data) {

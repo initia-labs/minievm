@@ -244,7 +244,7 @@ func NewAppKeeper(
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		appKeepers.OracleKeeper,
-		ante.CreateAnteHandlerForOPinit(appKeepers.AccountKeeper, appKeepers.EVMKeeper, txConfig.SignModeHandler()),
+		ante.CreateAnteHandlerForOPinit(appKeepers.AccountKeeper, txConfig.SignModeHandler()),
 		txConfig.TxDecoder(),
 		bApp.MsgServiceRouter(),
 		authorityAddr,
@@ -565,6 +565,9 @@ func NewAppKeeper(
 	)
 	*erc20Keeper = *appKeepers.EVMKeeper.ERC20Keeper().(*evmkeeper.ERC20Keeper)
 	*erc721Keeper = *appKeepers.EVMKeeper.ERC721Keeper().(*evmkeeper.ERC721Keeper)
+
+	// register token creation function
+	appKeepers.OPChildKeeper.WithTokenCreationFn(erc20Keeper.TokenCreationFn)
 
 	// x/auction module keeper initialization
 

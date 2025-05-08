@@ -99,7 +99,7 @@ func (e *CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sd
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
 func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
 	snapshot := e.stateDB.Snapshot()
-	ctx := e.stateDB.ContextOfSnapshot(snapshot).WithGasMeter(storetypes.NewGasMeter(suppliedGas))
+	ctx := e.stateDB.Context().WithGasMeter(storetypes.NewGasMeter(suppliedGas))
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -125,6 +125,9 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 	}()
 
+	// charge input gas
+	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")
+
 	method, err := e.ABI.MethodById(input)
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
@@ -134,9 +137,6 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}
-
-	// charge input gas
-	ctx.GasMeter().ConsumeGas(storetypes.Gas(len(input))*GAS_PER_BYTE, "input bytes")
 
 	switch method.Name {
 	case METHOD_IS_BLOCKED_ADDRESS:
@@ -247,11 +247,17 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 	case METHOD_EXECUTE_COSMOS, METHOD_EXECUTE_COSMOS_WITH_OPTIONS:
-		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_GAS, "execute_cosmos")
-
 		if readOnly {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNonReadOnlyMethod.Wrap(method.Name)
 		}
+
+		// check if execute cosmos is disabled
+		if e.stateDB.EVM().GetDisallowCosmosDispatch() {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrExecuteCosmosDisabled.Wrap(method.Name)
+		}
+
+		// charge the gas for the execute cosmos
+		ctx.GasMeter().ConsumeGas(EXECUTE_COSMOS_GAS, "execute_cosmos")
 
 		var executeCosmosArguments ExecuteCosmos
 		if method.Name == METHOD_EXECUTE_COSMOS {
@@ -386,6 +392,14 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 
 		// abi encode the response
 		resBz, err = method.Outputs.Pack(contractAddr)
+		if err != nil {
+			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
+		}
+	case METHOD_DISABLE_EXECUTE_COSMOS:
+		ctx.GasMeter().ConsumeGas(DISABLE_EXECUTE_COSMOS_GAS, "disable_execute_cosmos")
+		e.stateDB.EVM().SetDisallowCosmosDispatch(true)
+
+		resBz, err = method.Outputs.Pack(true)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
