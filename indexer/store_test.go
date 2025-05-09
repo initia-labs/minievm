@@ -3,14 +3,13 @@ package indexer
 import (
 	"testing"
 
-	"cosmossdk.io/store/dbadapter"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_StoreIO(t *testing.T) {
 	db := dbm.NewMemDB()
-	store := NewCacheStore(dbadapter.Store{DB: db}, 100)
+	store := NewCacheStoreWithBatch(db, 100)
 
 	key := []byte("key")
 	value := []byte("value")
