@@ -85,6 +85,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
         // ensure the local token exists if not create it
         address localToken = _ensureLocalTokenExists(
+            remoteDenom,
             remoteToken,
             _remoteDecimals
         );
@@ -146,7 +147,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         address localToken = COSMOS_CONTRACT.to_erc20(localDenom);
 
         // ensure the remote token exists if not create it
-        remoteToken = _ensureRemoteTokenExists(localToken);
+        remoteToken = _ensureRemoteTokenExists(localDenom, localToken);
         _remoteDecimals = remoteDecimals[localToken];
 
         // if the local amount is 0, do nothing
@@ -407,14 +408,17 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @dev Updates remoteTokens, remoteDecimals, and localTokens mappings if a new token is created
      */
     function _ensureRemoteTokenExists(
+        string memory localDenom,
         address localToken
     ) internal returns (address remoteToken) {
         remoteToken = remoteTokens[localToken];
         if (remoteToken == address(0)) {
+            bytes32 salt = keccak256(abi.encode(localDenom, REMOTE_DECIMALS));
             remoteToken = factory.createERC20(
                 string.concat(NAME_PREFIX, IERC20(localToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
-                REMOTE_DECIMALS
+                REMOTE_DECIMALS,
+                salt
             );
             remoteTokens[localToken] = remoteToken;
             remoteDecimals[localToken] = REMOTE_DECIMALS;
@@ -432,15 +436,18 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @dev Updates localTokens, remoteTokens, and remoteDecimals mappings if a new token is created
      */
     function _ensureLocalTokenExists(
+        string memory remoteDenom,
         address remoteToken,
         uint8 _remoteDecimals
     ) internal returns (address localToken) {
         localToken = localTokens[remoteToken][_remoteDecimals];
         if (localToken == address(0)) {
+            bytes32 salt = keccak256(abi.encode(remoteDenom, LOCAL_DECIMALS));
             localToken = factory.createERC20(
                 string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
-                LOCAL_DECIMALS
+                LOCAL_DECIMALS,
+                salt
             );
             localTokens[remoteToken][_remoteDecimals] = localToken;
             remoteTokens[localToken] = remoteToken;
