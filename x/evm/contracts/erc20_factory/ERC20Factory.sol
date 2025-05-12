@@ -12,14 +12,50 @@ contract ERC20Factory is ERC20Registry {
         string memory symbol,
         uint8 decimals
     ) external returns (address) {
-        // create the ERC20 contract with a deterministic address using create2
+        // try to create the ERC20 contract with create2
+        // if it fails, create the ERC20 contract with the fallback constructor
         address erc20Addr;
-        bytes32 salt = keccak256(abi.encodePacked(msg.sender, symbol, decimals));
+        try this.createERC20WithCreate2(msg.sender, name, symbol, decimals) returns (
+            address _erc20Addr
+        ) {
+            erc20Addr = _erc20Addr;
+        } catch {
+            ERC20 erc20 = new ERC20(name, symbol, decimals, msg.sender != CHAIN_ADDRESS);
+            erc20Addr = address(erc20);
+        }
+
+        // register the ERC20 contract with the ERC20 registry
+        ERC20_REGISTRY_CONTRACT.register_erc20_from_factory(erc20Addr);
+
+        // transfer ownership of the ERC20 contract to the sender
+        ERC20(erc20Addr).transferOwnership(msg.sender);
+
+        emit ERC20Created(erc20Addr, msg.sender);
+        return erc20Addr;
+    }
+
+    /*
+     * @notice Create a new ERC20 contract with create2
+     * @param name The name of the ERC20 contract
+     * @param symbol The symbol of the ERC20 contract
+     * @param decimals The decimals of the ERC20 contract
+     * @return The address of the new ERC20 contract
+     */
+    function createERC20WithCreate2(
+        address creator,
+        string memory name,
+        string memory symbol,
+        uint8 decimals
+    ) external returns (address) {
+        require(msg.sender == address(this), "ERC20Factory: only the factory can call this function");
+
+        address erc20Addr;
+        bytes32 salt = keccak256(abi.encodePacked(creator, symbol, decimals));
 
         // prepare the bytecode for the ERC20 contract
         bytes memory bytecode = abi.encodePacked(
             type(ERC20).creationCode,
-            abi.encode(name, symbol, decimals, msg.sender != CHAIN_ADDRESS)
+            abi.encode(name, symbol, decimals, creator != CHAIN_ADDRESS)
         );
 
         // deploy the ERC20 contract
@@ -30,13 +66,6 @@ contract ERC20Factory is ERC20Registry {
             }
         }
 
-        // register the ERC20 contract with the ERC20 registry
-        ERC20_REGISTRY_CONTRACT.register_erc20_from_factory(erc20Addr);
-
-        // transfer ownership of the ERC20 contract to the sender
-        ERC20(erc20Addr).transferOwnership(msg.sender);
-
-        emit ERC20Created(erc20Addr, msg.sender);
         return erc20Addr;
     }
 }
