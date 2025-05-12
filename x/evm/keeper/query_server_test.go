@@ -10,7 +10,6 @@ import (
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 
@@ -19,39 +18,33 @@ import (
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-func Test_Query_Call(t *testing.T) {
-	ctx, input := createDefaultTestInput(t)
-	_, _, addr := keyPubAddr()
-	evmAddr := common.BytesToAddress(addr.Bytes())
+func (s *ERC20TestSuite) Test_Query_Call(){
+	evmAddr, addr := s.evmAddrs[0], s.accAddrs[0]
 
 	// deploy erc20 contract
-	fooContractAddr := deployERC20(t, ctx, input, evmAddr, "foo")
-	fooDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
-	require.NoError(t, err)
-	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom)
-
+	fooContractAddr, fooDenom := s.createContract("foo", evmAddr)
 	// mint erc20
-	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
+	s.mintERC20(evmAddr, evmAddr, sdk.NewCoin(fooDenom, math.NewInt(100)), false)
 
 	abi, err := erc20.Erc20MetaData.GetAbi()
-	require.NoError(t, err)
+	s.Require().NoError(err)
 	inputBz, err := abi.Pack("balanceOf", evmAddr)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	qs := keeper.NewQueryServer(&input.EVMKeeper)
-	res, err := qs.Call(ctx, &types.QueryCallRequest{
+	qs := keeper.NewQueryServer(&s.input.EVMKeeper)
+	res, err := qs.Call(s.ctx, &types.QueryCallRequest{
 		Sender:       addr.String(),
 		ContractAddr: fooContractAddr.String(),
 		Input:        hexutil.Encode(inputBz),
 		TraceOptions: &types.TraceOptions{},
 	})
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	outputBz := hexutil.MustDecode(res.Response)
 	ret, err := abi.Unpack("balanceOf", outputBz)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	require.Equal(t, uint64(100), ret[0].(*big.Int).Uint64())
+	s.Require().Equal(uint64(100), ret[0].(*big.Int).Uint64())
 }
 
 func Test_Query_ERC20Factory(t *testing.T) {

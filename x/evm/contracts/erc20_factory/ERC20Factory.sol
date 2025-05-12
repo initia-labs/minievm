@@ -30,10 +30,9 @@ contract ERC20Factory is ERC20Registry {
         uint8 decimals,
         bytes32 salt
     ) external returns (address) {
-        bytes memory constructorArgs = abi.encode(name, symbol, decimals);
         bytes memory creation = abi.encodePacked(
             type(ERC20).creationCode,
-            constructorArgs
+            abi.encode(name, symbol, decimals, msg.sender != CHAIN_ADDRESS)
         );
         ERC20 erc20 = ERC20(Create2.deploy(0, salt, creation));
 
@@ -49,5 +48,18 @@ contract ERC20Factory is ERC20Registry {
         ERC20(erc20).transferOwnership(msg.sender);
 
         emit ERC20Created(address(erc20), msg.sender);
+    }
+
+    function computeERC20Address(
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        bytes32 salt
+    ) external view returns (address) {
+        bytes memory creation = abi.encodePacked(
+            type(ERC20).creationCode,
+            abi.encode(name, symbol, decimals, msg.sender != CHAIN_ADDRESS)
+        );
+        return Create2.computeAddress(salt, keccak256(creation));
     }
 }
