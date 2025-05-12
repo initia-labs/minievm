@@ -5,132 +5,100 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_wrapper"
 	"github.com/initia-labs/minievm/x/evm/state"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
-
-	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 )
 
-const upgradeName = "v1.0.2"
+const upgradeName = "v1.1.0"
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *MinitiaApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(
 		upgradeName,
 		func(ctx context.Context, _ upgradetypes.Plan, versionMap module.VersionMap) (module.VersionMap, error) {
-			//////////////////////////// OPINIT ////////////////////////////////////
 
-			// opchild params update
-			params, err := app.OPChildKeeper.GetParams(ctx)
+			// 1. update erc20 wrapper contract
+			wrapperAddr, err := app.EVMKeeper.GetERC20WrapperAddr(ctx)
 			if err != nil {
 				return nil, err
 			}
-
-			// set non-zero default values for new params
-			if params.HookMaxGas == 0 {
-				params.HookMaxGas = opchildtypes.DefaultHookMaxGas
-
-				err = app.OPChildKeeper.SetParams(ctx, params)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			//////////////////////////// MINIEVM ///////////////////////////////////
-
-			// try to deploy and store erc20 wrapper contract address
-			if err := app.EVMKeeper.DeployERC20Wrapper(ctx); err != nil &&
-				// ignore contract address collision error (contract already deployed)
-				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
+			wrapperCode, wrapperCodeHash := extractRuntimeCodeAndCodeHash(hexutil.MustDecode(erc20_wrapper.Erc20WrapperMetaData.Bin))
+			if err := app.replaceCodeAndCodeHash(ctx, wrapperAddr.Bytes(), wrapperCode, wrapperCodeHash); err != nil {
 				return nil, err
 			}
 
-			// try to deploy and store erc20 factory contract address
-			if err := app.EVMKeeper.DeployERC20Factory(ctx); err != nil &&
-				// ignore contract address collision error (contract already deployed)
-				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
+			// 2. update erc20 factory contract
+			factoryAddr, err := app.EVMKeeper.GetERC20FactoryAddr(ctx)
+			if err != nil {
 				return nil, err
-			} else if err == nil {
-				// update erc20 contracts only if erc20 factory contract has been deployed without error.
-				//
-				// address collision error is ignored because it means that the contract has already been deployed
-				// and the erc20 contracts have already been updated.
-				//
-				err = app.updateERC20s(ctx)
-				if err != nil {
-					return nil, err
-				}
 			}
-
-			// try to deploy and store connect oracle contract address
-			if err := app.EVMKeeper.DeployConnectOracle(ctx); err != nil &&
-				// ignore contract address collision error (contract already deployed)
-				!strings.Contains(err.Error(), vm.ErrContractAddressCollision.Error()) {
+			factoryCode, factoryCodeHash := extractRuntimeCodeAndCodeHash(hexutil.MustDecode(erc20_factory.Erc20FactoryMetaData.Bin))
+			if err := app.replaceCodeAndCodeHash(ctx, factoryAddr.Bytes(), factoryCode, factoryCodeHash); err != nil {
 				return nil, err
 			}
 
+			// 3. run migrations
 			return app.ModuleManager.RunMigrations(ctx, cfg, versionMap)
 		},
 	)
 }
 
-// updateERC20s updates all erc20 contracts to the new version
-// - update contract code
-// - update contract code hash
-// - update contract code size
-func (app *MinitiaApp) updateERC20s(ctx context.Context) error {
-	code := hexutil.MustDecode(erc20.Erc20MetaData.Bin)
+var (
+	initCodeOP = common.Hex2Bytes("5ff3fe")
+)
 
-	// runtime code
-	initCodeOP := common.Hex2Bytes("5ff3fe")
+func (app *MinitiaApp) replaceCodeAndCodeHash(ctx context.Context, contractAddr []byte, code, codeHash []byte) error {
+	// load account and replace code hash
+	acc := app.AccountKeeper.GetAccount(ctx, contractAddr)
+	if acc == nil {
+		return fmt.Errorf("account not found for contract address %s", contractAddr)
+	}
+	contractAcc, ok := acc.(*evmtypes.ContractAccount)
+	if !ok {
+		return fmt.Errorf("account is not a contract account for contract address %s", contractAddr)
+	}
+
+	// if the code hash is the same, do nothing
+	if bytes.Equal(contractAcc.CodeHash, codeHash) {
+		return nil
+	}
+
+	// update the code hash
+	contractAcc.CodeHash = codeHash
+	app.AccountKeeper.SetAccount(ctx, contractAcc)
+
+	// replace runtime code
+	codeKey := append(contractAddr, append(state.CodeKeyPrefix, codeHash...)...)
+	err := app.EVMKeeper.VMStore.Set(ctx, codeKey, code)
+	if err != nil {
+		return err
+	}
+
+	// replace code size
+	codeSizeKey := append(contractAddr, append(state.CodeSizeKeyPrefix, codeHash...)...)
+	err = app.EVMKeeper.VMStore.Set(ctx, codeSizeKey, uint64ToBytes(uint64(len(code))))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func extractRuntimeCodeAndCodeHash(code []byte) ([]byte, []byte) {
 	initCodePos := bytes.Index(code, initCodeOP)
 	code = code[initCodePos+3:]
-
-	// code hash
 	codeHash := crypto.Keccak256Hash(code).Bytes()
-
-	// iterate all erc20 contracts and replace contract code to new version
-	return app.EVMKeeper.ERC20s.Walk(ctx, nil, func(contractAddr []byte) (bool, error) {
-		acc := app.AccountKeeper.GetAccount(ctx, contractAddr)
-		if acc == nil {
-			return true, fmt.Errorf("account not found for contract address %s", contractAddr)
-		}
-
-		contractAcc, ok := acc.(*evmtypes.ContractAccount)
-		if !ok {
-			return true, fmt.Errorf("account is not a contract account for contract address %s", contractAddr)
-		}
-
-		contractAcc.CodeHash = codeHash
-		app.AccountKeeper.SetAccount(ctx, contractAcc)
-
-		// set code
-		codeKey := append(contractAddr, append(state.CodeKeyPrefix, codeHash...)...)
-		err := app.EVMKeeper.VMStore.Set(ctx, codeKey, code)
-		if err != nil {
-			return true, err
-		}
-
-		// set code size
-		codeSizeKey := append(contractAddr, append(state.CodeSizeKeyPrefix, codeHash...)...)
-		err = app.EVMKeeper.VMStore.Set(ctx, codeSizeKey, uint64ToBytes(uint64(len(code))))
-		if err != nil {
-			return true, err
-		}
-
-		return false, nil
-	})
+	return code, codeHash
 }
 
 func uint64ToBytes(v uint64) []byte {

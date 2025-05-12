@@ -36,8 +36,6 @@ func (suite *PostHandlerTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {
 	decimals := uint8(18)
 	feeCollectorAddr := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
 	suite.app.EVMKeeper.InitializeWithDecimals(suite.ctx, decimals)
-	err = suite.app.EVMKeeper.ERC20Keeper().CreateERC20(suite.ctx, params.FeeDenom, decimals)
-	suite.NoError(err)
 
 	// mint fee token to fee collector
 	gasPrice := math.NewInt(1_000_000_000)

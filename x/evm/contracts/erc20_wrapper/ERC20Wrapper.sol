@@ -94,8 +94,8 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             return;
         }
 
-        // check if the remote token is owned by this contract
-        if (ERC20(remoteToken).owner() == address(this)) {
+        // check if the local token is owned by this contract
+        if (_isOwner(remoteToken)) {
             // burn the remote token from the msg.sender
             ERC20(remoteToken).burnFrom(msg.sender, remoteAmount);
         } else {
@@ -116,7 +116,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         );
 
         // check if the local token is owned by this contract
-        if (ERC20(localToken).owner() == address(this)) {
+        if (_isOwner(localToken)) {
             // mint the local token to receiver
             ERC20(localToken).mint(receiver, localAmount);
         } else {
@@ -155,7 +155,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         }
 
         // check if the local token is owned by this contract
-        if (ERC20(localToken).owner() == address(this)) {
+        if (_isOwner(localToken)) {
             // burn the local token from the msg.sender
             ERC20(localToken).burnFrom(msg.sender, localAmount);
         } else {
@@ -176,7 +176,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         );
 
         // check if the remote token is owned by this contract
-        if (ERC20(remoteToken).owner() == address(this)) {
+        if (_isOwner(remoteToken)) {
             // mint the remote token to receiver
             ERC20(remoteToken).mint(receiver, remoteAmount);
         } else {
@@ -386,12 +386,12 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         // The remote token is already held by this contract from the failed IBC transfer.
         // If this contract owns the remote token, burn it directly.
         // No transfer needed since we already have custody of the tokens.
-        if (ERC20(callback.remoteToken).owner() == address(this)) {
+        if (_isOwner(callback.remoteToken)) {
             ERC20(callback.remoteToken).burn(callback.remoteAmount);
         }
 
         // check if this contract owns the local token to determine whether to mint or transfer
-        if (ERC20(localToken).owner() == address(this)) {
+        if (_isOwner(localToken)) {
             ERC20(localToken).mint(callback.sender, localAmount);
         } else {
             ERC20(localToken).transfer(callback.sender, localAmount);
@@ -553,6 +553,20 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             convertedAmount = amount * factor;
         } else {
             convertedAmount = amount;
+        }
+    }
+
+    /**
+     * @notice Checks if the contract is the owner of the given token
+     * @param token The address of the token to check ownership of
+     * @return true if the contract is the owner, false otherwise
+     * @dev This function is safe to call even if the token does not support ownership
+     */
+    function _isOwner(address token) internal view returns (bool) {
+        try ERC20(token).owner() returns (address owner) {
+            return owner == address(this);
+        } catch {
+            return false;
         }
     }
 }
