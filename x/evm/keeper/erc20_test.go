@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"crypto/rand"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -29,6 +30,34 @@ func deployERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common
 
 	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, factoryAddr, inputBz, nil, nil)
 	require.NoError(t, err)
+
+	return common.BytesToAddress(ret[12:])
+}
+
+func deployERC20WithSalt(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, symbol string) common.Address {
+	salt := func() [32]byte {
+		var salt [32]byte
+		rand.Read(salt[:])
+		return salt
+	}()
+	factoryAddr, err := input.EVMKeeper.GetERC20FactoryAddr(ctx)
+	require.NoError(t, err)
+
+	abi, err := erc20_factory.Erc20FactoryMetaData.GetAbi()
+	require.NoError(t, err)
+
+	// compute the address of the contract
+	inputBz, err := abi.Pack("computeERC20Address", caller, symbol, symbol, uint8(6), salt)
+	expected, err := input.EVMKeeper.EVMStaticCall(ctx, caller, factoryAddr, inputBz, nil)
+	require.NoError(t, err)
+
+	inputBz, err = abi.Pack("createERC20WithSalt", symbol, symbol, uint8(6), salt)
+	require.NoError(t, err)
+
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, caller, factoryAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	require.Equal(t, expected[12:], ret[12:])
 
 	return common.BytesToAddress(ret[12:])
 }
@@ -195,6 +224,19 @@ func Test_MintToModuleAccount(t *testing.T) {
 	_, _, addr2 := keyPubAddr()
 	evmAddr2 := common.BytesToAddress(addr2.Bytes())
 	mintERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
+
+	// deploy erc20 contract with salt
+	fooContractAddr = deployERC20WithSalt(t, ctx, input, evmAddr, "foo")
+	fooDenom2, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom2)
+
+	feeCollectorAddr = authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+	mintERC20(t, ctx, input, evmAddr, common.BytesToAddress(feeCollectorAddr.Bytes()), sdk.NewCoin(fooDenom, math.NewInt(50)), true)
+
+	_, _, addr3 := keyPubAddr()
+	evmAddr2 = common.BytesToAddress(addr3.Bytes())
+	mintERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom2, math.NewInt(50)), false)
 }
 
 func Test_BurnFromModuleAccount(t *testing.T) {
@@ -228,6 +270,22 @@ func Test_BurnFromModuleAccount(t *testing.T) {
 
 	// should be able to burn from other account
 	burnERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), false)
+
+	fooContractAddr2 := deployERC20WithSalt(t, ctx, input, evmAddr, "foo")
+	fooDenom2, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, fooContractAddr2)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+fooContractAddr2.Hex()[2:], fooDenom2)
+
+	// mint coins
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(fooDenom2, math.NewInt(100)), false)
+	erc20Keeper.SendCoins(ctx, addr, feeCollectorAddr, sdk.NewCoins(sdk.NewCoin(fooDenom2, math.NewInt(50))))
+	erc20Keeper.SendCoins(ctx, addr, addr2, sdk.NewCoins(sdk.NewCoin(fooDenom2, math.NewInt(50))))
+
+	// should not be able to burn from module account
+	burnERC20(t, ctx, input, evmAddr, common.BytesToAddress(feeCollectorAddr.Bytes()), sdk.NewCoin(fooDenom2, math.NewInt(50)), true)
+
+	// should be able to burn from other account
+	burnERC20(t, ctx, input, evmAddr, evmAddr2, sdk.NewCoin(fooDenom2, math.NewInt(50)), false)
 }
 
 func Test_MintBurn(t *testing.T) {

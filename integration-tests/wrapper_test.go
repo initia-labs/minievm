@@ -188,6 +188,7 @@ func (suite *KeeperTestSuite) wrapLocal(
 
 	wrapperAddr, err := evmKeeper.GetERC20WrapperAddr(fromCtx)
 	suite.Require().NoError(err)
+
 	// approve
 	inputBz, err := erc20Keeper.GetERC20ABI().Pack("approve", wrapperAddr, amount)
 	suite.Require().NoError(err)
@@ -197,6 +198,12 @@ func (suite *KeeperTestSuite) wrapLocal(
 	// wrap 18dp token to 6dp token
 	denom, err := evmtypes.ContractAddrToDenom(fromCtx, evmKeeper, tokenAddress)
 	suite.Require().NoError(err)
+	// get wrapped token contract address
+	inputBz, err = erc20Keeper.GetERC20WrapperABI().Pack("getToRemoteERC20Address", denom)
+	suite.Require().NoError(err)
+	ret, err := evmKeeper.EVMStaticCall(fromCtx, senderAddr, wrapperAddr, inputBz, nil)
+	suite.Require().NoError(err)
+	expectedAddr := common.BytesToAddress(ret[12:])
 	inputBz, err = erc20Keeper.GetERC20WrapperABI().Pack("toRemoteAndIBCTransfer0", denom, amount, fromEndpoint.ChannelID, receiver.String(), big.NewInt(timeoutTime.UnixNano()))
 	suite.Require().NoError(err)
 
@@ -209,7 +216,14 @@ func (suite *KeeperTestSuite) wrapLocal(
 	}
 	res, err := fromEndpoint.Chain.SendMsgs(msgWrap)
 	suite.Require().NoError(err)
-	packet, err := ibctesting.ParsePacketFromEvents(res.GetEvents())
+
+	events := res.GetEvents()
+	for _, event := range events {
+		if event.Type == evmtypes.EventTypeERC20Created {
+			suite.Require().Equal(event.Attributes[1].Value, expectedAddr.Hex())
+		}
+	}
+	packet, err := ibctesting.ParsePacketFromEvents(events)
 	suite.Require().NoError(err)
 
 	var data transfertypes.FungibleTokenPacketData
@@ -328,6 +342,7 @@ func (suite *KeeperTestSuite) wrapRemote(
 	fromEvmKeeper := getMinitiaApp(fromEndpoint.Chain).EVMKeeper
 	fromErc20Keeper := fromEvmKeeper.ERC20Keeper()
 	toEvmKeeper := getMinitiaApp(toEndpoint.Chain).EVMKeeper
+	toErc20Keeper := toEvmKeeper.ERC20Keeper()
 
 	bankKeeper := getMinitiaApp(toEndpoint.Chain).BankKeeper
 	coins := bankKeeper.GetAllBalances(toCtx, receiver)
@@ -341,9 +356,16 @@ func (suite *KeeperTestSuite) wrapRemote(
 	suite.Require().NoError(err)
 	sendToken := sdk.NewCoin(denom, math.NewIntFromBigInt(amount))
 
+	// get wrapped token contract address
+	inputBz, err := toErc20Keeper.GetERC20WrapperABI().Pack("getToLocalERC20Address", denom, denom, denom, uint8(6))
+	suite.Require().NoError(err)
+	ret, err := toEvmKeeper.EVMStaticCall(toCtx, common.HexToAddress("0x1"), wrapperAddr, inputBz, nil)
+	suite.Require().NoError(err)
+	expectedAddr := common.BytesToAddress(ret[12:])
+
 	// create wrap hook message
 	receivedToken := transfertypes.GetTransferCoin(toEndpoint.ChannelConfig.PortID, toEndpoint.ChannelID, denom, math.NewIntFromBigInt(amount))
-	inputBz, err := fromErc20Keeper.GetERC20WrapperABI().Pack("toLocal", receiverAddr, receivedToken.Denom, amount, uint8(6))
+	inputBz, err = fromErc20Keeper.GetERC20WrapperABI().Pack("toLocal", receiverAddr, receivedToken.Denom, amount, uint8(6))
 	suite.Require().NoError(err)
 
 	hook, err := unwrapHook(HookData{
@@ -384,7 +406,13 @@ func (suite *KeeperTestSuite) wrapRemote(
 	res, err := fromEndpoint.Chain.SendMsgs(msgTransfer)
 	suite.Require().NoError(err)
 
-	packet, err := ibctesting.ParsePacketFromEvents(res.GetEvents())
+	events := res.GetEvents()
+	for _, event := range events {
+		if event.Type == evmtypes.EventTypeERC20Created {
+			suite.Require().Equal(event.Attributes[1].Value, expectedAddr.Hex())
+		}
+	}
+	packet, err := ibctesting.ParsePacketFromEvents(events)
 	suite.Require().NoError(err)
 
 	var data transfertypes.FungibleTokenPacketData
