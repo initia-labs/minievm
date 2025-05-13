@@ -232,7 +232,7 @@ func Test_MintToModuleAccount(t *testing.T) {
 	require.Equal(t, "evm/"+fooContractAddr.Hex()[2:], fooDenom2)
 
 	feeCollectorAddr = authtypes.NewModuleAddress(authtypes.FeeCollectorName)
-	mintERC20(t, ctx, input, evmAddr, common.BytesToAddress(feeCollectorAddr.Bytes()), sdk.NewCoin(fooDenom, math.NewInt(50)), true)
+	mintERC20(t, ctx, input, evmAddr, common.BytesToAddress(feeCollectorAddr.Bytes()), sdk.NewCoin(fooDenom2, math.NewInt(50)), true)
 
 	_, _, addr3 := keyPubAddr()
 	evmAddr2 = common.BytesToAddress(addr3.Bytes())
