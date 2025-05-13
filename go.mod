@@ -33,7 +33,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.3.1
-	github.com/initia-labs/OPinit v1.0.1
+	github.com/initia-labs/OPinit v1.1.0
 	github.com/initia-labs/initia v1.0.0
 	github.com/initia-labs/kvindexer v0.1.14
 	github.com/initia-labs/kvindexer/submodules/block v0.1.4
@@ -173,7 +173,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit/api v1.0.0 // indirect
+	github.com/initia-labs/OPinit/api v1.1.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect

@@ -12,7 +12,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/initia-labs/OPinit/contrib/launchtools"
 	"github.com/initia-labs/OPinit/contrib/launchtools/steps"
@@ -92,7 +91,6 @@ func CreateINITWrappedToken(config *launchtools.Config) launchtools.LauncherStep
 		ctx.Logger().Info("Initiating token deposit...")
 
 		bridgeId := *ctx.GetBridgeId()
-		clientCtx := (*ctx.ClientContext()).WithChainID(config.L2Config.ChainID)
 		executorL1AddrStr := config.SystemKeys.BridgeExecutor.L1Address
 		executorL2AddrStr := config.SystemKeys.BridgeExecutor.L2Address
 		executorMnemonic := config.SystemKeys.BridgeExecutor.Mnemonic
@@ -103,7 +101,7 @@ func CreateINITWrappedToken(config *launchtools.Config) launchtools.LauncherStep
 		operatorMnemonic := config.SystemKeys.Validator.Mnemonic
 
 		// generate op bridge hook message
-		hookMsg, err := generateOPBridgeHookMessage(clientCtx, bridgeId, operatorL2AddrStr, operatorMnemonic)
+		hookMsg, err := generateOPBridgeHookMessage(ctx, bridgeId, operatorL2AddrStr, operatorMnemonic)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate op bridge hook message")
 		}
@@ -151,7 +149,7 @@ func CreateINITWrappedToken(config *launchtools.Config) launchtools.LauncherStep
 // generateOPBridgeHookMessage generates a hook message for the OP bridge to create
 // a wrapped token on L2.
 func generateOPBridgeHookMessage(
-	clientCtx client.Context,
+	ctx launchtools.Launcher,
 	bridgeId uint64,
 	operatorL2AddrStr string,
 	operatorMnemonic string,
@@ -171,7 +169,7 @@ func generateOPBridgeHookMessage(
 	l2Denom := ophosttypes.L2Denom(bridgeId, INIT_DENOM)
 
 	// fetch erc20 wrapper address
-	wrapperAddr, err := loadERC20WrapperAddress(clientCtx)
+	wrapperAddr, err := loadERC20WrapperAddress(*ctx.ClientContext())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load erc20 wrapper address")
 	}
@@ -190,33 +188,8 @@ func generateOPBridgeHookMessage(
 		Value:        sdkmath.NewInt(0),
 	}
 
-	// load account info
-	acc, err := loadAccountInfo(clientCtx, operatorAddr)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load account info")
-	}
-
-	// sign the transaction
-	signedTx, err := utils.SignTxOffline(
-		&clientCtx,
-		operatorMnemonic,
-		1,
-		acc.GetAccountNumber(),
-		acc.GetSequence(),
-		sdk.NewCoins(),
-		&msg,
-	)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to sign transaction")
-	}
-
-	// encode the transaction
-	txBytes, err := clientCtx.TxConfig.TxEncoder()(signedTx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to encode transaction")
-	}
-
-	return txBytes, nil
+	// create and sign transaction
+	return ctx.GetRPCHelperL2().CreateAndSignTx(operatorL2AddrStr, operatorMnemonic, 1, sdk.NewCoins(), &msg)
 }
 
 // loadERC20WrapperAddress loads the address of the ERC20 wrapper contract.
@@ -228,13 +201,4 @@ func loadERC20WrapperAddress(clientCtx client.Context) (common.Address, error) {
 	}
 
 	return common.HexToAddress(res.Address), nil
-}
-
-// loadAccountInfo loads the account info of the given address.
-func loadAccountInfo(clientCtx client.Context, addr sdk.AccAddress) (client.Account, error) {
-	ar := authtypes.AccountRetriever{}
-	return ar.GetAccount(
-		clientCtx,
-		addr,
-	)
 }
