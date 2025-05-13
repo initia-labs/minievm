@@ -411,10 +411,13 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     ) internal returns (address remoteToken) {
         remoteToken = remoteTokens[localToken];
         if (remoteToken == address(0)) {
-            remoteToken = factory.createERC20(
+            remoteToken = factory.createERC20WithSalt(
                 string.concat(NAME_PREFIX, IERC20(localToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
-                REMOTE_DECIMALS
+                REMOTE_DECIMALS,
+                keccak256(
+                    abi.encodePacked(msg.sender, localToken, REMOTE_DECIMALS)
+                )
             );
             remoteTokens[localToken] = remoteToken;
             remoteDecimals[localToken] = REMOTE_DECIMALS;
@@ -437,10 +440,11 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     ) internal returns (address localToken) {
         localToken = localTokens[remoteToken][_remoteDecimals];
         if (localToken == address(0)) {
-            localToken = factory.createERC20(
+            localToken = factory.createERC20WithSalt(
                 string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
-                LOCAL_DECIMALS
+                LOCAL_DECIMALS,
+                keccak256(abi.encodePacked(remoteToken, _remoteDecimals))
             );
             localTokens[remoteToken][_remoteDecimals] = localToken;
             remoteTokens[localToken] = remoteToken;
