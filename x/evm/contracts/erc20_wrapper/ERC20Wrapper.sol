@@ -366,6 +366,31 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         _handleFailedIbcTransfer(callback_id);
     }
 
+    /////////////////////////////
+    // External View functions //
+    /////////////////////////////
+    function getWrappedERC20Address(
+        string memory coinDenom,
+        bool isLocal
+    ) external view returns (address) {
+        address token = COSMOS_CONTRACT.to_erc20(coinDenom);
+        uint8 decimal = IERC20(token).decimals();
+        address wrappedToken = isLocal
+            ? remoteTokens[token]
+            : localTokens[token][decimal];
+        if (wrappedToken != address(0)) {
+            return wrappedToken;
+        }
+        return
+            factory.computeERC20Address(
+                address(this),
+                string.concat(NAME_PREFIX, IERC20(token).name()),
+                string.concat(SYMBOL_PREFIX, IERC20(token).symbol()),
+                isLocal ? REMOTE_DECIMALS : LOCAL_DECIMALS,
+                keccak256(abi.encodePacked(token, decimal))
+            );
+    }
+
     ////////////////////////
     // Internal functions //
     ////////////////////////
@@ -415,9 +440,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 string.concat(NAME_PREFIX, IERC20(localToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
                 REMOTE_DECIMALS,
-                keccak256(
-                    abi.encodePacked(localToken, REMOTE_DECIMALS)
-                )
+                keccak256(abi.encodePacked(localToken, REMOTE_DECIMALS))
             );
             remoteTokens[localToken] = remoteToken;
             remoteDecimals[localToken] = REMOTE_DECIMALS;
@@ -532,6 +555,20 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         );
     }
 
+    /**
+     * @notice Checks if the contract is the owner of the given token
+     * @param token The address of the token to check ownership of
+     * @return true if the contract is the owner, false otherwise
+     * @dev This function is safe to call even if the token does not support ownership
+     */
+    function _isOwner(address token) internal view returns (bool) {
+        try ERC20(token).owner() returns (address owner) {
+            return owner == address(this);
+        } catch {
+            return false;
+        }
+    }
+
     // pure
     /**
      * @notice Converts an amount from one decimal precision to another by scaling up or down
@@ -557,20 +594,6 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             convertedAmount = amount * factor;
         } else {
             convertedAmount = amount;
-        }
-    }
-
-    /**
-     * @notice Checks if the contract is the owner of the given token
-     * @param token The address of the token to check ownership of
-     * @return true if the contract is the owner, false otherwise
-     * @dev This function is safe to call even if the token does not support ownership
-     */
-    function _isOwner(address token) internal view returns (bool) {
-        try ERC20(token).owner() returns (address owner) {
-            return owner == address(this);
-        } catch {
-            return false;
         }
     }
 }

@@ -67,6 +67,41 @@ contract ERC20Factory is ERC20Registry {
     }
 
     /**
+     * @notice Create a new ERC20 contract with a salt and a custom bytecode
+     * @param creator The address of the creator of the ERC20 contract
+     * @param name The name of the ERC20 contract
+     * @param symbol The symbol of the ERC20 contract
+     * @param decimals The decimals of the ERC20 contract
+     * @param salt The salt to use for the ERC20 contract. it will be hashed with the sender's address to avoid collisions
+     * @return addr The address of the new ERC20 contract
+     */
+    function computeERC20Address(
+        address creator,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        bytes32 salt
+    ) external pure returns (address addr) {
+        bytes memory bytecode = abi.encodePacked(
+            type(ERC20).creationCode,
+            abi.encode(name, symbol, decimals, creator!= CHAIN_ADDRESS)
+        );
+        bytes32 bytecodeHash = keccak256(bytecode);
+        assembly ("memory-safe") {
+            let ptr := mload(0x40)
+            mstore(add(ptr, 0x40), bytecodeHash)
+            mstore(add(ptr, 0x20), salt)
+            mstore(ptr, creator) 
+            let start := add(ptr, 0x0b)
+            mstore8(start, 0xff)
+            addr := and(
+                keccak256(start, 85),
+                0xffffffffffffffffffffffffffffffffffffffff
+            )
+        }
+    }
+
+    /**
      * @notice Post-action to be performed after the ERC20 contract is created
      * @param erc20Addr The address of the ERC20 contract
      */
