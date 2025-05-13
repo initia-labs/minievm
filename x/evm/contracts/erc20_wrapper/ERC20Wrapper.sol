@@ -95,7 +95,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             return;
         }
 
-        // check if the local token is owned by this contract
+        // check if the remote token is owned by this contract
         if (_isOwner(remoteToken)) {
             // burn the remote token from the msg.sender
             ERC20(remoteToken).burnFrom(msg.sender, remoteAmount);
