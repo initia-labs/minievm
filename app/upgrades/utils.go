@@ -50,9 +50,8 @@ func ReplaceCodeAndCodeHash(ctx context.Context, app MinitiaApp, contractAddr []
 	return nil
 }
 
-func RuntimeCodeAndCodeHash(code []byte) ([]byte, []byte) {
-	codeHash := crypto.Keccak256Hash(code).Bytes()
-	return code, codeHash
+func CodeHash(code []byte) []byte {
+	return crypto.Keccak256Hash(code).Bytes()
 }
 
 func uint64ToBytes(v uint64) []byte {

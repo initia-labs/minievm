@@ -29,8 +29,8 @@ func RegisterUpgradeHandlers(app upgrades.MinitiaApp) {
 			if err != nil {
 				return nil, err
 			}
-			wrapperCode, wrapperCodeHash := upgrades.RuntimeCodeAndCodeHash(wrapperRuntimeCode)
-			if err := upgrades.ReplaceCodeAndCodeHash(ctx, app, wrapperAddr.Bytes(), wrapperCode, wrapperCodeHash); err != nil {
+			wrapperCodeHash := upgrades.CodeHash(wrapperRuntimeCode)
+			if err := upgrades.ReplaceCodeAndCodeHash(ctx, app, wrapperAddr.Bytes(), wrapperRuntimeCode, wrapperCodeHash); err != nil {
 				return nil, err
 			}
 
@@ -43,8 +43,8 @@ func RegisterUpgradeHandlers(app upgrades.MinitiaApp) {
 			if err != nil {
 				return nil, err
 			}
-			factoryCode, factoryCodeHash := upgrades.RuntimeCodeAndCodeHash(factoryRuntimeCode)
-			if err := upgrades.ReplaceCodeAndCodeHash(ctx, app, factoryAddr.Bytes(), factoryCode, factoryCodeHash); err != nil {
+			factoryCodeHash := upgrades.CodeHash(factoryRuntimeCode)
+			if err := upgrades.ReplaceCodeAndCodeHash(ctx, app, factoryAddr.Bytes(), factoryRuntimeCode, factoryCodeHash); err != nil {
 				return nil, err
 			}
 
