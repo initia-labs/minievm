@@ -22,6 +22,7 @@ import (
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	tmos "github.com/cometbft/cometbft/libs/os"
 
+	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -68,8 +69,10 @@ import (
 	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
+	upgrades_v1_1 "github.com/initia-labs/minievm/app/upgrades/v1_1"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
+	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
 	// kvindexer
@@ -274,7 +277,7 @@ func NewMinitiaApp(
 	// The cosmos upgrade handler attempts to create ${HOME}/.minitia/data to check for upgrade info,
 	// but this isn't required during initial encoding config setup.
 	if loadLatest {
-		app.RegisterUpgradeHandlers(app.configurator)
+		upgrades_v1_1.RegisterUpgradeHandlers(app)
 	}
 
 	// register executor change plans for later use
@@ -572,48 +575,69 @@ func GetMaccPerms() map[string][]string {
 	return dupMaccPerms
 }
 
-//////////////////////////////////////
-// TestingApp functions
+//////////////////////////////////////////////////////
+// Expose internal keepers for testing and upgrades //
+//////////////////////////////////////////////////////
 
-// GetBaseApp implements the TestingApp interface.
+// GetBaseApp returns the base app for the app.
 func (app *MinitiaApp) GetBaseApp() *baseapp.BaseApp {
 	return app.BaseApp
 }
 
-// GetAccountKeeper implements the TestingApp interface.
+// GetAccountKeeper returns the account keeper for the app.
 func (app *MinitiaApp) GetAccountKeeper() *authkeeper.AccountKeeper {
 	return app.AccountKeeper
 }
 
-// GetStakingKeeper implements the TestingApp interface.
+// GetEVMKeeper returns the evm keeper for the app.
+func (app *MinitiaApp) GetEVMKeeper() *evmkeeper.Keeper {
+	return app.EVMKeeper
+}
+
+// GetUpgradeKeeper returns the upgrade keeper for the app.
+func (app *MinitiaApp) GetUpgradeKeeper() *upgradekeeper.Keeper {
+	return app.UpgradeKeeper
+}
+
+// GetStakingKeeper returns the staking keeper for the app.
 // It returns opchild instead of original staking keeper.
 func (app *MinitiaApp) GetStakingKeeper() ibctestingtypes.StakingKeeper {
 	return app.OPChildKeeper
 }
 
-// GetIBCKeeper implements the TestingApp interface.
+// GetIBCKeeper returns the ibc keeper for the app.
 func (app *MinitiaApp) GetIBCKeeper() *ibckeeper.Keeper {
 	return app.IBCKeeper
 }
 
-// GetICAControllerKeeper implements the TestingApp interface.
+// GetICAControllerKeeper returns the ica controller keeper for the app.
 func (app *MinitiaApp) GetICAControllerKeeper() *icacontrollerkeeper.Keeper {
 	return app.ICAControllerKeeper
 }
 
-// GetICAAuthKeeper implements the TestingApp interface.
+// GetICAAuthKeeper returns the ica auth keeper for the app.
 func (app *MinitiaApp) GetICAAuthKeeper() *icaauthkeeper.Keeper {
 	return app.ICAAuthKeeper
 }
 
-// GetScopedIBCKeeper implements the TestingApp interface.
+// GetScopedIBCKeeper returns the scoped ibc keeper for the app.
 func (app *MinitiaApp) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
 	return app.ScopedIBCKeeper
 }
 
-// TxConfig implements the TestingApp interface.
+// TxConfig returns the tx config for the app.
 func (app *MinitiaApp) TxConfig() client.TxConfig {
 	return app.txConfig
+}
+
+// GetConfigurator returns the configurator for the app.
+func (app *MinitiaApp) GetConfigurator() module.Configurator {
+	return app.configurator
+}
+
+// GetModuleManager returns the module manager for the app.
+func (app *MinitiaApp) GetModuleManager() *module.Manager {
+	return app.ModuleManager
 }
 
 // allow 20 and 32 bytes address
