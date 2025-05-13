@@ -35,11 +35,11 @@ require (
 	github.com/holiman/uint256 v1.3.1
 	github.com/initia-labs/OPinit v1.0.1
 	github.com/initia-labs/initia v1.0.0
-	github.com/initia-labs/kvindexer v0.1.13
-	github.com/initia-labs/kvindexer/submodules/block v0.1.3
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.9
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.2.1
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.4
+	github.com/initia-labs/kvindexer v0.1.14
+	github.com/initia-labs/kvindexer/submodules/block v0.1.4
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.10
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.2.2
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.5
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/noble-assets/forwarding/v2 v2.0.1
 	github.com/pkg/errors v0.9.1
@@ -238,6 +238,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect

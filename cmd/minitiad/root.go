@@ -310,11 +310,16 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 		if err != nil {
 			panic(err)
 		}
-		kvdbConfig := getKVIndexerDBConfig(appOpts)
+		kvindexerConfig := getKVIndexerDBConfig(appOpts)
 
-		kvindexerDB, err := kvindexerstore.OpenDB(dbDir, kvindexerkeeper.StoreName, kvdbConfig.BackendConfig)
-		if err != nil {
-			panic(err)
+		// create KV indexer db if enabled
+		var kvindexerDB dbm.DB = nil
+		if kvindexerConfig.IsEnabled() {
+			db, err := kvindexerstore.OpenDB(dbDir, kvindexerkeeper.StoreName, kvindexerConfig.BackendConfig)
+			if err != nil {
+				panic(err)
+			}
+			kvindexerDB = db
 		}
 
 		evmConfig := evmconfig.GetConfig(appOpts)
