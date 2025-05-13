@@ -416,7 +416,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
                 REMOTE_DECIMALS,
                 keccak256(
-                    abi.encodePacked(msg.sender, localToken, REMOTE_DECIMALS)
+                    abi.encodePacked(localToken, REMOTE_DECIMALS)
                 )
             );
             remoteTokens[localToken] = remoteToken;
