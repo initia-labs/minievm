@@ -67,7 +67,7 @@ contract ERC20Factory is ERC20Registry {
     }
 
     /**
-     * @notice Create a new ERC20 contract with a salt and a custom bytecode
+     * @notice Compute the address of a new ERC20 contract with a salt
      * @param creator The address of the creator of the ERC20 contract
      * @param name The name of the ERC20 contract
      * @param symbol The symbol of the ERC20 contract
@@ -81,24 +81,19 @@ contract ERC20Factory is ERC20Registry {
         string memory symbol,
         uint8 decimals,
         bytes32 salt
-    ) external pure returns (address addr) {
+    ) external view returns (address) {
         bytes memory bytecode = abi.encodePacked(
             type(ERC20).creationCode,
-            abi.encode(name, symbol, decimals, creator!= CHAIN_ADDRESS)
+            abi.encode(name, symbol, decimals, creator != CHAIN_ADDRESS)
         );
+        bytes32 _salt = keccak256(abi.encodePacked(creator, salt));
+
+        // CREATE2 = keccak256(0xff ++ deployingAddress ++ salt ++ keccak256(bytecode))[12:]
         bytes32 bytecodeHash = keccak256(bytecode);
-        assembly ("memory-safe") {
-            let ptr := mload(0x40)
-            mstore(add(ptr, 0x40), bytecodeHash)
-            mstore(add(ptr, 0x20), salt)
-            mstore(ptr, creator) 
-            let start := add(ptr, 0x0b)
-            mstore8(start, 0xff)
-            addr := and(
-                keccak256(start, 85),
-                0xffffffffffffffffffffffffffffffffffffffff
-            )
-        }
+        bytes32 addr = keccak256(
+            abi.encodePacked(bytes1(0xff), address(this), _salt, bytecodeHash)
+        );
+        return address(uint160(uint(addr)));
     }
 
     /**

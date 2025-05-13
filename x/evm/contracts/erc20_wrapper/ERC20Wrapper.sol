@@ -85,6 +85,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
         // ensure the local token exists if not create it
         address localToken = _ensureLocalTokenExists(
+            remoteDenom,
             remoteToken,
             _remoteDecimals
         );
@@ -146,7 +147,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         address localToken = COSMOS_CONTRACT.to_erc20(localDenom);
 
         // ensure the remote token exists if not create it
-        remoteToken = _ensureRemoteTokenExists(localToken);
+        remoteToken = _ensureRemoteTokenExists(localDenom, localToken);
         _remoteDecimals = remoteDecimals[localToken];
 
         // if the local amount is 0, do nothing
@@ -369,25 +370,44 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     /////////////////////////////
     // External View functions //
     /////////////////////////////
-    function getWrappedERC20Address(
-        string memory coinDenom,
-        bool isLocal
+    /**
+     * Get the local wrapped contract address 
+     * @param remoteDenom remote coin denom. it can be not exists in this chain.
+     * @param name remote token name
+     * @param symbol remote token symbol
+     * @param decimal retmoe token decimals
+     */
+    function getToLocalERC20Address(
+        string memory remoteDenom,
+        string memory name,
+        string memory symbol,
+        uint8 decimal
     ) external view returns (address) {
-        address token = COSMOS_CONTRACT.to_erc20(coinDenom);
-        uint8 decimal = IERC20(token).decimals();
-        address wrappedToken = isLocal
-            ? remoteTokens[token]
-            : localTokens[token][decimal];
-        if (wrappedToken != address(0)) {
-            return wrappedToken;
-        }
         return
             factory.computeERC20Address(
                 address(this),
-                string.concat(NAME_PREFIX, IERC20(token).name()),
-                string.concat(SYMBOL_PREFIX, IERC20(token).symbol()),
-                isLocal ? REMOTE_DECIMALS : LOCAL_DECIMALS,
-                keccak256(abi.encodePacked(token, decimal))
+                string.concat(NAME_PREFIX, name),
+                string.concat(SYMBOL_PREFIX, symbol),
+                LOCAL_DECIMALS,
+                keccak256(abi.encodePacked(remoteDenom, decimal))
+            );
+    }
+
+    /**
+     * Get the remote wrapped contract address 
+     * @param localDenom local coin denom 
+     */
+    function getToRemoteERC20Address(
+        string memory localDenom
+    ) external view returns (address) {
+        address token = COSMOS_CONTRACT.to_erc20(localDenom);
+        return
+            factory.computeERC20Address(
+                address(this),
+                string.concat(NAME_PREFIX, ERC20(token).name()),
+                string.concat(SYMBOL_PREFIX, ERC20(token).symbol()),
+                REMOTE_DECIMALS,
+                keccak256(abi.encodePacked(localDenom, ERC20(token).decimals()))
             );
     }
 
@@ -432,6 +452,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @dev Updates remoteTokens, remoteDecimals, and localTokens mappings if a new token is created
      */
     function _ensureRemoteTokenExists(
+        string memory localDenom,
         address localToken
     ) internal returns (address remoteToken) {
         remoteToken = remoteTokens[localToken];
@@ -440,7 +461,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 string.concat(NAME_PREFIX, IERC20(localToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
                 REMOTE_DECIMALS,
-                keccak256(abi.encodePacked(localToken, REMOTE_DECIMALS))
+                keccak256(abi.encodePacked(localDenom, IERC20(localToken).decimals()))
             );
             remoteTokens[localToken] = remoteToken;
             remoteDecimals[localToken] = REMOTE_DECIMALS;
@@ -458,6 +479,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @dev Updates localTokens, remoteTokens, and remoteDecimals mappings if a new token is created
      */
     function _ensureLocalTokenExists(
+        string memory remoteDenom,
         address remoteToken,
         uint8 _remoteDecimals
     ) internal returns (address localToken) {
@@ -467,7 +489,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
                 LOCAL_DECIMALS,
-                keccak256(abi.encodePacked(remoteToken, _remoteDecimals))
+                keccak256(abi.encodePacked(remoteDenom, _remoteDecimals))
             );
             localTokens[remoteToken][_remoteDecimals] = localToken;
             remoteTokens[localToken] = remoteToken;
