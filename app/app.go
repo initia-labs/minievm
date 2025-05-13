@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -72,8 +73,6 @@ import (
 	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
 
 	// unnamed import of statik for swagger UI support
-	"maps"
-
 	_ "github.com/initia-labs/minievm/client/docs/statik"
 )
 
