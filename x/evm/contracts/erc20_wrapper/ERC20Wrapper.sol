@@ -85,6 +85,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
         // ensure the local token exists if not create it
         address localToken = _ensureLocalTokenExists(
+            remoteDenom,
             remoteToken,
             _remoteDecimals
         );
@@ -95,7 +96,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         }
 
         // check if the remote token is owned by this contract
-        if (ERC20(remoteToken).owner() == address(this)) {
+        if (_isOwner(remoteToken)) {
             // burn the remote token from the msg.sender
             ERC20(remoteToken).burnFrom(msg.sender, remoteAmount);
         } else {
@@ -116,7 +117,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         );
 
         // check if the local token is owned by this contract
-        if (ERC20(localToken).owner() == address(this)) {
+        if (_isOwner(localToken)) {
             // mint the local token to receiver
             ERC20(localToken).mint(receiver, localAmount);
         } else {
@@ -146,7 +147,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         address localToken = COSMOS_CONTRACT.to_erc20(localDenom);
 
         // ensure the remote token exists if not create it
-        remoteToken = _ensureRemoteTokenExists(localToken);
+        remoteToken = _ensureRemoteTokenExists(localDenom, localToken);
         _remoteDecimals = remoteDecimals[localToken];
 
         // if the local amount is 0, do nothing
@@ -155,7 +156,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         }
 
         // check if the local token is owned by this contract
-        if (ERC20(localToken).owner() == address(this)) {
+        if (_isOwner(localToken)) {
             // burn the local token from the msg.sender
             ERC20(localToken).burnFrom(msg.sender, localAmount);
         } else {
@@ -176,7 +177,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         );
 
         // check if the remote token is owned by this contract
-        if (ERC20(remoteToken).owner() == address(this)) {
+        if (_isOwner(remoteToken)) {
             // mint the remote token to receiver
             ERC20(remoteToken).mint(receiver, remoteAmount);
         } else {
@@ -366,6 +367,50 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         _handleFailedIbcTransfer(callback_id);
     }
 
+    /////////////////////////////
+    // External View functions //
+    /////////////////////////////
+    /**
+     * Get the local wrapped contract address 
+     * @param remoteDenom remote coin denom. it can be not exists in this chain.
+     * @param name remote token name
+     * @param symbol remote token symbol
+     * @param decimal retmoe token decimals
+     */
+    function getToLocalERC20Address(
+        string memory remoteDenom,
+        string memory name,
+        string memory symbol,
+        uint8 decimal
+    ) external view returns (address) {
+        return
+            factory.computeERC20Address(
+                address(this),
+                string.concat(NAME_PREFIX, name),
+                string.concat(SYMBOL_PREFIX, symbol),
+                LOCAL_DECIMALS,
+                keccak256(abi.encodePacked(remoteDenom, decimal))
+            );
+    }
+
+    /**
+     * Get the remote wrapped contract address 
+     * @param localDenom local coin denom 
+     */
+    function getToRemoteERC20Address(
+        string memory localDenom
+    ) external view returns (address) {
+        address token = COSMOS_CONTRACT.to_erc20(localDenom);
+        return
+            factory.computeERC20Address(
+                address(this),
+                string.concat(NAME_PREFIX, ERC20(token).name()),
+                string.concat(SYMBOL_PREFIX, ERC20(token).symbol()),
+                REMOTE_DECIMALS,
+                keccak256(abi.encodePacked(localDenom, ERC20(token).decimals()))
+            );
+    }
+
     ////////////////////////
     // Internal functions //
     ////////////////////////
@@ -386,12 +431,12 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         // The remote token is already held by this contract from the failed IBC transfer.
         // If this contract owns the remote token, burn it directly.
         // No transfer needed since we already have custody of the tokens.
-        if (ERC20(callback.remoteToken).owner() == address(this)) {
+        if (_isOwner(callback.remoteToken)) {
             ERC20(callback.remoteToken).burn(callback.remoteAmount);
         }
 
         // check if this contract owns the local token to determine whether to mint or transfer
-        if (ERC20(localToken).owner() == address(this)) {
+        if (_isOwner(localToken)) {
             ERC20(localToken).mint(callback.sender, localAmount);
         } else {
             ERC20(localToken).transfer(callback.sender, localAmount);
@@ -407,14 +452,16 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @dev Updates remoteTokens, remoteDecimals, and localTokens mappings if a new token is created
      */
     function _ensureRemoteTokenExists(
+        string memory localDenom,
         address localToken
     ) internal returns (address remoteToken) {
         remoteToken = remoteTokens[localToken];
         if (remoteToken == address(0)) {
-            remoteToken = factory.createERC20(
+            remoteToken = factory.createERC20WithSalt(
                 string.concat(NAME_PREFIX, IERC20(localToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(localToken).symbol()),
-                REMOTE_DECIMALS
+                REMOTE_DECIMALS,
+                keccak256(abi.encodePacked(localDenom, IERC20(localToken).decimals()))
             );
             remoteTokens[localToken] = remoteToken;
             remoteDecimals[localToken] = REMOTE_DECIMALS;
@@ -432,15 +479,17 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
      * @dev Updates localTokens, remoteTokens, and remoteDecimals mappings if a new token is created
      */
     function _ensureLocalTokenExists(
+        string memory remoteDenom,
         address remoteToken,
         uint8 _remoteDecimals
     ) internal returns (address localToken) {
         localToken = localTokens[remoteToken][_remoteDecimals];
         if (localToken == address(0)) {
-            localToken = factory.createERC20(
+            localToken = factory.createERC20WithSalt(
                 string.concat(NAME_PREFIX, IERC20(remoteToken).name()),
                 string.concat(SYMBOL_PREFIX, IERC20(remoteToken).symbol()),
-                LOCAL_DECIMALS
+                LOCAL_DECIMALS,
+                keccak256(abi.encodePacked(remoteDenom, _remoteDecimals))
             );
             localTokens[remoteToken][_remoteDecimals] = localToken;
             remoteTokens[localToken] = remoteToken;
@@ -526,6 +575,20 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 '"}'
             )
         );
+    }
+
+    /**
+     * @notice Checks if the contract is the owner of the given token
+     * @param token The address of the token to check ownership of
+     * @return true if the contract is the owner, false otherwise
+     * @dev This function is safe to call even if the token does not support ownership
+     */
+    function _isOwner(address token) internal view returns (bool) {
+        try ERC20(token).owner() returns (address owner) {
+            return owner == address(this);
+        } catch {
+            return false;
+        }
     }
 
     // pure

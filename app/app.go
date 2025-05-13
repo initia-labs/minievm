@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -42,22 +43,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	"github.com/cosmos/cosmos-sdk/version"
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
-	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/gogoproto/proto"
 
 	// ibc imports
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	// initia imports
 	"github.com/initia-labs/initia/app/params"
 	cryptocodec "github.com/initia-labs/initia/crypto/codec"
-	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
-	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
 
 	// skip imports
 	blockchecktx "github.com/skip-mev/block-sdk/v2/abci/checktx"
@@ -68,6 +63,7 @@ import (
 	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
+	upgrades_v1_1 "github.com/initia-labs/minievm/app/upgrades/v1_1"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -274,7 +270,7 @@ func NewMinitiaApp(
 	// The cosmos upgrade handler attempts to create ${HOME}/.minitia/data to check for upgrade info,
 	// but this isn't required during initial encoding config setup.
 	if loadLatest {
-		app.RegisterUpgradeHandlers(app.configurator)
+		upgrades_v1_1.RegisterUpgradeHandlers(app)
 	}
 
 	// register executor change plans for later use
@@ -552,81 +548,6 @@ func (app *MinitiaApp) RegisterNodeService(clientCtx client.Context, cfg config.
 	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
 }
 
-// RegisterSwaggerAPI registers swagger route with API Server
-func RegisterSwaggerAPI(rtr *mux.Router) {
-	statikFS, err := fs.New()
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-
-	staticServer := http.FileServer(statikFS)
-	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
-}
-
-// GetMaccPerms returns a copy of the module account permissions
-func GetMaccPerms() map[string][]string {
-	dupMaccPerms := make(map[string][]string)
-	for k, v := range maccPerms {
-		dupMaccPerms[k] = v
-	}
-	return dupMaccPerms
-}
-
-//////////////////////////////////////
-// TestingApp functions
-
-// GetBaseApp implements the TestingApp interface.
-func (app *MinitiaApp) GetBaseApp() *baseapp.BaseApp {
-	return app.BaseApp
-}
-
-// GetAccountKeeper implements the TestingApp interface.
-func (app *MinitiaApp) GetAccountKeeper() *authkeeper.AccountKeeper {
-	return app.AccountKeeper
-}
-
-// GetStakingKeeper implements the TestingApp interface.
-// It returns opchild instead of original staking keeper.
-func (app *MinitiaApp) GetStakingKeeper() ibctestingtypes.StakingKeeper {
-	return app.OPChildKeeper
-}
-
-// GetIBCKeeper implements the TestingApp interface.
-func (app *MinitiaApp) GetIBCKeeper() *ibckeeper.Keeper {
-	return app.IBCKeeper
-}
-
-// GetICAControllerKeeper implements the TestingApp interface.
-func (app *MinitiaApp) GetICAControllerKeeper() *icacontrollerkeeper.Keeper {
-	return app.ICAControllerKeeper
-}
-
-// GetICAAuthKeeper implements the TestingApp interface.
-func (app *MinitiaApp) GetICAAuthKeeper() *icaauthkeeper.Keeper {
-	return app.ICAAuthKeeper
-}
-
-// GetScopedIBCKeeper implements the TestingApp interface.
-func (app *MinitiaApp) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
-	return app.ScopedIBCKeeper
-}
-
-// TxConfig implements the TestingApp interface.
-func (app *MinitiaApp) TxConfig() client.TxConfig {
-	return app.txConfig
-}
-
-// allow 20 and 32 bytes address
-func VerifyAddressLen() func(addr []byte) error {
-	return func(addr []byte) error {
-		addrLen := len(addr)
-		if addrLen != 32 && addrLen != 20 {
-			return sdkerrors.ErrInvalidAddress
-		}
-		return nil
-	}
-}
-
 // Close closes the underlying baseapp, the oracle service, and the prometheus server if required.
 // This method blocks on the closure of both the prometheus server, and the oracle-service
 func (app *MinitiaApp) Close() error {
@@ -651,14 +572,31 @@ func (app *MinitiaApp) Close() error {
 	return nil
 }
 
-// IndexerKeeper returns the evm indexer
-func (app *MinitiaApp) EVMIndexer() evmindexer.EVMIndexer {
-	return app.evmIndexer
+// RegisterSwaggerAPI registers swagger route with API Server
+func RegisterSwaggerAPI(rtr *mux.Router) {
+	statikFS, err := fs.New()
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	staticServer := http.FileServer(statikFS)
+	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
 }
 
-// CheckStateContextGetter returns a function that returns a new Context for state checking.
-func (app *MinitiaApp) CheckStateContextGetter() func() sdk.Context {
-	return func() sdk.Context {
-		return app.GetContextForCheckTx(nil)
+// GetMaccPerms returns a copy of the module account permissions
+func GetMaccPerms() map[string][]string {
+	dupMaccPerms := make(map[string][]string)
+	maps.Copy(dupMaccPerms, maccPerms)
+	return dupMaccPerms
+}
+
+// allow 20 and 32 bytes address
+func VerifyAddressLen() func(addr []byte) error {
+	return func(addr []byte) error {
+		addrLen := len(addr)
+		if addrLen != 32 && addrLen != 20 {
+			return sdkerrors.ErrInvalidAddress
+		}
+		return nil
 	}
 }

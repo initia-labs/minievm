@@ -18,6 +18,18 @@ for CONTRACT_HOME in $CONTRACTS_DIR/*; do
                     --bin=$BUILD_DIR/$CONTRACT_NAME.bin \
                     --abi=$BUILD_DIR/$CONTRACT_NAME.abi \
                     --out=$CONTRACT_HOME/$CONTRACT_NAME.go
+
+                # Generate runtime code for ERC20Factory and ERC20Wrapper contracts
+                # This is needed for contract upgrades to replace the runtime code
+                # The runtime code is stored in app/upgrades/contracts/
+                if [ "$CONTRACT_NAME" == "ERC20Factory" ] || [ "$CONTRACT_NAME" == "ERC20Wrapper" ]; then
+                    solc $CONTRACT_PATH --metadata-hash none --bin-runtime -o $BUILD_DIR --overwrite
+                    mkdir -p app/upgrades/contracts/$PKG_NAME
+                    abigen --pkg $PKG_NAME \
+                        --bin=$BUILD_DIR/$CONTRACT_NAME.bin-runtime \
+                        --abi=$BUILD_DIR/$CONTRACT_NAME.abi \
+                        --out=app/upgrades/contracts/$PKG_NAME/$CONTRACT_NAME.go
+                fi
             fi
         done
     fi
