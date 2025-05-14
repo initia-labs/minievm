@@ -17,10 +17,10 @@ import (
 
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 	"github.com/initia-labs/minievm/app/posthandler"
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 func (suite *PostHandlerTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {
@@ -104,11 +104,12 @@ func (suite *PostHandlerTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {
 
 	// Spend half of the gas
 	gasMeter := storetypes.NewGasMeter(gasLimit)
-	gasMeter.ConsumeGas(gasLimit/2-2216 /* 2216 is extra gas for refunds */, "test")
+	gasMeter.ConsumeGas(gasLimit/2-1114 /* extra gas for params loading */, "test")
 	gasPrices := sdk.DecCoins{sdk.NewDecCoin(params.FeeDenom, gasPrice)}
 
-	ctx := sdk.UnwrapSDKContext(suite.ctx).WithValue(evmante.ContextKeyGasPrices, gasPrices)
+	ctx := sdk.UnwrapSDKContext(suite.ctx).WithValue(evmtypes.CONTEXT_KEY_GAS_PRICES, gasPrices)
 	ctx = ctx.WithGasMeter(gasMeter).WithExecMode(sdk.ExecModeFinalize)
+	ctx = ctx.WithValue(types.CONTEXT_KEY_ETH_TX, true)
 	ctx, err = gasRefundPostHandler.PostHandle(ctx, sdkTx, false, true, func(ctx sdk.Context, tx sdk.Tx, simulate, success bool) (newCtx sdk.Context, err error) {
 		return ctx, nil
 	})
