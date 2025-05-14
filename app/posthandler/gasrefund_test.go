@@ -104,7 +104,7 @@ func (suite *PostHandlerTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {
 
 	// Spend half of the gas
 	gasMeter := storetypes.NewGasMeter(gasLimit)
-	gasMeter.ConsumeGas(gasLimit/2-1114 /* extra gas for params loading */, "test")
+	gasMeter.ConsumeGas(gasLimit/2-1108 /* extra gas for params loading */, "test")
 	gasPrices := sdk.DecCoins{sdk.NewDecCoin(params.FeeDenom, gasPrice)}
 
 	ctx := sdk.UnwrapSDKContext(suite.ctx).WithValue(evmtypes.CONTEXT_KEY_GAS_PRICES, gasPrices)
