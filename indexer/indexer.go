@@ -240,4 +240,5 @@ func (e *EVMIndexerImpl) Stop() {
 	if e.queuedTxs != nil {
 		e.queuedTxs.Stop()
 	}
+	e.store.Write()
 }

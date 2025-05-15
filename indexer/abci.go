@@ -2,8 +2,6 @@ package indexer
 
 import (
 	"context"
-	"cosmossdk.io/store/cachekv"
-	"cosmossdk.io/store/dbadapter"
 	"math/big"
 	"time"
 
@@ -23,11 +21,6 @@ import (
 )
 
 func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseCommit, changeSet []*storetypes.StoreKVPair) error {
-	e.store.Write()
-
-	// reset CacheKVStore's cache on each block Commit by creating a new instance
-	e.store.store = cachekv.NewStore(dbadapter.Store{DB: e.store.db})
-
 	return nil
 }
 
@@ -118,12 +111,6 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		}
 
 		receipts = append(receipts, &receipt)
-
-		// periodically flush the batch if processing many transactions,
-		// this helps prevent memory buildup during high-volume periods
-		if idx > 0 && idx%100 == 0 {
-			e.store.Write()
-		}
 	}
 
 	blockGasMeter := sdkCtx.BlockGasMeter()

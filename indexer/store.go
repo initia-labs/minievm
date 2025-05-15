@@ -15,17 +15,21 @@ import (
 var _ corestoretypes.KVStore = (*CacheStoreWithBatch)(nil)
 
 const (
+	// DefaultBatchFlushThreshold defines the maximum batch size (in bytes) before automatically writing to disk.
 	DefaultBatchFlushThreshold = 4 * 1024 * 1024 // 4MB
 )
 
+// CacheStoreWithBatch is a CacheKVStore implementation that combines multi-level caching with batched
+// database operations.
 type CacheStoreWithBatch struct {
-	store storetypes.CacheKVStore
-	cache *bigcache.BigCache
-	batch dbm.Batch
-	db    dbm.DB
+	store storetypes.CacheKVStore // Core CacheKVStore interface for standard operations
+	cache *bigcache.BigCache      // Fast in-memory cache for frequently accessed data
+	batch dbm.Batch               // Batch accumulator for database operations
+	db    dbm.DB                  // Underlying persistent database
 	mtx   sync.RWMutex
 }
 
+// NewCacheStoreWithBatch creates a new cache store with batched write capabilities.
 func NewCacheStoreWithBatch(db dbm.DB, capacity int) *CacheStoreWithBatch {
 	// default with no eviction and custom hard max cache capacity
 	cacheCfg := bigcache.DefaultConfig(0)
@@ -44,7 +48,8 @@ func NewCacheStoreWithBatch(db dbm.DB, capacity int) *CacheStoreWithBatch {
 	}
 }
 
-// Get returns nil iff key doesn't exist. Errors on nil key.
+// Get retrieves a value for the given key, prioritizing cache lookups for performance.
+// Returns a nil iff key doesn't exist, errors on a nil key.
 func (c *CacheStoreWithBatch) Get(key []byte) ([]byte, error) {
 	storetypes.AssertValidKey(key)
 
@@ -88,7 +93,8 @@ func (c *CacheStoreWithBatch) Has(key []byte) (bool, error) {
 	return true, nil
 }
 
-// Set sets the key. Errors on nil key or value.
+// Set stores a key-value pair and adds it to the writing batch.
+// Automatically writes the batch to the underlying database if the batch threshold is reached.
 func (c *CacheStoreWithBatch) Set(key, value []byte) error {
 	storetypes.AssertValidKey(key)
 	storetypes.AssertValidValue(value)
@@ -110,7 +116,7 @@ func (c *CacheStoreWithBatch) Set(key, value []byte) error {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
-		c.writeBatch()
+		c.writeBatchLocked()
 		c.batch = c.db.NewBatch()
 	}
 
@@ -118,7 +124,8 @@ func (c *CacheStoreWithBatch) Set(key, value []byte) error {
 	return c.batch.Set(key, value)
 }
 
-// Delete deletes the key. Errors on a nil key.
+// Delete removes a key-value pair from all store layers and schedules the deletion in the writing batch.
+// Like Set, it uses threshold-based batch commits for optimal performance.
 func (c *CacheStoreWithBatch) Delete(key []byte) error {
 	storetypes.AssertValidKey(key)
 
@@ -139,7 +146,7 @@ func (c *CacheStoreWithBatch) Delete(key []byte) error {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
-		c.writeBatch()
+		c.writeBatchLocked()
 		c.batch = c.db.NewBatch()
 	}
 
@@ -147,7 +154,7 @@ func (c *CacheStoreWithBatch) Delete(key []byte) error {
 	return c.batch.Delete(key)
 }
 
-// cacheIterator wraps a storetypes.Iterator to add caching
+// cacheIterator extends the standard iterator with cache awareness
 type cacheIterator struct {
 	storetypes.Iterator
 	cache *bigcache.BigCache
@@ -202,16 +209,17 @@ func (c *CacheStoreWithBatch) ReverseIterator(start, end []byte) (storetypes.Ite
 	}, nil
 }
 
-// Write writes the batch to the store.
+// Write explicitly flushes the current batch to persistent storage.
 func (c *CacheStoreWithBatch) Write() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	c.writeBatch()
+	c.writeBatchLocked()
 }
 
-// writeBatch writes the batch to persistent storage and clears the batch to prepare for later operations.
-func (c *CacheStoreWithBatch) writeBatch() {
+// writeBatchLocked writes the batch to persistent storage and resets both the batch and cache,
+// assuming that the caller has already acquired the appropriate locks.
+func (c *CacheStoreWithBatch) writeBatchLocked() {
 	if c.batch == nil {
 		return
 	}
@@ -221,6 +229,9 @@ func (c *CacheStoreWithBatch) writeBatch() {
 
 	// clear the batch after writing
 	c.batch = nil
+
+	// also clear the cache after writing
+	c.store = cachekv.NewStore(dbadapter.Store{DB: c.db})
 }
 
 // estimateSizeAfterSetting estimates the batch's size after setting a key / value
