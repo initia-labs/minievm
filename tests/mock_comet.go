@@ -12,11 +12,9 @@ import (
 
 	"github.com/skip-mev/block-sdk/v2/block"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/types/mempool"
+	minitiaapp "github.com/initia-labs/minievm/app"
 
-	"github.com/initia-labs/minievm/indexer"
+	"github.com/cosmos/cosmos-sdk/client"
 )
 
 var _ client.CometRPC = &MockCometRPC{}
@@ -24,14 +22,16 @@ var _ rpcclient.MempoolClient = &MockCometRPC{}
 var _ rpcclient.NetworkClient = &MockCometRPC{}
 
 type MockCometRPC struct {
-	app *baseapp.BaseApp
+	app *minitiaapp.MinitiaApp
 
 	NPeers        int
 	Listening     bool
 	ClientVersion string
+
+	txs [][]byte
 }
 
-func NewMockCometRPC(app *baseapp.BaseApp) *MockCometRPC {
+func NewMockCometRPC(app *minitiaapp.MinitiaApp) *MockCometRPC {
 	return &MockCometRPC{app: app}
 }
 
@@ -65,6 +65,12 @@ func (m *MockCometRPC) BroadcastTxSync(ctx context.Context, tx types.Tx) (*ctype
 	if err != nil {
 		return nil, err
 	}
+
+	// save tx to be rechecked
+	if res.Code == abci.CodeTypeOK && res.Codespace == "txqueue" {
+		m.txs = append(m.txs, tx)
+	}
+
 	return &ctypes.ResultBroadcastTx{
 		Code:      res.Code,
 		Log:       res.Log,
@@ -73,15 +79,25 @@ func (m *MockCometRPC) BroadcastTxSync(ctx context.Context, tx types.Tx) (*ctype
 		Hash:      tx.Hash(),
 	}, nil
 }
-func (m *MockCometRPC) UnconfirmedTxs(ctx context.Context, limit *int) (*ctypes.ResultUnconfirmedTxs, error) {
-	var ok bool
-	var mempool mempool.Mempool
-	if mempool, ok = m.app.Mempool().(*indexer.MempoolWrapper); ok {
-		mempool = mempool.(*indexer.MempoolWrapper).Inner()
-	} else {
-		mempool = m.app.Mempool()
+func (m *MockCometRPC) RecheckTx() error {
+	remainTxs := make([][]byte, 0)
+	for _, tx := range m.txs {
+		if res, err := m.app.CheckTx(&abci.RequestCheckTx{
+			Tx:   tx,
+			Type: abci.CheckTxType_Recheck,
+		}); err != nil {
+			return err
+		} else if res.Code == 0 && res.Codespace == "txqueue" {
+			remainTxs = append(remainTxs, tx)
+		}
 	}
 
+	m.txs = remainTxs
+
+	return nil
+}
+func (m *MockCometRPC) UnconfirmedTxs(ctx context.Context, limit *int) (*ctypes.ResultUnconfirmedTxs, error) {
+	mempool := m.app.Mempool()
 	laneMempool := mempool.(*block.LanedMempool)
 	lanes := laneMempool.Registry()
 	txs := make([]types.Tx, 0)

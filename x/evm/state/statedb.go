@@ -50,6 +50,7 @@ type StateDB struct {
 	evm             *vm.EVM
 	erc20ABI        *abi.ABI
 	feeContractAddr common.Address // feeDenom contract address
+	tracer          *tracing.Hooks
 
 	// Snapshot stack
 	snaps []*Snapshot
@@ -117,6 +118,11 @@ func NewStateDB(
 	return s, nil
 }
 
+// SetTracer sets the tracer for account update hooks.
+func (s *StateDB) SetTracer(tracer *tracing.Hooks) {
+	s.tracer = tracer
+}
+
 // AddBalance mint coins to the recipient
 func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) {
 	if amount.IsZero() {
@@ -127,6 +133,10 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 	if err != nil {
 		panic(err)
 	}
+
+	// increase depth manually because it is not executed by interpreter
+	s.evm.IncreaseDepth()
+	defer func() { s.evm.DecreaseDepth() }()
 
 	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
@@ -146,6 +156,10 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing
 		panic(err)
 	}
 
+	// increase depth manually because it is not executed by interpreter
+	s.evm.IncreaseDepth()
+	defer func() { s.evm.DecreaseDepth() }()
+
 	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to burn token", "error", err)
@@ -159,6 +173,10 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 	if err != nil {
 		panic(err)
 	}
+
+	// increase depth manually because it is not executed by interpreter
+	s.evm.IncreaseDepth()
+	defer func() { s.evm.DecreaseDepth() }()
 
 	retBz, _, err := s.evm.StaticCall(vm.AccountRef(evmtypes.NullAddress), s.feeContractAddr, inputBz, erc20OpGasLimit)
 	if err != nil {
@@ -586,18 +604,14 @@ func (s *StateDB) RevertToSnapshot(i int) {
 	s.snaps = s.snaps[:i+1]
 }
 
-// ContextOfSnapshot returns the context of the snapshot with the given id
-func (s *StateDB) ContextOfSnapshot(i int) sdk.Context {
-	if i == -1 {
-		return s.initialCtx.Context
-	}
-
-	return s.snaps[i].ctx.Context
-}
-
 // Context returns the current context
 func (s *StateDB) Context() sdk.Context {
 	return s.ctx.Context
+}
+
+// EVM returns the EVM instance
+func (s *StateDB) EVM() *vm.EVM {
+	return s.evm
 }
 
 // Prepare handles the preparatory steps for executing a state transition with.
@@ -645,6 +659,11 @@ func (s *StateDB) Commit() error {
 		// If ether was sent to account post-selfdestruct it is burnt.
 		if bal := s.GetBalance(addr); bal.Sign() != 0 {
 			s.SubBalance(addr, bal, tracing.BalanceDecreaseSelfdestructBurn)
+
+			// emit log event to tracer
+			if s.tracer != nil && s.tracer.OnBalanceChange != nil {
+				s.tracer.OnBalanceChange(addr, bal.ToBig(), new(big.Int), tracing.BalanceDecreaseSelfdestructBurn)
+			}
 		}
 
 		err = s.vmStore.Clear(s.ctx, new(collections.Range[[]byte]).Prefix(addr.Bytes()))
@@ -683,6 +702,11 @@ func (s *StateDB) AddLog(log *types.Log) {
 	err = s.memStoreLogs.Set(s.ctx, logSize, evmtypes.NewLog(log))
 	if err != nil {
 		panic(err)
+	}
+
+	// emit log event to tracer
+	if s.tracer != nil && s.tracer.OnLog != nil {
+		s.tracer.OnLog(log)
 	}
 }
 

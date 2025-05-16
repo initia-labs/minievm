@@ -86,6 +86,8 @@ const (
 	QUERY_COSMOS_GAS   storetypes.Gas = 200
 	EXECUTE_COSMOS_GAS storetypes.Gas = 200
 
+	DISABLE_EXECUTE_COSMOS_GAS storetypes.Gas = 100
+
 	GAS_PER_BYTE storetypes.Gas = 1
 )
 
@@ -96,6 +98,8 @@ const (
 
 	METHOD_TO_COSMOS_ADDRESS = "to_cosmos_address"
 	METHOD_TO_EVM_ADDRESS    = "to_evm_address"
+
+	METHOD_DISABLE_EXECUTE_COSMOS = "disable_execute_cosmos"
 
 	METHOD_QUERY_COSMOS                = "query_cosmos"
 	METHOD_EXECUTE_COSMOS              = "execute_cosmos"

@@ -8,6 +8,9 @@ import (
 
 	"github.com/initia-labs/minievm/app/ante"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 func (suite *AnteTestSuite) Test_SkipSequenceCheck() {
@@ -36,19 +39,20 @@ func (suite *AnteTestSuite) Test_SkipSequenceCheck() {
 	suite.NoError(err)
 
 	// 1. simulate should skip sequence check
-	sigVerifyAnte := ante.NewSigVerificationDecorator(suite.app.AccountKeeper, suite.app.EVMKeeper, suite.app.TxConfig().SignModeHandler())
+	suite.ctx = suite.ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX, &coretypes.Transaction{})
+	sigVerifyAnte := ante.NewSigVerificationDecorator(suite.app.AccountKeeper, suite.app.TxConfig().SignModeHandler())
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), true, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })
 	suite.NoError(err)
 
-	// 2. simulate should check sequence when it is not ethereum sign mode
-	sigV2.Data.(*signing.SingleSignatureData).SignMode = signing.SignMode_SIGN_MODE_DIRECT
+	// 2. simulate should not check sequence when it is not ethereum tx
+	suite.ctx = suite.ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX, nil)
 	err = suite.txBuilder.SetSignatures(sigV2)
 	suite.NoError(err)
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), true, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })
-	suite.ErrorIs(err, sdkerrors.ErrWrongSequence)
+	suite.NoError(err)
 
 	// 3. non-simulate should check sequence
-	sigV2.Data.(*signing.SingleSignatureData).SignMode = evmkeeper.SignMode_SIGN_MODE_ETHEREUM
+	suite.ctx = suite.ctx.WithValue(evmtypes.CONTEXT_KEY_ETH_TX, &coretypes.Transaction{})
 	err = suite.txBuilder.SetSignatures(sigV2)
 	suite.NoError(err)
 	_, err = sigVerifyAnte.AnteHandle(suite.ctx, suite.txBuilder.GetTx(), false, func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, err error) { return ctx, nil })

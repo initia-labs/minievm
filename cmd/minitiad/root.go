@@ -132,7 +132,17 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
+			// override the keyring if it's set
+			if initClientCtx.Keyring != nil {
+				kr, err := initiakeyring.NewKeyring(initClientCtx, initClientCtx.Keyring.Backend())
+				if err != nil {
+					return err
+				}
+
+				initClientCtx = initClientCtx.WithKeyring(kr)
+			}
+
+			if err := client.SetCmdClientContext(cmd, initClientCtx); err != nil {
 				return err
 			}
 
@@ -300,11 +310,16 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 		if err != nil {
 			panic(err)
 		}
-		kvdbConfig := getKVIndexerDBConfig(appOpts)
+		kvindexerConfig := getKVIndexerDBConfig(appOpts)
 
-		kvindexerDB, err := kvindexerstore.OpenDB(dbDir, kvindexerkeeper.StoreName, kvdbConfig.BackendConfig)
-		if err != nil {
-			panic(err)
+		// create KV indexer db if enabled
+		var kvindexerDB dbm.DB = nil
+		if kvindexerConfig.IsEnabled() {
+			db, err := kvindexerstore.OpenDB(dbDir, kvindexerkeeper.StoreName, kvindexerConfig.BackendConfig)
+			if err != nil {
+				panic(err)
+			}
+			kvindexerDB = db
 		}
 
 		evmConfig := evmconfig.GetConfig(appOpts)

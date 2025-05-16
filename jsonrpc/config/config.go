@@ -23,7 +23,7 @@ const (
 	DefaultEnableUnsafeCORS = true
 	// DefaultMaxOpenConnections is the default maximum number of simultaneous connections
 	// for the server listener.
-	DefaultMaxOpenConnections = 100
+	DefaultMaxOpenConnections = 1000
 	// DefaultAddress defines the default HTTP server to listen on.
 	DefaultAddress = "127.0.0.1:8545"
 	// DefaultAddressWS defines the default WebSocket server address to bind to.
@@ -32,8 +32,6 @@ const (
 	DefaultBatchRequestLimit = 1000
 	// DefaultBatchResponseMaxSize is the default maximum number of bytes returned from a batched call
 	DefaultBatchResponseMaxSize = 25 * 1000 * 1000
-	// DefaultQueuedTransactionCap is the default maximum number of queued transactions that can be in the transaction pool.
-	DefaultQueuedTransactionCap = 1000
 	// DefaultFeeHistoryMaxHeaders is the default maximum number of headers, which can be used to lookup the fee history.
 	DefaultFeeHistoryMaxHeaders = 1024
 	// DefaultFeeHistoryMaxBlocks is the default maximum number of blocks, which can be used to lookup the fee history.
@@ -42,6 +40,8 @@ const (
 	DefaultFilterTimeout = 5 * time.Minute
 	// DefaultFilterMaxBlockRange is the default maximum number of blocks that can be queried in a filter.
 	DefaultFilterMaxBlockRange = 1_000_000
+	// DefaultFilterMaxAddresses is the default maximum number of addresses that can be used in a log filter.
+	DefaultFilterMaxAddresses = 100
 	// DefaultLogCacheSize is the maximum number of cached blocks.
 	DefaultLogCacheSize = 32
 	// DefaultGasMultiplier is the default gas multiplier for the EVM state transition.
@@ -65,14 +65,13 @@ const (
 	flagJSONRPCMaxOpenConnections   = "json-rpc.max-open-connections"
 	flagJSONRPCBatchRequestLimit    = "json-rpc.batch-request-limit"
 	flagJSONRPCBatchResponseMaxSize = "json-rpc.batch-response-max-size"
-	flagJSONRPCQueuedTransactionCap = "json-rpc.queued-transaction-cap"
-	flagJSONRPCQueuedTransactionTTL = "json-rpc.queued-transaction-ttl"
 	flagJSONRPCFeeHistoryMaxHeaders = "json-rpc.fee-history-max-headers"
 	flagJSONRPCFeeHistoryMaxBlocks  = "json-rpc.fee-history-max-blocks"
 	flagJSONRPCFilterTimeout        = "json-rpc.filter-timeout"
 	flagJSONRPCLogCacheSize         = "json-rpc.log-cache-size"
 	flagJSONRPCGasMultiplier        = "json-rpc.gas-multiplier"
 	flagJSONRPCFilterMaxBlockRange  = "json-rpc.filter-max-block-range"
+	flagJSONRPCFilterMaxAddresses   = "json-rpc.filter-max-addresses"
 )
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -100,8 +99,6 @@ type JSONRPCConfig struct {
 	BatchRequestLimit int `mapstructure:"batch-request-limit"`
 	// Maximum number of bytes returned from a batched call
 	BatchResponseMaxSize int `mapstructure:"batch-response-max-size"`
-	// QueuedTransactionCap is a maximum number of queued transactions that can be in the transaction pool.
-	QueuedTransactionCap int `mapstructure:"queued-transaction-cap"`
 	// FeeHistoryMaxHeaders is the maximum number of headers, which can be used to lookup the fee history.
 	FeeHistoryMaxHeaders int `mapstructure:"fee-history-max-headers"`
 	// FeeHistoryMaxBlocks is the maximum number of blocks, which can be used to lookup the fee history.
@@ -114,6 +111,8 @@ type JSONRPCConfig struct {
 	LogCacheSize int `mapstructure:"log-cache-size"`
 	// GasMultiplier is the gas multiplier for the EVM state transition.
 	GasMultiplier string `mapstructure:"gas-multiplier"`
+	// FilterMaxAddresses is the maximum number of addresses that can be used in a log filter.
+	FilterMaxAddresses int `mapstructure:"filter-max-addresses"`
 }
 
 // DefaultJSONRPCConfig returns a default configuration for the EVM RPC server.
@@ -134,15 +133,13 @@ func DefaultJSONRPCConfig() JSONRPCConfig {
 		BatchRequestLimit:    DefaultBatchRequestLimit,
 		BatchResponseMaxSize: DefaultBatchResponseMaxSize,
 
-		QueuedTransactionCap: DefaultQueuedTransactionCap,
-
 		FeeHistoryMaxHeaders: DefaultFeeHistoryMaxHeaders,
 		FeeHistoryMaxBlocks:  DefaultFeeHistoryMaxBlocks,
 
 		FilterTimeout:       DefaultFilterTimeout,
 		FilterMaxBlockRange: DefaultFilterMaxBlockRange,
-
-		LogCacheSize: DefaultLogCacheSize,
+		FilterMaxAddresses:  DefaultFilterMaxAddresses,
+		LogCacheSize:        DefaultLogCacheSize,
 
 		GasMultiplier: DefaultGasMultiplier,
 	}
@@ -161,11 +158,11 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Int(flagJSONRPCMaxOpenConnections, DefaultMaxOpenConnections, "Maximum number of simultaneous connections for the server listener")
 	startCmd.Flags().Int(flagJSONRPCBatchRequestLimit, DefaultBatchRequestLimit, "Maximum number of requests in a batch")
 	startCmd.Flags().Int(flagJSONRPCBatchResponseMaxSize, DefaultBatchResponseMaxSize, "Maximum number of bytes returned from a batched call")
-	startCmd.Flags().Int(flagJSONRPCQueuedTransactionCap, DefaultQueuedTransactionCap, "Maximum number of queued transactions that can be in the transaction pool")
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxHeaders, DefaultFeeHistoryMaxHeaders, "Maximum number of headers used to lookup the fee history")
 	startCmd.Flags().Int(flagJSONRPCFeeHistoryMaxBlocks, DefaultFeeHistoryMaxBlocks, "Maximum number of blocks used to lookup the fee history")
 	startCmd.Flags().Duration(flagJSONRPCFilterTimeout, DefaultFilterTimeout, "Duration how long filters stay active")
 	startCmd.Flags().Int(flagJSONRPCFilterMaxBlockRange, DefaultFilterMaxBlockRange, "Maximum number of blocks that can be queried in a filter")
+	startCmd.Flags().Int(flagJSONRPCFilterMaxAddresses, DefaultFilterMaxAddresses, "Maximum number of addresses that can be used in a log filter")
 	startCmd.Flags().Int(flagJSONRPCLogCacheSize, DefaultLogCacheSize, "Maximum number of cached blocks for the log filter")
 	startCmd.Flags().String(flagJSONRPCGasMultiplier, DefaultGasMultiplier, "Gas multiplier for the EVM state transition")
 }
@@ -184,11 +181,11 @@ func GetConfig(appOpts servertypes.AppOptions) JSONRPCConfig {
 		MaxOpenConnections:   cast.ToInt(appOpts.Get(flagJSONRPCMaxOpenConnections)),
 		BatchRequestLimit:    cast.ToInt(appOpts.Get(flagJSONRPCBatchRequestLimit)),
 		BatchResponseMaxSize: cast.ToInt(appOpts.Get(flagJSONRPCBatchResponseMaxSize)),
-		QueuedTransactionCap: cast.ToInt(appOpts.Get(flagJSONRPCQueuedTransactionCap)),
 		FeeHistoryMaxHeaders: cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxHeaders)),
 		FeeHistoryMaxBlocks:  cast.ToInt(appOpts.Get(flagJSONRPCFeeHistoryMaxBlocks)),
 		FilterTimeout:        cast.ToDuration(appOpts.Get(flagJSONRPCFilterTimeout)),
 		FilterMaxBlockRange:  cast.ToInt(appOpts.Get(flagJSONRPCFilterMaxBlockRange)),
+		FilterMaxAddresses:   cast.ToInt(appOpts.Get(flagJSONRPCFilterMaxAddresses)),
 		LogCacheSize:         cast.ToInt(appOpts.Get(flagJSONRPCLogCacheSize)),
 		GasMultiplier:        cast.ToString(appOpts.Get(flagJSONRPCGasMultiplier)),
 	}
@@ -237,10 +234,6 @@ batch-request-limit = {{ .JSONRPCConfig.BatchRequestLimit }}
 # Maximum number of bytes returned from a batched call
 batch-response-max-size = {{ .JSONRPCConfig.BatchResponseMaxSize }}
 
-# QueuedTransactionCap is the maximum number of queued transactions that 
-# can be in the transaction pool.
-queued-transaction-cap = {{ .JSONRPCConfig.QueuedTransactionCap }}
-
 # FeeHistoryMaxHeaders is the maximum number of headers, which can be used to lookup the fee history.
 fee-history-max-headers = {{ .JSONRPCConfig.FeeHistoryMaxHeaders }}
 
@@ -252,6 +245,9 @@ filter-timeout = "{{ .JSONRPCConfig.FilterTimeout }}"
 
 # FilterMaxBlockRange is the maximum number of blocks that can be queried in a filter.
 filter-max-block-range = {{ .JSONRPCConfig.FilterMaxBlockRange }}
+
+# FilterMaxAddresses is the maximum number of addresses that can be used in a log filter.
+filter-max-addresses = {{ .JSONRPCConfig.FilterMaxAddresses }}
 
 # LogCacheSize is the maximum number of cached blocks for the log filter.
 log-cache-size = {{ .JSONRPCConfig.LogCacheSize }}

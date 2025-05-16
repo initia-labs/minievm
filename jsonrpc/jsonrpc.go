@@ -21,6 +21,7 @@ import (
 	"github.com/initia-labs/minievm/jsonrpc/backend"
 	"github.com/initia-labs/minievm/jsonrpc/config"
 	cosmosns "github.com/initia-labs/minievm/jsonrpc/namespaces/cosmos"
+	debugns "github.com/initia-labs/minievm/jsonrpc/namespaces/debug"
 	ethns "github.com/initia-labs/minievm/jsonrpc/namespaces/eth"
 	"github.com/initia-labs/minievm/jsonrpc/namespaces/eth/filters"
 	netns "github.com/initia-labs/minievm/jsonrpc/namespaces/net"
@@ -104,6 +105,12 @@ func StartJSONRPC(
 			Namespace: CosmosNamespace,
 			Version:   apiVersion,
 			Service:   cosmosns.NewCosmosAPI(ctx, logger, bkd),
+			Public:    true,
+		},
+		{
+			Namespace: DebugNamespace,
+			Version:   apiVersion,
+			Service:   debugns.NewDebugAPI(logger, bkd),
 			Public:    true,
 		},
 	}

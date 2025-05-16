@@ -8,8 +8,8 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/initia-labs/initia v1.0.0-beta.6
-	github.com/initia-labs/minievm v0.6.11
+	github.com/initia-labs/initia v1.0.0
+	github.com/initia-labs/minievm v1.0.7
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -142,14 +142,14 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v1.0.0-beta.2 // indirect
-	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
-	github.com/initia-labs/kvindexer v0.1.11 // indirect
-	github.com/initia-labs/kvindexer/submodules/block v0.1.2 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.8 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.1.6 // indirect
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.3 // indirect
-	github.com/initia-labs/movevm v1.0.0-beta.0 // indirect
+	github.com/initia-labs/OPinit v1.1.0 // indirect
+	github.com/initia-labs/OPinit/api v1.1.0 // indirect
+	github.com/initia-labs/kvindexer v0.1.14 // indirect
+	github.com/initia-labs/kvindexer/submodules/block v0.1.4 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.10 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.2.2 // indirect
+	github.com/initia-labs/kvindexer/submodules/pair v0.1.5 // indirect
+	github.com/initia-labs/movevm v1.0.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -220,6 +220,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
@@ -261,14 +262,25 @@ replace (
 )
 
 // indirect custom dependencies
-// - https://github.com/cosmos/cosmos-sdk/issues/23740
-require github.com/cosmos/iavl v1.2.5-0.20250306174232-6cfb3dac2c71 // indirect
+require github.com/cosmos/iavl v1.2.6 // indirect
 
 // initia custom
+// use custom version for
+//
+// cosmos-sdk
+// - https://github.com/initia-labs/cosmos-sdk/commit/2d8e8144a217545d4d4d35d4b82f0dcc711a2501
+// - https://github.com/cosmos/cosmos-sdk/pull/24526
+//
+// ibc-go
+// - https://github.com/initia-labs/ibc-go/commit/36b81501adfc4506f5b3a19886c8f5b38dec47da
+//
+// connect
+// - https://github.com/initia-labs/connect/pull/1
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250317074810-1c0e84d2d4b6
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250423153228-2a8797de61ac
+	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250415174140-9fd233bcf847
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20241108055119-3d312736d7fb
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250502185204-604b1666eb18
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
 
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line

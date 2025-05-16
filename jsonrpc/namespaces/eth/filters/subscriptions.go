@@ -81,7 +81,7 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 
 	if len(crit.Topics) > maxTopics {
 		return &rpc.Subscription{}, errExceedMaxTopics
-	} else if len(crit.Addresses) > maxAddresses {
+	} else if len(crit.Addresses) > api.backend.FilterMaxAddresses() {
 		return &rpc.Subscription{}, errExceedMaxAddrs
 	}
 

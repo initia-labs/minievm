@@ -1,14 +1,17 @@
 #!/usr/bin/make -f
 
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
-COMMIT := $(shell git log -1 --format='%H')
 LEDGER_ENABLED ?= true
 BINDIR ?= $(GOPATH)/bin
 BUILDDIR ?= $(CURDIR)/build
 DOCKER := $(shell which docker)
 CONTRACTS_DIR = ./x/evm/contracts
 
-# don't override user values
+# don't override user values of COMMIT and VERSION
+ifeq (,$(COMMIT))
+  COMMIT := $(shell git log -1 --format='%H')
+endif
+
 ifeq (,$(VERSION))
   VERSION := $(shell git describe --tags)
   # if VERSION is empty, then populate it with branch's name and raw commit hash
@@ -67,7 +70,7 @@ build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 # process linker flags
 
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=minitia \
+ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=minievm \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=minitiad \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
