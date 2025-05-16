@@ -4,8 +4,10 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
-	"github.com/initia-labs/minievm/x/evm/ante"
+	"github.com/initia-labs/minievm/app/ante"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 func (suite *AnteTestSuite) TestIncrementSequenceDecorator() {
@@ -27,7 +29,10 @@ func (suite *AnteTestSuite) TestIncrementSequenceDecorator() {
 	suite.txBuilder.SetFeeAmount(feeAmount)
 	suite.txBuilder.SetGasLimit(gasLimit)
 
-	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID())
+	defaultSignMode, err := authsign.APISignModeToInternal(suite.app.TxConfig().SignModeHandler().DefaultMode())
+	suite.NoError(err)
+
+	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID(), defaultSignMode)
 	suite.NoError(err)
 
 	isd := ante.NewIncrementSequenceDecorator(suite.app.AccountKeeper)
@@ -51,6 +56,6 @@ func (suite *AnteTestSuite) TestIncrementSequenceDecorator() {
 		suite.Equal(tc.expectedSeq, suite.app.AccountKeeper.GetAccount(suite.ctx, addr).GetSequence())
 
 		// the flag should be set in the context
-		suite.NotNil(ctx.Value(ante.ContextKeySequenceIncremented))
+		suite.NotNil(ctx.Value(evmtypes.CONTEXT_KEY_SEQUENCE_INCREMENTED))
 	}
 }

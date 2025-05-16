@@ -377,64 +377,8 @@ func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx)
 	return tx, &sender, nil
 }
 
-// IsEthereumTx checks if the given Cosmos SDK transaction is an Ethereum transaction.
-func (u *TxUtils) IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error) {
-	msgs := sdkTx.GetMsgs()
-	if len(msgs) != 1 {
-		return false, nil
-	}
-
-	authTx := sdkTx.(authsigning.Tx)
-	memo := authTx.GetMemo()
-	if len(memo) == 0 {
-		return false, nil
-	}
-	md := metadata{}
-	decoder := json.NewDecoder(bytes.NewReader([]byte(memo)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&md); err != nil {
-		return false, nil
-	}
-
-	sigs, err := authTx.GetSignaturesV2()
-	if err != nil {
-		return false, err
-	}
-	if len(sigs) != 1 {
-		return false, nil
-	}
-
-	feeAmount := authTx.GetFee()
-	params, err := u.Params.Get(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	if !(len(feeAmount) == 0 || (len(feeAmount) == 1 && feeAmount[0].Denom == params.FeeDenom)) {
-		return false, nil
-	}
-
-	msg := msgs[0]
-	typeUrl := sdk.MsgTypeURL(msg)
-	if typeUrl != "/minievm.evm.v1.MsgCall" && typeUrl != "/minievm.evm.v1.MsgCreate" {
-		return false, nil
-	}
-
-	sig := sigs[0]
-	cosmosSender := sig.PubKey.Address()
-	if len(cosmosSender.Bytes()) != common.AddressLength {
-		return false, nil
-	}
-
-	sigData, ok := sig.Data.(*signing.SingleSignatureData)
-	if !ok {
-		return false, nil
-	}
-
-	// filter out non-EVM transactions
-	if sigData.SignMode != SignMode_SIGN_MODE_ETHEREUM {
-		return false, nil
-	}
-
-	return true, nil
+// IsEthereumTx checks current context has ethereum tx
+// This is used to check if the transaction is an ethereum transaction.
+func (u *TxUtils) IsEthereumTx(ctx context.Context) bool {
+	return sdk.UnwrapSDKContext(ctx).Value(types.CONTEXT_KEY_ETH_TX) != nil
 }

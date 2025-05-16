@@ -63,4 +63,10 @@ const (
 
 	// CONTEXT_KEY_ETH_TX_SENDER is a context key for ethereum tx sender
 	CONTEXT_KEY_ETH_TX_SENDER
+
+	// CONTEXT_KEY_GAS_PRICES is a context key for gas prices
+	CONTEXT_KEY_GAS_PRICES
+
+	// CONTEXT_KEY_SEQUENCE_INCREMENTED is a context key for sequence incremented
+	CONTEXT_KEY_SEQUENCE_INCREMENTED
 )

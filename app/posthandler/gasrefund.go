@@ -12,7 +12,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 var _ sdk.PostDecorator = &GasRefundDecorator{}
@@ -33,7 +33,7 @@ func NewGasRefundDecorator(logger log.Logger, ek EVMKeeper) sdk.PostDecorator {
 func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, success bool, next sdk.PostHandler) (newCtx sdk.Context, err error) {
 	if success && ctx.ExecMode() == sdk.ExecModeFinalize {
 		// Conduct gas refund only for the successful EVM transactions
-		if ok, err := erd.ek.TxUtils().IsEthereumTx(ctx, tx); err != nil || !ok {
+		if !erd.ek.TxUtils().IsEthereumTx(ctx) {
 			return next(ctx, tx, simulate, success)
 		}
 
@@ -42,7 +42,7 @@ func (erd *GasRefundDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, 
 			return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
 		}
 
-		value := ctx.Value(evmante.ContextKeyGasPrices)
+		value := ctx.Value(evmtypes.CONTEXT_KEY_GAS_PRICES)
 		if value == nil {
 			return next(ctx, tx, simulate, success)
 		}

@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -27,7 +26,7 @@ func Test_GasPrice(t *testing.T) {
 
 	gasPriceInEthersUnit := types.ToEthersUnit(0, big.NewInt(123))
 	gasPrice := types.FromEthersUnit(fee.Decimals(), gasPriceInEthersUnit)
-	ctx = ctx.WithValue(evmante.ContextKeyGasPrices, sdk.DecCoins{sdk.NewDecCoinFromDec(fee.Denom(), math.LegacyNewDecFromBigInt(gasPrice))})
+	ctx = ctx.WithValue(types.CONTEXT_KEY_GAS_PRICES, sdk.DecCoins{sdk.NewDecCoinFromDec(fee.Denom(), math.LegacyNewDecFromBigInt(gasPrice))})
 
 	caller := common.BytesToAddress(addr.Bytes())
 	_, evm, err := input.EVMKeeper.CreateEVM(ctx, caller, nil)

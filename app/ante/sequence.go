@@ -6,6 +6,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 // IncrementSequenceDecorator is an AnteDecorator that increments the sequence number
@@ -44,6 +46,6 @@ func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 
 	// set a flag in context to indicate that sequence has been incremented in ante handler
 	incremented := true // use pointer to enable revert after first call
-	ctx = ctx.WithValue(ContextKeySequenceIncremented, &incremented)
+	ctx = ctx.WithValue(evmtypes.CONTEXT_KEY_SEQUENCE_INCREMENTED, &incremented)
 	return next(ctx, tx, simulate)
 }

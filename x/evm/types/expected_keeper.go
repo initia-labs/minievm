@@ -107,7 +107,7 @@ type GasPriceKeeper interface {
 type TxUtils interface {
 	ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx) (*coretypes.Transaction, *common.Address, error)
 	ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *coretypes.Transaction) (sdk.Tx, error)
-	IsEthereumTx(ctx context.Context, sdkTx sdk.Tx) (bool, error)
+	IsEthereumTx(ctx context.Context) bool
 }
 
 type IBCHookKeeper interface {

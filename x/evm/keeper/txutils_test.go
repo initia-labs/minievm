@@ -14,8 +14,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -447,108 +445,11 @@ func Test_LegacyTxConversion(t *testing.T) {
 func Test_IsEthereumTx(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 
-	txBuilder := authtx.NewTxConfig(input.EncodingConfig.Codec, authtx.DefaultSignModes).NewTxBuilder()
-
-	// 1. multiple messages
-	txBuilder.SetMsgs(&types.MsgCall{}, &types.MsgCall{})
-	txBuilder.SetMemo("{}")
-	tx := txBuilder.GetTx()
-
-	ok, err := input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
-	require.NoError(t, err)
+	ok := keeper.NewTxUtils(&input.EVMKeeper).IsEthereumTx(ctx)
 	require.False(t, ok)
 
-	// 2. wrong fee type
-	txBuilder.SetMsgs(&types.MsgCall{})
-	txBuilder.SetMemo("{}")
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("foo", math.NewInt(100))))
-	tx = txBuilder.GetTx()
-
-	ok, err = input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
-	require.NoError(t, err)
-	require.False(t, ok)
-
-	// 3. wrong message type
-	txBuilder.SetMsgs(&types.MsgCreate2{})
-	txBuilder.SetMemo("{}")
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100))))
-	tx = txBuilder.GetTx()
-
-	ok, err = input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
-	require.NoError(t, err)
-	require.False(t, ok)
-
-	// 4. wrong cosmos type
-	txBuilder.SetMsgs(&banktypes.MsgMultiSend{})
-	txBuilder.SetMemo("{}")
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100))))
-	tx = txBuilder.GetTx()
-
-	ok, err = input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
-	require.NoError(t, err)
-	require.False(t, ok)
-
-	ethTx, _, err := input.EVMKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
-	require.NoError(t, err)
-	require.Nil(t, ethTx)
-
-	// 5. wrong signature type
-	txBuilder.SetMsgs(&types.MsgCreate{})
-	txBuilder.SetMemo("{}")
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100))))
-
-	// empty eth tx for signature
-	randBytes := make([]byte, 64)
-	_, err = rand.Read(randBytes)
-	require.NoError(t, err)
-	reader := bytes.NewReader(randBytes)
-	privKey, err := ecdsa.GenerateKey(crypto.S256(), reader)
-	require.NoError(t, err)
-
-	ethChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
-	signer := coretypes.LatestSignerForChainID(ethChainID)
-	signedTx, err := coretypes.SignTx(coretypes.NewTx(&coretypes.DynamicFeeTx{}), signer, privKey)
-	require.NoError(t, err)
-
-	cosmosKey := ethsecp256k1.PrivKey{
-		Key: crypto.FromECDSA(privKey),
-	}
-
-	v, r, s := signedTx.RawSignatureValues()
-	sigBytes := make([]byte, 65)
-	copy(sigBytes[32-len(r.Bytes()):32], r.Bytes())
-	copy(sigBytes[64-len(s.Bytes()):64], s.Bytes())
-	sigBytes[64] = byte(v.Uint64())
-	err = txBuilder.SetSignatures(signing.SignatureV2{
-		PubKey: cosmosKey.PubKey(),
-		Data: &signing.SingleSignatureData{
-			SignMode:  signing.SignMode(10),
-			Signature: sigBytes,
-		},
-	})
-	require.NoError(t, err)
-
-	tx = txBuilder.GetTx()
-	ok, err = input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
-	require.NoError(t, err)
-	require.False(t, ok)
-
-	// 5. correct tx
-	txBuilder.SetMsgs(&types.MsgCall{})
-	txBuilder.SetMemo("{}")
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(100))))
-	err = txBuilder.SetSignatures(signing.SignatureV2{
-		PubKey: cosmosKey.PubKey(),
-		Data: &signing.SingleSignatureData{
-			SignMode:  keeper.SignMode_SIGN_MODE_ETHEREUM,
-			Signature: sigBytes,
-		},
-	})
-	require.NoError(t, err)
-	tx = txBuilder.GetTx()
-
-	ok, err = input.EVMKeeper.TxUtils().IsEthereumTx(ctx, tx)
-	require.NoError(t, err)
+	ctx = ctx.WithValue(types.CONTEXT_KEY_ETH_TX, true)
+	ok = keeper.NewTxUtils(&input.EVMKeeper).IsEthereumTx(ctx)
 	require.True(t, ok)
 }
 
