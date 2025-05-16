@@ -3,6 +3,10 @@ package indexer
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+
+	abci "github.com/cometbft/cometbft/abci/types"
+	comettypes "github.com/cometbft/cometbft/types"
 
 	collcodec "cosmossdk.io/collections/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,8 +16,117 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
+
+type EthTxInfo struct {
+	Tx           *coretypes.Transaction
+	Logs         []*coretypes.Log
+	ContractAddr *common.Address
+	Status       uint64
+	GasUsed      uint64
+	CosmosTxHash []byte
+}
+
+// extractEthTxInfo extracts Ethereum transaction information from a Cosmos SDK transaction.
+// It decodes the transaction, checks its status, and converts it to an Ethereum transaction format.
+// For successful Ethereum transactions, it extracts logs and contract address information.
+// For non-Ethereum Cosmos transactions, it processes EVM events if the transaction was successful and
+// creates a fake Ethereum transaction for indexing purposes.
+func extractEthTxInfo(
+	ctx sdk.Context,
+	txDecoder sdk.TxDecoder,
+	evmKeeper keeper.Keeper,
+	txBytes []byte,
+	txResult *abci.ExecTxResult,
+) (*EthTxInfo, error) {
+	tx, err := txDecoder(txBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	txStatus := coretypes.ReceiptStatusSuccessful
+	if txResult.Code != abci.CodeTypeOK {
+		txStatus = coretypes.ReceiptStatusFailed
+	}
+
+	// convert cosmos tx to ethereum tx
+	ethTx, _, err := evmKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// if the tx is normal ethereum tx, then return a single EthTxInfo
+	if ethTx != nil {
+		ethLogs, contractAddr, err := extractLogsAndContractAddr(txStatus, txResult.Data, ethTx.To() == nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return &EthTxInfo{
+			Tx:           ethTx,
+			Logs:         ethLogs,
+			ContractAddr: contractAddr,
+			Status:       txStatus,
+			GasUsed:      uint64(txResult.GasUsed),
+			CosmosTxHash: comettypes.Tx(txBytes).Hash(),
+		}, nil
+	}
+
+	// if the tx is not successful, then we don't need to create fake eth tx for cosmos tx
+	if txStatus != coretypes.ReceiptStatusSuccessful {
+		return nil, nil
+	}
+
+	var logs types.Logs
+	for _, event := range txResult.Events {
+		if event.Type != types.EventTypeEVM {
+			continue
+		}
+
+		for _, attr := range event.Attributes {
+			if attr.Key != types.AttributeKeyLog {
+				continue
+			}
+
+			var log types.Log
+			if err := json.Unmarshal([]byte(attr.Value), &log); err != nil {
+				return nil, err
+			}
+
+			logs = append(logs, log)
+		}
+	}
+	if len(logs) == 0 {
+		return nil, nil
+	}
+
+	// if there is evm events, then create a fake eth tx
+	cosmosTxHash := comettypes.Tx(txBytes).Hash()
+	ethLogs := logs.ToEthLogs()
+	ethTx = coretypes.NewTx(&coretypes.LegacyTx{
+		Data:     cosmosTxHash,
+		To:       nil,
+		Nonce:    0,
+		Gas:      0,
+		GasPrice: new(big.Int),
+		Value:    new(big.Int),
+		V:        new(big.Int),
+		R:        new(big.Int),
+		S:        new(big.Int),
+	})
+
+	// check whether the tx has MsgCall or MsgCreate or MsgCreate2
+	return &EthTxInfo{
+		Tx:           ethTx,
+		Logs:         ethLogs,
+		Status:       txStatus,
+		ContractAddr: nil,
+		GasUsed:      uint64(txResult.GasUsed),
+		CosmosTxHash: cosmosTxHash,
+	}, nil
+}
 
 func extractLogsAndContractAddr(txStatus uint64, data []byte, isContractCreation bool) ([]*coretypes.Log, *common.Address, error) {
 	if txStatus != coretypes.ReceiptStatusSuccessful {

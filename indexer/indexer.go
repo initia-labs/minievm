@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/jellydator/ttlcache/v3"
 
 	"cosmossdk.io/collections"
@@ -114,6 +115,16 @@ type EVMIndexerImpl struct {
 
 	// queuedTxs is a map to store tx hashes in queued state.
 	queuedTxs *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
+
+	// wg is a wait group to wait for all the indexing to finish.
+	indexingChan chan *indexingTask
+}
+
+// indexingTask is a task to be indexed.
+type indexingTask struct {
+	ctx context.Context
+	req *abci.RequestFinalizeBlock
+	res *abci.ResponseFinalizeBlock
 }
 
 func NewEVMIndexer(
@@ -179,6 +190,8 @@ func NewEVMIndexer(
 			// queued tx lifetime is 1 minutes in indexer
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
+
+		indexingChan: make(chan *indexingTask, 10),
 	}
 
 	schema, err := sb.Build()
@@ -190,6 +203,9 @@ func NewEVMIndexer(
 	// expire pending tx
 	go indexer.pendingTxs.Start()
 	go indexer.queuedTxs.Start()
+
+	// start indexing loop
+	go indexer.indexingLoop()
 
 	return indexer, nil
 }
@@ -240,5 +256,20 @@ func (e *EVMIndexerImpl) Stop() {
 	}
 	if e.queuedTxs != nil {
 		e.queuedTxs.Stop()
+	}
+
+	// wait for all the indexing to finish
+	ticker := time.NewTicker(time.Millisecond * 100)
+	timeout := time.NewTimer(time.Second * 30)
+	for {
+		select {
+		case <-ticker.C:
+			if len(e.indexingChan) == 0 {
+				return
+			}
+		case <-timeout.C:
+			e.logger.Error("evm indexer stop timeout, some indexing tasks are still running")
+			return
+		}
 	}
 }
