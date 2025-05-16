@@ -116,7 +116,7 @@ func (c *CacheStoreWithBatch) Set(key, value []byte) error {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
-		c.writeBatchLocked()
+		c.writeBatchUnlocked()
 		c.batch = c.db.NewBatch()
 	}
 
@@ -146,7 +146,7 @@ func (c *CacheStoreWithBatch) Delete(key []byte) error {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
-		c.writeBatchLocked()
+		c.writeBatchUnlocked()
 		c.batch = c.db.NewBatch()
 	}
 
@@ -169,13 +169,7 @@ func (i *cacheIterator) Value() []byte {
 		return value
 	}
 
-	// get from the underlying iterator
-	value := i.Iterator.Value()
-	if value != nil {
-		_ = i.cache.Set(string(key), value)
-	}
-
-	return value
+	return i.Iterator.Value()
 }
 
 // Iterator iterates over a domain of keys in ascending order. End is exclusive.
@@ -214,12 +208,12 @@ func (c *CacheStoreWithBatch) Write() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	c.writeBatchLocked()
+	c.writeBatchUnlocked()
 }
 
-// writeBatchLocked writes the batch to persistent storage and resets both the batch and cache,
+// writeBatchUnlocked writes the batch to persistent storage and resets both the batch and cache,
 // assuming that the caller has already acquired the appropriate locks.
-func (c *CacheStoreWithBatch) writeBatchLocked() {
+func (c *CacheStoreWithBatch) writeBatchUnlocked() {
 	if c.batch == nil {
 		return
 	}

@@ -240,5 +240,19 @@ func (e *EVMIndexerImpl) Stop() {
 	if e.queuedTxs != nil {
 		e.queuedTxs.Stop()
 	}
+
+	logged := false
+	for e.pruningRunning.Load() {
+		if !logged {
+			e.logger.Info("Waiting for pruning to complete before shutdown...")
+			logged = true
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// Set pruning running to true to prevent other goroutines from entering
+	e.pruningRunning.Store(true)
+
 	e.store.Write()
+	e.logger.Info("Indexer stopped successfully")
 }
