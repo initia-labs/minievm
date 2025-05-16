@@ -241,17 +241,19 @@ func (e *EVMIndexerImpl) Stop() {
 		e.queuedTxs.Stop()
 	}
 
+	// flag to prevent logging multiple times
 	logged := false
-	for e.pruningRunning.Load() {
+
+	// Wait for pruning to complete. it try to swap the pruningRunning to true,
+	// if the old value is false, then it means pruning is not running and we can stop the indexer.
+	for e.pruningRunning.Swap(true) {
 		if !logged {
 			e.logger.Info("Waiting for pruning to complete before shutdown...")
 			logged = true
 		}
+
 		time.Sleep(100 * time.Millisecond)
 	}
-
-	// Set pruning running to true to prevent other goroutines from entering
-	e.pruningRunning.Store(true)
 
 	e.store.Write()
 	e.logger.Info("Indexer stopped successfully")
