@@ -10,7 +10,6 @@ import (
 	"cosmossdk.io/collections"
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
-	"cosmossdk.io/store/dbadapter"
 	snapshot "cosmossdk.io/store/snapshots/types"
 	storetypes "cosmossdk.io/store/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -85,7 +84,7 @@ type EVMIndexerImpl struct {
 	txConfig client.TxConfig
 	appCodec codec.Codec
 
-	store     *CacheStore
+	store     *CacheStoreWithBatch
 	evmKeeper *evmkeeper.Keeper
 
 	schema collections.Schema
@@ -128,7 +127,7 @@ func NewEVMIndexer(
 		cfg.IndexerCacheSize = evmconfig.DefaultIndexerCacheSize
 	}
 
-	store := NewCacheStore(dbadapter.Store{DB: db}, cfg.IndexerCacheSize)
+	store := NewCacheStoreWithBatch(db, cfg.IndexerCacheSize)
 	sb := collections.NewSchemaBuilderFromAccessor(
 		func(ctx context.Context) corestoretypes.KVStore {
 			// if there is prune store in context, use it
@@ -241,4 +240,21 @@ func (e *EVMIndexerImpl) Stop() {
 	if e.queuedTxs != nil {
 		e.queuedTxs.Stop()
 	}
+
+	// flag to prevent logging multiple times
+	logged := false
+
+	// Wait for pruning to complete. it try to swap the pruningRunning to true,
+	// if the old value is false, then it means pruning is not running and we can stop the indexer.
+	for e.pruningRunning.Swap(true) {
+		if !logged {
+			e.logger.Info("Waiting for pruning to complete before shutdown...")
+			logged = true
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	e.store.Write()
+	e.logger.Info("Indexer stopped successfully")
 }

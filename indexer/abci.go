@@ -21,7 +21,6 @@ import (
 )
 
 func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseCommit, changeSet []*storetypes.StoreKVPair) error {
-	e.store.Write()
 	return nil
 }
 
