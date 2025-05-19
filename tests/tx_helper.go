@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -233,7 +232,6 @@ INDEXING_WAIT_LOOP:
 
 func CheckTxResult(t *testing.T, txResult *abcitypes.ExecTxResult, expectSuccess bool) {
 	if expectSuccess {
-		fmt.Println("txResult", txResult.Log)
 		require.Equal(t, abcitypes.CodeTypeOK, txResult.Code)
 	} else {
 		require.NotEqual(t, abcitypes.CodeTypeOK, txResult.Code)

@@ -322,17 +322,19 @@ func Test_NewFilter(t *testing.T) {
 
 	changes, err := input.filterAPI.GetFilterChanges(filterID)
 	require.NoError(t, err)
-	require.Len(t, changes, 1)
+	require.Len(t, changes, 2) // 1 for tx fee and 1 for mint
 	for _, change := range changes.([]*coretypes.Log) {
 		require.Equal(t, txHash2, change.TxHash)
 	}
 
 	changes, err = input.filterAPI.GetFilterChanges(filterID2)
 	require.NoError(t, err)
-	require.Len(t, changes, 3)
+	require.Len(t, changes, 5) // 2 for tx fee for each txs and 2 for tx 1 and 1 for tx 2
 	require.Equal(t, txHash1, changes.([]*coretypes.Log)[0].TxHash)
 	require.Equal(t, txHash1, changes.([]*coretypes.Log)[1].TxHash)
-	require.Equal(t, txHash2, changes.([]*coretypes.Log)[2].TxHash)
+	require.Equal(t, txHash1, changes.([]*coretypes.Log)[2].TxHash)
+	require.Equal(t, txHash2, changes.([]*coretypes.Log)[3].TxHash)
+	require.Equal(t, txHash2, changes.([]*coretypes.Log)[4].TxHash)
 }
 
 func Test_GetLogs(t *testing.T) {
@@ -490,7 +492,7 @@ func Test_GetFilterLogs(t *testing.T) {
 	// there should be 1 changes
 	logs, err := input.filterAPI.GetFilterLogs(context.Background(), filterID)
 	require.NoError(t, err)
-	require.Len(t, logs, 1)
+	require.Len(t, logs, 2) // 1 for tx fee and 1 for mint
 	for _, change := range logs {
 		require.Equal(t, txHash2, change.TxHash)
 	}
@@ -498,8 +500,10 @@ func Test_GetFilterLogs(t *testing.T) {
 	// there should be 3 changes
 	logs, err = input.filterAPI.GetFilterLogs(context.Background(), filterID2)
 	require.NoError(t, err)
-	require.Len(t, logs, 3)
+	require.Len(t, logs, 5) // 2 for tx fee and 2 for tx 1 and 1 for tx 2
 	require.Equal(t, txHash1, logs[0].TxHash)
 	require.Equal(t, txHash1, logs[1].TxHash)
-	require.Equal(t, txHash2, logs[2].TxHash)
+	require.Equal(t, txHash1, logs[2].TxHash)
+	require.Equal(t, txHash2, logs[3].TxHash)
+	require.Equal(t, txHash2, logs[4].TxHash)
 }

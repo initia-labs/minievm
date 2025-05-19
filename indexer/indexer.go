@@ -122,7 +122,10 @@ type EVMIndexerImpl struct {
 	indexingChan chan *indexingTask
 
 	// indexedHeight is the height of the last indexed block.
-	indexedHeight uint64
+	indexedHeight *atomic.Uint64
+
+	// lastFinalizeHeight is the height of the last finalize block.
+	lastFinalizeHeight *atomic.Uint64
 }
 
 // indexingTask is a task to be indexed.
@@ -196,8 +199,11 @@ func NewEVMIndexer(
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
 
-		indexingChan:  make(chan *indexingTask, 10),
-		indexedHeight: 0,
+		indexingChan: make(chan *indexingTask, 10),
+
+		// for graceful shutdown
+		indexedHeight:      &atomic.Uint64{},
+		lastFinalizeHeight: &atomic.Uint64{},
 	}
 
 	schema, err := sb.Build()
@@ -283,7 +289,7 @@ func (e *EVMIndexerImpl) flushStore() {
 	for {
 		select {
 		case <-ticker.C:
-			if len(e.indexingChan) == 0 && !e.pruningRunning.Swap(true) {
+			if len(e.indexingChan) == 0 && !e.pruningRunning.Swap(true) && e.LastFinalizeHeight() == e.IndexedHeight() {
 				e.store.Write()
 				e.logger.Info("EVM indexer stopped successfully")
 
@@ -298,5 +304,9 @@ func (e *EVMIndexerImpl) flushStore() {
 
 // IndexedHeight returns the height of the last indexed block.
 func (e *EVMIndexerImpl) IndexedHeight() uint64 {
-	return e.indexedHeight
+	return e.indexedHeight.Load()
+}
+
+func (e *EVMIndexerImpl) LastFinalizeHeight() uint64 {
+	return e.lastFinalizeHeight.Load()
 }
