@@ -188,8 +188,6 @@ func extractEthTxInfo(
 		R:        new(big.Int),
 		S:        new(big.Int),
 	})
-
-	// check whether the tx has MsgCall or MsgCreate or MsgCreate2
 	return &EthTxInfo{
 		Tx:           ethTx,
 		Logs:         ethLogs,
