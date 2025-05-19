@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -69,7 +70,7 @@ type EVMIndexer interface {
 	IsBloomIndexingRunning() bool
 
 	// Stop
-	Stop()
+	Close() error
 
 	// IndexedHeight returns the height of the last indexed block.
 	IndexedHeight() uint64
@@ -169,7 +170,7 @@ func NewEVMIndexer(
 
 		db:       db,
 		store:    store,
-		logger:   logger.With("module", "indexer"),
+		logger:   logger.With("module", "evm-indexer"),
 		txConfig: txConfig,
 		appCodec: appCodec,
 
@@ -261,8 +262,8 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan 
 	}
 }
 
-// Stop stops the indexer.
-func (e *EVMIndexerImpl) Stop() {
+// Close stops the indexer.
+func (e *EVMIndexerImpl) Close() error {
 	if e.pendingTxs != nil {
 		e.pendingTxs.Stop()
 	}
@@ -271,14 +272,14 @@ func (e *EVMIndexerImpl) Stop() {
 	}
 
 	// flush store before stopping
-	e.flushStore()
+	return e.flushStore()
 }
 
 // flushStore flushes the store before stopping the indexer.
 // it waits for all the indexing to finish and then flushes the store.
 // it also waits for pruning to complete before flushing the store.
-func (e *EVMIndexerImpl) flushStore() {
-	e.logger.Info("Waiting for EVM indexer to complete before shutdown...")
+func (e *EVMIndexerImpl) flushStore() error {
+	e.logger.Info("service stop", "msg", "Stopping EVM indexer service")
 
 	// wait for all the indexing to finish
 	ticker := time.NewTicker(time.Millisecond * 100)
@@ -291,13 +292,15 @@ func (e *EVMIndexerImpl) flushStore() {
 		case <-ticker.C:
 			if len(e.indexingChan) == 0 && !e.pruningRunning.Swap(true) && e.LastFinalizeHeight() == e.IndexedHeight() {
 				e.store.Write()
-				e.logger.Info("EVM indexer stopped successfully")
+				e.logger.Info("Closing evm_index.db")
+				if err := e.store.db.Close(); err != nil {
+					return err
+				}
 
-				return
+				return nil
 			}
 		case <-timeout.C:
-			e.logger.Error("Timeout waiting for EVM indexer to complete before shutdown")
-			return
+			return fmt.Errorf("timeout waiting for EVM indexer to complete before shutdown")
 		}
 	}
 }
