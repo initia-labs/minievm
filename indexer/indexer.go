@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -69,11 +70,13 @@ type EVMIndexer interface {
 	PeekBloomBitsNextSection(ctx context.Context) (uint64, error)
 	IsBloomIndexingRunning() bool
 
-	// Close stops the indexer process and flushes the store with a timeout.
+	// Close stops the indexer process, waits for pending operations to complete,
+	// and flushes the store to disk with a timeout. Returns an error if the
+	// timeout is reached before operations complete.
 	Close() error
 
-	// IndexedHeight returns the height of the last indexed block.
-	IndexedHeight() uint64
+	// Wait waits for all the indexing to finish.
+	Wait()
 }
 
 // EVMIndexerImpl implements EVMIndexer.
@@ -122,11 +125,8 @@ type EVMIndexerImpl struct {
 	// wg is a wait group to wait for all the indexing to finish.
 	indexingChan chan *indexingTask
 
-	// indexedHeight is the height of the last indexed block.
-	indexedHeight *atomic.Uint64
-
-	// lastFinalizeHeight is the height of the last finalize block.
-	lastFinalizeHeight *atomic.Uint64
+	// indexingWg is a wait group to wait for all the indexing to finish.
+	indexingWg *sync.WaitGroup
 }
 
 // indexingTask is a task to be indexed.
@@ -203,8 +203,7 @@ func NewEVMIndexer(
 		indexingChan: make(chan *indexingTask, 10),
 
 		// for graceful shutdown
-		indexedHeight:      &atomic.Uint64{},
-		lastFinalizeHeight: &atomic.Uint64{},
+		indexingWg: &sync.WaitGroup{},
 	}
 
 	schema, err := sb.Build()
@@ -282,6 +281,9 @@ func (e *EVMIndexerImpl) flushStore() error {
 	e.logger.Info("service stop", "msg", "Stopping EVM indexer service")
 
 	// wait for all the indexing to finish
+	e.Wait()
+
+	// wait for all the indexing to finish
 	ticker := time.NewTicker(time.Millisecond * 100)
 	timeout := time.NewTimer(time.Second * 30)
 	defer ticker.Stop()
@@ -290,8 +292,11 @@ func (e *EVMIndexerImpl) flushStore() error {
 	for {
 		select {
 		case <-ticker.C:
-			if len(e.indexingChan) == 0 && !e.pruningRunning.Swap(true) && e.LastFinalizeHeight() == e.IndexedHeight() {
+			if !e.pruningRunning.Swap(true) {
+				// if pruning is finished, flush the store
 				e.store.Write()
+
+				// close the store
 				e.logger.Info("Closing evm_index.db")
 				if err := e.store.db.Close(); err != nil {
 					return err
@@ -305,11 +310,7 @@ func (e *EVMIndexerImpl) flushStore() error {
 	}
 }
 
-// IndexedHeight returns the height of the last indexed block.
-func (e *EVMIndexerImpl) IndexedHeight() uint64 {
-	return e.indexedHeight.Load()
-}
-
-func (e *EVMIndexerImpl) LastFinalizeHeight() uint64 {
-	return e.lastFinalizeHeight.Load()
+// Wait waits for all the indexing to finish.
+func (e *EVMIndexerImpl) Wait() {
+	e.indexingWg.Wait()
 }

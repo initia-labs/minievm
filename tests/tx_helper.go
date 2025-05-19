@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -210,22 +209,7 @@ func ExecuteTxs(t *testing.T, app *minitiaapp.MinitiaApp, txs ...sdk.Tx) (*abcit
 	require.NoError(t, err)
 
 	// wait for indexing to complete
-	ticker := time.NewTicker(time.Millisecond * 100)
-	timeout := time.NewTimer(time.Second * 10)
-	defer ticker.Stop()
-	defer timeout.Stop()
-
-INDEXING_WAIT_LOOP:
-	for {
-		select {
-		case <-ticker.C:
-			if app.EVMIndexer().IndexedHeight() >= uint64(finalizeReq.Height) {
-				break INDEXING_WAIT_LOOP
-			}
-		case <-timeout.C:
-			require.Fail(t, "timeout waiting for indexing to complete")
-		}
-	}
+	app.EVMIndexer().Wait()
 
 	return finalizeReq, finalizeRes
 }
@@ -251,7 +235,7 @@ func IncreaseBlockHeight(t *testing.T, app *minitiaapp.MinitiaApp) {
 func GenerateCosmosTx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, msgs []sdk.Msg) sdk.Tx {
 	txConfig := app.TxConfig()
 	txBuilder := txConfig.NewTxBuilder()
-	txBuilder.SetMsgs(msgs...)
+	_ = txBuilder.SetMsgs(msgs...)
 	txBuilder.SetMemo("test")
 	txBuilder.SetGasLimit(1000000)
 

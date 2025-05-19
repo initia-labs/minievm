@@ -12,8 +12,6 @@ import (
 	collcodec "cosmossdk.io/collections/codec"
 	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -150,10 +148,6 @@ func extractEthTxInfo(
 			return nil, err
 		}
 
-		if ethLogs == nil {
-			fmt.Println("SIBONG1", ethLogs)
-		}
-
 		return &EthTxInfo{
 			Tx:           ethTx,
 			Logs:         ethLogs,
@@ -171,7 +165,9 @@ func extractEthTxInfo(
 
 	// extract the logs from the events
 	ethLogs, _, err := extractLogsAndContractAddr(txStatus, txResult.Events, false)
-	if len(ethLogs) == 0 {
+	if err != nil {
+		return nil, err
+	} else if len(ethLogs) == 0 {
 		return nil, nil
 	}
 
@@ -249,31 +245,6 @@ func extractLogsAndContractAddr(txStatus uint64, events []abci.Event, isContract
 	}
 
 	return logs, contractAddr, nil
-}
-
-// unpackData extracts msg response from the data
-func unpackData(data []byte, resp proto.Message) error {
-	var txMsgData sdk.TxMsgData
-	if err := proto.Unmarshal(data, &txMsgData); err != nil {
-		return err
-	}
-
-	if len(txMsgData.MsgResponses) == 0 {
-		return sdkerrors.ErrLogic.Wrap("failed to unpack data; got nil Msg response")
-	}
-
-	msgResp := txMsgData.MsgResponses[0]
-	expectedTypeUrl := sdk.MsgTypeURL(resp)
-	if msgResp.TypeUrl != expectedTypeUrl {
-		return fmt.Errorf("unexpected type URL; got: %s, expected: %s", msgResp.TypeUrl, expectedTypeUrl)
-	}
-
-	// Unpack the response
-	if err := proto.Unmarshal(msgResp.Value, resp); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // CollJsonVal is used for protobuf values of the newest google.golang.org/protobuf API.

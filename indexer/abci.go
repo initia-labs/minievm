@@ -30,21 +30,22 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		return nil
 	}
 
-	e.lastFinalizeHeight.Store(uint64(req.Height))
+	// add to the indexing wait group
+	e.indexingWg.Add(1)
 	e.indexingChan <- &indexingTask{ctx: ctx, req: &req, res: &res}
 	return nil
 }
 
 // indexingLoop is the main loop for indexing.
 func (e *EVMIndexerImpl) indexingLoop() {
-	for {
-		select {
-		case task := <-e.indexingChan:
-			err := e.doIndexing(task.ctx, task.req, task.res)
-			if err != nil {
-				e.logger.Error("indexingLoop error", "err", err)
-			}
+	for task := range e.indexingChan {
+		err := e.doIndexing(task.ctx, task.req, task.res)
+		if err != nil {
+			e.logger.Error("indexingLoop error", "err", err)
 		}
+
+		// done with the indexing
+		e.indexingWg.Done()
 	}
 }
 
@@ -54,9 +55,6 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 		if r := recover(); r != nil {
 			err = fmt.Errorf("doIndexing panic: %v", r)
 		}
-
-		// update indexed height
-		e.indexedHeight.Store(uint64(req.Height))
 	}()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
