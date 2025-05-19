@@ -283,7 +283,7 @@ func (e *EVMIndexerImpl) flushStore() error {
 	// wait for all the indexing to finish
 	e.Wait()
 
-	// wait for all the indexing to finish
+	// wait for pruning to complete before flushing the store
 	ticker := time.NewTicker(time.Millisecond * 100)
 	timeout := time.NewTimer(time.Second * 30)
 	defer ticker.Stop()
