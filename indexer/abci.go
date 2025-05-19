@@ -241,5 +241,8 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 	// trigger bloom indexing
 	e.doBloomIndexing(ctx, uint64(blockHeight))
 
+	// update indexed height
+	e.indexedHeight = uint64(blockHeight)
+
 	return nil
 }

@@ -70,6 +70,9 @@ type EVMIndexer interface {
 
 	// Stop
 	Stop()
+
+	// IndexedHeight returns the height of the last indexed block.
+	IndexedHeight() uint64
 }
 
 // EVMIndexerImpl implements EVMIndexer.
@@ -117,6 +120,9 @@ type EVMIndexerImpl struct {
 
 	// wg is a wait group to wait for all the indexing to finish.
 	indexingChan chan *indexingTask
+
+	// indexedHeight is the height of the last indexed block.
+	indexedHeight uint64
 }
 
 // indexingTask is a task to be indexed.
@@ -190,7 +196,8 @@ func NewEVMIndexer(
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
 
-		indexingChan: make(chan *indexingTask, 10),
+		indexingChan:  make(chan *indexingTask, 10),
+		indexedHeight: 0,
 	}
 
 	schema, err := sb.Build()
@@ -261,34 +268,35 @@ func (e *EVMIndexerImpl) Stop() {
 	e.flushStore()
 }
 
+// flushStore flushes the store before stopping the indexer.
+// it waits for all the indexing to finish and then flushes the store.
+// it also waits for pruning to complete before flushing the store.
 func (e *EVMIndexerImpl) flushStore() {
+	e.logger.Info("Waiting for EVM indexer to complete before shutdown...")
+
 	// wait for all the indexing to finish
 	ticker := time.NewTicker(time.Millisecond * 100)
 	timeout := time.NewTimer(time.Second * 30)
+	defer ticker.Stop()
+	defer timeout.Stop()
+
 	for {
 		select {
 		case <-ticker.C:
-			if len(e.indexingChan) == 0 {
-				// wait for pruning to complete
-				if e.pruningRunning.Load() {
-					e.logger.Info("Waiting for pruning to complete before shutdown...")
-				}
-
-				// wait for pruning to complete by checking pruningRunning flag.
-				// When pruningRunning.Swap(true) returns false, it means pruning has finished
-				// and we can safely stop the indexer.
-				for e.pruningRunning.Swap(true) {
-					time.Sleep(100 * time.Millisecond)
-				}
-
+			if len(e.indexingChan) == 0 && !e.pruningRunning.Swap(true) {
 				e.store.Write()
-				e.logger.Info("Indexer stopped successfully")
+				e.logger.Info("EVM indexer stopped successfully")
 
 				return
 			}
 		case <-timeout.C:
-			e.logger.Error("evm indexer stop timeout, some indexing tasks are still running")
+			e.logger.Error("Timeout waiting for EVM indexer to complete before shutdown")
 			return
 		}
 	}
+}
+
+// IndexedHeight returns the height of the last indexed block.
+func (e *EVMIndexerImpl) IndexedHeight() uint64 {
+	return e.indexedHeight
 }
