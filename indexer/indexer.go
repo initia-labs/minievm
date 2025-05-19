@@ -11,7 +11,6 @@ import (
 	"cosmossdk.io/collections"
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
-	"cosmossdk.io/store/dbadapter"
 	snapshot "cosmossdk.io/store/snapshots/types"
 	storetypes "cosmossdk.io/store/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -86,7 +85,7 @@ type EVMIndexerImpl struct {
 	txConfig client.TxConfig
 	appCodec codec.Codec
 
-	store     *CacheStore
+	store     *CacheStoreWithBatch
 	evmKeeper *evmkeeper.Keeper
 
 	schema collections.Schema
@@ -139,7 +138,7 @@ func NewEVMIndexer(
 		cfg.IndexerCacheSize = evmconfig.DefaultIndexerCacheSize
 	}
 
-	store := NewCacheStore(dbadapter.Store{DB: db}, cfg.IndexerCacheSize)
+	store := NewCacheStoreWithBatch(db, cfg.IndexerCacheSize)
 	sb := collections.NewSchemaBuilderFromAccessor(
 		func(ctx context.Context) corestoretypes.KVStore {
 			// if there is prune store in context, use it
@@ -258,6 +257,11 @@ func (e *EVMIndexerImpl) Stop() {
 		e.queuedTxs.Stop()
 	}
 
+	// flush store before stopping
+	e.flushStore()
+}
+
+func (e *EVMIndexerImpl) flushStore() {
 	// wait for all the indexing to finish
 	ticker := time.NewTicker(time.Millisecond * 100)
 	timeout := time.NewTimer(time.Second * 30)
@@ -265,6 +269,21 @@ func (e *EVMIndexerImpl) Stop() {
 		select {
 		case <-ticker.C:
 			if len(e.indexingChan) == 0 {
+				// wait for pruning to complete
+				if e.pruningRunning.Load() {
+					e.logger.Info("Waiting for pruning to complete before shutdown...")
+				}
+
+				// wait for pruning to complete by checking pruningRunning flag.
+				// When pruningRunning.Swap(true) returns false, it means pruning has finished
+				// and we can safely stop the indexer.
+				for e.pruningRunning.Swap(true) {
+					time.Sleep(100 * time.Millisecond)
+				}
+
+				e.store.Write()
+				e.logger.Info("Indexer stopped successfully")
+
 				return
 			}
 		case <-timeout.C:

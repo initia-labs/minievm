@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"cosmossdk.io/collections"
-	storetypes "cosmossdk.io/store/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	"golang.org/x/sync/errgroup"
 
@@ -36,10 +34,6 @@ func (e *EVMIndexerImpl) doPrune(ctx context.Context, height uint64) {
 
 // prune removes old blocks and transactions from the indexer.
 func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
-	// use branch context to perform batch operations
-	batchStore := e.store.store.CacheWrap()
-	ctx = sdk.UnwrapSDKContext(ctx).WithValue(pruneStoreKey, newCoreKVStore(interface{}(batchStore).(storetypes.KVStore)))
-
 	minHeight := curHeight - e.retainHeight
 	if minHeight <= 0 || minHeight >= curHeight {
 		return nil
@@ -60,8 +54,7 @@ func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 		return err
 	}
 
-	// write batch
-	batchStore.Write()
+	e.store.Write()
 
 	return nil
 }
