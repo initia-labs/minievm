@@ -69,7 +69,7 @@ type EVMIndexer interface {
 	PeekBloomBitsNextSection(ctx context.Context) (uint64, error)
 	IsBloomIndexingRunning() bool
 
-	// Stop
+	// Close stops the indexer process and flushes the store with a timeout.
 	Close() error
 
 	// IndexedHeight returns the height of the last indexed block.
