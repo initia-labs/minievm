@@ -170,11 +170,10 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 		}
 	}
 
-	parseStateKey := func(key []byte) (addr common.Address, slot common.Hash) {
-		copy(addr[:], key[:20])
+	extractSlot := func(key []byte) (slot common.Hash) {
 		prefixLen := 20 + len(state.StateKeyPrefix)
 		copy(slot[:], key[prefixLen:])
-		return addr, slot
+		return slot
 	}
 
 	result := rpctypes.StorageRangeResult{Storage: rpctypes.StorageMap{}}
@@ -191,9 +190,9 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 			return rpctypes.StorageRangeResult{}, err
 		}
 		key := keyValue.Key
-		_, slot := parseStateKey(key)
+		slot := extractSlot(key)
 		content := keyValue.Value
-		e := rpctypes.StorageEntry{Value: common.BytesToHash(content)}
+		e := rpctypes.StorageEntry{Key: &slot, Value: common.BytesToHash(content)}
 		result.Storage[slot] = e
 		iter.Next()
 	}
@@ -203,7 +202,7 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 		if err != nil {
 			result.NextKey = nil
 		} else {
-			_, nextSlot := parseStateKey(nextKey)
+			nextSlot := extractSlot(nextKey)
 			result.NextKey = &nextSlot
 		}
 	}
