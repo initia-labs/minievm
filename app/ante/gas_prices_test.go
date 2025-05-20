@@ -5,8 +5,10 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
+	"github.com/initia-labs/minievm/app/ante"
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 func (suite *AnteTestSuite) TestGasPricesDecorator() {
@@ -22,18 +24,20 @@ func (suite *AnteTestSuite) TestGasPricesDecorator() {
 	suite.txBuilder.SetGasLimit(gasLimit)
 
 	privs, accNums, accSeqs := []cryptotypes.PrivKey{priv1}, []uint64{0}, []uint64{0}
-	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID())
+	defaultSignMode, err := authsign.APISignModeToInternal(suite.app.TxConfig().SignModeHandler().DefaultMode())
+	suite.NoError(err)
+	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID(), defaultSignMode)
 	suite.Require().NoError(err)
 
-	decorator := evmante.NewGasPricesDecorator()
+	decorator := ante.NewGasPricesDecorator()
 
 	// in normal mode
 	ctx, err := decorator.AnteHandle(suite.ctx, tx, false, nil)
 	suite.Require().NoError(err)
-	suite.Require().Equal(sdk.NewDecCoinsFromCoins(feeAmount...).QuoDec(math.LegacyNewDec(int64(gasLimit))), ctx.Value(evmante.ContextKeyGasPrices).(sdk.DecCoins))
+	suite.Require().Equal(sdk.NewDecCoinsFromCoins(feeAmount...).QuoDec(math.LegacyNewDec(int64(gasLimit))), ctx.Value(evmtypes.CONTEXT_KEY_GAS_PRICES).(sdk.DecCoins))
 
 	// in simulation mode
 	ctx, err = decorator.AnteHandle(suite.ctx, tx, true, nil)
 	suite.Require().NoError(err)
-	suite.Require().Nil(ctx.Value(evmante.ContextKeyGasPrices))
+	suite.Require().Nil(ctx.Value(evmtypes.CONTEXT_KEY_GAS_PRICES))
 }

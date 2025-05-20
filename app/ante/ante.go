@@ -14,7 +14,6 @@ import (
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	"github.com/initia-labs/initia/app/ante/accnum"
 	"github.com/initia-labs/initia/app/ante/sigverify"
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
 
 	auctionante "github.com/skip-mev/block-sdk/v2/x/auction/ante"
 	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
@@ -75,7 +74,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		NewEthTxDecorator(options.EVMKeeper),
-		evmante.NewGasPricesDecorator(),
+		NewGasPricesDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
@@ -86,7 +85,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
 		NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
 		NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
-		evmante.NewIncrementSequenceDecorator(options.AccountKeeper),
+		NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCkeeper),
 		auctionante.NewAuctionDecorator(options.AuctionKeeper, options.TxEncoder, options.MevLane),
 		opchildante.NewRedundantBridgeDecorator(options.OPChildKeeper),
@@ -102,6 +101,6 @@ func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, signModeHandler *txsignin
 		ante.NewValidateSigCountDecorator(ak),
 		NewSigGasConsumeDecorator(ak, sigverify.DefaultSigVerificationGasConsumer),
 		NewSigVerificationDecorator(ak, signModeHandler),
-		evmante.NewIncrementSequenceDecorator(ak),
+		NewIncrementSequenceDecorator(ak),
 	)
 }
