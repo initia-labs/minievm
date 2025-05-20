@@ -156,10 +156,13 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 			break
 		}
 		value, _ := uint256.FromBig(rpcTx.Value.ToInt())
-		if rpcTx.To != nil || *rpcTx.To != (common.Address{}) {
-			b.app.EVMKeeper.EVMCall(traceCtx, rpcTx.From, *rpcTx.To, rpcTx.Input, value, *rpcTx.Accesses)
+		if rpcTx.To != nil && *rpcTx.To != (common.Address{}) {
+			_, _, err = b.app.EVMKeeper.EVMCall(traceCtx, rpcTx.From, *rpcTx.To, rpcTx.Input, value, *rpcTx.Accesses)
 		} else {
-			b.app.EVMKeeper.EVMCreate(traceCtx, rpcTx.From, rpcTx.Input, value, *rpcTx.Accesses)
+			_, _, _, err = b.app.EVMKeeper.EVMCreate(traceCtx, rpcTx.From, rpcTx.Input, value, *rpcTx.Accesses)
+		}
+		if err != nil {
+			return rpctypes.StorageRangeResult{}, err
 		}
 	}
 
@@ -171,11 +174,13 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 	}
 
 	result := rpctypes.StorageRangeResult{Storage: rpctypes.StorageMap{}}
-	iter, err := b.app.EVMKeeper.VMStore.Iterate(traceCtx, new(collections.Range[[]byte]).Prefix(append(contractAddress.Bytes(), state.StateKeyPrefix...)))
+	prefix := append(contractAddress.Bytes(), state.StateKeyPrefix...)
+	startKey := append(prefix, keyStart...)
+	iter, err := b.app.EVMKeeper.VMStore.Iterate(traceCtx, new(collections.Range[[]byte]).Prefix(prefix).StartInclusive(startKey))
 	if err != nil {
 		return rpctypes.StorageRangeResult{}, err
 	}
-	
+
 	for i := 0; i < maxResult && iter.Valid(); i++ {
 		keyValue, err := iter.KeyValue()
 		if err != nil {
