@@ -4,6 +4,7 @@ import (
 	"cosmossdk.io/log"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rpc"
 
@@ -17,6 +18,8 @@ var _ DebugEthereumAPI = (*DebugAPI)(nil)
 type DebugEthereumAPI interface {
 	TraceBlockByNumber(number rpc.BlockNumber, config *tracers.TraceConfig) ([]*rpctypes.TxTraceResult, error)
 	TraceBlockByHash(hash common.Hash, config *tracers.TraceConfig) ([]*rpctypes.TxTraceResult, error)
+	TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (*rpctypes.TxTraceResult, error)
+	StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txIndex int, contractAddress common.Address, keyStart hexutil.Bytes, maxResult int) (rpctypes.StorageRangeResult, error)
 }
 
 // DebugAPI is the debug namespace for the Ethereum JSON-RPC APIs.
@@ -39,14 +42,26 @@ func NewDebugAPI(logger log.Logger, backend *backend.JSONRPCBackend) *DebugAPI {
 // *               Trace              *
 // *************************************
 
-// GetBlockByNumber returns the block identified by number.
+// TraceBlockByNumber  returns trace of a block by number.
 func (api *DebugAPI) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config *tracers.TraceConfig) ([]*rpctypes.TxTraceResult, error) {
 	api.logger.Debug("debug_traceBlockByNumber", "number", ethBlockNum, "config", config)
 	return api.backend.TraceBlockByNumber(ethBlockNum, config)
 }
 
-// GetBlockByHash returns the block identified by hash.
+// TraceBlockByHash returns trace of a block by hash.  
 func (api *DebugAPI) TraceBlockByHash(hash common.Hash, config *tracers.TraceConfig) ([]*rpctypes.TxTraceResult, error) {
 	api.logger.Debug("debug_traceBlockByHash", "hash", hash.Hex(), "config", config)
 	return api.backend.TraceBlockByHash(hash, config)
+}
+
+// TraceTransaction returns trace of a transaction by hash.
+func (api *DebugAPI) TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (*rpctypes.TxTraceResult, error) {
+	api.logger.Debug("debug_traceTransaction", "hash", hash.Hex(), "config", config)
+	return api.backend.TraceTransaction(hash, config)
+}
+
+// StorageRangeAt returns a storage range at a specific transaction index and block.
+func (api *DebugAPI) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txIndex int, contractAddress common.Address, keyStart hexutil.Bytes, maxResult int) (rpctypes.StorageRangeResult, error) {
+	api.logger.Debug("debug_storageRangeAt", "block", blockNrOrHash, "txIndex", txIndex, "contractAddress", contractAddress.Hex(), "keyStart", keyStart, "maxResult", maxResult)
+	return api.backend.StorageRangeAt(blockNrOrHash, txIndex, contractAddress, keyStart, maxResult)
 }

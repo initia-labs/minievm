@@ -3,12 +3,14 @@ package backend
 import (
 	"fmt"
 
+	"github.com/holiman/uint256"
 	"github.com/pkg/errors"
 
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
@@ -17,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	"github.com/initia-labs/minievm/x/evm/state"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -53,8 +56,8 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 	)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	for i, rcpTx := range rpcTxs {
-		tx := rcpTx.ToTransaction()
+	for i, rpcTx := range rpcTxs {
+		tx := rpcTx.ToTransaction()
 
 		// Generate the next state snapshot fast without tracing
 		txctx := &tracers.Context{
@@ -85,6 +88,118 @@ func (b *JSONRPCBackend) TraceBlockByHash(hash common.Hash, config *tracers.Trac
 		return nil, err
 	}
 	return b.TraceBlockByNumber(rpc.BlockNumber(blockNumber), config)
+}
+
+func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (*rpctypes.TxTraceResult, error) {
+	queryCtx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
+	if err != nil {
+		return nil, err
+	} else if tx == nil {
+		return nil, errors.New("transaction not found")
+	}
+
+	blockNumber := tx.BlockNumber.ToInt().Uint64()
+
+	ctx, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	if err != nil {
+		return nil, err
+	}
+
+	header, err := b.app.EVMIndexer().BlockHeaderByNumber(ctx, blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	txIndex := tx.TransactionIndex
+	ethTx := tx.ToTransaction()
+	txctx := &tracers.Context{
+		BlockHash:   header.Hash(),
+		BlockNumber: header.Number,
+		TxHash:      ethTx.Hash(),
+		TxIndex:     int(*txIndex),
+	}
+	res, err := b.traceTx(sdkCtx, ethTx, txctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rpctypes.TxTraceResult{TxHash: ethTx.Hash(), Result: res}, nil
+}
+
+func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txIndex int, contractAddress common.Address, keyStart hexutil.Bytes, maxResult int) (rpctypes.StorageRangeResult, error) {
+	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	}
+
+	traceCtx, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	}
+
+	rpcTxs, err := b.getBlockTransactions(blockNumber)
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	} else if len(rpcTxs) == 0 {
+		return rpctypes.StorageRangeResult{}, nil
+	}
+
+	// replay all transactions in the block before the given txIndex
+	for idx, rpcTx := range rpcTxs {
+		if idx >= txIndex {
+			break
+		}
+		value, _ := uint256.FromBig(rpcTx.Value.ToInt())
+		if rpcTx.To != nil || *rpcTx.To != (common.Address{}) {
+			b.app.EVMKeeper.EVMCall(traceCtx, rpcTx.From, *rpcTx.To, rpcTx.Input, value, *rpcTx.Accesses)
+		} else {
+			b.app.EVMKeeper.EVMCreate(traceCtx, rpcTx.From, rpcTx.Input, value, *rpcTx.Accesses)
+		}
+	}
+
+	parseStateKey := func(key []byte) (addr common.Address, slot common.Hash) {
+		copy(addr[:], key[:20])
+		prefixLen := 20 + len(state.StateKeyPrefix)
+		copy(slot[:], key[prefixLen:])
+		return addr, slot
+	}
+
+	result := rpctypes.StorageRangeResult{Storage: rpctypes.StorageMap{}}
+	iter, err := b.app.EVMKeeper.VMStore.Iterate(traceCtx, new(collections.Range[[]byte]).Prefix(append(contractAddress.Bytes(), state.StateKeyPrefix...)))
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	}
+	
+	for i := 0; i < maxResult && iter.Valid(); i++ {
+		keyValue, err := iter.KeyValue()
+		if err != nil {
+			return rpctypes.StorageRangeResult{}, err
+		}
+		key := keyValue.Key
+		_, slot := parseStateKey(key)
+		content := keyValue.Value
+		e := rpctypes.StorageEntry{Value: common.BytesToHash(content)}
+		result.Storage[slot] = e
+		iter.Next()
+	}
+
+	if iter.Valid() {
+		nextKey, err := iter.Key()
+		if err != nil {
+			result.NextKey = nil
+		} else {
+			_, nextSlot := parseStateKey(nextKey)
+			result.NextKey = &nextSlot
+		}
+	}
+
+	return result, nil
 }
 
 // traceTx configures a new tracer according to the provided configuration, and
