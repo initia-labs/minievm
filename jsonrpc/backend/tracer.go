@@ -179,8 +179,7 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 
 	result := rpctypes.StorageRangeResult{Storage: rpctypes.StorageMap{}}
 	prefix := append(contractAddress.Bytes(), state.StateKeyPrefix...)
-	startKey := append(prefix, keyStart...)
-	iter, err := b.app.EVMKeeper.VMStore.Iterate(traceCtx, new(collections.Range[[]byte]).Prefix(prefix).StartInclusive(startKey))
+	iter, err := b.app.EVMKeeper.VMStore.Iterate(traceCtx, new(collections.Range[[]byte]).Prefix(prefix).StartInclusive(keyStart))
 	if err != nil {
 		return rpctypes.StorageRangeResult{}, err
 	}
