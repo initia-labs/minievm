@@ -125,7 +125,7 @@ func extractEthTxInfo(
 	txBytes []byte,
 	txResult *abci.ExecTxResult,
 ) (*EthTxInfo, error) {
-	tx, err := txDecoder(txBytes)
+	sdkTx, err := txDecoder(txBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func extractEthTxInfo(
 	}
 
 	// convert cosmos tx to ethereum tx
-	ethTx, _, err := evmKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
+	ethTx, _, err := evmKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, sdkTx)
 	if err != nil {
 		return nil, err
 	}
@@ -180,10 +180,11 @@ func extractEthTxInfo(
 		Gas:      0,
 		GasPrice: new(big.Int),
 		Value:    new(big.Int),
-		V:        new(big.Int),
 		R:        new(big.Int),
 		S:        new(big.Int),
+		V:        new(big.Int),
 	})
+
 	return &EthTxInfo{
 		Tx:           ethTx,
 		Logs:         ethLogs,

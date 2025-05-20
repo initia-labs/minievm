@@ -232,15 +232,14 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	evm.SetPrecompiles(precompiles)
 
 	if tracer != nil {
-		var ethTx *coretypes.Transaction
-		if v := ctx.Value(types.CONTEXT_KEY_ETH_TX); v != nil {
-			ethTx = v.(*coretypes.Transaction)
-		} else {
-			ethTx = &coretypes.Transaction{}
-		}
-
-		// register vm context to tracer
 		if tracer.OnTxStart != nil {
+			var ethTx *coretypes.Transaction
+			if v := ctx.Value(types.CONTEXT_KEY_ETH_TX); v != nil {
+				ethTx = v.(*coretypes.Transaction)
+			} else {
+				ethTx = coretypes.NewTx(&coretypes.LegacyTx{Gas: k.computeGasLimit(sdk.UnwrapSDKContext(ctx))})
+			}
+
 			tracer.OnTxStart(evm.GetVMContext(), ethTx, caller)
 		}
 
@@ -272,11 +271,16 @@ func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
 
 // EVMStaticCall executes an EVM call with the given input data in static mode.
 func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList) ([]byte, error) {
-	return k.EVMStaticCallWithTracer(ctx, caller, contractAddr, inputBz, accessList, nil)
+	var tracer *tracing.Hooks
+	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
+		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(types.TracingHooks)()
+	}
+
+	return k.evmStaticCall(ctx, caller, contractAddr, inputBz, accessList, tracer)
 }
 
-// EVMStaticCallWithTracer executes an EVM call with the given input data and tracer in static mode.
-func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, error) {
+// evmStaticCall executes an EVM call with the given input data and tracer in static mode.
+func (k Keeper) evmStaticCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, err
@@ -317,11 +321,16 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 
 // EVMCall executes an EVM call with the given input data.
 func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, accessList coretype.AccessList) ([]byte, types.Logs, error) {
-	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, accessList, nil)
+	var tracer *tracing.Hooks
+	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
+		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(types.TracingHooks)()
+	}
+
+	return k.evmCall(ctx, caller, contractAddr, inputBz, value, accessList, tracer)
 }
 
-// EVMCallWithTracer executes an EVM call with the given input data and tracer.
-func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
+// evmCall executes an EVM call with the given input data and tracer.
+func (k Keeper) evmCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, nil, err
@@ -422,18 +431,28 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 
 // EVMCreate creates a new contract with the given code.
 func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, accessList, nil)
+	var tracer *tracing.Hooks
+	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
+		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(types.TracingHooks)()
+	}
+
+	return k.evmCreate(ctx, caller, codeBz, value, nil, accessList, tracer)
 }
 
 // EVMCreate2 creates a new contract with the given code.
 func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, salt, accessList, nil)
+	var tracer *tracing.Hooks
+	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
+		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(types.TracingHooks)()
+	}
+
+	return k.evmCreate(ctx, caller, codeBz, value, salt, accessList, tracer)
 }
 
-// EVMCreateWithTracer creates a new contract with the given code and tracer.
+// evmCreate creates a new contract with the given code and tracer.
 // if salt is nil, it will create a contract with the CREATE opcode.
 // if salt is not nil, it will create a contract with the CREATE2 opcode.
-func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
+func (k Keeper) evmCreate(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
 	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
 	if err != nil {
 		return nil, common.Address{}, nil, err

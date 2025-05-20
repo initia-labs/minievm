@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/tracing"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
@@ -41,33 +40,51 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 		return nil, err
 	}
 
-	rpcTxs, err := b.getBlockTransactions(blockNumber)
+	bn := int64(blockNumber)
+	cosmosBlock, err := b.clientCtx.Client.Block(ctx, &bn)
 	if err != nil {
 		return nil, err
-	} else if len(rpcTxs) == 0 {
-		return nil, nil
 	}
 
 	var (
-		results = make([]*rpctypes.TxTraceResult, len(rpcTxs))
+		cosmosTxs = cosmosBlock.Block.Data.Txs
+		results   = []*rpctypes.TxTraceResult{}
 	)
 
+	idx := 0
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	for i, rcpTx := range rpcTxs {
-		tx := rcpTx.ToTransaction()
+	for _, cosmosTxBytes := range cosmosTxs {
+		cosmosTxHash := cosmosTxBytes.Hash()
+		cosmosTx, err := b.app.TxDecode(cosmosTxBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		// If the tx is not evm tx or cosmos tx which is not indexed, we need to run it without tracer
+		// and continue to the next tx
+		txHash, err := b.TxHashByCosmosTxHash(cosmosTxHash)
+		isCosmosTx := err == nil
+		if !isCosmosTx {
+			_ = b.runTxWithTracer(sdkCtx, cosmosTx, nil)
+			continue
+		}
 
 		// Generate the next state snapshot fast without tracing
 		txctx := &tracers.Context{
 			BlockHash:   header.Hash(),
 			BlockNumber: header.Number,
-			TxIndex:     i,
-			TxHash:      tx.Hash(),
+			TxIndex:     idx,
+			TxHash:      txHash,
 		}
-		res, err := b.traceTx(sdkCtx, tx, txctx, config)
-		results[i] = &rpctypes.TxTraceResult{TxHash: tx.Hash(), Result: res}
+		res, err := b.traceTx(sdkCtx, cosmosTx, txctx, config)
+		for _, result := range res {
+			results = append(results, &rpctypes.TxTraceResult{TxHash: txHash, Result: result})
+		}
 		if err != nil {
-			results[i].Error = err.Error()
+			results = append(results, &rpctypes.TxTraceResult{TxHash: txHash, Error: err.Error()})
 		}
+
+		idx++
 	}
 
 	return results, nil
@@ -92,10 +109,10 @@ func (b *JSONRPCBackend) TraceBlockByHash(hash common.Hash, config *tracers.Trac
 // be tracer dependent.
 func (b *JSONRPCBackend) traceTx(
 	sdkCtx sdk.Context,
-	tx *coretypes.Transaction,
+	cosmosTx sdk.Tx,
 	txctx *tracers.Context,
 	config *tracers.TraceConfig,
-) (any, error) {
+) ([]any, error) {
 	var (
 		tracer *tracers.Tracer
 		err    error
@@ -103,43 +120,60 @@ func (b *JSONRPCBackend) traceTx(
 	if config == nil {
 		config = &tracers.TraceConfig{}
 	}
-	// Default tracer is the struct logger
-	if config.Tracer == nil {
-		logger := logger.NewStructLogger(config.Config)
-		tracer = &tracers.Tracer{
-			Hooks:     logger.Hooks(),
-			GetResult: logger.GetResult,
-			Stop:      logger.Stop,
+
+	tracerFn := func() (*tracers.Tracer, error) {
+		// Default tracer is the struct logger
+		if config.Tracer == nil {
+			logger := logger.NewStructLogger(config.Config)
+			tracer = &tracers.Tracer{
+				Hooks:     logger.Hooks(),
+				GetResult: logger.GetResult,
+				Stop:      logger.Stop,
+			}
+		} else {
+			tracer, err = tracers.DefaultDirectory.New(*config.Tracer, txctx, config.TracerConfig)
+			if err != nil {
+				return nil, err
+			}
 		}
-	} else {
-		tracer, err = tracers.DefaultDirectory.New(*config.Tracer, txctx, config.TracerConfig)
+
+		return tracer, nil
+	}
+
+	// check tracerFn returns a valid tracer
+	if _, err := tracerFn(); err != nil {
+		return nil, err
+	}
+
+	var tracers []*tracers.Tracer
+	tracerGenerator := func() *tracing.Hooks {
+		tracer, _ := tracerFn()
+		tracers = append(tracers, tracer)
+		return tracer.Hooks
+	}
+
+	execErr := b.runTxWithTracer(sdkCtx, cosmosTx, tracerGenerator)
+	results := make([]any, len(tracers))
+	for i, tracer := range tracers {
+		result, err := tracer.GetResult()
 		if err != nil {
+			if execErr != nil {
+				return nil, errors.Wrap(err, execErr.Error())
+			}
+
 			return nil, err
 		}
+
+		results[i] = result
 	}
 
-	cosmosTx, err := b.app.EVMKeeper.TxUtils().ConvertEthereumTxToCosmosTx(sdkCtx, tx)
-	if err != nil {
-		return nil, err
-	}
-
-	execErr := b.runTxWithTracer(sdkCtx, cosmosTx, tracer.Hooks)
-	result, err := tracer.GetResult()
-	if err != nil {
-		if execErr != nil {
-			return nil, errors.Wrap(err, execErr.Error())
-		}
-
-		return nil, err
-	}
-
-	return result, nil
+	return results, nil
 }
 
 func (b *JSONRPCBackend) runTxWithTracer(
 	sdkCtx sdk.Context,
 	cosmosTx sdk.Tx,
-	tracer *tracing.Hooks,
+	tracerGenerator evmtypes.TracingHooks,
 ) (err error) {
 	// ante handler state changes should be applied always
 	sdkCtx, err = b.app.AnteHandler()(sdkCtx, cosmosTx, false)
@@ -161,7 +195,7 @@ func (b *JSONRPCBackend) runTxWithTracer(
 
 	// run msg with post handler
 	msg := cosmosTx.GetMsgs()[0]
-	_, err = b.app.MsgServiceRouter().Handler(msg)(sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACER, tracer), msg)
+	_, err = b.app.MsgServiceRouter().Handler(msg)(sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACER, tracerGenerator), msg)
 	_, postErr := b.app.PostHandler()(sdkCtx, cosmosTx, false, err == nil)
 	if err == nil && postErr != nil {
 		err = postErr

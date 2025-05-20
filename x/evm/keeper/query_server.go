@@ -86,14 +86,18 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	// use cache context to rollback writes
 	sdkCtx, _ = sdkCtx.CacheContext()
 
+	// set tracer to context
+	sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, types.TracingHooks(func() *tracing.Hooks {
+		return tracer
+	}))
+
 	var retBz []byte
 	var logs []types.Log
 	if contractAddr == (common.Address{}) {
 		// if contract address is not provided, then it's a contract creation
-		retBz, _, logs, err = qs.EVMCreateWithTracer(sdkCtx, caller, inputBz, value, nil, list, tracer)
+		retBz, _, logs, err = qs.EVMCreate(sdkCtx, caller, inputBz, value, list)
 	} else {
-		retBz, logs, err = qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, value, list, tracer)
-
+		retBz, logs, err = qs.EVMCall(sdkCtx, caller, contractAddr, inputBz, value, list)
 	}
 
 	if err != nil {

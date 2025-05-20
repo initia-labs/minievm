@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	"github.com/holiman/uint256"
@@ -73,7 +74,8 @@ func Test_CreateWithValue(t *testing.T) {
 		EnableReturnData: true,
 	}, tracerOutput)
 
-	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreateWithTracer(ctx, caller, counterBz, uint256.NewInt(100), nil, nil, tracer)
+	ctx = ctx.WithValue(types.CONTEXT_KEY_TRACER, types.TracingHooks(func() *tracing.Hooks { return tracer }))
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, uint256.NewInt(100), nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
@@ -82,6 +84,7 @@ func Test_CreateWithValue(t *testing.T) {
 	balance, err := input.EVMKeeper.ERC20Keeper().GetBalance(ctx, contractAddr.Bytes(), sdk.DefaultBondDenom)
 	require.NoError(t, err)
 	require.Equal(t, balance, math.NewInt(100))
+	require.NotEmpty(t, tracerOutput.String())
 }
 
 func Test_Call(t *testing.T) {

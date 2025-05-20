@@ -16,6 +16,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
+	"slices"
+
 	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
@@ -53,14 +55,8 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 		return nil, err
 	}
 
-	var tracer *tracing.Hooks
-	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
-		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
-		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
-	}
-
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, accessList, tracer)
+	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -106,14 +102,8 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 		return nil, err
 	}
 
-	var tracer *tracing.Hooks
-	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
-		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
-		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
-	}
-
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreateWithTracer(ctx, caller, codeBz, value, salt, accessList, tracer)
+	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, salt, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -149,14 +139,8 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, err
 	}
 
-	var tracer *tracing.Hooks
-	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
-		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
-		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
-	}
-
 	// call a contract
-	retBz, logs, err := ms.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, accessList, tracer)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList)
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -292,19 +276,8 @@ func (ms *msgServerImpl) assertAllowedPublishers(ctx context.Context, sender str
 	}
 
 	// assert deploy authorization
-	if len(params.AllowedPublishers) != 0 {
-		allowed := false
-		for _, publisher := range params.AllowedPublishers {
-			if sender == publisher {
-				allowed = true
-
-				break
-			}
-		}
-
-		if !allowed {
-			return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", sender)
-		}
+	if len(params.AllowedPublishers) != 0 && !slices.Contains(params.AllowedPublishers, sender) {
+		return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", sender)
 	}
 
 	return nil
