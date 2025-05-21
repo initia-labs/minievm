@@ -224,7 +224,7 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 		}
 	}()
 
-	_ = e.lastIndexedHeight.Swap(uint64(req.Height))
+	e.lastIndexedHeight.Store(uint64(req.Height))
 	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm preblocker.
 	// - https://github.com/cosmos/cosmos-sdk/issues/22246
 	//
