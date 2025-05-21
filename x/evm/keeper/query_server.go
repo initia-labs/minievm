@@ -19,6 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -87,9 +89,25 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	sdkCtx, _ = sdkCtx.CacheContext()
 
 	// set tracer to context
-	sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, types.TracingHooks(func() *tracing.Hooks {
-		return tracer
-	}))
+	if tracer != nil {
+		// create evm to create tracing
+		_, evm, _, err := qs.CreateEVM(sdkCtx, caller, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		tracing := types.NewTracing(evm, tracer)
+		sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACING, tracing)
+
+		// execute OnTxStart and dummy OnEnter
+		gasLimit := qs.computeGasLimit(sdkCtx)
+		if tracer.OnTxStart != nil {
+			tracer.OnTxStart(tracing.VMContext(), types.TracingTx(gasLimit), caller)
+		}
+		if tracer.OnEnter != nil {
+			tracer.OnEnter(0, byte(vm.CALL), types.NullAddress, types.NullAddress, []byte{}, gasLimit, nil)
+		}
+	}
 
 	var retBz []byte
 	var logs []types.Log
@@ -100,17 +118,33 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		retBz, logs, err = qs.EVMCall(sdkCtx, caller, contractAddr, inputBz, value, list)
 	}
 
+	gasUsed := sdkCtx.GasMeter().GasConsumedToLimit()
+
+	// execute dummy OnExit and OnTxEnd
+	if tracer != nil {
+		if tracer.OnExit != nil {
+			if revertErr, ok := err.(*types.RevertError); ok {
+				tracer.OnExit(0, revertErr.Ret(), gasUsed, vm.ErrExecutionReverted, true)
+			} else {
+				tracer.OnExit(0, nil, gasUsed, err, false)
+			}
+		}
+		if tracer.OnTxEnd != nil {
+			tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
+		}
+	}
+
 	if err != nil {
 		return &types.QueryCallResponse{
 			Error:       err.Error(),
-			UsedGas:     sdkCtx.GasMeter().GasConsumedToLimit(),
+			UsedGas:     gasUsed,
 			TraceOutput: tracerOutput.String(),
 		}, nil
 	}
 
 	return &types.QueryCallResponse{
 		Response:    hexutil.Encode(retBz),
-		UsedGas:     sdkCtx.GasMeter().GasConsumedToLimit(),
+		UsedGas:     gasUsed,
 		Logs:        logs,
 		TraceOutput: tracerOutput.String(),
 	}, nil

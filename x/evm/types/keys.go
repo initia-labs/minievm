@@ -55,8 +55,8 @@ const (
 	// CONTEXT_KEY_LOAD_DECIMALS is a context key for load decimals
 	CONTEXT_KEY_LOAD_DECIMALS
 
-	// CONTEXT_KEY_TRACER is a context key for tracer
-	CONTEXT_KEY_TRACER
+	// CONTEXT_KEY_TRACING is a context key for tracing
+	CONTEXT_KEY_TRACING
 
 	// CONTEXT_KEY_ETH_TX is a context key for ethereum tx
 	CONTEXT_KEY_ETH_TX

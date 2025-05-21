@@ -58,7 +58,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	// deploy a contract
 	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value, accessList)
 	if err != nil {
-		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		return nil, err
 	}
 
 	return &types.MsgCreateResponse{
@@ -105,7 +105,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	// deploy a contract
 	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, salt, accessList)
 	if err != nil {
-		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		return nil, err
 	}
 
 	return &types.MsgCreate2Response{
@@ -142,7 +142,7 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	// call a contract
 	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList)
 	if err != nil {
-		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		return nil, err
 	}
 
 	return &types.MsgCallResponse{Result: hexutil.Encode(retBz), Logs: logs}, nil
@@ -191,11 +191,11 @@ func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) 
 		return err
 	}
 
-	_, evm, err := ms.CreateEVM(ctx, types.StdAddress, nil)
+	_, evm, cleanup, err := ms.CreateEVM(ctx, types.StdAddress, nil)
 	if err != nil {
 		return err
 	}
-
+	defer cleanup()
 	defer func() {
 		if r := recover(); r != nil {
 			err = types.ErrInvalidFeeDenom.Wrap("failed to conduct sudoMint and sudoBurn")

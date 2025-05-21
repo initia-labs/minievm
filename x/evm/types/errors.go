@@ -1,12 +1,8 @@
 package types
 
 import (
-	"fmt"
-
 	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -47,13 +43,43 @@ var (
 	ErrExecuteCosmosDisabled        = errorsmod.Register(ModuleName, 34, "Execute cosmos is disabled")
 )
 
+// ModError is a wrapper for the errorsmod.Error
+type ModError = *errorsmod.Error
+
+// RevertError is a wrapper for the vm.RevertError
+type RevertError struct {
+	ModError
+	ret []byte
+}
+
+// Ret returns the revert data
+func (e RevertError) Ret() []byte {
+	return e.ret
+}
+
+// NewRevertError creates a new RevertError
+//
+//	revert: the revert data
+//
+// Returns:
+// - RevertError: the new RevertError
 func NewRevertError(revert []byte) error {
-	reason, errUnpack := abi.UnpackRevert(revert)
-	if errUnpack == nil {
-		return fmt.Errorf("%w: %v", vm.ErrExecutionReverted, reason)
+	revertErr := &RevertError{
+		ModError: ErrReverted,
+		ret:      revert,
 	}
 
-	return ErrReverted.Wrapf("revert: %v", hexutil.Encode(revert))
+	return revertErr
+}
+
+// Error returns the error message
+func (e *RevertError) Error() string {
+	reason, errUnpack := abi.UnpackRevert(e.ret)
+	if errUnpack != nil {
+		return e.ModError.Error()
+	}
+
+	return e.ModError.Wrapf("revert: %v", reason).Error()
 }
 
 // revertSelector is a special function selector for revert reason unpacking.

@@ -30,7 +30,7 @@ func Test_SnapshotRevert(t *testing.T) {
 	require.NoError(t, err)
 	input.Faucet.Fund(sdkCtx, addr2, sdk.NewInt64Coin(feeDenom, 100))
 
-	_, evm, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 	stateDB := evm.StateDB.(*state.StateDB)
 
@@ -120,7 +120,7 @@ func Test_SnapshotRevert(t *testing.T) {
 func Test_SimpleSnapshotRevert(t *testing.T) {
 	sdkCtx, input := createDefaultTestInput(t)
 
-	_, evm, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 	stateDB := evm.StateDB.(*state.StateDB)
 
@@ -139,7 +139,7 @@ func Test_GetStroageRoot_NonEmptyState(t *testing.T) {
 	sdkCtx, input := createDefaultTestInput(t)
 
 	_, _, addr1 := keyPubAddr()
-	_, evm, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 	stateDB := evm.StateDB.(*state.StateDB)
 
@@ -153,7 +153,7 @@ func Test_GetStorageRoot_NonEmptyCosmosAccount(t *testing.T) {
 	sdkCtx, input := createDefaultTestInput(t)
 
 	_, _, addr1 := keyPubAddr()
-	_, evm, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 	stateDB := evm.StateDB.(*state.StateDB)
 
@@ -204,7 +204,7 @@ func Test_SelfDestruct(t *testing.T) {
 	require.NotEmpty(t, logs)
 
 	// check destruct
-	_, evm, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 	stateDB := evm.StateDB.(*state.StateDB)
 
@@ -261,7 +261,7 @@ func Test_Selfdestruct6780_InDifferentTx(t *testing.T) {
 	require.NotEmpty(t, logs)
 
 	// check destruct
-	_, evm, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 	stateDB := evm.StateDB.(*state.StateDB)
 
@@ -295,7 +295,7 @@ func Test_Selfdestruct6780_InSameTx(t *testing.T) {
 	input.Faucet.Fund(sdkCtx, addr, sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000000000))
 
 	caller := common.BytesToAddress(addr.Bytes())
-	_, evm, err := input.EVMKeeper.CreateEVM(sdkCtx, caller, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, caller, nil)
 	require.NoError(t, err)
 	stateDB := evm.StateDB.(*state.StateDB)
 
@@ -347,7 +347,7 @@ func Test_Empty(t *testing.T) {
 	_, _, addr := keyPubAddr()
 
 	// get state db
-	_, evm, err := input.EVMKeeper.CreateEVM(ctx, evmtypes.StdAddress, nil)
+	_, evm, _, err := input.EVMKeeper.CreateEVM(ctx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 
 	stateDB := evm.StateDB.(*state.StateDB)
@@ -368,7 +368,7 @@ func Test_Empty(t *testing.T) {
 	input.Faucet.Fund(ctx, addr, sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000000000))
 
 	// get state db again
-	_, evm, err = input.EVMKeeper.CreateEVM(ctx, evmtypes.StdAddress, nil)
+	_, evm, _, err = input.EVMKeeper.CreateEVM(ctx, evmtypes.StdAddress, nil)
 	require.NoError(t, err)
 
 	stateDB = evm.StateDB.(*state.StateDB)

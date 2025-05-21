@@ -6,10 +6,13 @@ import (
 	"github.com/pkg/errors"
 
 	"cosmossdk.io/collections"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/tracing"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
@@ -48,7 +51,7 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 
 	var (
 		cosmosTxs = cosmosBlock.Block.Data.Txs
-		results   = []*rpctypes.TxTraceResult{}
+		results   = make([]*rpctypes.TxTraceResult, 0, len(cosmosTxs))
 	)
 
 	idx := 0
@@ -77,11 +80,9 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 			TxHash:      txHash,
 		}
 		res, err := b.traceTx(sdkCtx, cosmosTx, txctx, config)
-		for _, result := range res {
-			results = append(results, &rpctypes.TxTraceResult{TxHash: txHash, Result: result})
-		}
+		results = append(results, &rpctypes.TxTraceResult{TxHash: txHash, Result: res})
 		if err != nil {
-			results = append(results, &rpctypes.TxTraceResult{TxHash: txHash, Error: err.Error()})
+			results[len(results)-1].Error = err.Error()
 		}
 
 		idx++
@@ -112,7 +113,7 @@ func (b *JSONRPCBackend) traceTx(
 	cosmosTx sdk.Tx,
 	txctx *tracers.Context,
 	config *tracers.TraceConfig,
-) ([]any, error) {
+) (any, error) {
 	var (
 		tracer *tracers.Tracer
 		err    error
@@ -121,60 +122,43 @@ func (b *JSONRPCBackend) traceTx(
 		config = &tracers.TraceConfig{}
 	}
 
-	tracerFn := func() (*tracers.Tracer, error) {
-		// Default tracer is the struct logger
-		if config.Tracer == nil {
-			logger := logger.NewStructLogger(config.Config)
-			tracer = &tracers.Tracer{
-				Hooks:     logger.Hooks(),
-				GetResult: logger.GetResult,
-				Stop:      logger.Stop,
-			}
-		} else {
-			tracer, err = tracers.DefaultDirectory.New(*config.Tracer, txctx, config.TracerConfig)
-			if err != nil {
-				return nil, err
-			}
+	// Default tracer is the struct logger
+	if config.Tracer == nil {
+		logger := logger.NewStructLogger(config.Config)
+		tracer = &tracers.Tracer{
+			Hooks:     logger.Hooks(),
+			GetResult: logger.GetResult,
+			Stop:      logger.Stop,
 		}
-
-		return tracer, nil
+	} else {
+		tracer, err = tracers.DefaultDirectory.New(*config.Tracer, txctx, config.TracerConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// check tracerFn returns a valid tracer
-	if _, err := tracerFn(); err != nil {
+	execErr := b.runTxWithTracer(sdkCtx, cosmosTx, tracer.Hooks)
+	result, err := tracer.GetResult()
+	if err != nil {
+		if execErr != nil {
+			return nil, errors.Wrap(err, execErr.Error())
+		}
+
 		return nil, err
 	}
 
-	var tracers []*tracers.Tracer
-	tracerGenerator := func() *tracing.Hooks {
-		tracer, _ := tracerFn()
-		tracers = append(tracers, tracer)
-		return tracer.Hooks
-	}
-
-	execErr := b.runTxWithTracer(sdkCtx, cosmosTx, tracerGenerator)
-	results := make([]any, len(tracers))
-	for i, tracer := range tracers {
-		result, err := tracer.GetResult()
-		if err != nil {
-			if execErr != nil {
-				return nil, errors.Wrap(err, execErr.Error())
-			}
-
-			return nil, err
-		}
-
-		results[i] = result
-	}
-
-	return results, nil
+	return result, nil
 }
 
 func (b *JSONRPCBackend) runTxWithTracer(
 	sdkCtx sdk.Context,
 	cosmosTx sdk.Tx,
-	tracerGenerator evmtypes.TracingHooks,
+	tracer *tracing.Hooks,
 ) (err error) {
+	feeTx := cosmosTx.(sdk.FeeTx)
+	gasLimit := feeTx.GetGas()
+	sdkCtx = sdkCtx.WithGasMeter(storetypes.NewGasMeter(gasLimit)).WithExecMode(sdk.ExecModeFinalize)
+
 	// ante handler state changes should be applied always
 	sdkCtx, err = b.app.AnteHandler()(sdkCtx, cosmosTx, false)
 	if err != nil {
@@ -193,12 +177,51 @@ func (b *JSONRPCBackend) runTxWithTracer(
 		}
 	}()
 
-	// run msg with post handler
-	msg := cosmosTx.GetMsgs()[0]
-	_, err = b.app.MsgServiceRouter().Handler(msg)(sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACER, tracerGenerator), msg)
+	// setup tracing
+	// execute OnTxStart and dummy OnEnter
+	if tracer != nil {
+		feePayer := common.BytesToAddress(feeTx.FeePayer())
+		_, evm, _, err := b.app.EVMKeeper.CreateEVM(sdkCtx, feePayer, nil)
+		if err != nil {
+			return err
+		}
+
+		tracing := evmtypes.NewTracing(evm, tracer)
+		sdkCtx = sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACING, tracing)
+
+		if tracer.OnTxStart != nil {
+			tracer.OnTxStart(tracing.VMContext(), evmtypes.TracingTx(gasLimit), feePayer)
+		}
+		if tracer.OnEnter != nil {
+			tracer.OnEnter(0, byte(vm.CALL), evmtypes.NullAddress, evmtypes.NullAddress, []byte{}, gasLimit, nil)
+		}
+	}
+
+	// run msgs with post handler
+	for _, msg := range cosmosTx.GetMsgs() {
+		_, err = b.app.MsgServiceRouter().Handler(msg)(sdkCtx, msg)
+		if err != nil {
+			break
+		}
+	}
 	_, postErr := b.app.PostHandler()(sdkCtx, cosmosTx, false, err == nil)
 	if err == nil && postErr != nil {
 		err = postErr
+	}
+
+	// execute dummy OnExit and OnTxEnd
+	if tracer != nil {
+		gasUsed := sdkCtx.GasMeter().GasConsumedToLimit()
+		if tracer.OnExit != nil {
+			if revertErr, ok := err.(*evmtypes.RevertError); ok {
+				tracer.OnExit(0, revertErr.Ret(), gasUsed, vm.ErrExecutionReverted, true)
+			} else {
+				tracer.OnExit(0, nil, gasUsed, err, false)
+			}
+		}
+		if tracer.OnTxEnd != nil {
+			tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
+		}
 	}
 
 	return err
