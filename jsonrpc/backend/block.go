@@ -208,3 +208,15 @@ func formatHeader(head *coretypes.Header) map[string]interface{} {
 	}
 	return result
 }
+
+// isBlockIndexed checks if a block at the given height has been indexed by comparing it against
+// the last indexed block height. Returns true if the block is indexed, false if not indexed or
+// if there was an error retrieving the last indexed height (error will be logged).
+func (b *JSONRPCBackend) isBlockIndexed(blockHeight uint64) (bool, error) {
+	lastIndexedHeight, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return blockHeight <= uint64(lastIndexedHeight), nil
+}

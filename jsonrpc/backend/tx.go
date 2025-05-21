@@ -320,16 +320,6 @@ func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) (
 	return result, nil
 }
 
-// ensure indexed tx to avoid disperency of receipts and txs
-func (b *JSONRPCBackend) isBlockIndexed(blockHeight uint64) (bool, error) {
-	lastIndexedHeight, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
-	if err != nil {
-		return false, err
-	}
-
-	return blockHeight <= uint64(lastIndexedHeight), nil
-}
-
 // getTransaction retrieves the lookup along with the transaction itself associate
 // with the given transaction hash.
 func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransaction, error) {
