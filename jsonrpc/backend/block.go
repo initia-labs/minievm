@@ -13,7 +13,12 @@ import (
 )
 
 func (b *JSONRPCBackend) BlockNumber() (hexutil.Uint64, error) {
-	lh, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	ctx, err := b.app.CreateQueryContext(0, false)
+	if err != nil {
+		return 0, err
+	}
+
+	lh, err := b.app.EVMIndexer().GetLastIndexedHeight(ctx)
 	if err != nil {
 		return 0, err
 	}
