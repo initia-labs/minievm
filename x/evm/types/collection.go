@@ -31,8 +31,8 @@ func TokenIdToBigInt(classId string, tokenId string) (*big.Int, bool) {
 }
 
 func ContractAddressFromClassId(ctx context.Context, k ERC721ClassIdKeeper, classId string) (common.Address, error) {
-	if strings.HasPrefix(classId, EVMPrefix) {
-		contractAddrInString := strings.TrimPrefix(classId, EVMPrefix)
+	if after, ok := strings.CutPrefix(classId, EVMPrefix); ok {
+		contractAddrInString := after
 		if !common.IsHexAddress(contractAddrInString) {
 			return NullAddress, ErrInvalidClassId
 		}
