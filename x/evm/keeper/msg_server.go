@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,9 +17,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"slices"
-
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -32,6 +30,17 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 
 // Create implements types.MsgServer.
 func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*types.MsgCreateResponse, error) {
+	params, err := ms.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// check the sender is allowed publisher
+	err = assertAllowedPublishers(params, msg.Sender)
+	if err != nil {
+		return nil, err
+	}
+
 	sender, err := ms.ac.StringToBytes(msg.Sender)
 	if err != nil {
 		return nil, err
@@ -50,7 +59,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// check the sender is allowed publisher
-	err = ms.assertAllowedPublishers(ctx, msg.Sender)
+	err = assertAllowedPublishers(params, msg.Sender)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +79,17 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 
 // Create2 implements types.MsgServer.
 func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*types.MsgCreate2Response, error) {
+	params, err := ms.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// check the sender is allowed publisher
+	err = assertAllowedPublishers(params, msg.Sender)
+	if err != nil {
+		return nil, err
+	}
+
 	sender, err := ms.ac.StringToBytes(msg.Sender)
 	if err != nil {
 		return nil, err
@@ -97,7 +117,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// check the sender is allowed publisher
-	err = ms.assertAllowedPublishers(ctx, msg.Sender)
+	err = assertAllowedPublishers(params, msg.Sender)
 	if err != nil {
 		return nil, err
 	}
@@ -215,11 +235,11 @@ func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) 
 // If the sequence number is not incremented in the ante handler and the message is call, increment the sequence number to ensure proper sequencing.
 func (k *msgServerImpl) handleSequenceIncremented(ctx context.Context, sender sdk.AccAddress, isCreate bool) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if sdkCtx.Value(evmante.ContextKeySequenceIncremented) == nil {
+	if sdkCtx.Value(types.CONTEXT_KEY_SEQUENCE_INCREMENTED) == nil {
 		return nil
 	}
 
-	incremented := sdkCtx.Value(evmante.ContextKeySequenceIncremented).(*bool)
+	incremented := sdkCtx.Value(types.CONTEXT_KEY_SEQUENCE_INCREMENTED).(*bool)
 	if isCreate && *incremented {
 		// if the sequence is already incremented, decrement it to prevent double incrementing the sequence number at create.
 		acc := k.accountKeeper.GetAccount(ctx, sender)
@@ -269,12 +289,7 @@ func (ms *msgServerImpl) validateArguments(
 }
 
 // assertAllowedPublishers asserts the sender is allowed to deploy a contract.
-func (ms *msgServerImpl) assertAllowedPublishers(ctx context.Context, sender string) error {
-	params, err := ms.Params.Get(ctx)
-	if err != nil {
-		return err
-	}
-
+func assertAllowedPublishers(params types.Params, sender string) error {
 	// assert deploy authorization
 	if len(params.AllowedPublishers) != 0 && !slices.Contains(params.AllowedPublishers, sender) {
 		return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", sender)

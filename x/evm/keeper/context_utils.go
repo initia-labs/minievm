@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -40,7 +39,7 @@ func (k Keeper) extractGasPriceFromContext(ctx context.Context, fee types.Fee) (
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	value := sdkCtx.Value(evmante.ContextKeyGasPrices)
+	value := sdkCtx.Value(types.CONTEXT_KEY_GAS_PRICES)
 	if value == nil {
 		return big.NewInt(0), nil
 	}

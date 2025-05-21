@@ -251,7 +251,7 @@ func NewMinitiaApp(
 	}
 
 	// setup indexer
-	evmIndexer, kvIndexerKeeper, kvIndexerModule, streamingManager, err := setupIndexer(app, appOpts, indexerDB, kvindexerDB)
+	evmIndexer, kvIndexerKeeper, kvIndexerModule, streamingManager, err := setupIndexer(app, appOpts, encodingConfig, indexerDB, kvindexerDB)
 	if err != nil {
 		tmos.Exit(err.Error())
 	} else if kvIndexerKeeper != nil && kvIndexerModule != nil {

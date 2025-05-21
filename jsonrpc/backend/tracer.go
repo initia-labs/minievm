@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 
+	"github.com/holiman/uint256"
 	"github.com/pkg/errors"
 
 	"cosmossdk.io/collections"
@@ -10,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -19,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	"github.com/initia-labs/minievm/x/evm/state"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -103,6 +106,143 @@ func (b *JSONRPCBackend) TraceBlockByHash(hash common.Hash, config *tracers.Trac
 		return nil, err
 	}
 	return b.TraceBlockByNumber(rpc.BlockNumber(blockNumber), config)
+}
+
+func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (any, error) {
+	ctx, err := b.getQueryCtx()
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := b.app.EVMIndexer().TxByHash(ctx, hash)
+	if err != nil {
+		return nil, err
+	} else if tx == nil {
+		return nil, errors.New("transaction not found")
+	} else if tx.BlockNumber == nil {
+		return nil, errors.New("transaction is not indexed")
+	}
+
+	blockNumber := tx.BlockNumber.ToInt().Uint64()
+	if blockNumber < 2 {
+		return nil, errors.New("genesis is not traceable")
+	}
+	ctx, err = b.getQueryCtxWithHeight(blockNumber - 1)
+	if err != nil {
+		return nil, err
+	}
+
+	bn := int64(blockNumber)
+	cosmosBlock, err := b.clientCtx.Client.Block(ctx, &bn)
+	if err != nil {
+		return nil, err
+	}
+
+	cosmosTxs := cosmosBlock.Block.Data.Txs
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	for _, cosmosTxBytes := range cosmosTxs {
+		cosmosTxHash := cosmosTxBytes.Hash()
+		cosmosTx, err := b.app.TxDecode(cosmosTxBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		// If the tx is not evm tx or cosmos tx which is not indexed, we need to run it without tracer
+		// and continue to the next tx
+		txHash, err := b.TxHashByCosmosTxHash(cosmosTxHash)
+		isCosmosTx := err == nil
+		if !isCosmosTx || txHash != hash {
+			_ = b.runTxWithTracer(sdkCtx, cosmosTx, nil)
+			continue
+		}
+
+		// Generate the next state snapshot fast without tracing
+		txctx := &tracers.Context{
+			BlockHash:   *tx.BlockHash,
+			BlockNumber: tx.BlockNumber.ToInt(),
+			TxIndex:     int(*tx.TransactionIndex),
+			TxHash:      txHash,
+		}
+		return b.traceTx(sdkCtx, cosmosTx, txctx, config)
+	}
+
+	return nil, errors.New("transaction not found in the block")
+}
+
+func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txIndex int, contractAddress common.Address, keyStart hexutil.Bytes, maxResult int) (rpctypes.StorageRangeResult, error) {
+	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	} else if blockNumber < 2 {
+		return rpctypes.StorageRangeResult{}, errors.New("genesis is not traceable")
+	}
+
+	traceCtx, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	}
+
+	rpcTxs, err := b.getBlockTransactions(blockNumber)
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	} else if len(rpcTxs) == 0 {
+		return rpctypes.StorageRangeResult{}, nil
+	}
+
+	// replay all transactions in the block before the given txIndex
+	for idx, rpcTx := range rpcTxs {
+		if idx >= txIndex {
+			break
+		}
+		value, _ := uint256.FromBig(rpcTx.Value.ToInt())
+		if rpcTx.To != nil && *rpcTx.To != (common.Address{}) {
+			_, _, err = b.app.EVMKeeper.EVMCall(traceCtx, rpcTx.From, *rpcTx.To, rpcTx.Input, value, *rpcTx.Accesses)
+		} else {
+			_, _, _, err = b.app.EVMKeeper.EVMCreate(traceCtx, rpcTx.From, rpcTx.Input, value, *rpcTx.Accesses)
+		}
+		if err != nil {
+			return rpctypes.StorageRangeResult{}, err
+		}
+	}
+
+	extractSlot := func(key []byte) (slot common.Hash) {
+		prefixLen := 20 + len(state.StateKeyPrefix)
+		copy(slot[:], key[prefixLen:])
+		return slot
+	}
+
+	result := rpctypes.StorageRangeResult{Storage: rpctypes.StorageMap{}}
+	prefix := append(contractAddress.Bytes(), state.StateKeyPrefix...)
+	startKey := append(prefix, keyStart...)
+	iter, err := b.app.EVMKeeper.VMStore.Iterate(traceCtx, new(collections.Range[[]byte]).Prefix(prefix).StartInclusive(startKey))
+	if err != nil {
+		return rpctypes.StorageRangeResult{}, err
+	}
+
+	for i := 0; i < maxResult && iter.Valid(); i++ {
+		keyValue, err := iter.KeyValue()
+		if err != nil {
+			return rpctypes.StorageRangeResult{}, err
+		}
+		key := keyValue.Key
+		slot := extractSlot(key)
+		content := keyValue.Value
+		e := rpctypes.StorageEntry{Key: &slot, Value: common.BytesToHash(content)}
+		result.Storage[slot] = e
+		iter.Next()
+	}
+
+	if iter.Valid() {
+		nextKey, err := iter.Key()
+		if err != nil {
+			result.NextKey = nil
+		} else {
+			nextSlot := extractSlot(nextKey)
+			result.NextKey = &nextSlot
+		}
+	}
+
+	return result, nil
 }
 
 // traceTx configures a new tracer according to the provided configuration, and

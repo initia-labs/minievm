@@ -10,8 +10,8 @@ import (
 	"github.com/holiman/uint256"
 
 	sdkmath "cosmossdk.io/math"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	evmante "github.com/initia-labs/minievm/x/evm/ante"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -58,7 +58,7 @@ func Test_MsgServer_Create(t *testing.T) {
 		Sender: addr.String(),
 		Code:   counter.CounterBin,
 	})
-	require.Error(t, err)
+	require.ErrorIs(t, err, sdkerrors.ErrUnauthorized)
 }
 
 func Test_MsgServer_Create2(t *testing.T) {
@@ -209,7 +209,7 @@ func Test_MsgServer_NonceIncrement_Call(t *testing.T) {
 
 	// increment sequence
 	incremented := true
-	ctx = ctx.WithValue(evmante.ContextKeySequenceIncremented, &incremented)
+	ctx = ctx.WithValue(types.CONTEXT_KEY_SEQUENCE_INCREMENTED, &incremented)
 	acc := input.AccountKeeper.GetAccount(ctx, addr)
 	seq := acc.GetSequence() + 1
 	acc.SetSequence(seq)
@@ -274,7 +274,7 @@ func Test_MsgServer_NonceIncrement_Create(t *testing.T) {
 
 	// increment sequence
 	incremented := true
-	ctx = ctx.WithValue(evmante.ContextKeySequenceIncremented, &incremented)
+	ctx = ctx.WithValue(types.CONTEXT_KEY_SEQUENCE_INCREMENTED, &incremented)
 	acc := input.AccountKeeper.GetAccount(ctx, addr)
 	seq := acc.GetSequence() + 1
 	acc.SetSequence(seq)
