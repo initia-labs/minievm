@@ -41,7 +41,7 @@ proto_dirs=$(find \
   ../third_party/cosmos-sdk/proto/cosmos \
   ../third_party/ibc-go/proto/ibc \
   ../third_party/initia/proto \
-  ../third_party/opinit/proto \
+  ../third_party/OPinit/proto \
   ../third_party/kvindexer/proto \
   ../third_party/connect/proto \
   ../third_party/block-sdk/proto \
