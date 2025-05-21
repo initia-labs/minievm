@@ -215,6 +215,7 @@ func formatHeader(head *coretypes.Header) map[string]interface{} {
 func (b *JSONRPCBackend) isBlockIndexed(blockHeight uint64) (bool, error) {
 	lastIndexedHeight, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
 	if err != nil {
+		b.logger.Error("failed to get last indexed height", "err", err)
 		return false, err
 	}
 
