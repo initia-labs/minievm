@@ -69,6 +69,11 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
+	// check the tx is indexed
+	ih, err := indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
 	// 2. Test that Cosmos transactions which generate EVM logs are properly indexed
 	// This verifies the indexer handles non-Ethereum transactions that still produce EVM events
 	feeDenom, err := app.EVMKeeper.GetFeeDenom(ctx)
@@ -103,6 +108,11 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
+	// check the tx is indexed
+	ih, err = indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
 	// 3. Test that Cosmos transactions which do not generate EVM logs are not indexed
 	authzMsg, err := authz.NewMsgGrant(sdk.AccAddress(addrs[0].Bytes()), sdk.AccAddress(addrs[1].Bytes()), authz.NewGenericAuthorization("/cosmos.bank.v1beta1.MsgSend"), nil)
 	require.NoError(t, err)
@@ -122,8 +132,13 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
+	// check the tx is indexed
+	ih, err = indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
 	// check the tx is not indexed
-	evmTxHash, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	_, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 
 	// 4. Test that failed Cosmo transactions are not indexed
@@ -147,8 +162,13 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, header)
 
+	// check the tx is indexed
+	ih, err = indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
 	// check the tx is not indexed
-	evmTxHash, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	_, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 }
 
