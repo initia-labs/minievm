@@ -7,6 +7,7 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 
 	// local imports
+	"github.com/initia-labs/initia/app/params"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 
 	// kvindexer
@@ -23,6 +24,7 @@ import (
 func setupIndexer(
 	app *MinitiaApp,
 	appOpts servertypes.AppOptions,
+	encodingConfig params.EncodingConfig,
 	indexerDB, kvindexerDB dbm.DB,
 ) (evmindexer.EVMIndexer, *kvindexerkeeper.Keeper, *kvindexermodule.AppModuleBasic, *storetypes.StreamingManager, error) {
 	// setup evm indexer
@@ -45,22 +47,23 @@ func setupIndexer(
 		app.vc,
 	)
 
-	smBlock, err := blocksubmodule.NewBlockSubmodule(app.appCodec, kvIndexerKeeper, app.OPChildKeeper)
+	smBlock, err := blocksubmodule.NewBlockSubmodule(encodingConfig, kvIndexerKeeper, app.OPChildKeeper)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	smTx, err := tx.NewTxSubmodule(app.appCodec, kvIndexerKeeper)
+	smTx, err := tx.NewTxSubmodule(encodingConfig, kvIndexerKeeper)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	smPair, err := pair.NewPairSubmodule(app.appCodec, kvIndexerKeeper, app.IBCKeeper.ChannelKeeper, app.TransferKeeper)
+	smPair, err := pair.NewPairSubmodule(encodingConfig, kvIndexerKeeper, app.IBCKeeper.ChannelKeeper, app.TransferKeeper)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	smNft, err := nft.NewEvmNFTSubmodule(app.ac, app.appCodec, kvIndexerKeeper, app.EVMKeeper, smPair)
+	smNft, err := nft.NewEvmNFTSubmodule(app.ac, encodingConfig, kvIndexerKeeper, app.EVMKeeper, smPair)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
+	// order of registration matters: smPair must be registered before smNft since smNft depends on smPair
 	err = kvIndexerKeeper.RegisterSubmodules(smBlock, smTx, smPair, smNft)
 	if err != nil {
 		return nil, nil, nil, nil, err
