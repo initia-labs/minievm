@@ -51,6 +51,9 @@ type EVMIndexer interface {
 	// event subscription
 	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction)
 
+	// last indexed height
+	GetLastIndexedHeight(ctx context.Context) (uint64, error)
+
 	// mempool
 	TxInPending(hash common.Hash) *rpctypes.RPCTransaction
 	TxInQueued(hash common.Hash) *rpctypes.RPCTransaction
@@ -79,6 +82,7 @@ type EVMIndexerImpl struct {
 
 	pruningRunning       *atomic.Bool
 	bloomIndexingRunning *atomic.Bool
+	lastIndexedHeight    *atomic.Uint64
 
 	db       dbm.DB
 	logger   log.Logger
@@ -147,6 +151,7 @@ func NewEVMIndexer(
 
 		pruningRunning:       &atomic.Bool{},
 		bloomIndexingRunning: &atomic.Bool{},
+		lastIndexedHeight:    &atomic.Uint64{},
 
 		db:       db,
 		store:    store,
@@ -204,6 +209,26 @@ func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.
 	e.logsChans = append(e.logsChans, logsChan)
 	e.pendingChans = append(e.pendingChans, pendingChan)
 	return blockChan, logsChan, pendingChan
+}
+
+func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, error) {
+	// if lastIndexedHeight is not set, get the last indexed block header from the store
+	if e.lastIndexedHeight.Load() == 0 {
+		blockHeader, err := e.BlockHeaderMap.Iterate(ctx, new(collections.Range[uint64]).Descending())
+		if err != nil {
+			return 0, err
+		}
+
+		if blockHeader.Valid() {
+			lastHeight, err := blockHeader.Key()
+			if err != nil {
+				return 0, err
+			}
+
+			e.lastIndexedHeight.Store(lastHeight)
+		}
+	}
+	return e.lastIndexedHeight.Load(), nil
 }
 
 // blockEvents is a struct to emit block events.

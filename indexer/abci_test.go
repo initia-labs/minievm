@@ -59,7 +59,6 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
-
 }
 
 func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {

@@ -137,6 +137,10 @@ func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]int
 		return nil, nil // tx is not found or in pending/queued state
 	}
 
+	if indexed, err := b.isBlockIndexed(rpcTx.BlockNumber.ToInt().Uint64()); err != nil || !indexed {
+		return nil, err
+	}
+
 	receipt, err := b.getReceipt(hash)
 	if err != nil {
 		return nil, err
@@ -172,6 +176,10 @@ func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockN
 		}
 
 		return txs[idx], nil
+	}
+
+	if indexed, err := b.isBlockIndexed(blockNumber); err != nil || !indexed {
+		return nil, err
 	}
 
 	queryCtx, err := b.getQueryCtx()
@@ -283,6 +291,10 @@ func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) (
 		return nil, nil
 	} else if err != nil {
 		b.logger.Error("failed to get block number by hash", "err", err)
+		return nil, err
+	}
+
+	if indexed, err := b.isBlockIndexed(blockNumber); err != nil || !indexed {
 		return nil, err
 	}
 
