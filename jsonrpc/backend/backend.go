@@ -171,6 +171,11 @@ func (b *JSONRPCBackend) feeFetcher() {
 		return nil
 	}
 
+	// fetch fee for the first time
+	if err := fetcher(); err != nil {
+		b.logger.Error("failed to fetch fee", "err", err)
+	}
+
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 

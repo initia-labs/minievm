@@ -230,6 +230,9 @@ func IncreaseBlockHeight(t *testing.T, app *minitiaapp.MinitiaApp) {
 
 	_, err = app.Commit()
 	require.NoError(t, err)
+
+	// wait for indexing to complete
+	app.EVMIndexer().Wait()
 }
 
 func GenerateCosmosTx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, msgs []sdk.Msg) sdk.Tx {
