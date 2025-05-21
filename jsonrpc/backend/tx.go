@@ -137,6 +137,10 @@ func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]int
 		return nil, nil // tx is not found or in pending/queued state
 	}
 
+	if indexed, err := b.isBlockIndexed(rpcTx.BlockNumber.ToInt().Uint64()); err != nil || !indexed {
+		return nil, err
+	}
+
 	receipt, err := b.getReceipt(hash)
 	if err != nil {
 		return nil, err
@@ -172,6 +176,10 @@ func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockN
 		}
 
 		return txs[idx], nil
+	}
+
+	if indexed, err := b.isBlockIndexed(blockNumber); err != nil || !indexed {
+		return nil, err
 	}
 
 	queryCtx, err := b.getQueryCtx()
@@ -286,6 +294,10 @@ func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) (
 		return nil, err
 	}
 
+	if indexed, err := b.isBlockIndexed(blockNumber); err != nil || !indexed {
+		return nil, err
+	}
+
 	txs, err := b.getBlockTransactions(blockNumber)
 	if err != nil {
 		return nil, err
@@ -306,6 +318,16 @@ func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) (
 	}
 
 	return result, nil
+}
+
+// ensure indexed tx to avoid disperency of receipts and txs
+func (b *JSONRPCBackend) isBlockIndexed(blockHeight uint64) (bool, error) {
+	lastIndexedHeight, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return blockHeight <= uint64(lastIndexedHeight), nil
 }
 
 // getTransaction retrieves the lookup along with the transaction itself associate

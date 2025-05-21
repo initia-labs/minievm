@@ -13,7 +13,11 @@ import (
 )
 
 func (b *JSONRPCBackend) BlockNumber() (hexutil.Uint64, error) {
-	return hexutil.Uint64(b.app.LastBlockHeight()), nil
+	lh, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	if err != nil {
+		return 0, nil
+	}
+	return hexutil.Uint64(lh), nil
 }
 
 func (b *JSONRPCBackend) resolveBlockNrOrHash(blockNrOrHash rpc.BlockNumberOrHash) (uint64, error) {
@@ -53,6 +57,11 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 	if err != nil {
 		return nil, err
 	}
+
+	if indexed, err := b.isBlockIndexed(blockNumber); err != nil || !indexed {
+		return nil, err
+	}
+
 	if header, ok := b.headerCache.Get(blockNumber); ok {
 		return header, nil
 	}
@@ -90,6 +99,10 @@ func (b *JSONRPCBackend) GetHeaderByHash(hash common.Hash) (*coretypes.Header, e
 func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
 	blockNumber, err := b.resolveBlockNr(ethBlockNum)
 	if err != nil {
+		return nil, err
+	}
+
+	if indexed, err := b.isBlockIndexed(blockNumber); err != nil || !indexed {
 		return nil, err
 	}
 
