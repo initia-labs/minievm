@@ -13,7 +13,11 @@ import (
 )
 
 func (b *JSONRPCBackend) BlockNumber() (hexutil.Uint64, error) {
-	return hexutil.Uint64(b.app.LastBlockHeight()), nil
+	lh, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	if err != nil {
+		return 0, err
+	}
+	return hexutil.Uint64(lh), nil
 }
 
 func (b *JSONRPCBackend) resolveBlockNrOrHash(blockNrOrHash rpc.BlockNumberOrHash) (uint64, error) {
@@ -53,6 +57,11 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 	if err != nil {
 		return nil, err
 	}
+
+	if indexed, err := b.isBlockIndexed(blockNumber); err != nil || !indexed {
+		return nil, err
+	}
+
 	if header, ok := b.headerCache.Get(blockNumber); ok {
 		return header, nil
 	}
@@ -198,4 +207,17 @@ func formatHeader(head *coretypes.Header) map[string]interface{} {
 		result["parentBeaconBlockRoot"] = head.ParentBeaconRoot
 	}
 	return result
+}
+
+// isBlockIndexed checks if a block at the given height has been indexed by comparing it against
+// the last indexed block height. Returns true if the block is indexed, false if not indexed or
+// if there was an error retrieving the last indexed height (error will be logged).
+func (b *JSONRPCBackend) isBlockIndexed(blockHeight uint64) (bool, error) {
+	lastIndexedHeight, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	if err != nil {
+		b.logger.Error("failed to get last indexed height", "err", err)
+		return false, err
+	}
+
+	return blockHeight <= uint64(lastIndexedHeight), nil
 }
