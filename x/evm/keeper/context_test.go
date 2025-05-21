@@ -285,7 +285,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "revert reason dummy value for test")
 
 	// check balance
