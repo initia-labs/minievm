@@ -58,12 +58,6 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 		return nil, err
 	}
 
-	// check the sender is allowed publisher
-	err = assertAllowedPublishers(params, msg.Sender)
-	if err != nil {
-		return nil, err
-	}
-
 	// deploy a contract
 	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value, accessList)
 	if err != nil {
@@ -112,12 +106,6 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 
 	// argument validation
 	caller, codeBz, value, accessList, err := ms.validateArguments(ctx, sender, msg.Code, msg.Value, msg.AccessList, true)
-	if err != nil {
-		return nil, err
-	}
-
-	// check the sender is allowed publisher
-	err = assertAllowedPublishers(params, msg.Sender)
 	if err != nil {
 		return nil, err
 	}
