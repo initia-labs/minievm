@@ -68,8 +68,10 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 		// If the tx is not evm tx or cosmos tx which is not indexed, we need to run it without tracer
 		// and continue to the next tx
 		txHash, err := b.TxHashByCosmosTxHash(cosmosTxHash)
-		isCosmosTx := err == nil
-		if !isCosmosTx {
+		if err != nil {
+			return nil, err
+		}
+		if txHash == (common.Hash{}) {
 			_ = b.runTxWithTracer(sdkCtx, cosmosTx, nil)
 			continue
 		}
@@ -152,8 +154,10 @@ func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.Trac
 
 		// until the target tx is found, run the tx without tracing
 		txHash, err := b.TxHashByCosmosTxHash(cosmosTxHash)
-		isCosmosTx := err == nil
-		if !isCosmosTx || txHash != hash {
+		if err != nil {
+			return nil, err
+		}
+		if txHash != hash {
 			_ = b.runTxWithTracer(sdkCtx, cosmosTx, nil)
 			continue
 		}
@@ -214,8 +218,10 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 
 		// run the tx without tracing until the target tx is found
 		txHash, err := b.TxHashByCosmosTxHash(cosmosTxHash)
-		isCosmosTx := err == nil
-		if !isCosmosTx || txHash != tx.Hash {
+		if err != nil {
+			return rpctypes.StorageRangeResult{}, err
+		}
+		if txHash != tx.Hash {
 			_ = b.runTxWithTracer(sdkCtx, cosmosTx, nil)
 			continue
 		}
