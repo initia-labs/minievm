@@ -53,5 +53,8 @@ func CreateApp(t *testing.T) (*minitiaapp.MinitiaApp, []common.Address, []*ecdsa
 	_, err = app.Commit()
 	require.NoError(t, err)
 
+	// wait for indexing to complete
+	app.EVMIndexer().Wait()
+
 	return app, addrs, privKeys
 }

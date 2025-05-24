@@ -52,6 +52,7 @@ func Test_Query_Call(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, uint64(100), ret[0].(*big.Int).Uint64())
+	require.NotEmpty(t, res.TraceOutput)
 }
 
 func Test_Query_ERC20Factory(t *testing.T) {

@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 
@@ -31,7 +33,7 @@ import (
 func GenerateKeys(t *testing.T, n int) ([]common.Address, []*ecdsa.PrivateKey) {
 	addrs := make([]common.Address, n)
 	privKeys := make([]*ecdsa.PrivateKey, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		randBytes := make([]byte, 64)
 		_, err := rand.Read(randBytes)
 		require.NoError(t, err)
@@ -206,6 +208,9 @@ func ExecuteTxs(t *testing.T, app *minitiaapp.MinitiaApp, txs ...sdk.Tx) (*abcit
 	_, err = app.Commit()
 	require.NoError(t, err)
 
+	// wait for indexing to complete
+	app.EVMIndexer().Wait()
+
 	return finalizeReq, finalizeRes
 }
 
@@ -225,4 +230,63 @@ func IncreaseBlockHeight(t *testing.T, app *minitiaapp.MinitiaApp) {
 
 	_, err = app.Commit()
 	require.NoError(t, err)
+
+	// wait for indexing to complete
+	app.EVMIndexer().Wait()
+}
+
+func GenerateCosmosTx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, msgs []sdk.Msg) sdk.Tx {
+	txConfig := app.TxConfig()
+	txBuilder := txConfig.NewTxBuilder()
+	_ = txBuilder.SetMsgs(msgs...)
+	txBuilder.SetMemo("test")
+	txBuilder.SetGasLimit(1000000)
+
+	// build empty signature
+	signMode, err := authsign.APISignModeToInternal(txConfig.SignModeHandler().DefaultMode())
+	require.NoError(t, err)
+
+	ethPrivKey := ethsecp256k1.PrivKey{Key: crypto.FromECDSA(privKey)}
+	ethPubKey := ethPrivKey.PubKey()
+
+	ctx, err := app.CreateQueryContext(0, false)
+	require.NoError(t, err)
+
+	account := app.AccountKeeper.GetAccount(ctx, sdk.AccAddress(ethPubKey.Address().Bytes()))
+	require.NotNil(t, account)
+
+	sequence := account.GetSequence()
+	accountNumber := account.GetAccountNumber()
+
+	sig := signing.SignatureV2{
+		PubKey: ethPubKey,
+		Data: &signing.SingleSignatureData{
+			SignMode: signMode,
+		},
+		Sequence: sequence,
+	}
+
+	err = txBuilder.SetSignatures(sig)
+	require.NoError(t, err)
+	signerData := authsign.SignerData{
+		Address:       sdk.AccAddress(ethPubKey.Address().Bytes()).String(),
+		ChainID:       ctx.ChainID(),
+		AccountNumber: accountNumber,
+		Sequence:      sequence,
+		PubKey:        ethPubKey,
+	}
+
+	signBytes, err := authsign.GetSignBytesAdapter(
+		ctx, txConfig.SignModeHandler(), signMode, signerData, txBuilder.GetTx(),
+	)
+	require.NoError(t, err)
+
+	sigBytes, err := ethPrivKey.Sign(signBytes)
+	require.NoError(t, err)
+
+	sig.Data.(*signing.SingleSignatureData).Signature = sigBytes
+	err = txBuilder.SetSignatures(sig)
+	require.NoError(t, err)
+
+	return txBuilder.GetTx()
 }

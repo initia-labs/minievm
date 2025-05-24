@@ -2,11 +2,11 @@ package indexer
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	comettypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/collections"
 	storetypes "cosmossdk.io/store/types"
@@ -17,10 +17,10 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
-	"github.com/initia-labs/minievm/x/evm/keeper"
 )
 
 func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseCommit, changeSet []*storetypes.StoreKVPair) error {
+
 	return nil
 }
 
@@ -30,64 +30,74 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		return nil
 	}
 
+	// add to the indexing wait group
+	e.indexingWg.Add(1)
+	e.indexingChan <- &indexingTask{ctx: ctx, req: &req, res: &res}
+	return nil
+}
+
+// indexingLoop is the main loop for indexing.
+func (e *EVMIndexerImpl) indexingLoop() {
+	for task := range e.indexingChan {
+		err := e.doIndexing(task.ctx, task.req, task.res)
+		if err != nil {
+			e.logger.Error("indexingLoop error", "err", err)
+		}
+
+		// done with the indexing
+		e.indexingWg.Done()
+	}
+}
+
+// doIndexing is the main function for indexing.
+func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinalizeBlock, res *abci.ResponseFinalizeBlock) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("doIndexing panic: %v", r)
+		}
+	}()
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// load base fee from evm keeper
 	baseFee, err := e.evmKeeper.BaseFee(sdkCtx)
 	if err != nil {
-		e.logger.Error("failed to get base fee", "err", err)
-		return err
+		err = fmt.Errorf("failed to get base fee: %w", err)
+		return
+	}
+
+	ethTxInfos, err_ := extractEthTxInfos(sdkCtx, e.logger, e.txConfig.TxDecoder(), *e.evmKeeper, *req, *res)
+	if err_ != nil {
+		err = fmt.Errorf("failed to extract eth tx infos: %w", err_)
+		return
 	}
 
 	txIndex := uint(0)
 	cumulativeGasUsed := uint64(0)
-	ethTxs := make([]*coretypes.Transaction, 0, len(req.Txs))
-	receipts := make([]*coretypes.Receipt, 0, len(req.Txs))
-	for idx, txBytes := range req.Txs {
-		tx, err := e.txConfig.TxDecoder()(txBytes)
-		if err != nil {
-			e.logger.Error("failed to decode tx", "err", err)
-			continue
-		}
-
-		ethTx, _, err := keeper.NewTxUtils(e.evmKeeper).ConvertCosmosTxToEthereumTx(sdkCtx, tx)
-		if err != nil {
-			e.logger.Error("failed to convert CosmosTx to EthTx", "err", err)
-			return err
-		}
-		if ethTx == nil {
-			continue
-		}
-
-		txResult := res.TxResults[idx]
-		txStatus := coretypes.ReceiptStatusSuccessful
-		if txResult.Code != abci.CodeTypeOK {
-			txStatus = coretypes.ReceiptStatusFailed
-		}
+	ethTxs := make([]*coretypes.Transaction, len(ethTxInfos))
+	receipts := make([]*coretypes.Receipt, len(ethTxInfos))
+	for idx, ethTxInfo := range ethTxInfos {
+		ethTx := ethTxInfo.Tx
+		txStatus := ethTxInfo.Status
+		gasUsed := ethTxInfo.GasUsed
+		cosmosTxHash := ethTxInfo.CosmosTxHash
+		ethLogs := ethTxInfo.Logs
+		contractAddr := ethTxInfo.ContractAddr
 
 		// index tx hash
-		cosmosTxHash := comettypes.Tx(txBytes).Hash()
-		if err := e.TxHashToCosmosTxHash.Set(sdkCtx, ethTx.Hash().Bytes(), cosmosTxHash); err != nil {
-			e.logger.Error("failed to store tx hash to cosmos tx hash", "err", err)
-			return err
+		if err_ := e.TxHashToCosmosTxHash.Set(sdkCtx, ethTx.Hash().Bytes(), cosmosTxHash); err_ != nil {
+			err = fmt.Errorf("failed to store tx hash to cosmos tx hash: %w", err_)
+			return
 		}
-		if err := e.CosmosTxHashToTxHash.Set(sdkCtx, cosmosTxHash, ethTx.Hash().Bytes()); err != nil {
-			e.logger.Error("failed to store cosmos tx hash to tx hash", "err", err)
-			return err
+		if err_ := e.CosmosTxHashToTxHash.Set(sdkCtx, cosmosTxHash, ethTx.Hash().Bytes()); err_ != nil {
+			err = fmt.Errorf("failed to store cosmos tx hash to tx hash: %w", err_)
+			return
 		}
 
-		gasUsed := uint64(txResult.GasUsed)
 		cumulativeGasUsed += gasUsed
 
 		txIndex++
-		ethTxs = append(ethTxs, ethTx)
-
-		// extract logs and contract address from tx results
-		ethLogs, contractAddr, err := extractLogsAndContractAddr(txStatus, txResult.Data, ethTx.To() == nil)
-		if err != nil {
-			e.logger.Error("failed to extract logs and contract address", "err", err)
-			return err
-		}
+		ethTxs[idx] = ethTx
 
 		receipt := coretypes.Receipt{
 			PostState:         nil,
@@ -110,7 +120,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 			receipt.ContractAddress = *contractAddr
 		}
 
-		receipts = append(receipts, &receipt)
+		receipts[idx] = &receipt
 	}
 
 	blockGasMeter := sdkCtx.BlockGasMeter()
@@ -120,10 +130,10 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	parentHash := common.Hash{}
 	if blockHeight > 1 {
 		parentNumber := uint64(blockHeight - 1)
-		parentHeader, err := e.BlockHeaderByNumber(ctx, parentNumber)
-		if err != nil {
-			e.logger.Error("failed to get parent header", "err", err)
-			return err
+		parentHeader, err_ := e.BlockHeaderByNumber(ctx, parentNumber)
+		if err_ != nil {
+			err = fmt.Errorf("failed to get parent header: %w", err_)
+			return
 		}
 
 		parentHash = parentHeader.Hash()
@@ -160,19 +170,19 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 
 		// store tx
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), ethTx.ChainId())
-		if err := e.TxMap.Set(sdkCtx, txHash.Bytes(), *rpcTx); err != nil {
-			e.logger.Error("failed to store rpcTx", "err", err)
-			return err
+		if err_ := e.TxMap.Set(sdkCtx, txHash.Bytes(), *rpcTx); err_ != nil {
+			err = fmt.Errorf("failed to store rpcTx: %w", err_)
+			return
 		}
-		if err := e.TxReceiptMap.Set(sdkCtx, txHash.Bytes(), *receipt); err != nil {
-			e.logger.Error("failed to store tx receipt", "err", err)
-			return err
+		if err_ := e.TxReceiptMap.Set(sdkCtx, txHash.Bytes(), *receipt); err_ != nil {
+			err = fmt.Errorf("failed to store tx receipt: %w", err_)
+			return
 		}
 
 		// store index
-		if err := e.BlockAndIndexToTxHashMap.Set(sdkCtx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err != nil {
-			e.logger.Error("failed to store blockAndIndexToTxHash", "err", err)
-			return err
+		if err_ := e.BlockAndIndexToTxHashMap.Set(sdkCtx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err_ != nil {
+			err = fmt.Errorf("failed to store blockAndIndexToTxHash: %w", err_)
+			return
 		}
 
 		// remove tx from the pending and queued after indexing
@@ -194,13 +204,13 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 	}
 
 	// index block header
-	if err := e.BlockHeaderMap.Set(sdkCtx, uint64(blockHeight), blockHeader); err != nil {
-		e.logger.Error("failed to marshal blockHeader", "err", err)
-		return err
+	if err_ := e.BlockHeaderMap.Set(sdkCtx, uint64(blockHeight), blockHeader); err_ != nil {
+		err = fmt.Errorf("failed to marshal blockHeader: %w", err_)
+		return
 	}
-	if err := e.BlockHashToNumberMap.Set(sdkCtx, blockHash.Bytes(), uint64(blockHeight)); err != nil {
-		e.logger.Error("failed to store blockHashToNumber", "err", err)
-		return err
+	if err_ := e.BlockHashToNumberMap.Set(sdkCtx, blockHash.Bytes(), uint64(blockHeight)); err_ != nil {
+		err = fmt.Errorf("failed to store blockHashToNumber: %w", err_)
+		return
 	}
 
 	// emit block event in a goroutine
@@ -214,6 +224,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		}
 	}()
 
+	e.lastIndexedHeight.Store(uint64(req.Height))
 	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm preblocker.
 	// - https://github.com/cosmos/cosmos-sdk/issues/22246
 	//
@@ -230,6 +241,8 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 
 	// trigger bloom indexing
 	e.doBloomIndexing(ctx, uint64(blockHeight))
+
+	e.logger.Info("evm indexer indexed", "blockHeight", blockHeight)
 
 	return nil
 }

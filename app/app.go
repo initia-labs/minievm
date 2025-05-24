@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -551,25 +552,29 @@ func (app *MinitiaApp) RegisterNodeService(clientCtx client.Context, cfg config.
 // Close closes the underlying baseapp, the oracle service, and the prometheus server if required.
 // This method blocks on the closure of both the prometheus server, and the oracle-service
 func (app *MinitiaApp) Close() error {
+	var errs []error
+
 	if app.kvIndexerKeeper != nil {
 		if err := app.kvIndexerKeeper.Close(); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
 	if err := app.BaseApp.Close(); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if app.evmIndexer != nil {
-		app.evmIndexer.Stop()
+		if err := app.evmIndexer.Close(); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if app.checkTxWrapper != nil {
 		app.checkTxWrapper.Stop()
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // RegisterSwaggerAPI registers swagger route with API Server

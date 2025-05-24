@@ -8,6 +8,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	comettypes "github.com/cometbft/cometbft/types"
+
+	"cosmossdk.io/collections"
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
 	"github.com/initia-labs/minievm/tests"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
@@ -40,6 +48,7 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
+	// 1. Test that Ethereum transactions are properly indexed
 	// mint 1_000_000 tokens to the first address
 	tx, evmTxHash = tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
 	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
@@ -60,6 +69,107 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
+	// check the tx is indexed
+	ih, err := indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
+	// 2. Test that Cosmos transactions which generate EVM logs are properly indexed
+	// This verifies the indexer handles non-Ethereum transactions that still produce EVM events
+	feeDenom, err := app.EVMKeeper.GetFeeDenom(ctx)
+	require.NoError(t, err)
+	tx = tests.GenerateCosmosTx(t, app, privKeys[0], []sdk.Msg{
+		&banktypes.MsgSend{
+			FromAddress: sdk.AccAddress(addrs[0].Bytes()).String(),
+			ToAddress:   sdk.AccAddress(addrs[1].Bytes()).String(),
+			Amount:      sdk.NewCoins(sdk.NewCoin(feeDenom, math.NewIntFromBigInt(new(big.Int).SetUint64(1_000_000_000_000)))),
+		},
+	})
+
+	txBytes, err := app.TxConfig().TxEncoder()(tx)
+	require.NoError(t, err)
+	cosmosTxHash := comettypes.Tx(txBytes).Hash()
+
+	finalizeReq, finalizeRes = tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	// check the block header is indexed
+	header, err = indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	require.NoError(t, err)
+	require.NotNil(t, header)
+	require.Equal(t, finalizeReq.Height, header.Number.Int64())
+
+	// check the tx is indexed
+	evmTxHash, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	require.NoError(t, err)
+	require.NotNil(t, evmTxHash)
+
+	evmTx, err = indexer.TxByHash(ctx, evmTxHash)
+	require.NoError(t, err)
+	require.NotNil(t, evmTx)
+
+	// check the tx is indexed
+	ih, err = indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
+	// 3. Test that Cosmos transactions which do not generate EVM logs are not indexed
+	authzMsg, err := authz.NewMsgGrant(sdk.AccAddress(addrs[0].Bytes()), sdk.AccAddress(addrs[1].Bytes()), authz.NewGenericAuthorization("/cosmos.bank.v1beta1.MsgSend"), nil)
+	require.NoError(t, err)
+
+	tx = tests.GenerateCosmosTx(t, app, privKeys[0], []sdk.Msg{authzMsg})
+
+	txBytes, err = app.TxConfig().TxEncoder()(tx)
+	require.NoError(t, err)
+	cosmosTxHash = comettypes.Tx(txBytes).Hash()
+
+	finalizeReq, finalizeRes = tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	// check the block header is indexed
+	header, err = indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	require.NoError(t, err)
+	require.NotNil(t, header)
+	require.Equal(t, finalizeReq.Height, header.Number.Int64())
+
+	// check the tx is indexed
+	ih, err = indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
+	// check the tx is not indexed
+	_, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	require.ErrorIs(t, err, collections.ErrNotFound)
+
+	// 4. Test that failed Cosmo transactions are not indexed
+	tx = tests.GenerateCosmosTx(t, app, privKeys[0], []sdk.Msg{
+		&banktypes.MsgSend{
+			FromAddress: sdk.AccAddress(addrs[0].Bytes()).String(),
+			ToAddress:   sdk.AccAddress(addrs[1].Bytes()).String(),
+			Amount:      sdk.NewCoins(sdk.NewCoin(feeDenom, math.ZeroInt())),
+		},
+	})
+
+	txBytes, err = app.TxConfig().TxEncoder()(tx)
+	require.NoError(t, err)
+	cosmosTxHash = comettypes.Tx(txBytes).Hash()
+
+	finalizeReq, finalizeRes = tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], false)
+
+	// check the block header is indexed
+	header, err = indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	require.NoError(t, err)
+	require.NotNil(t, header)
+
+	// check the tx is indexed
+	ih, err = indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
+	// check the tx is not indexed
+	_, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	require.ErrorIs(t, err, collections.ErrNotFound)
 }
 
 func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {

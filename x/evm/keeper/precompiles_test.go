@@ -14,7 +14,6 @@ import (
 	abiapi "github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/vm"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/connect_oracle"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
@@ -271,7 +270,7 @@ func Test_PrecompileRevertError(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, sdkerrors.ErrUnauthorized.Error())
 
 	// check balance
@@ -378,7 +377,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 
 	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
 	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "no price / nonce reported for CurrencyPair")
 
 	inputBz, err = abi.Pack("get_price", `Error`)
@@ -386,7 +385,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 
 	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
 	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "incorrectly formatted CurrencyPair")
 
 	// 2. get price in correct case
@@ -512,7 +511,7 @@ func Test_ExecuteCosmosMessage_Disabled(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, types.ErrExecuteCosmosDisabled.Error())
 
 	// call disable_and_execute_in_child
@@ -529,7 +528,7 @@ func Test_ExecuteCosmosMessage_Disabled(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, types.ErrExecuteCosmosDisabled.Error())
 
 	// check balance
