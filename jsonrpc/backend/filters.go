@@ -35,6 +35,11 @@ func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error
 		return nil, err
 	}
 	if len(txs) != len(receipts) {
+		// something is wrong, clear the cache
+		b.blockTxsCache.Remove(height)
+		b.blockReceiptsCache.Remove(height)
+		b.logger.Error("mismatched number of transactions and receipts", "height", height)
+
 		return nil, NewInternalError("mismatched number of transactions and receipts")
 	}
 

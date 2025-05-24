@@ -213,7 +213,8 @@ func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.
 
 func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, error) {
 	// if lastIndexedHeight is not set, get the last indexed block header from the store
-	if e.lastIndexedHeight.Load() == 0 {
+	lastIndexedHeight := e.lastIndexedHeight.Load()
+	if lastIndexedHeight == 0 {
 		blockHeader, err := e.BlockHeaderMap.Iterate(ctx, new(collections.Range[uint64]).Descending())
 		if err != nil {
 			return 0, err
@@ -228,7 +229,8 @@ func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, erro
 			e.lastIndexedHeight.Store(lastHeight)
 		}
 	}
-	return e.lastIndexedHeight.Load(), nil
+
+	return lastIndexedHeight, nil
 }
 
 // blockEvents is a struct to emit block events.

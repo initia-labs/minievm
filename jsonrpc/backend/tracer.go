@@ -39,6 +39,8 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 	header, err := b.GetHeaderByNumber(ethBlockNum)
 	if err != nil {
 		return nil, err
+	} else if header == nil {
+		return nil, fmt.Errorf("block #%d not found", ethBlockNum)
 	}
 
 	rpcTxs, err := b.getBlockTransactions(blockNumber)
