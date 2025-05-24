@@ -302,13 +302,16 @@ func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) (
 	if err != nil {
 		return nil, err
 	}
-
 	receipts, err := b.getBlockReceipts(blockNumber)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(txs) != len(receipts) {
+		// something is wrong, clear the cache
+		b.blockTxsCache.Remove(blockNumber)
+		b.blockReceiptsCache.Remove(blockNumber)
+		b.logger.Error("mismatched number of transactions and receipts", "height", blockNumber)
+
 		return nil, NewInternalError("mismatched number of transactions and receipts")
 	}
 
