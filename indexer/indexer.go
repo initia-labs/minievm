@@ -241,4 +241,7 @@ func (e *EVMIndexerImpl) Stop() {
 	if e.queuedTxs != nil {
 		e.queuedTxs.Stop()
 	}
+	if e.db != nil {
+		e.db.Close()
+	}
 }
