@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/tracing"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
@@ -310,7 +310,7 @@ func (b *JSONRPCBackend) traceTx(
 		}
 	}
 
-	execErr := b.runTxWithTracer(sdkCtx, cosmosTx, tracer.Hooks)
+	execErr := b.runTxWithTracer(sdkCtx, cosmosTx, tracer)
 	result, err := tracer.GetResult()
 	if err != nil {
 		if execErr != nil {
@@ -326,7 +326,7 @@ func (b *JSONRPCBackend) traceTx(
 func (b *JSONRPCBackend) runTxWithTracer(
 	sdkCtx sdk.Context,
 	cosmosTx sdk.Tx,
-	tracer *tracing.Hooks,
+	tracer *tracers.Tracer,
 ) (err error) {
 	feeTx := cosmosTx.(sdk.FeeTx)
 	gasLimit := feeTx.GetGas()
@@ -353,14 +353,29 @@ func (b *JSONRPCBackend) runTxWithTracer(
 	// setup tracing
 	// execute OnTxStart and dummy OnEnter
 	if tracer != nil {
+		evmPointer := new(*vm.EVM)
+		deadlineCtx, cancel := context.WithTimeout(sdkCtx, b.cfg.TracerTimeout)
+		go func() {
+			<-deadlineCtx.Done()
+			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
+				tracer.Stop(errors.New("execution timeout"))
+				// Stop evm execution. Note cancellation is not necessarily immediate.
+				if *evmPointer != nil {
+					(*evmPointer).Cancel()
+				}
+			}
+		}()
+		defer cancel()
+
 		feePayer := common.BytesToAddress(feeTx.FeePayer())
-		_, evm, _, err := b.app.EVMKeeper.CreateEVM(sdkCtx, feePayer, nil)
+		_, evm, _, err := b.app.EVMKeeper.CreateEVM(sdkCtx, feePayer)
 		if err != nil {
 			return err
 		}
 
-		tracing := evmtypes.NewTracing(evm, tracer)
+		tracing := evmtypes.NewTracing(evm, tracer.Hooks)
 		sdkCtx = sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACING, tracing)
+		sdkCtx = sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACE_EVM, evmPointer)
 
 		if tracer.OnTxStart != nil {
 			tracer.OnTxStart(tracing.VMContext(), evmtypes.TracingTx(gasLimit), feePayer)

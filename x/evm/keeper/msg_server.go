@@ -199,7 +199,7 @@ func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) 
 		return err
 	}
 
-	_, evm, cleanup, err := ms.CreateEVM(ctx, types.StdAddress, nil)
+	_, evm, cleanup, err := ms.CreateEVM(ctx, types.StdAddress)
 	if err != nil {
 		return err
 	}

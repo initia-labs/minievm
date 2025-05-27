@@ -69,4 +69,7 @@ const (
 
 	// CONTEXT_KEY_SEQUENCE_INCREMENTED is a context key for sequence incremented
 	CONTEXT_KEY_SEQUENCE_INCREMENTED
+
+	// CONTEXT_TRACE_EVM is a context key for trace evm
+	CONTEXT_KEY_TRACE_EVM
 )

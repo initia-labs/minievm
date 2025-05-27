@@ -89,15 +89,31 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	sdkCtx, _ = sdkCtx.CacheContext()
 
 	// set tracer to context
+	timeoutRevert := false
 	if tracer != nil {
+		evmPointer := new(*vm.EVM)
+		deadlineCtx, cancel := context.WithTimeout(sdkCtx, qs.config.TracerTimeout)
+		go func() {
+			<-deadlineCtx.Done()
+			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
+				// Stop evm execution. Note cancellation is not necessarily immediate.
+				if *evmPointer != nil {
+					(*evmPointer).Cancel()
+				}
+				timeoutRevert = true
+			}
+		}()
+		defer cancel()
+
 		// create evm to create tracing
-		_, evm, _, err := qs.CreateEVM(sdkCtx, caller, nil)
+		_, evm, _, err := qs.CreateEVM(sdkCtx, caller)
 		if err != nil {
 			return nil, err
 		}
 
 		tracing := types.NewTracing(evm, tracer)
 		sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACING, tracing)
+		sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACE_EVM, evmPointer)
 
 		// execute OnTxStart and dummy OnEnter
 		gasLimit := qs.computeGasLimit(sdkCtx)
@@ -134,7 +150,13 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 		}
 	}
 
-	if err != nil {
+	if timeoutRevert {
+		return &types.QueryCallResponse{
+			Error:       "execution timeout",
+			UsedGas:     gasUsed,
+			TraceOutput: tracerOutput.String(),
+		}, nil
+	} else if err != nil {
 		return &types.QueryCallResponse{
 			Error:       err.Error(),
 			UsedGas:     gasUsed,

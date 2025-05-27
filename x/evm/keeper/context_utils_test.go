@@ -29,7 +29,7 @@ func Test_GasPrice(t *testing.T) {
 	ctx = ctx.WithValue(types.CONTEXT_KEY_GAS_PRICES, sdk.DecCoins{sdk.NewDecCoinFromDec(fee.Denom(), math.LegacyNewDecFromBigInt(gasPrice))})
 
 	caller := common.BytesToAddress(addr.Bytes())
-	_, evm, cleanup, err := input.EVMKeeper.CreateEVM(ctx, caller, nil)
+	_, evm, cleanup, err := input.EVMKeeper.CreateEVM(ctx, caller)
 	require.NoError(t, err)
 	defer cleanup()
 
@@ -51,7 +51,7 @@ func Test_BaseFee(t *testing.T) {
 	input.GasPriceKeeper.GasPrices[fee.Denom()] = math.LegacyNewDecFromBigInt(gasPrice)
 
 	caller := common.BytesToAddress(addr.Bytes())
-	_, evm, cleanup, err := input.EVMKeeper.CreateEVM(ctx, caller, nil)
+	_, evm, cleanup, err := input.EVMKeeper.CreateEVM(ctx, caller)
 	require.NoError(t, err)
 	defer cleanup()
 

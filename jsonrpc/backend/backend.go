@@ -82,6 +82,9 @@ func NewJSONRPCBackend(
 	if cfg.FilterMaxAddresses == 0 {
 		cfg.FilterMaxAddresses = config.DefaultFilterMaxAddresses
 	}
+	if cfg.TracerTimeout == 0 {
+		cfg.TracerTimeout = 10 * time.Second
+	}
 
 	gasMultiplier, err := math.LegacyNewDecFromStr(cfg.GasMultiplier)
 	if err != nil {

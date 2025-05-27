@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -18,6 +19,8 @@ const (
 	DefaultIndexerCacheSize = 100
 	// DefaultIndexerRetainHeight is the default height to retain indexer data.
 	DefaultIndexerRetainHeight = uint64(0)
+	// DefaultTracerTimeout is the default tracer timeout.
+	DefaultTracerTimeout = 10 * time.Second
 
 	// SectionSize is the size of the section for bloom indexing
 	SectionSize = uint64(4096)
@@ -28,6 +31,7 @@ const (
 	flagIndexerDisable             = "evm.indexer-disable"
 	flagIndexerCacheSize           = "evm.indexer-cache-size"
 	flagIndexerRetainHeight        = "evm.indexer-retain-height"
+	flagTracerTimeout              = "evm.tracer-timeout"
 )
 
 // EVMConfig is the extra config required for evm
@@ -41,6 +45,8 @@ type EVMConfig struct {
 	// IndexerRetainHeight is the height to retain indexer data.
 	// If 0, it will retain all data.
 	IndexerRetainHeight uint64 `mapstructure:"indexer-retain-height"`
+	// TracerTimeout is the timeout for the tracer.
+	TracerTimeout time.Duration `mapstructure:"tracer-timeout"`
 }
 
 func (c EVMConfig) Validate() error {
@@ -58,16 +64,23 @@ func DefaultEVMConfig() EVMConfig {
 		IndexerDisable:             DefaultIndexerDisable,
 		IndexerCacheSize:           DefaultIndexerCacheSize,
 		IndexerRetainHeight:        DefaultIndexerRetainHeight,
+		TracerTimeout:              DefaultTracerTimeout,
 	}
 }
 
 // GetConfig load config values from the app options
 func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
+	tracerTimeout := cast.ToDuration(appOpts.Get(flagTracerTimeout))
+	if tracerTimeout == 0 {
+		tracerTimeout = DefaultTracerTimeout
+	}
+
 	return EVMConfig{
 		ContractSimulationGasLimit: cast.ToUint64(appOpts.Get(flagContractSimulationGasLimit)),
 		IndexerDisable:             cast.ToBool(appOpts.Get(flagIndexerDisable)),
 		IndexerCacheSize:           cast.ToInt(appOpts.Get(flagIndexerCacheSize)),
 		IndexerRetainHeight:        cast.ToUint64(appOpts.Get(flagIndexerRetainHeight)),
+		TracerTimeout:              tracerTimeout,
 	}
 }
 
@@ -77,6 +90,7 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Bool(flagIndexerDisable, DefaultIndexerDisable, "Disable evm indexer")
 	startCmd.Flags().Int(flagIndexerCacheSize, DefaultIndexerCacheSize, "Maximum size (MiB) of the indexer cache")
 	startCmd.Flags().Uint64(flagIndexerRetainHeight, DefaultIndexerRetainHeight, "Height to retain indexer data")
+	startCmd.Flags().Duration(flagTracerTimeout, DefaultTracerTimeout, "Timeout for the tracer")
 }
 
 // DefaultConfigTemplate default config template for evm
@@ -100,4 +114,7 @@ indexer-cache-size = {{ .EVMConfig.IndexerCacheSize }}
 # IndexerRetainHeight is the height to retain indexer data.
 # If 0, it will retain all data.
 indexer-retain-height = {{ .EVMConfig.IndexerRetainHeight }}
+
+# TracerTimeout is the timeout for the tracer.
+tracer-timeout = {{ .EVMConfig.TracerTimeout }}
 `
