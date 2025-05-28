@@ -19,6 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -86,27 +88,85 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	// use cache context to rollback writes
 	sdkCtx, _ = sdkCtx.CacheContext()
 
+	// set tracer to context
+	timeoutRevert := false
+	if tracer != nil {
+		evmPointer := new(*vm.EVM)
+		deadlineCtx, cancel := context.WithTimeout(sdkCtx, qs.config.TracerTimeout)
+		go func() {
+			<-deadlineCtx.Done()
+			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
+				// Stop evm execution. Note cancellation is not necessarily immediate.
+				if *evmPointer != nil {
+					(*evmPointer).Cancel()
+				}
+				timeoutRevert = true
+			}
+		}()
+		defer cancel()
+
+		// create evm to create tracing
+		_, evm, _, err := qs.CreateEVM(sdkCtx, caller)
+		if err != nil {
+			return nil, err
+		}
+
+		tracing := types.NewTracing(evm, tracer)
+		sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACING, tracing)
+		sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACE_EVM, evmPointer)
+
+		// execute OnTxStart and dummy OnEnter
+		gasLimit := qs.computeGasLimit(sdkCtx)
+		if tracer.OnTxStart != nil {
+			tracer.OnTxStart(tracing.VMContext(), types.TracingTx(gasLimit), caller)
+		}
+		if tracer.OnEnter != nil {
+			tracer.OnEnter(0, byte(vm.CALL), types.NullAddress, types.NullAddress, []byte{}, gasLimit, nil)
+		}
+	}
+
 	var retBz []byte
 	var logs []types.Log
 	if contractAddr == (common.Address{}) {
 		// if contract address is not provided, then it's a contract creation
-		retBz, _, logs, err = qs.EVMCreateWithTracer(sdkCtx, caller, inputBz, value, nil, list, tracer)
+		retBz, _, logs, err = qs.EVMCreate(sdkCtx, caller, inputBz, value, list)
 	} else {
-		retBz, logs, err = qs.EVMCallWithTracer(sdkCtx, caller, contractAddr, inputBz, value, list, tracer)
-
+		retBz, logs, err = qs.EVMCall(sdkCtx, caller, contractAddr, inputBz, value, list)
 	}
 
-	if err != nil {
+	gasUsed := sdkCtx.GasMeter().GasConsumedToLimit()
+
+	// execute dummy OnExit and OnTxEnd
+	if tracer != nil {
+		if tracer.OnExit != nil {
+			if revertErr, ok := err.(*types.RevertError); ok {
+				tracer.OnExit(0, revertErr.Ret(), gasUsed, vm.ErrExecutionReverted, true)
+			} else {
+				tracer.OnExit(0, nil, gasUsed, err, false)
+			}
+		}
+		if tracer.OnTxEnd != nil {
+			tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
+		}
+	}
+
+	if timeoutRevert {
+		return &types.QueryCallResponse{
+			Error:       "execution timeout",
+			UsedGas:     gasUsed,
+			TraceOutput: tracerOutput.String(),
+		}, nil
+	} else if err != nil {
 		return &types.QueryCallResponse{
 			Error:       err.Error(),
-			UsedGas:     sdkCtx.GasMeter().GasConsumedToLimit(),
+			UsedGas:     gasUsed,
 			TraceOutput: tracerOutput.String(),
 		}, nil
 	}
 
 	return &types.QueryCallResponse{
 		Response:    hexutil.Encode(retBz),
-		UsedGas:     sdkCtx.GasMeter().GasConsumedToLimit(),
+		UsedGas:     gasUsed,
 		Logs:        logs,
 		TraceOutput: tracerOutput.String(),
 	}, nil

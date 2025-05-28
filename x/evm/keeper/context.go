@@ -16,9 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/tracing"
 	coretype "github.com/ethereum/go-ethereum/core/types"
-	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
@@ -173,37 +171,42 @@ func (k Keeper) buildTxContext(ctx context.Context, caller common.Address, fee t
 	}, nil
 }
 
-// CreateEVM creates a new EVM instance.
-func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tracing.Hooks) (context.Context, *vm.EVM, error) {
+// CreateEVM creates a new EVM instance with the given caller address and optional tracing.
+// It returns:
+// - context: The context used for EVM execution
+// - evm: A new EVM instance configured with chain rules and state
+// - cleanup: A function to rollback the tracer's stateDB changes (only needed when using tracing)
+// - error: Any error that occurred during EVM creation
+func (k Keeper) CreateEVM(ctx context.Context, caller common.Address) (context.Context, *vm.EVM, func(), error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 
 	extraEIPs := params.ToExtraEIPs()
 	fee, err := k.LoadFee(ctx, params)
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 
 	// prepare SDK context for EVM execution
 	ctx, err = prepareSDKContext(sdk.UnwrapSDKContext(ctx))
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 
 	chainConfig := types.DefaultChainConfig(ctx)
-	vmConfig := vm.Config{Tracer: tracer, ExtraEips: extraEIPs, NumRetainBlockHashes: &params.NumRetainBlockHashes}
+	vmConfig := vm.Config{ExtraEips: extraEIPs, NumRetainBlockHashes: &params.NumRetainBlockHashes}
 
 	// use default block context for chain rules in EVM creation
 	defaultBlockContext, err := k.buildDefaultBlockContext(ctx)
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 
 	txContext, err := k.buildTxContext(ctx, caller, fee)
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 
 	// NOTE: need to check if the EVM is correctly initialized with empty context and stateDB
@@ -217,43 +220,31 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address, tracer *tr
 	// customize EVM contexts and stateDB and precompiles
 	evm.Context, err = k.buildBlockContext(ctx, defaultBlockContext, evm, fee)
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 	evm.StateDB, err = k.NewStateDB(ctx, evm, fee)
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 
 	rules := chainConfig.Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
 	precompiles, err := k.precompiles(rules, evm.StateDB.(types.StateDB))
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, func() {}, err
 	}
 	evm.SetPrecompiles(precompiles)
 
-	if tracer != nil {
-		var ethTx *coretypes.Transaction
-		if v := ctx.Value(types.CONTEXT_KEY_ETH_TX); v != nil {
-			ethTx = v.(*coretypes.Transaction)
-		} else {
-			ethTx = &coretypes.Transaction{}
-		}
-
-		// register vm context to tracer
-		if tracer.OnTxStart != nil {
-			tracer.OnTxStart(evm.GetVMContext(), ethTx, caller)
-		}
-
-		// set tracer to stateDB
-		evm.StateDB.(types.StateDB).SetTracer(tracer)
+	cleanup, err := prepareTracing(ctx, evm)
+	if err != nil {
+		return ctx, nil, func() {}, err
 	}
 
-	return ctx, evm, nil
+	return ctx, evm, cleanup, nil
 }
 
-// prepare SDK context for EVM execution
-// 1. set cosmos messages to context
-// 2. check recursive depth and increment it (the maximum depth is 8)
+// prepareSDKContext prepares the SDK context for EVM execution.
+// 1. sets the cosmos messages to context
+// 2. checks the recursive depth and increments it (the maximum depth is 8)
 func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
 	// set cosmos messages to context
 	ctx = ctx.WithValue(types.CONTEXT_KEY_EXECUTE_REQUESTS, &[]types.ExecuteRequest{})
@@ -270,17 +261,41 @@ func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
 	return ctx.WithValue(types.CONTEXT_KEY_RECURSIVE_DEPTH, depth), nil
 }
 
-// EVMStaticCall executes an EVM call with the given input data in static mode.
-func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList) ([]byte, error) {
-	return k.EVMStaticCallWithTracer(ctx, caller, contractAddr, inputBz, accessList, nil)
+// prepareTracing prepares the tracing for the EVM execution.
+// 1. sets the tracer to the EVM and the stateDB to the tracing VMContext.
+// 2. returns a cleanup function to rollback the tracing.
+func prepareTracing(ctx context.Context, evm *vm.EVM) (func(), error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if sdkCtx.Value(types.CONTEXT_KEY_TRACING) == nil || sdkCtx.Value(types.CONTEXT_KEY_TRACE_EVM) == nil {
+		return func() {}, nil
+	}
+
+	tracing := sdkCtx.Value(types.CONTEXT_KEY_TRACING).(*types.Tracing)
+	evmPointer := sdkCtx.Value(types.CONTEXT_KEY_TRACE_EVM).(**vm.EVM)
+
+	evm.Config.Tracer = tracing.Tracer()
+	evm.StateDB.(types.StateDB).SetTracer(tracing.Tracer())
+
+	originalStateDB := tracing.VMContext().StateDB
+	tracing.VMContext().StateDB = evm.StateDB
+
+	originalEVM := *evmPointer
+	*evmPointer = evm
+
+	return func() {
+		tracing.VMContext().StateDB = originalStateDB
+		*evmPointer = originalEVM
+	}, nil
 }
 
-// EVMStaticCallWithTracer executes an EVM call with the given input data and tracer in static mode.
-func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, error) {
-	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
+// EVMStaticCall executes an EVM call with the given input data in static mode.
+func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, accessList coretype.AccessList) ([]byte, error) {
+	ctx, evm, cleanup, err := k.CreateEVM(ctx, caller)
 	if err != nil {
 		return nil, err
 	}
+
+	defer cleanup()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
@@ -305,9 +320,6 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
-	if tracer != nil && tracer.OnTxEnd != nil {
-		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
-	}
 	if err != nil {
 		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
 	}
@@ -317,15 +329,12 @@ func (k Keeper) EVMStaticCallWithTracer(ctx context.Context, caller common.Addre
 
 // EVMCall executes an EVM call with the given input data.
 func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, accessList coretype.AccessList) ([]byte, types.Logs, error) {
-	return k.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, accessList, nil)
-}
-
-// EVMCallWithTracer executes an EVM call with the given input data and tracer.
-func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, contractAddr common.Address, inputBz []byte, value *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) ([]byte, types.Logs, error) {
-	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
+	ctx, evm, cleanup, err := k.CreateEVM(ctx, caller)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	defer cleanup()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
@@ -359,6 +368,10 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	case sdk.ExecModeSimulate, sdk.ExecModeReCheck, sdk.ExecModeCheck:
 		// return exact error instead of out of gas error
 		if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+			if err == vm.ErrExecutionReverted {
+				return nil, nil, types.NewRevertError(common.CopyBytes(retBz))
+			}
+
 			return nil, nil, types.ErrEVMCallFailed.Wrap(err.Error())
 		}
 	default:
@@ -367,12 +380,9 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
-	if tracer != nil && tracer.OnTxEnd != nil {
-		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
-	}
 	if err != nil {
 		if err == vm.ErrExecutionReverted {
-			err = types.NewRevertError(common.CopyBytes(retBz))
+			return nil, nil, types.NewRevertError(common.CopyBytes(retBz))
 		}
 
 		return nil, nil, types.ErrEVMCallFailed.Wrap(err.Error())
@@ -422,22 +432,24 @@ func (k Keeper) EVMCallWithTracer(ctx context.Context, caller common.Address, co
 
 // EVMCreate creates a new contract with the given code.
 func (k Keeper) EVMCreate(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, accessList, nil)
+	return k.evmCreate(ctx, caller, codeBz, value, nil, accessList)
 }
 
 // EVMCreate2 creates a new contract with the given code.
 func (k Keeper) EVMCreate2(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList) ([]byte, common.Address, types.Logs, error) {
-	return k.EVMCreateWithTracer(ctx, caller, codeBz, value, salt, accessList, nil)
+	return k.evmCreate(ctx, caller, codeBz, value, salt, accessList)
 }
 
-// EVMCreateWithTracer creates a new contract with the given code and tracer.
+// evmCreate creates a new contract with the given code and tracer.
 // if salt is nil, it will create a contract with the CREATE opcode.
 // if salt is not nil, it will create a contract with the CREATE2 opcode.
-func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList, tracer *tracing.Hooks) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
-	ctx, evm, err := k.CreateEVM(ctx, caller, tracer)
+func (k Keeper) evmCreate(ctx context.Context, caller common.Address, codeBz []byte, value *uint256.Int, salt *uint256.Int, accessList coretype.AccessList) (retBz []byte, contractAddr common.Address, logs types.Logs, err error) {
+	ctx, evm, cleanup, err := k.CreateEVM(ctx, caller)
 	if err != nil {
 		return nil, common.Address{}, nil, err
 	}
+
+	defer cleanup()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	gasBalance := k.computeGasLimit(sdkCtx)
@@ -479,6 +491,10 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	case sdk.ExecModeSimulate, sdk.ExecModeReCheck, sdk.ExecModeCheck:
 		// return exact error instead of out of gas error
 		if gasRemaining == 0 && err != nil && err != vm.ErrOutOfGas {
+			if err == vm.ErrExecutionReverted {
+				return nil, common.Address{}, nil, types.NewRevertError(common.CopyBytes(retBz))
+			}
+
 			return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())
 		}
 	default:
@@ -487,12 +503,9 @@ func (k Keeper) EVMCreateWithTracer(ctx context.Context, caller common.Address, 
 	// London enforced
 	gasUsed := types.CalGasUsed(gasBalance, gasRemaining, evm.StateDB.GetRefund())
 	consumeGas(sdkCtx, gasUsed, gasRemaining, "EVM gas consumption")
-	if tracer != nil && tracer.OnTxEnd != nil {
-		tracer.OnTxEnd(&coretypes.Receipt{GasUsed: gasUsed}, err)
-	}
 	if err != nil {
 		if err == vm.ErrExecutionReverted {
-			err = types.NewRevertError(common.CopyBytes(retBz))
+			return nil, common.Address{}, nil, types.NewRevertError(common.CopyBytes(retBz))
 		}
 
 		return nil, common.Address{}, nil, types.ErrEVMCreateFailed.Wrap(err.Error())

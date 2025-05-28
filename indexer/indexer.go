@@ -2,9 +2,12 @@ package indexer
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/jellydator/ttlcache/v3"
 
 	"cosmossdk.io/collections"
@@ -50,6 +53,9 @@ type EVMIndexer interface {
 	// event subscription
 	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction)
 
+	// last indexed height
+	GetLastIndexedHeight(ctx context.Context) (uint64, error)
+
 	// mempool
 	TxInPending(hash common.Hash) *rpctypes.RPCTransaction
 	TxInQueued(hash common.Hash) *rpctypes.RPCTransaction
@@ -67,8 +73,13 @@ type EVMIndexer interface {
 	PeekBloomBitsNextSection(ctx context.Context) (uint64, error)
 	IsBloomIndexingRunning() bool
 
-	// Stop
-	Stop()
+	// Close stops the indexer process, waits for pending operations to complete,
+	// and flushes the store to disk with a timeout. Returns an error if the
+	// timeout is reached before operations complete.
+	Close() error
+
+	// Wait waits for all the indexing to finish.
+	Wait()
 }
 
 // EVMIndexerImpl implements EVMIndexer.
@@ -78,6 +89,7 @@ type EVMIndexerImpl struct {
 
 	pruningRunning       *atomic.Bool
 	bloomIndexingRunning *atomic.Bool
+	lastIndexedHeight    *atomic.Uint64
 
 	db       dbm.DB
 	logger   log.Logger
@@ -113,6 +125,19 @@ type EVMIndexerImpl struct {
 
 	// queuedTxs is a map to store tx hashes in queued state.
 	queuedTxs *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
+
+	// indexingChan is a channel to receive indexing tasks.
+	indexingChan chan *indexingTask
+
+	// indexingWg is a wait group to wait for all the indexing to finish.
+	indexingWg *sync.WaitGroup
+}
+
+// indexingTask is a task to be indexed.
+type indexingTask struct {
+	ctx context.Context
+	req *abci.RequestFinalizeBlock
+	res *abci.ResponseFinalizeBlock
 }
 
 func NewEVMIndexer(
@@ -146,10 +171,11 @@ func NewEVMIndexer(
 
 		pruningRunning:       &atomic.Bool{},
 		bloomIndexingRunning: &atomic.Bool{},
+		lastIndexedHeight:    &atomic.Uint64{},
 
 		db:       db,
 		store:    store,
-		logger:   logger.With("module", "indexer"),
+		logger:   logger.With("module", "evm-indexer"),
 		txConfig: txConfig,
 		appCodec: appCodec,
 
@@ -178,6 +204,12 @@ func NewEVMIndexer(
 			// queued tx lifetime is 1 minutes in indexer
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
+
+		// use buffered channel to avoid blocking the main thread
+		indexingChan: make(chan *indexingTask, 10),
+
+		// for graceful shutdown
+		indexingWg: &sync.WaitGroup{},
 	}
 
 	schema, err := sb.Build()
@@ -189,6 +221,9 @@ func NewEVMIndexer(
 	// expire pending tx
 	go indexer.pendingTxs.Start()
 	go indexer.queuedTxs.Start()
+
+	// start indexing loop
+	go indexer.indexingLoop()
 
 	return indexer, nil
 }
@@ -203,6 +238,28 @@ func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.
 	e.logsChans = append(e.logsChans, logsChan)
 	e.pendingChans = append(e.pendingChans, pendingChan)
 	return blockChan, logsChan, pendingChan
+}
+
+func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, error) {
+	// if lastIndexedHeight is not set, get the last indexed block header from the store
+	lastIndexedHeight := e.lastIndexedHeight.Load()
+	if lastIndexedHeight == 0 {
+		blockHeader, err := e.BlockHeaderMap.Iterate(ctx, new(collections.Range[uint64]).Descending())
+		if err != nil {
+			return 0, err
+		}
+
+		if blockHeader.Valid() {
+			lastHeight, err := blockHeader.Key()
+			if err != nil {
+				return 0, err
+			}
+
+			e.lastIndexedHeight.Store(lastHeight)
+		}
+	}
+
+	return lastIndexedHeight, nil
 }
 
 // blockEvents is a struct to emit block events.
@@ -232,8 +289,8 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan 
 	}
 }
 
-// Stop stops the indexer.
-func (e *EVMIndexerImpl) Stop() {
+// Close stops the indexer.
+func (e *EVMIndexerImpl) Close() error {
 	if e.pendingTxs != nil {
 		e.pendingTxs.Stop()
 	}
@@ -241,20 +298,47 @@ func (e *EVMIndexerImpl) Stop() {
 		e.queuedTxs.Stop()
 	}
 
-	// flag to prevent logging multiple times
-	logged := false
+	// flush store before stopping
+	return e.flushStore()
+}
 
-	// Wait for pruning to complete. it try to swap the pruningRunning to true,
-	// if the old value is false, then it means pruning is not running and we can stop the indexer.
-	for e.pruningRunning.Swap(true) {
-		if !logged {
-			e.logger.Info("Waiting for pruning to complete before shutdown...")
-			logged = true
+// flushStore flushes the store before stopping the indexer.
+// it waits for all the indexing to finish and then flushes the store.
+// it also waits for pruning to complete before flushing the store.
+func (e *EVMIndexerImpl) flushStore() error {
+	e.logger.Info("service stop", "msg", "Stopping EVM indexer service")
+
+	// wait for all the indexing to finish
+	e.Wait()
+
+	// wait for pruning to complete before flushing the store
+	ticker := time.NewTicker(time.Millisecond * 100)
+	timeout := time.NewTimer(time.Second * 30)
+	defer ticker.Stop()
+	defer timeout.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if !e.pruningRunning.Swap(true) {
+				// if pruning is finished, flush the store
+				e.store.Write()
+
+				// close the store
+				e.logger.Info("Closing evm_index.db")
+				if err := e.store.db.Close(); err != nil {
+					return err
+				}
+
+				return nil
+			}
+		case <-timeout.C:
+			return fmt.Errorf("timeout waiting for EVM indexer to complete before shutdown")
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
+}
 
-	e.store.Write()
-	e.logger.Info("Indexer stopped successfully")
+// Wait waits for all the indexing to finish.
+func (e *EVMIndexerImpl) Wait() {
+	e.indexingWg.Wait()
 }

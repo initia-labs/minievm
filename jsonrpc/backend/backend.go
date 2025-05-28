@@ -82,6 +82,9 @@ func NewJSONRPCBackend(
 	if cfg.FilterMaxAddresses == 0 {
 		cfg.FilterMaxAddresses = config.DefaultFilterMaxAddresses
 	}
+	if cfg.TracerTimeout == 0 {
+		cfg.TracerTimeout = 10 * time.Second
+	}
 
 	gasMultiplier, err := math.LegacyNewDecFromStr(cfg.GasMultiplier)
 	if err != nil {
@@ -169,6 +172,11 @@ func (b *JSONRPCBackend) feeFetcher() {
 		b.feeMutex.Unlock()
 
 		return nil
+	}
+
+	// fetch fee for the first time
+	if err := fetcher(); err != nil {
+		b.logger.Error("failed to fetch fee", "err", err)
 	}
 
 	ticker := time.NewTicker(3 * time.Second)

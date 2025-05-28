@@ -58,16 +58,10 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 		return nil, err
 	}
 
-	var tracer *tracing.Hooks
-	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
-		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
-		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
-	}
-
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreateWithTracer(ctx, caller, codeBz, value, nil, accessList, tracer)
+	retBz, contractAddr, logs, err := ms.EVMCreate(ctx, caller, codeBz, value, accessList)
 	if err != nil {
-		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		return nil, err
 	}
 
 	return &types.MsgCreateResponse{
@@ -116,16 +110,10 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 		return nil, err
 	}
 
-	var tracer *tracing.Hooks
-	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
-		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
-		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
-	}
-
 	// deploy a contract
-	retBz, contractAddr, logs, err := ms.EVMCreateWithTracer(ctx, caller, codeBz, value, salt, accessList, tracer)
+	retBz, contractAddr, logs, err := ms.EVMCreate2(ctx, caller, codeBz, value, salt, accessList)
 	if err != nil {
-		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		return nil, err
 	}
 
 	return &types.MsgCreate2Response{
@@ -159,16 +147,10 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 		return nil, err
 	}
 
-	var tracer *tracing.Hooks
-	if sdkCtx := sdk.UnwrapSDKContext(ctx); sdkCtx.Value(types.CONTEXT_KEY_TRACER) != nil {
-		tracer = sdkCtx.Value(types.CONTEXT_KEY_TRACER).(*tracing.Hooks)
-		ctx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACER, nil)
-	}
-
 	// call a contract
-	retBz, logs, err := ms.EVMCallWithTracer(ctx, caller, contractAddr, inputBz, value, accessList, tracer)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList)
 	if err != nil {
-		return nil, types.ErrEVMCallFailed.Wrap(err.Error())
+		return nil, err
 	}
 
 	return &types.MsgCallResponse{Result: hexutil.Encode(retBz), Logs: logs}, nil
@@ -217,11 +199,11 @@ func (ms *msgServerImpl) testFeeDenom(ctx context.Context, params types.Params) 
 		return err
 	}
 
-	_, evm, err := ms.CreateEVM(ctx, types.StdAddress, nil)
+	_, evm, cleanup, err := ms.CreateEVM(ctx, types.StdAddress)
 	if err != nil {
 		return err
 	}
-
+	defer cleanup()
 	defer func() {
 		if r := recover(); r != nil {
 			err = types.ErrInvalidFeeDenom.Wrap("failed to conduct sudoMint and sudoBurn")
@@ -297,12 +279,8 @@ func (ms *msgServerImpl) validateArguments(
 // assertAllowedPublishers asserts the sender is allowed to deploy a contract.
 func assertAllowedPublishers(params types.Params, sender string) error {
 	// assert deploy authorization
-	if len(params.AllowedPublishers) != 0 {
-		allowed := slices.Contains(params.AllowedPublishers, sender)
-
-		if !allowed {
-			return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", sender)
-		}
+	if len(params.AllowedPublishers) != 0 && !slices.Contains(params.AllowedPublishers, sender) {
+		return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", sender)
 	}
 
 	return nil

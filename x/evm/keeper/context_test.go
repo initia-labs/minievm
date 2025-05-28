@@ -2,14 +2,12 @@ package keeper_test
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 
@@ -65,15 +63,7 @@ func Test_CreateWithValue(t *testing.T) {
 	require.NoError(t, err)
 
 	caller := common.BytesToAddress(addr.Bytes())
-	tracerOutput := new(strings.Builder)
-	tracer := logger.NewJSONLogger(&logger.Config{
-		EnableMemory:     false,
-		DisableStack:     false,
-		DisableStorage:   false,
-		EnableReturnData: true,
-	}, tracerOutput)
-
-	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreateWithTracer(ctx, caller, counterBz, uint256.NewInt(100), nil, nil, tracer)
+	retBz, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, caller, counterBz, uint256.NewInt(100), nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 	require.Len(t, contractAddr, 20)
@@ -295,7 +285,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
-	require.ErrorContains(t, err, vm.ErrExecutionReverted.Error())
+	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "revert reason dummy value for test")
 
 	// check balance

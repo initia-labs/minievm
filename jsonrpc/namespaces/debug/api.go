@@ -18,7 +18,7 @@ var _ DebugEthereumAPI = (*DebugAPI)(nil)
 type DebugEthereumAPI interface {
 	TraceBlockByNumber(number rpc.BlockNumber, config *tracers.TraceConfig) ([]*rpctypes.TxTraceResult, error)
 	TraceBlockByHash(hash common.Hash, config *tracers.TraceConfig) ([]*rpctypes.TxTraceResult, error)
-	TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (*rpctypes.TxTraceResult, error)
+	TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (any, error)
 	StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txIndex int, contractAddress common.Address, keyStart hexutil.Bytes, maxResult int) (rpctypes.StorageRangeResult, error)
 }
 
@@ -48,14 +48,14 @@ func (api *DebugAPI) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config *tra
 	return api.backend.TraceBlockByNumber(ethBlockNum, config)
 }
 
-// TraceBlockByHash returns trace of a block by hash.  
+// TraceBlockByHash returns trace of a block by hash.
 func (api *DebugAPI) TraceBlockByHash(hash common.Hash, config *tracers.TraceConfig) ([]*rpctypes.TxTraceResult, error) {
 	api.logger.Debug("debug_traceBlockByHash", "hash", hash.Hex(), "config", config)
 	return api.backend.TraceBlockByHash(hash, config)
 }
 
 // TraceTransaction returns trace of a transaction by hash.
-func (api *DebugAPI) TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (*rpctypes.TxTraceResult, error) {
+func (api *DebugAPI) TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (any, error) {
 	api.logger.Debug("debug_traceTransaction", "hash", hash.Hex(), "config", config)
 	return api.backend.TraceTransaction(hash, config)
 }
