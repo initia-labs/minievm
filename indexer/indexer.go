@@ -126,7 +126,7 @@ type EVMIndexerImpl struct {
 	// queuedTxs is a map to store tx hashes in queued state.
 	queuedTxs *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
 
-	// wg is a wait group to wait for all the indexing to finish.
+	// indexingChan is a channel to receive indexing tasks.
 	indexingChan chan *indexingTask
 
 	// indexingWg is a wait group to wait for all the indexing to finish.
@@ -205,6 +205,7 @@ func NewEVMIndexer(
 			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
 		),
 
+		// use buffered channel to avoid blocking the main thread
 		indexingChan: make(chan *indexingTask, 10),
 
 		// for graceful shutdown
