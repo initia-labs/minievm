@@ -208,7 +208,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             localDenom,
             COSMOS_CONTRACT.to_denom(remoteToken),
             _localDecimals,
-            REMOTE_DECIMALS,
+            _remoteDecimals,
             localAmount
         );
         return (remoteToken, remoteAmount, _remoteDecimals);
