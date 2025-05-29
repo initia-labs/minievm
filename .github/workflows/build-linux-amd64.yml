@@ -41,12 +41,14 @@ jobs:
           mkdir -p minievm_${VERSION}
           mv minitiad minievm_${VERSION}/
           tar -czvf minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz minievm_${VERSION}
+          mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz $GITHUB_WORKSPACE/
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            ./build/minievm_${{ env.VERSION }}_Linux_${{ env.ARCH_NAME }}.tar.gz
+          name: minievm-linux-amd64
+          path: minievm_${{ env.VERSION }}_Linux_${{ env.ARCH_NAME }}.tar.gz
+          retention-days: 1
         env:
           VERSION: ${{ env.VERSION }}
           ARCH_NAME: ${{ env.ARCH_NAME }}
