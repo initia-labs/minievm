@@ -44,20 +44,20 @@ jobs:
           echo "WASMVM_VERSION=${WASMVM_VERSION}"
           echo "MINIWASM_NETWORK_NAME=${MINIWASM_NETWORK_NAME}"
 
-      - name: Build and Package for Darwin ADM642
+      - name: Build and Package for Darwin AMD64
         run: |
-          cd ../minievm \
-          && make build \
+          make build \
           && cd ./build \
-          && tar -czvf minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz ./minitiad \
+          && tar -czvf minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz minitiad \
           && mv ./minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz $GITHUB_WORKSPACE/ \
           && rm -rf ./minitiad
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            minievm_${{ env.VERSION }}_Darwin_${{ env.ARCH_NAME }}.tar.gz
+          name: minievm-darwin-amd64
+          path: minievm_${{ env.VERSION }}_Darwin_${{ env.ARCH_NAME }}.tar.gz
+          retention-days: 1
         env:
           VERSION: ${{ env.VERSION }}
           ARCH_NAME: ${{ env.ARCH_NAME }}
