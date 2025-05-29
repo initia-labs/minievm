@@ -33,8 +33,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.3.1
-	github.com/initia-labs/OPinit v1.1.0
-	github.com/initia-labs/initia v1.0.0
+	github.com/initia-labs/OPinit v1.1.1
+	github.com/initia-labs/initia v1.1.2
 	github.com/initia-labs/kvindexer v0.2.0
 	github.com/initia-labs/kvindexer/submodules/block v0.2.0
 	github.com/initia-labs/kvindexer/submodules/evm-nft v0.2.0
