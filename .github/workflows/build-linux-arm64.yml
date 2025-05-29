@@ -49,11 +49,10 @@ jobs:
           docker rm temp
 
           # Packaging of results
-          cd ./build
-          mkdir -p minievm_${VERSION}
-          mv minitiad minievm_${VERSION}/
-          tar -czvf minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz minievm_${VERSION}
-          mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz $GITHUB_WORKSPACE/
+          cd ./build \
+          && tar -czvf minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz minitiad \
+          && mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz $GITHUB_WORKSPACE/ \
+          && rm -rf ./minitiad
 
           # Check build results
           cd ..
