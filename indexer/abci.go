@@ -29,7 +29,10 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		return nil
 	}
 
-	// load state dependent args for extractEthTxInfo before passing this to the separate goroutine
+	// avoid passing the context passed to the abci listener to the indexing goroutine
+	// because it will be cleared after the abci listener returns by the sdk.
+	//
+	// so load all the state dependent args before passing this to the indexing goroutine
 	params, err := e.evmKeeper.Params.Get(sdk.UnwrapSDKContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to get params: %w", err)
