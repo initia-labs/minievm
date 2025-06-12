@@ -13,12 +13,7 @@ import (
 )
 
 func (b *JSONRPCBackend) BlockNumber() (hexutil.Uint64, error) {
-	ctx, err := b.app.CreateQueryContext(0, false)
-	if err != nil {
-		return 0, err
-	}
-
-	lh, err := b.app.EVMIndexer().GetLastIndexedHeight(ctx)
+	lh, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -71,12 +66,7 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 		return header, nil
 	}
 
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	header, err := b.app.EVMIndexer().BlockHeaderByNumber(queryCtx, blockNumber)
+	header, err := b.app.EVMIndexer().BlockHeaderByNumber(b.ctx, blockNumber)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -140,12 +130,7 @@ func (b *JSONRPCBackend) blockNumberByHash(hash common.Hash) (uint64, error) {
 		return number, nil
 	}
 
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return 0, err
-	}
-
-	number, err := b.app.EVMIndexer().BlockHashToNumber(queryCtx, hash)
+	number, err := b.app.EVMIndexer().BlockHashToNumber(b.ctx, hash)
 	if err != nil {
 		b.logger.Error("failed to get block number by hash", "err", err)
 		return 0, NewInternalError("failed to get block number by hash")

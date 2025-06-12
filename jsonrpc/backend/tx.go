@@ -63,10 +63,14 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	return nil
 }
 
+// getQueryCtx returns a query context for the current block height.
+// This function should only be used when interacting with keepers, as it creates a context specifically configured for keeper queries.
 func (b *JSONRPCBackend) getQueryCtx() (context.Context, error) {
 	return b.app.CreateQueryContext(0, false)
 }
 
+// getQueryCtxWithHeight returns a query context for the given block height.
+// This function should only be used when interacting with keepers, as it creates a context specifically configured for keeper queries.
 func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, error) {
 	// check whether the given height is bigger than the latest block height
 	num, err := b.BlockNumber()
@@ -182,12 +186,7 @@ func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockN
 		return nil, err
 	}
 
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	txhash, err := b.app.EVMIndexer().TxHashByBlockAndIndex(queryCtx, blockNumber, uint64(idx))
+	txhash, err := b.app.EVMIndexer().TxHashByBlockAndIndex(b.ctx, blockNumber, uint64(idx))
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -340,12 +339,7 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 		return tx, nil
 	}
 
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	tx, err := b.app.EVMIndexer().TxByHash(queryCtx, hash)
+	tx, err := b.app.EVMIndexer().TxByHash(b.ctx, hash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -362,12 +356,7 @@ func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error
 		return receipt, nil
 	}
 
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
-	receipt, err := b.app.EVMIndexer().TxReceiptByHash(queryCtx, hash)
+	receipt, err := b.app.EVMIndexer().TxReceiptByHash(b.ctx, hash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -384,13 +373,8 @@ func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.R
 		return txs, nil
 	}
 
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
 	txs := []*rpctypes.RPCTransaction{}
-	err = b.app.EVMIndexer().IterateBlockTxs(queryCtx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+	err := b.app.EVMIndexer().IterateBlockTxs(b.ctx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
 		txs = append(txs, tx)
 		return false, nil
 	})
@@ -409,13 +393,8 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 		return receipt, nil
 	}
 
-	queryCtx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
 	receipt := []*coretypes.Receipt{}
-	err = b.app.EVMIndexer().IterateBlockTxReceipts(queryCtx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
+	err := b.app.EVMIndexer().IterateBlockTxReceipts(b.ctx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
 		receipt = append(receipt, recept)
 		return false, nil
 	})

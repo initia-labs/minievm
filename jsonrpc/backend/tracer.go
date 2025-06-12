@@ -112,13 +112,8 @@ func (b *JSONRPCBackend) TraceBlockByHash(hash common.Hash, config *tracers.Trac
 }
 
 func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (any, error) {
-	ctx, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
-
 	// check if the tx is indexed
-	tx, err := b.app.EVMIndexer().TxByHash(ctx, hash)
+	tx, err := b.app.EVMIndexer().TxByHash(b.ctx, hash)
 	if err != nil {
 		return nil, err
 	} else if tx == nil {
@@ -132,7 +127,7 @@ func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.Trac
 	if blockNumber < 2 {
 		return nil, errors.New("genesis is not traceable")
 	}
-	ctx, err = b.getQueryCtxWithHeight(blockNumber - 1)
+	ctx, err := b.getQueryCtxWithHeight(blockNumber - 1)
 	if err != nil {
 		return nil, err
 	}

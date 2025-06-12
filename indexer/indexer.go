@@ -11,6 +11,7 @@ import (
 	"github.com/jellydator/ttlcache/v3"
 
 	"cosmossdk.io/collections"
+	"cosmossdk.io/core/address"
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	snapshot "cosmossdk.io/store/snapshots/types"
@@ -18,7 +19,6 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -94,6 +94,7 @@ type EVMIndexerImpl struct {
 	db       dbm.DB
 	logger   log.Logger
 	txConfig client.TxConfig
+	ac       address.Codec
 	appCodec codec.Codec
 
 	store     *CacheStoreWithBatch
@@ -135,13 +136,16 @@ type EVMIndexerImpl struct {
 
 // indexingTask is a task to be indexed.
 type indexingTask struct {
-	ctx context.Context
 	req *abci.RequestFinalizeBlock
 	res *abci.ResponseFinalizeBlock
+
+	// state dependent args for extractEthTxInfo
+	args *indexingArgs
 }
 
 func NewEVMIndexer(
 	db dbm.DB,
+	ac address.Codec,
 	appCodec codec.Codec,
 	logger log.Logger,
 	txConfig client.TxConfig,
@@ -154,12 +158,7 @@ func NewEVMIndexer(
 
 	store := NewCacheStoreWithBatch(db, cfg.IndexerCacheSize)
 	sb := collections.NewSchemaBuilderFromAccessor(
-		func(ctx context.Context) corestoretypes.KVStore {
-			// if there is prune store in context, use it
-			if pruneStore := sdk.UnwrapSDKContext(ctx).Value(pruneStoreKey); pruneStore != nil {
-				return pruneStore.(corestoretypes.KVStore)
-			}
-
+		func(_ context.Context) corestoretypes.KVStore {
 			return store
 		},
 	)
@@ -177,6 +176,7 @@ func NewEVMIndexer(
 		store:    store,
 		logger:   logger.With("module", "evm-indexer"),
 		txConfig: txConfig,
+		ac:       ac,
 		appCodec: appCodec,
 
 		evmKeeper: evmKeeper,
