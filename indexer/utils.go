@@ -63,9 +63,9 @@ type indexingArgs struct {
 // It uses a worker pool to extract the transaction information in parallel.
 func extractEthTxInfos(
 	logger log.Logger,
-	req abci.RequestFinalizeBlock,
-	res abci.ResponseFinalizeBlock,
-	args indexingArgs,
+	args *indexingArgs,
+	req *abci.RequestFinalizeBlock,
+	res *abci.ResponseFinalizeBlock,
 ) ([]*EthTxInfo, error) {
 	numTxs := len(req.Txs)
 	if numTxs == 0 {
@@ -90,7 +90,7 @@ func extractEthTxInfos(
 	for range workerCount {
 		go func() {
 			for job := range jobs {
-				ethTxInfo, err := extractEthTxInfo(job.txBytes, job.result, args)
+				ethTxInfo, err := extractEthTxInfo(args, job.txBytes, job.result)
 				if err != nil {
 					logger.Error("failed to extract tx info",
 						"height", req.Height,
@@ -139,9 +139,9 @@ func extractEthTxInfos(
 // For non-Ethereum Cosmos transactions, it processes EVM events if the transaction was successful and
 // creates a fake Ethereum transaction for indexing purposes.
 func extractEthTxInfo(
+	args *indexingArgs,
 	txBytes []byte,
 	txResult *abci.ExecTxResult,
-	args indexingArgs,
 ) (*EthTxInfo, error) {
 	sdkTx, err := args.txDecoder(txBytes)
 	if err != nil {

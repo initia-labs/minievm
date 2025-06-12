@@ -76,7 +76,7 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 // indexingLoop is the main loop for indexing.
 func (e *EVMIndexerImpl) indexingLoop() {
 	for task := range e.indexingChan {
-		err := e.doIndexing(task.req, task.res, task.args)
+		err := e.doIndexing(task.args, task.req, task.res)
 		if err != nil {
 			e.logger.Error("indexingLoop error", "err", err)
 		}
@@ -87,15 +87,17 @@ func (e *EVMIndexerImpl) indexingLoop() {
 }
 
 // doIndexing is the main function for indexing.
-func (e *EVMIndexerImpl) doIndexing(req *abci.RequestFinalizeBlock, res *abci.ResponseFinalizeBlock, args *indexingArgs) (err error) {
+func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinalizeBlock, res *abci.ResponseFinalizeBlock) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("doIndexing panic: %v", r)
 		}
 	}()
 
+	// TODO: Consider removing context usage across all getter and setter methods since they are only used for consistency.
+	// Currently keeping it to maintain uniform API patterns across the collections.Map interface and other storage operations.
 	ctx := context.Background()
-	ethTxInfos, err_ := extractEthTxInfos(e.logger, *req, *res, *args)
+	ethTxInfos, err_ := extractEthTxInfos(e.logger, args, req, res)
 	if err_ != nil {
 		err = fmt.Errorf("failed to extract eth tx infos: %w", err_)
 		return
