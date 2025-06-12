@@ -35,15 +35,21 @@ type txMetadata struct {
 
 // LazyArgsGetterForConvertEthereumTxToCosmosTx is a function that returns the arguments for ConvertEthereumTxToCosmosTx.
 // use lazy args getter to avoid unnecessary params and decimals fetching
-type LazyArgsGetterForConvertEthereumTxToCosmosTx func() (chainID string, ac address.Codec, cdc codec.Codec, params Params, feeDecimals uint8, ethTx *coretypes.Transaction, err error)
+type LazyArgsGetterForConvertEthereumTxToCosmosTx func() (params Params, feeDecimals uint8, err error)
 
 // LazyArgsGetterForConvertCosmosTxToEthereumTx is a function that returns the arguments for ConvertCosmosTxToEthereumTx.
 // use lazy args getter to avoid unnecessary params and decimals fetching
-type LazyArgsGetterForConvertCosmosTxToEthereumTx func() (chainID string, ac address.Codec, params Params, feeDecimals uint8, sdkTx sdk.Tx, err error)
+type LazyArgsGetterForConvertCosmosTxToEthereumTx func() (params Params, feeDecimals uint8, err error)
 
 // ConvertEthereumTxToCosmosTx converts an Ethereum transaction to a Cosmos SDK transaction.
-func ConvertEthereumTxToCosmosTx(lazyArgsGetter LazyArgsGetterForConvertEthereumTxToCosmosTx) (sdk.Tx, error) {
-	chainID, ac, cdc, params, feeDecimals, ethTx, err := lazyArgsGetter()
+func ConvertEthereumTxToCosmosTx(
+	chainID string,
+	ac address.Codec,
+	cdc codec.Codec,
+	ethTx *coretypes.Transaction,
+	lazyArgsGetter LazyArgsGetterForConvertEthereumTxToCosmosTx,
+) (sdk.Tx, error) {
+	params, feeDecimals, err := lazyArgsGetter()
 	if err != nil {
 		return nil, err
 	}
@@ -171,12 +177,12 @@ func ConvertEthereumTxToCosmosTx(lazyArgsGetter LazyArgsGetterForConvertEthereum
 
 // ConvertCosmosTxToEthereumTx converts a Cosmos SDK transaction to an Ethereum transaction.
 // It returns nil if the transaction is not an EVM transaction.
-func ConvertCosmosTxToEthereumTx(lazyArgsGetter LazyArgsGetterForConvertCosmosTxToEthereumTx) (*coretypes.Transaction, *common.Address, error) {
-	chainID, ac, params, feeDecimals, sdkTx, err := lazyArgsGetter()
-	if err != nil {
-		return nil, nil, err
-	}
-
+func ConvertCosmosTxToEthereumTx(
+	chainID string,
+	ac address.Codec,
+	sdkTx sdk.Tx,
+	lazyArgsGetter LazyArgsGetterForConvertCosmosTxToEthereumTx,
+) (*coretypes.Transaction, *common.Address, error) {
 	msgs := sdkTx.GetMsgs()
 	if len(msgs) != 1 {
 		return nil, nil, nil
@@ -209,6 +215,13 @@ func ConvertCosmosTxToEthereumTx(lazyArgsGetter LazyArgsGetterForConvertCosmosTx
 	}
 
 	feeAmount := authTx.GetFee()
+
+	// load params and fee decimals from the lazy args getter
+	params, feeDecimals, err := lazyArgsGetter()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	if !(len(feeAmount) == 0 || (len(feeAmount) == 1 && feeAmount[0].Denom == params.FeeDenom)) {
 		return nil, nil, nil
 	}
