@@ -375,7 +375,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	inputBz, err := abi.Pack("get_price", `BTC/USD`)
 	require.NoError(t, err)
 
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
 	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "no price / nonce reported for CurrencyPair")
@@ -383,7 +383,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	inputBz, err = abi.Pack("get_price", `Error`)
 	require.NoError(t, err)
 
-	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
 	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "incorrectly formatted CurrencyPair")
@@ -422,7 +422,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	inputBz, err = abi.Pack("get_price", `BTC/USD`)
 	require.NoError(t, err)
 
-	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["get_price"].Outputs.Unpack(ret)

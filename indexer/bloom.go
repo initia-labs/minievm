@@ -47,6 +47,12 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 	}
 
 	for i := uint64(0); i < evmconfig.SectionSize; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		height := section*evmconfig.SectionSize + i
 		header, err := e.BlockHeaderByNumber(ctx, height)
 		if err != nil && errors.Is(err, collections.ErrNotFound) {
