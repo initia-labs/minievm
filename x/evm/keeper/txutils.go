@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -23,18 +22,6 @@ func NewTxUtils(k *Keeper) *TxUtils {
 	return &TxUtils{
 		Keeper: k,
 	}
-}
-
-func computeGasFeeAmount(gasFeeCap *big.Int, gas uint64, decimals uint8) *big.Int {
-	if gasFeeCap.Cmp(big.NewInt(0)) == 0 {
-		return big.NewInt(0)
-	}
-
-	gasFeeCap = new(big.Int).Mul(gasFeeCap, new(big.Int).SetUint64(gas))
-	gasFeeAmount := types.FromEthersUnit(decimals, gasFeeCap)
-
-	// add 1 to the gas fee amount to avoid rounding errors
-	return new(big.Int).Add(gasFeeAmount, big.NewInt(1))
 }
 
 // ConvertEthereumTxToCosmosTx converts an Ethereum transaction to a Cosmos SDK transaction.
