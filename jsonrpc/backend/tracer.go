@@ -21,6 +21,7 @@ import (
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/state"
+	"github.com/initia-labs/minievm/x/evm/types"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -304,7 +305,7 @@ func (b *JSONRPCBackend) traceTx(
 			Stop:      logger.Stop,
 		}
 	} else {
-		tracer, err = tracers.DefaultDirectory.New(*config.Tracer, txctx, config.TracerConfig)
+		tracer, err = tracers.DefaultDirectory.New(*config.Tracer, txctx, config.TracerConfig, types.DefaultChainConfig(sdkCtx))
 		if err != nil {
 			return nil, err
 		}

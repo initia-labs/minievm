@@ -16,6 +16,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/stateless"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -124,9 +125,9 @@ func (s *StateDB) SetTracer(tracer *tracing.Hooks) {
 }
 
 // AddBalance mint coins to the recipient
-func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) {
+func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) *uint256.Int {
 	if amount.IsZero() {
-		return
+		return nil
 	}
 
 	inputBz, err := s.erc20ABI.Pack("sudoMint", addr, amount.ToBig())
@@ -138,17 +139,19 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 	s.evm.IncreaseDepth()
 	defer func() { s.evm.DecreaseDepth() }()
 
-	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
+	_, _, err = s.evm.Call(evmtypes.StdAddress, s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to mint token", "error", err)
 		panic(err)
 	}
+
+	return nil
 }
 
 // SubBalance burn coins from the account with addr
-func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) {
+func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) *uint256.Int {
 	if amount.IsZero() {
-		return
+		return nil
 	}
 
 	inputBz, err := s.erc20ABI.Pack("sudoBurn", addr, amount.ToBig())
@@ -160,11 +163,13 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing
 	s.evm.IncreaseDepth()
 	defer func() { s.evm.DecreaseDepth() }()
 
-	_, _, err = s.evm.Call(vm.AccountRef(evmtypes.StdAddress), s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
+	_, _, err = s.evm.Call(evmtypes.StdAddress, s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to burn token", "error", err)
 		panic(err)
 	}
+
+	return nil
 }
 
 // GetBalance returns the erc20 balance of the account with addr
@@ -178,7 +183,7 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 	s.evm.IncreaseDepth()
 	defer func() { s.evm.DecreaseDepth() }()
 
-	retBz, _, err := s.evm.StaticCall(vm.AccountRef(evmtypes.NullAddress), s.feeContractAddr, inputBz, erc20OpGasLimit)
+	retBz, _, err := s.evm.StaticCall(evmtypes.NullAddress, s.feeContractAddr, inputBz, erc20OpGasLimit)
 	if err != nil {
 		s.logger.Warn("failed to check balance", "error", err)
 		panic(err)
@@ -373,7 +378,7 @@ func (s *StateDB) GetCode(addr common.Address) []byte {
 
 // SetCode store the code of the account with addr, and set the code hash to the account
 // It is always used in conjunction with CreateContract, so don't need to check account conversion.
-func (s *StateDB) SetCode(addr common.Address, code []byte) {
+func (s *StateDB) SetCode(addr common.Address, code []byte) []byte {
 	ca := s.getOrNewAccount(addr)
 	if evmtypes.IsEmptyAccount(ca) {
 		an := ca.GetAccountNumber()
@@ -396,6 +401,8 @@ func (s *StateDB) SetCode(addr common.Address, code []byte) {
 	if err := s.vmStore.Set(s.ctx, codeSizeKey(addr, codeHash), uint64ToBytes(uint64(len(code)))); err != nil {
 		panic(err)
 	}
+
+	return code
 }
 
 // GetCodeHash returns the code hash of the account with addr
@@ -457,7 +464,7 @@ func (s *StateDB) GetNonce(addr common.Address) uint64 {
 }
 
 // SetNonce sets the nonce of the account with addr
-func (s *StateDB) SetNonce(addr common.Address, nonce uint64) {
+func (s *StateDB) SetNonce(addr common.Address, nonce uint64, _ tracing.NonceChangeReason) {
 	acc := s.getOrNewAccount(addr)
 	if err := acc.SetSequence(nonce); err != nil {
 		panic(err)
@@ -512,10 +519,10 @@ func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
 //
 // The account's state object is still available until the state is committed,
 // getStateObject will return a non-nil account after SelfDestruct.
-func (s *StateDB) SelfDestruct(addr common.Address) {
+func (s *StateDB) SelfDestruct(addr common.Address) *uint256.Int {
 	acc := s.getAccount(addr)
 	if acc == nil {
-		return
+		return nil
 	}
 
 	// mark the account as self-destructed
@@ -524,29 +531,37 @@ func (s *StateDB) SelfDestruct(addr common.Address) {
 	}
 
 	// clear the balance of the account
-	s.SubBalance(addr, s.GetBalance(addr), tracing.BalanceDecreaseSelfdestructBurn)
+	return s.SubBalance(addr, s.GetBalance(addr), tracing.BalanceDecreaseSelfdestructBurn)
 }
 
 // Selfdestruct6780 calls selfdestruct and clears the account balance if the account is created in the same transaction.
-func (s *StateDB) Selfdestruct6780(addr common.Address) {
+func (s *StateDB) SelfDestruct6780(addr common.Address) (*uint256.Int, bool) {
 	acc := s.getAccount(addr)
 	if acc == nil {
-		return
+		return nil, false
 	}
 
 	ok, err := s.memStoreCreated.Has(s.ctx, addr.Bytes())
+	// If the account was not created in this transaction, we can self-destruct it
 	if err != nil {
-		panic(err)
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil, false
+		} else {
+			panic(err)
+		}
 	} else if ok {
-		s.SelfDestruct(addr)
+		return s.SelfDestruct(addr), true
 	}
+	return nil, false
 }
 
 // SetState implements vm.StateDB.
-func (s *StateDB) SetState(addr common.Address, slot common.Hash, value common.Hash) {
+func (s *StateDB) SetState(addr common.Address, slot common.Hash, value common.Hash) common.Hash {
+	prev := s.GetState(addr, slot)
 	if err := s.vmStore.Set(s.ctx, stateKey(addr, slot), value[:]); err != nil {
 		panic(err)
 	}
+	return prev
 }
 
 // SetTransientState sets memStore storage for a given account.
@@ -757,6 +772,7 @@ func (s *StateDB) GetStorageRoot(addr common.Address) common.Hash {
 	return common.Hash{}
 }
 
+// NO IMPLEMENTATION
 // unused in the current implementation
 func (s *StateDB) PointCache() *utils.PointCache {
 	return nil
@@ -770,4 +786,17 @@ func (s *StateDB) Witness() *stateless.Witness {
 // unused in the current implementation
 func (s *StateDB) AddPreimage(common.Hash, []byte) {
 	// no-op
+}
+
+// unused in the current implementation
+func (s *StateDB) AccessEvents() *state.AccessEvents {
+	return nil
+}
+
+// unused in the current implementation
+func (s *StateDB) Finalise(bool) {
+	// no-op
+	// Finalise is used to finalize the state after the transaction, but in minievm,
+	// we don't need to do anything here as we don't have any state changes.
+	// All state changes are committed in Commit method.
 }

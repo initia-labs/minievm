@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	storetypes "cosmossdk.io/store/types"
@@ -43,7 +44,7 @@ const (
 )
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
-func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
+func (e *ERC20RegistryPrecompile) ExtendedRun(caller common.Address, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
 	snapshot := e.stateDB.Snapshot()
 	ctx := e.stateDB.Context().WithGasMeter(storetypes.NewGasMeter(suppliedGas))
 
@@ -92,7 +93,7 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 		// charge the gas for the register erc20
 		ctx.GasMeter().ConsumeGas(REGISTER_GAS, "register_erc20")
 
-		if err := e.k.Register(ctx, caller.Address()); err != nil {
+		if err := e.k.Register(ctx, caller); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
@@ -113,7 +114,7 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		if err := e.k.RegisterFromFactory(ctx, caller.Address(), registerArgs.ERC20); err != nil {
+		if err := e.k.RegisterFromFactory(ctx, caller, registerArgs.ERC20); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
@@ -134,7 +135,7 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		if err := e.k.RegisterStore(ctx, registerArgs.Account.Bytes(), caller.Address()); err != nil {
+		if err := e.k.RegisterStore(ctx, registerArgs.Account.Bytes(), caller); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
@@ -150,7 +151,7 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller vm.ContractRef, input []byt
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		ok, err := e.k.IsStoreRegistered(ctx, isRegisteredArgs.Account.Bytes(), caller.Address())
+		ok, err := e.k.IsStoreRegistered(ctx, isRegisteredArgs.Account.Bytes(), caller)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}

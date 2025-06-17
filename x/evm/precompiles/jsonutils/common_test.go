@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	corestate "github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/stateless"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -33,8 +34,7 @@ func NewMockStateDB(sdkCtx sdk.Context) *MockStateDB {
 	return &MockStateDB{
 		ctx:        ctx,
 		initialCtx: ctx,
-
-		evm: &vm.EVM{},
+		evm:        &vm.EVM{},
 	}
 }
 
@@ -75,7 +75,6 @@ func (m *MockStateDB) Context() sdk.Context {
 	return m.ctx.Context
 }
 
-// EVM implements types.StateDB.
 func (m *MockStateDB) EVM() *vm.EVM {
 	return m.evm
 }
@@ -90,7 +89,7 @@ func (m *MockStateDB) AddAddressToAccessList(addr common.Address) {
 }
 
 // AddBalance implements types.StateDB.
-func (m *MockStateDB) AddBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) {
+func (m *MockStateDB) AddBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) *uint256.Int {
 	panic("unimplemented")
 }
 
@@ -205,27 +204,27 @@ func (m *MockStateDB) Prepare(rules params.Rules, sender common.Address, coinbas
 }
 
 // SelfDestruct implements types.StateDB.
-func (m *MockStateDB) SelfDestruct(common.Address) {
+func (m *MockStateDB) SelfDestruct(common.Address) *uint256.Int {
 	panic("unimplemented")
 }
 
-// Selfdestruct6780 implements types.StateDB.
-func (m *MockStateDB) Selfdestruct6780(common.Address) {
+// SelfDestruct6780 implements types.StateDB.
+func (m *MockStateDB) SelfDestruct6780(common.Address) (*uint256.Int, bool) {
 	panic("unimplemented")
 }
 
 // SetCode implements types.StateDB.
-func (m *MockStateDB) SetCode(common.Address, []byte) {
+func (m *MockStateDB) SetCode(common.Address, []byte) []byte {
 	panic("unimplemented")
 }
 
 // SetNonce implements types.StateDB.
-func (m *MockStateDB) SetNonce(common.Address, uint64) {
+func (m *MockStateDB) SetNonce(common.Address, uint64, tracing.NonceChangeReason) {
 	panic("unimplemented")
 }
 
 // SetState implements types.StateDB.
-func (m *MockStateDB) SetState(common.Address, common.Hash, common.Hash) {
+func (m *MockStateDB) SetState(common.Address, common.Hash, common.Hash) common.Hash {
 	panic("unimplemented")
 }
 
@@ -240,7 +239,7 @@ func (m *MockStateDB) SlotInAccessList(addr common.Address, slot common.Hash) (a
 }
 
 // SubBalance implements types.StateDB.
-func (m *MockStateDB) SubBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) {
+func (m *MockStateDB) SubBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) *uint256.Int {
 	panic("unimplemented")
 }
 
@@ -251,5 +250,14 @@ func (m *MockStateDB) SubRefund(uint64) {
 
 // Witness implements types.StateDB.
 func (m *MockStateDB) Witness() *stateless.Witness {
+	panic("unimplemented")
+}
+
+// AccessEvents implements types.StateDB.
+func (m *MockStateDB) AccessEvents() *corestate.AccessEvents {
+	panic("unimplemented")
+}
+
+func (m *MockStateDB) Finalise(_ bool) {
 	panic("unimplemented")
 }

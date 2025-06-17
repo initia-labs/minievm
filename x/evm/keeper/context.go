@@ -35,7 +35,7 @@ func (k Keeper) NewStateDB(ctx context.Context, evm *vm.EVM, fee types.Fee) (*ev
 }
 
 func (k Keeper) chargeIntrinsicGas(gasBalance uint64, isContractCreation bool, data []byte, list coretype.AccessList, rules params.Rules) (uint64, error) {
-	intrinsicGas, err := core.IntrinsicGas(data, list, isContractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+	intrinsicGas, err := core.IntrinsicGas(data, list, []coretype.SetCodeAuthorization{}, isContractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
 	if err != nil {
 		return 0, err
 	}
@@ -100,7 +100,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 			evm.IncreaseDepth()
 			defer func() { evm.DecreaseDepth() }()
 
-			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), fee.Contract(), inputBz, 100000)
+			retBz, _, err := evm.StaticCall(types.NullAddress, fee.Contract(), inputBz, 100000)
 			if err != nil {
 				k.Logger(ctx).Warn("failed to check balance", "error", err)
 				return false
@@ -132,7 +132,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 			evm.IncreaseDepth()
 			defer func() { evm.DecreaseDepth() }()
 
-			_, _, err = evm.Call(vm.AccountRef(a1), fee.Contract(), inputBz, 100000, uint256.NewInt(0))
+			_, _, err = evm.Call(a1, fee.Contract(), inputBz, 100000, uint256.NewInt(0))
 			if err != nil {
 				k.Logger(ctx).Warn("failed to transfer token", "error", err)
 				panic(err)
@@ -212,11 +212,11 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address) (context.C
 	// NOTE: need to check if the EVM is correctly initialized with empty context and stateDB
 	evm := vm.NewEVM(
 		defaultBlockContext,
-		txContext,
 		nil,
 		chainConfig,
 		vmConfig,
 	)
+	evm.SetTxContext(txContext)
 	// customize EVM contexts and stateDB and precompiles
 	evm.Context, err = k.buildBlockContext(ctx, defaultBlockContext, evm, fee)
 	if err != nil {
@@ -311,7 +311,7 @@ func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contra
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs(rules), accessList)
 
 	retBz, gasRemaining, err := evm.StaticCall(
-		vm.AccountRef(caller),
+		caller,
 		contractAddr,
 		inputBz,
 		gasRemaining,
@@ -356,7 +356,7 @@ func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs(rules), accessList)
 
 	retBz, gasRemaining, err := evm.Call(
-		vm.AccountRef(caller),
+		caller,
 		contractAddr,
 		inputBz,
 		gasRemaining,
@@ -471,14 +471,14 @@ func (k Keeper) evmCreate(ctx context.Context, caller common.Address, codeBz []b
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, k.precompileAddrs(rules), accessList)
 	if salt == nil {
 		retBz, contractAddr, gasRemaining, err = evm.Create(
-			vm.AccountRef(caller),
+			caller,
 			codeBz,
 			gasRemaining,
 			value,
 		)
 	} else {
 		retBz, contractAddr, gasRemaining, err = evm.Create2(
-			vm.AccountRef(caller),
+			caller,
 			codeBz,
 			gasRemaining,
 			value,
@@ -642,7 +642,7 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 			}
 
 			var callbackLogs types.Logs
-			_, callbackLogs, err = k.EVMCall(parentCtx, caller.Address(), caller.Address(), inputBz, nil, nil)
+			_, callbackLogs, err = k.EVMCall(parentCtx, caller, caller, inputBz, nil, nil)
 			if err != nil {
 				return
 			}

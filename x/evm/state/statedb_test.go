@@ -270,7 +270,7 @@ func Test_Selfdestruct6780_InDifferentTx(t *testing.T) {
 
 	// self destruct
 	require.False(t, stateDB.HasSelfDestructed(contractAddr))
-	stateDB.Selfdestruct6780(contractAddr)
+	stateDB.SelfDestruct6780(contractAddr)
 	require.False(t, stateDB.HasSelfDestructed(contractAddr))
 
 	// check balance
@@ -303,7 +303,7 @@ func Test_Selfdestruct6780_InSameTx(t *testing.T) {
 	counterBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
 
-	_, contractAddr, _, err := evm.Create(vm.AccountRef(caller), counterBz, 1_000_000, uint256.NewInt(0))
+	_, contractAddr, _, err := evm.Create(caller, counterBz, 1_000_000, uint256.NewInt(0))
 	require.NoError(t, err)
 
 	// increase counter
@@ -314,7 +314,7 @@ func Test_Selfdestruct6780_InSameTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// call with value
-	res, logs, err := evm.Call(vm.AccountRef(caller), contractAddr, inputBz, 1_000_000, uint256.NewInt(100))
+	res, logs, err := evm.Call(caller, contractAddr, inputBz, 1_000_000, uint256.NewInt(100))
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.NotEmpty(t, logs)
@@ -324,7 +324,7 @@ func Test_Selfdestruct6780_InSameTx(t *testing.T) {
 
 	// self destruct
 	require.False(t, stateDB.HasSelfDestructed(contractAddr))
-	stateDB.Selfdestruct6780(contractAddr)
+	stateDB.SelfDestruct6780(contractAddr)
 	require.True(t, stateDB.HasSelfDestructed(contractAddr))
 
 	// check balance
@@ -355,10 +355,10 @@ func Test_Empty(t *testing.T) {
 
 	require.True(t, stateDB.Empty(common.BytesToAddress(addr.Bytes())))
 
-	stateDB.SetNonce(common.BytesToAddress(addr.Bytes()), 1)
+	stateDB.SetNonce(common.BytesToAddress(addr.Bytes()), 1, tracing.NonceChangeReason(0))
 	require.False(t, stateDB.Empty(common.BytesToAddress(addr.Bytes())))
 
-	stateDB.SetNonce(common.BytesToAddress(addr.Bytes()), 0)
+	stateDB.SetNonce(common.BytesToAddress(addr.Bytes()), 0, tracing.NonceChangeReason(0))
 	require.True(t, stateDB.Empty(common.BytesToAddress(addr.Bytes())))
 
 	stateDB.SetCode(common.BytesToAddress(addr.Bytes()), []byte{1, 2, 3})
