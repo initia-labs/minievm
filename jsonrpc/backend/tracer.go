@@ -22,7 +22,6 @@ import (
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/state"
 	"github.com/initia-labs/minievm/x/evm/types"
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 // TraceBlockByNumber configures a new tracer according to the provided configuration, and
@@ -374,15 +373,15 @@ func (b *JSONRPCBackend) runTxWithTracer(
 			return err
 		}
 
-		tracing := evmtypes.NewTracing(evm, tracer.Hooks)
-		sdkCtx = sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACING, tracing)
-		sdkCtx = sdkCtx.WithValue(evmtypes.CONTEXT_KEY_TRACE_EVM, evmPointer)
+		tracing := types.NewTracing(evm, tracer.Hooks)
+		sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACING, tracing)
+		sdkCtx = sdkCtx.WithValue(types.CONTEXT_KEY_TRACE_EVM, evmPointer)
 
 		if tracer.OnTxStart != nil {
-			tracer.OnTxStart(tracing.VMContext(), evmtypes.TracingTx(gasLimit), feePayer)
+			tracer.OnTxStart(tracing.VMContext(), types.TracingTx(gasLimit), feePayer)
 		}
 		if tracer.OnEnter != nil {
-			tracer.OnEnter(0, byte(vm.CALL), evmtypes.NullAddress, evmtypes.NullAddress, []byte{}, gasLimit, nil)
+			tracer.OnEnter(0, byte(vm.CALL), types.NullAddress, types.NullAddress, []byte{}, gasLimit, nil)
 		}
 	}
 
@@ -402,7 +401,7 @@ func (b *JSONRPCBackend) runTxWithTracer(
 	if tracer != nil {
 		gasUsed := sdkCtx.GasMeter().GasConsumedToLimit()
 		if tracer.OnExit != nil {
-			if revertErr, ok := err.(*evmtypes.RevertError); ok {
+			if revertErr, ok := err.(*types.RevertError); ok {
 				tracer.OnExit(0, revertErr.Ret(), gasUsed, vm.ErrExecutionReverted, true)
 			} else {
 				tracer.OnExit(0, nil, gasUsed, err, false)
