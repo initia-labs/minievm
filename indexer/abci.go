@@ -20,7 +20,6 @@ import (
 )
 
 func (e *EVMIndexerImpl) ListenCommit(ctx context.Context, res abci.ResponseCommit, changeSet []*storetypes.StoreKVPair) error {
-
 	return nil
 }
 
@@ -30,16 +29,57 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 		return nil
 	}
 
+	// avoid passing the context passed to the abci listener to the indexing goroutine
+	// because it will be cleared after the abci listener returns by the sdk.
+	//
+	// so load all the state dependent args before passing this to the indexing goroutine
+	params, err := e.evmKeeper.Params.Get(sdk.UnwrapSDKContext(ctx))
+	if err != nil {
+		return fmt.Errorf("failed to get params: %w", err)
+	}
+	feeDecimals, err := e.evmKeeper.ERC20Keeper().GetDecimals(sdk.UnwrapSDKContext(ctx), params.FeeDenom)
+	if err != nil {
+		return fmt.Errorf("failed to get fee decimals: %w", err)
+	}
+	baseFee, err := e.evmKeeper.BaseFee(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load fee: %w", err)
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	blockTime := sdkCtx.BlockTime()
+	blockHeight := sdkCtx.BlockHeight()
+	blockGasMeter := sdkCtx.BlockGasMeter()
+
 	// add to the indexing wait group
 	e.indexingWg.Add(1)
-	e.indexingChan <- &indexingTask{ctx: ctx, req: &req, res: &res}
+	e.indexingChan <- &indexingTask{
+		req: &req,
+		res: &res,
+
+		// state dependent args for indexing
+		args: &indexingArgs{
+			chainID: sdk.UnwrapSDKContext(ctx).ChainID(),
+
+			ac:        e.ac,
+			txDecoder: e.txConfig.TxDecoder(),
+
+			params:      params,
+			baseFee:     baseFee,
+			feeDecimals: feeDecimals,
+
+			blockHeight:   blockHeight,
+			blockTime:     blockTime,
+			blockGasMeter: blockGasMeter,
+		},
+	}
 	return nil
 }
 
 // indexingLoop is the main loop for indexing.
 func (e *EVMIndexerImpl) indexingLoop() {
 	for task := range e.indexingChan {
-		err := e.doIndexing(task.ctx, task.req, task.res)
+		err := e.doIndexing(task.args, task.req, task.res)
 		if err != nil {
 			e.logger.Error("indexingLoop error", "err", err)
 		}
@@ -50,23 +90,17 @@ func (e *EVMIndexerImpl) indexingLoop() {
 }
 
 // doIndexing is the main function for indexing.
-func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinalizeBlock, res *abci.ResponseFinalizeBlock) (err error) {
+func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinalizeBlock, res *abci.ResponseFinalizeBlock) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("doIndexing panic: %v", r)
 		}
 	}()
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	// load base fee from evm keeper
-	baseFee, err := e.evmKeeper.BaseFee(sdkCtx)
-	if err != nil {
-		err = fmt.Errorf("failed to get base fee: %w", err)
-		return
-	}
-
-	ethTxInfos, err_ := extractEthTxInfos(sdkCtx, e.logger, e.txConfig.TxDecoder(), *e.evmKeeper, *req, *res)
+	// TODO: Consider removing context usage across all getter and setter methods since they are only used for consistency.
+	// Currently keeping it to maintain uniform API patterns across the collections.Map interface and other storage operations.
+	ctx := context.Background()
+	ethTxInfos, err_ := extractEthTxInfos(e.logger, args, req, res)
 	if err_ != nil {
 		err = fmt.Errorf("failed to extract eth tx infos: %w", err_)
 		return
@@ -85,11 +119,11 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 		contractAddr := ethTxInfo.ContractAddr
 
 		// index tx hash
-		if err_ := e.TxHashToCosmosTxHash.Set(sdkCtx, ethTx.Hash().Bytes(), cosmosTxHash); err_ != nil {
+		if err_ := e.TxHashToCosmosTxHash.Set(ctx, ethTx.Hash().Bytes(), cosmosTxHash); err_ != nil {
 			err = fmt.Errorf("failed to store tx hash to cosmos tx hash: %w", err_)
 			return
 		}
-		if err_ := e.CosmosTxHashToTxHash.Set(sdkCtx, cosmosTxHash, ethTx.Hash().Bytes()); err_ != nil {
+		if err_ := e.CosmosTxHashToTxHash.Set(ctx, cosmosTxHash, ethTx.Hash().Bytes()); err_ != nil {
 			err = fmt.Errorf("failed to store cosmos tx hash to tx hash: %w", err_)
 			return
 		}
@@ -123,8 +157,8 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 		receipts[idx] = &receipt
 	}
 
-	blockGasMeter := sdkCtx.BlockGasMeter()
-	blockHeight := sdkCtx.BlockHeight()
+	blockGasMeter := args.blockGasMeter
+	blockHeight := args.blockHeight
 
 	// load parent hash
 	parentHash := common.Hash{}
@@ -147,8 +181,8 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 		GasLimit:    blockGasMeter.Limit(),
 		GasUsed:     blockGasMeter.GasConsumedToLimit(),
 		Number:      big.NewInt(blockHeight),
-		Time:        uint64(sdkCtx.BlockTime().Unix()),
-		BaseFee:     baseFee,
+		Time:        uint64(args.blockTime.Unix()),
+		BaseFee:     args.baseFee,
 
 		// empty values
 		Root:            coretypes.EmptyRootHash,
@@ -170,17 +204,17 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 
 		// store tx
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), ethTx.ChainId())
-		if err_ := e.TxMap.Set(sdkCtx, txHash.Bytes(), *rpcTx); err_ != nil {
+		if err_ := e.TxMap.Set(ctx, txHash.Bytes(), *rpcTx); err_ != nil {
 			err = fmt.Errorf("failed to store rpcTx: %w", err_)
 			return
 		}
-		if err_ := e.TxReceiptMap.Set(sdkCtx, txHash.Bytes(), *receipt); err_ != nil {
+		if err_ := e.TxReceiptMap.Set(ctx, txHash.Bytes(), *receipt); err_ != nil {
 			err = fmt.Errorf("failed to store tx receipt: %w", err_)
 			return
 		}
 
 		// store index
-		if err_ := e.BlockAndIndexToTxHashMap.Set(sdkCtx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err_ != nil {
+		if err_ := e.BlockAndIndexToTxHashMap.Set(ctx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err_ != nil {
 			err = fmt.Errorf("failed to store blockAndIndexToTxHash: %w", err_)
 			return
 		}
@@ -204,11 +238,11 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 	}
 
 	// index block header
-	if err_ := e.BlockHeaderMap.Set(sdkCtx, uint64(blockHeight), blockHeader); err_ != nil {
+	if err_ := e.BlockHeaderMap.Set(ctx, uint64(blockHeight), blockHeader); err_ != nil {
 		err = fmt.Errorf("failed to marshal blockHeader: %w", err_)
 		return
 	}
-	if err_ := e.BlockHashToNumberMap.Set(sdkCtx, blockHash.Bytes(), uint64(blockHeight)); err_ != nil {
+	if err_ := e.BlockHashToNumberMap.Set(ctx, blockHash.Bytes(), uint64(blockHeight)); err_ != nil {
 		err = fmt.Errorf("failed to store blockHashToNumber: %w", err_)
 		return
 	}
@@ -224,7 +258,7 @@ func (e *EVMIndexerImpl) doIndexing(ctx context.Context, req *abci.RequestFinali
 		}
 	}()
 
-	e.lastIndexedHeight.Store(uint64(req.Height))
+	e.lastIndexedHeight.Store(uint64(blockHeight))
 	// TODO - currently state changes are not supported in abci listener, so we track cosmos block hash at x/evm preblocker.
 	// - https://github.com/cosmos/cosmos-sdk/issues/22246
 	//
