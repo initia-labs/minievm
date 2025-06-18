@@ -525,7 +525,9 @@ func (s *StateDB) SelfDestruct(addr common.Address) *uint256.Int {
 	}
 
 	// clear the balance of the account
-	return s.SubBalance(addr, s.GetBalance(addr), tracing.BalanceDecreaseSelfdestructBurn)
+	prev := s.GetBalance(addr)
+	s.SubBalance(addr, s.GetBalance(addr), tracing.BalanceDecreaseSelfdestructBurn)
+	return prev
 }
 
 // Selfdestruct6780 calls selfdestruct and clears the account balance if the account is created in the same transaction.
