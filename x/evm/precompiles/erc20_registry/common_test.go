@@ -78,7 +78,6 @@ func (m *MockStateDB) EVM() *vm.EVM {
 	return m.evm
 }
 
-func (m *MockStateDB) SetTracer(tracer *tracing.Hooks) {}
 
 //////////////////////// MOCKED METHODS ////////////////////////
 
@@ -194,7 +193,7 @@ func (m *MockStateDB) HasSelfDestructed(common.Address) bool {
 
 // PointCache implements types.StateDB.
 func (m *MockStateDB) PointCache() *utils.PointCache {
-	panic("unimplemented")
+	return nil
 }
 
 // Prepare implements types.StateDB.
@@ -258,5 +257,13 @@ func (m *MockStateDB) AccessEvents() *corestate.AccessEvents {
 }
 
 func (m *MockStateDB) Finalise(_ bool) {
+	panic("unimplemented")
+}
+
+func (m *MockStateDB) Commit() error {
+	panic("unimplemented")
+}
+
+func (m *MockStateDB) Logs() evmtypes.Logs {
 	panic("unimplemented")
 }

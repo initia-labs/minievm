@@ -4,5 +4,3 @@ use (
 	.
 	./integration-tests
 )
-
-replace github.com/ethereum/go-ethereum => ../evm

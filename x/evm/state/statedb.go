@@ -19,22 +19,22 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/stateless"
 	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
+	evmtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie/utils"
 
-	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+	"github.com/initia-labs/minievm/x/evm/types"
 )
 
-var _ vm.StateDB = &StateDB{}
+var _ types.StateDB = &StateDB{}
 
 type StateDB struct {
 	ctx           Context
 	initialCtx    Context
 	logger        log.Logger
-	accountKeeper evmtypes.AccountKeeper
+	accountKeeper types.AccountKeeper
 
 	vmStore collections.Map[[]byte, []byte]
 
@@ -42,7 +42,7 @@ type StateDB struct {
 	memStoreVMStore      collections.Map[[]byte, []byte]
 	memStoreCreated      collections.KeySet[[]byte]
 	memStoreSelfDestruct collections.KeySet[[]byte]
-	memStoreLogs         collections.Map[uint64, evmtypes.Log]
+	memStoreLogs         collections.Map[uint64, types.Log]
 	memStoreLogSize      collections.Item[uint64]
 	memStoreAccessList   collections.KeySet[[]byte]
 	memStoreRefund       collections.Item[uint64]
@@ -51,7 +51,6 @@ type StateDB struct {
 	evm             *vm.EVM
 	erc20ABI        *abi.ABI
 	feeContractAddr common.Address // feeDenom contract address
-	tracer          *tracing.Hooks
 
 	// Snapshot stack
 	snaps []*Snapshot
@@ -65,7 +64,7 @@ func NewStateDB(
 	sdkCtx sdk.Context,
 	cdc codec.Codec,
 	logger log.Logger,
-	accountKeeper evmtypes.AccountKeeper,
+	accountKeeper types.AccountKeeper,
 	// store params
 	vmStore collections.Map[[]byte, []byte],
 	// erc20 params
@@ -92,7 +91,7 @@ func NewStateDB(
 		memStoreVMStore:      collections.NewMap(sb, memStoreVMStorePrefix, "mem_store_vm_store", collections.BytesKey, collections.BytesValue),
 		memStoreCreated:      collections.NewKeySet(sb, memStoreCreatedPrefix, "mem_store_created", collections.BytesKey),
 		memStoreSelfDestruct: collections.NewKeySet(sb, memStoreSelfDestructPrefix, "mem_store_self_destruct", collections.BytesKey),
-		memStoreLogs:         collections.NewMap(sb, memStoreLogsPrefix, "mem_store_logs", collections.Uint64Key, codec.CollValue[evmtypes.Log](cdc)),
+		memStoreLogs:         collections.NewMap(sb, memStoreLogsPrefix, "mem_store_logs", collections.Uint64Key, codec.CollValue[types.Log](cdc)),
 		memStoreLogSize:      collections.NewItem(sb, memStoreLogSizePrefix, "mem_store_log_size", collections.Uint64Value),
 		memStoreAccessList:   collections.NewKeySet(sb, memStoreAccessListPrefix, "mem_store_access_list", collections.BytesKey),
 		memStoreRefund:       collections.NewItem(sb, memStoreRefundPrefix, "mem_store_refund", collections.Uint64Value),
@@ -119,11 +118,6 @@ func NewStateDB(
 	return s, nil
 }
 
-// SetTracer sets the tracer for account update hooks.
-func (s *StateDB) SetTracer(tracer *tracing.Hooks) {
-	s.tracer = tracer
-}
-
 // AddBalance mint coins to the recipient
 func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) *uint256.Int {
 	if amount.IsZero() {
@@ -139,7 +133,7 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 	s.evm.IncreaseDepth()
 	defer func() { s.evm.DecreaseDepth() }()
 
-	_, _, err = s.evm.Call(evmtypes.StdAddress, s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
+	_, _, err = s.evm.Call(types.StdAddress, s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to mint token", "error", err)
 		panic(err)
@@ -163,7 +157,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing
 	s.evm.IncreaseDepth()
 	defer func() { s.evm.DecreaseDepth() }()
 
-	_, _, err = s.evm.Call(evmtypes.StdAddress, s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
+	_, _, err = s.evm.Call(types.StdAddress, s.feeContractAddr, inputBz, erc20OpGasLimit, uint256.NewInt(0))
 	if err != nil {
 		s.logger.Warn("failed to burn token", "error", err)
 		panic(err)
@@ -183,7 +177,7 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 	s.evm.IncreaseDepth()
 	defer func() { s.evm.DecreaseDepth() }()
 
-	retBz, _, err := s.evm.StaticCall(evmtypes.NullAddress, s.feeContractAddr, inputBz, erc20OpGasLimit)
+	retBz, _, err := s.evm.StaticCall(types.NullAddress, s.feeContractAddr, inputBz, erc20OpGasLimit)
 	if err != nil {
 		s.logger.Warn("failed to check balance", "error", err)
 		panic(err)
@@ -301,25 +295,25 @@ func (s *StateDB) CreateContract(contractAddr common.Address) {
 		acc := s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(contractAddr.Bytes()))
 
 		// check the account is empty or not
-		if !evmtypes.IsEmptyAccount(acc) {
-			panic(evmtypes.ErrAddressAlreadyExists.Wrap(contractAddr.String()))
+		if !types.IsEmptyAccount(acc) {
+			panic(types.ErrAddressAlreadyExists.Wrap(contractAddr.String()))
 		}
 
 		// convert base account to contract account only if this account is empty
-		contractAcc := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
+		contractAcc := types.NewContractAccountWithAddress(contractAddr.Bytes())
 		contractAcc.AccountNumber = acc.GetAccountNumber()
 		s.accountKeeper.SetAccount(s.ctx, contractAcc)
 	} else {
 		// create contract account
-		contractAcc := evmtypes.NewContractAccountWithAddress(contractAddr.Bytes())
+		contractAcc := types.NewContractAccountWithAddress(contractAddr.Bytes())
 		contractAcc.AccountNumber = s.accountKeeper.NextAccountNumber(s.ctx)
 		s.accountKeeper.SetAccount(s.ctx, contractAcc)
 	}
 
 	// emit cosmos contract created event
 	s.ctx.EventManager().EmitEvent(sdk.NewEvent(
-		evmtypes.EventTypeContractCreated,
-		sdk.NewAttribute(evmtypes.AttributeKeyContract, contractAddr.Hex()),
+		types.EventTypeContractCreated,
+		sdk.NewAttribute(types.AttributeKeyContract, contractAddr.Hex()),
 	))
 }
 
@@ -344,7 +338,7 @@ func (s *StateDB) Empty(addr common.Address) bool {
 	}
 
 	acc := s.getAccount(addr)
-	return acc == nil || evmtypes.IsEmptyAccount(acc)
+	return acc == nil || types.IsEmptyAccount(acc)
 }
 
 // Exist reports whether the given account address exists in the state.
@@ -361,7 +355,7 @@ func (s *StateDB) GetCode(addr common.Address) []byte {
 		return nil
 	}
 
-	cacc, ok := acc.(*evmtypes.ContractAccount)
+	cacc, ok := acc.(*types.ContractAccount)
 	if !ok {
 		return nil
 	}
@@ -380,16 +374,16 @@ func (s *StateDB) GetCode(addr common.Address) []byte {
 // It is always used in conjunction with CreateContract, so don't need to check account conversion.
 func (s *StateDB) SetCode(addr common.Address, code []byte) []byte {
 	ca := s.getOrNewAccount(addr)
-	if evmtypes.IsEmptyAccount(ca) {
+	if types.IsEmptyAccount(ca) {
 		an := ca.GetAccountNumber()
-		ca = evmtypes.NewContractAccountWithAddress(addr.Bytes())
+		ca = types.NewContractAccountWithAddress(addr.Bytes())
 		if err := ca.SetAccountNumber(an); err != nil {
 			panic(err)
 		}
 	}
 
 	codeHash := crypto.Keccak256Hash(code).Bytes()
-	ca.(*evmtypes.ContractAccount).CodeHash = codeHash
+	ca.(*types.ContractAccount).CodeHash = codeHash
 	s.accountKeeper.SetAccount(s.ctx, ca)
 
 	// set the code in the store
@@ -412,9 +406,9 @@ func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
 		return common.Hash{}
 	}
 
-	cacc, ok := acc.(*evmtypes.ContractAccount)
+	cacc, ok := acc.(*types.ContractAccount)
 	if !ok {
-		return types.EmptyCodeHash
+		return evmtypes.EmptyCodeHash
 	}
 
 	return common.BytesToHash(cacc.CodeHash)
@@ -427,7 +421,7 @@ func (s *StateDB) GetCodeSize(addr common.Address) int {
 		return 0
 	}
 
-	cacc, ok := acc.(*evmtypes.ContractAccount)
+	cacc, ok := acc.(*types.ContractAccount)
 	if !ok {
 		return 0
 	}
@@ -642,7 +636,7 @@ func (s *StateDB) EVM() *vm.EVM {
 // - Reset access list (Berlin)
 // - Add coinbase to access list (EIP-3651)
 // - Reset transient storage (EIP-1153)
-func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
+func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase common.Address, dst *common.Address, precompiles []common.Address, list evmtypes.AccessList) {
 	if rules.IsBerlin {
 		// Clear out any leftover from previous executions
 		s.AddAddressToAccessList(sender)
@@ -674,11 +668,6 @@ func (s *StateDB) Commit() error {
 		// If ether was sent to account post-selfdestruct it is burnt.
 		if bal := s.GetBalance(addr); bal.Sign() != 0 {
 			s.SubBalance(addr, bal, tracing.BalanceDecreaseSelfdestructBurn)
-
-			// emit log event to tracer
-			if s.tracer != nil && s.tracer.OnBalanceChange != nil {
-				s.tracer.OnBalanceChange(addr, bal.ToBig(), new(big.Int), tracing.BalanceDecreaseSelfdestructBurn)
-			}
 		}
 
 		err = s.vmStore.Clear(s.ctx, new(collections.Range[[]byte]).Prefix(addr.Bytes()))
@@ -703,7 +692,7 @@ func (s *StateDB) Commit() error {
 }
 
 // AddLog implements vm.StateDB.
-func (s *StateDB) AddLog(log *types.Log) {
+func (s *StateDB) AddLog(log *evmtypes.Log) {
 	logSize, err := s.memStoreLogSize.Get(s.ctx)
 	if err != nil {
 		panic(err)
@@ -714,27 +703,22 @@ func (s *StateDB) AddLog(log *types.Log) {
 		panic(err)
 	}
 
-	err = s.memStoreLogs.Set(s.ctx, logSize, evmtypes.NewLog(log))
+	err = s.memStoreLogs.Set(s.ctx, logSize, types.NewLog(log))
 	if err != nil {
 		panic(err)
 	}
-
-	// emit log event to tracer
-	if s.tracer != nil && s.tracer.OnLog != nil {
-		s.tracer.OnLog(log)
-	}
 }
 
-func (s *StateDB) Logs() evmtypes.Logs {
+func (s *StateDB) Logs() types.Logs {
 	logSize, err := s.memStoreLogSize.Get(s.ctx)
 	if err != nil {
 		panic(err)
 	} else if logSize == 0 {
-		return []evmtypes.Log{}
+		return []types.Log{}
 	}
 
-	logs := make([]evmtypes.Log, logSize)
-	err = s.memStoreLogs.Walk(s.ctx, nil, func(key uint64, log evmtypes.Log) (stop bool, err error) {
+	logs := make([]types.Log, logSize)
+	err = s.memStoreLogs.Walk(s.ctx, nil, func(key uint64, log types.Log) (stop bool, err error) {
 		logs[key] = log
 		return false, nil
 	})
@@ -755,7 +739,7 @@ func (s *StateDB) GetStorageRoot(addr common.Address) common.Hash {
 		account := s.accountKeeper.GetAccount(s.ctx, sdk.AccAddress(addr.Bytes()))
 
 		// check the account is empty or not
-		if !evmtypes.IsEmptyAccount(account) {
+		if !types.IsEmptyAccount(account) {
 			return nonEmptyHash
 		}
 	}
