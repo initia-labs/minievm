@@ -119,9 +119,10 @@ func NewStateDB(
 }
 
 // AddBalance mint coins to the recipient
-func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) *uint256.Int {
+// Always returns zero, because the balance query is expensive, but not used
+func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) uint256.Int {
 	if amount.IsZero() {
-		return nil
+		return uint256.Int{}
 	}
 
 	inputBz, err := s.erc20ABI.Pack("sudoMint", addr, amount.ToBig())
@@ -139,13 +140,14 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing
 		panic(err)
 	}
 
-	return nil
+	return uint256.Int{}
 }
 
-// SubBalance burn coins from the account with addr
-func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) *uint256.Int {
+// SubBalance burns coins from the account with addr
+// Always returns zero, because the balance query is expensive, but not used
+func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) uint256.Int {
 	if amount.IsZero() {
-		return nil
+		return uint256.Int{}
 	}
 
 	inputBz, err := s.erc20ABI.Pack("sudoBurn", addr, amount.ToBig())
@@ -163,7 +165,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing
 		panic(err)
 	}
 
-	return nil
+	return uint256.Int{}
 }
 
 // GetBalance returns the erc20 balance of the account with addr
@@ -513,10 +515,10 @@ func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
 //
 // The account's state object is still available until the state is committed,
 // getStateObject will return a non-nil account after SelfDestruct.
-func (s *StateDB) SelfDestruct(addr common.Address) *uint256.Int {
+func (s *StateDB) SelfDestruct(addr common.Address) uint256.Int {
 	acc := s.getAccount(addr)
 	if acc == nil {
-		return nil
+		return uint256.Int{}
 	}
 
 	// mark the account as self-destructed
@@ -527,28 +529,28 @@ func (s *StateDB) SelfDestruct(addr common.Address) *uint256.Int {
 	// clear the balance of the account
 	prev := s.GetBalance(addr)
 	s.SubBalance(addr, s.GetBalance(addr), tracing.BalanceDecreaseSelfdestructBurn)
-	return prev
+	return *prev
 }
 
 // Selfdestruct6780 calls selfdestruct and clears the account balance if the account is created in the same transaction.
-func (s *StateDB) SelfDestruct6780(addr common.Address) (*uint256.Int, bool) {
+func (s *StateDB) SelfDestruct6780(addr common.Address) (uint256.Int, bool) {
 	acc := s.getAccount(addr)
 	if acc == nil {
-		return nil, false
+		return uint256.Int{}, false
 	}
 
 	ok, err := s.memStoreCreated.Has(s.ctx, addr.Bytes())
 	// If the account was not created in this transaction, we can self-destruct it
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
-			return nil, false
+			return uint256.Int{}, false
 		} else {
 			panic(err)
 		}
 	} else if ok {
 		return s.SelfDestruct(addr), true
 	}
-	return nil, false
+	return uint256.Int{}, false
 }
 
 // SetState implements vm.StateDB.

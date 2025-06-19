@@ -29,27 +29,25 @@ func NewHookedState(stateDb *StateDB, hooks *tracing.Hooks) *HookedStateDB {
 	return s
 }
 
-// INITIA CUSTOM: return *uint256.Int instead of uint256.Int, always return nil in minievm
 // only hooked statedb use previous balance for tracing
-func (s *HookedStateDB) SubBalance(addr common.Address, amount *uint256.Int, reason tracing.BalanceChangeReason) *uint256.Int {
+func (s *HookedStateDB) SubBalance(addr common.Address, amount *uint256.Int, reason tracing.BalanceChangeReason) uint256.Int {
 	s.StateDB.SubBalance(addr, amount, reason)
 	if s.hooks.OnBalanceChange != nil && !amount.IsZero() {
 		prev := s.StateDB.GetBalance(addr)
 		newBalance := new(uint256.Int).Sub(prev, amount)
 		s.hooks.OnBalanceChange(addr, prev.ToBig(), newBalance.ToBig(), reason)
 	}
-	return nil
+	return uint256.Int{}
 }
 
-// INITIA CUSTOM: return *uint256.Int instead of uint256.Int, always return nil in minievm
-func (s *HookedStateDB) AddBalance(addr common.Address, amount *uint256.Int, reason tracing.BalanceChangeReason) *uint256.Int {
+func (s *HookedStateDB) AddBalance(addr common.Address, amount *uint256.Int, reason tracing.BalanceChangeReason) uint256.Int {
 	s.StateDB.AddBalance(addr, amount, reason)
 	if s.hooks.OnBalanceChange != nil && !amount.IsZero() {
 		prev := s.StateDB.GetBalance(addr)
 		newBalance := new(uint256.Int).Add(prev, amount)
 		s.hooks.OnBalanceChange(addr, prev.ToBig(), newBalance.ToBig(), reason)
 	}
-	return nil
+	return uint256.Int{}
 }
 
 func (s *HookedStateDB) SetNonce(address common.Address, nonce uint64, reason tracing.NonceChangeReason) {
@@ -82,8 +80,7 @@ func (s *HookedStateDB) SetState(address common.Address, key common.Hash, value 
 	return prev
 }
 
-// INITIA CUSTOM: return *uint256.Int instead of uint256.Int, always return nil in minievm
-func (s *HookedStateDB) SelfDestruct(address common.Address) *uint256.Int {
+func (s *HookedStateDB) SelfDestruct(address common.Address) uint256.Int {
 	var prevCode []byte
 	var prevCodeHash common.Hash
 
@@ -105,8 +102,7 @@ func (s *HookedStateDB) SelfDestruct(address common.Address) *uint256.Int {
 	return prev
 }
 
-// INITIA CUSTOM: return *uint256.Int instead of uint256.Int, returns previous balance and whether the account was destructed
-func (s *HookedStateDB) SelfDestruct6780(address common.Address) (*uint256.Int, bool) {
+func (s *HookedStateDB) SelfDestruct6780(address common.Address) (uint256.Int, bool) {
 	var prevCode []byte
 	var prevCodeHash common.Hash
 
