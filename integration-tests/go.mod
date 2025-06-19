@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/initia-labs/initia v1.0.0
-	github.com/initia-labs/minievm v1.0.0-rc.2
+	github.com/initia-labs/minievm v1.0.7
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -144,11 +144,11 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v1.0.1 // indirect
 	github.com/initia-labs/OPinit/api v1.0.0 // indirect
-	github.com/initia-labs/kvindexer v0.1.13 // indirect
-	github.com/initia-labs/kvindexer/submodules/block v0.1.3 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.9 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.2.1 // indirect
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.4 // indirect
+	github.com/initia-labs/kvindexer v0.2.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/block v0.2.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.2.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.3.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/pair v0.2.0 // indirect
 	github.com/initia-labs/movevm v1.0.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -220,6 +220,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
@@ -276,7 +277,7 @@ require github.com/cosmos/iavl v1.2.6 // indirect
 // connect
 // - https://github.com/initia-labs/connect/pull/1
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250423153228-2a8797de61ac
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250619032334-56903a4d3e03
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250415174140-9fd233bcf847
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250502185204-604b1666eb18
