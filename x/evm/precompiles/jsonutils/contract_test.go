@@ -1,3 +1,6 @@
+// +build test
+
+//go:build test
 package jsonutils_test
 
 import (
@@ -28,6 +31,7 @@ import (
 
 	contracts "github.com/initia-labs/minievm/x/evm/contracts/i_jsonutils"
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/jsonutils"
+	precompiletesting "github.com/initia-labs/minievm/x/evm/precompiles/testing"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -95,7 +99,7 @@ func Test_JSONUtilsPrecompile_Merge(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 
@@ -151,7 +155,7 @@ func Test_JSONUtilsPrecompile_Stringify(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 
@@ -214,7 +218,7 @@ func Test_JSONUtilsPrecompile_UnmarshalToObject(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 
@@ -274,7 +278,7 @@ func Test_JSONUtilsPrecompile_UnmarshalToString(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 
@@ -333,7 +337,7 @@ func Test_JSONUtilsPrecompile_UnmarshalToUint(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 
@@ -397,7 +401,7 @@ func Test_JSONUtilsPrecompile_UnmarshalToBool(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 
@@ -471,7 +475,7 @@ func Test_JSONUtilsPrecompile_UnmarshalToArray(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 
@@ -530,7 +534,7 @@ func Test_JSONUtilsPrecompile_UnmarshalISOToUnix(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, _, _ := setup()
-			stateDB := NewMockStateDB(ctx)
+			stateDB := precompiletesting.NewMockStateDB(ctx)
 			contract, err := precompiles.NewJSONUtilsPrecompile(stateDB)
 			require.NoError(t, err)
 

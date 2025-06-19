@@ -1,7 +1,16 @@
-package erc20registryprecompile_test
+// +build test
+
+//go:build test
+package testing
 
 import (
+	"context"
+
+	"cosmossdk.io/core/address"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	corestate "github.com/ethereum/go-ethereum/core/state"
@@ -12,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie/utils"
 	"github.com/holiman/uint256"
+
 	"github.com/initia-labs/minievm/x/evm/state"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
@@ -78,7 +88,6 @@ func (m *MockStateDB) EVM() *vm.EVM {
 	return m.evm
 }
 
-
 //////////////////////// MOCKED METHODS ////////////////////////
 
 // AddAddressToAccessList implements types.StateDB.
@@ -87,7 +96,7 @@ func (m *MockStateDB) AddAddressToAccessList(addr common.Address) {
 }
 
 // AddBalance implements types.StateDB.
-func (m *MockStateDB) AddBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) *uint256.Int {
+func (m *MockStateDB) AddBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) uint256.Int {
 	panic("unimplemented")
 }
 
@@ -202,12 +211,12 @@ func (m *MockStateDB) Prepare(rules params.Rules, sender common.Address, coinbas
 }
 
 // SelfDestruct implements types.StateDB.
-func (m *MockStateDB) SelfDestruct(common.Address) *uint256.Int {
+func (m *MockStateDB) SelfDestruct(common.Address) uint256.Int {
 	panic("unimplemented")
 }
 
 // SelfDestruct6780 implements types.StateDB.
-func (m *MockStateDB) SelfDestruct6780(common.Address) (*uint256.Int, bool) {
+func (m *MockStateDB) SelfDestruct6780(common.Address) (uint256.Int, bool) {
 	panic("unimplemented")
 }
 
@@ -237,7 +246,7 @@ func (m *MockStateDB) SlotInAccessList(addr common.Address, slot common.Hash) (a
 }
 
 // SubBalance implements types.StateDB.
-func (m *MockStateDB) SubBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) *uint256.Int {
+func (m *MockStateDB) SubBalance(common.Address, *uint256.Int, tracing.BalanceChangeReason) uint256.Int {
 	panic("unimplemented")
 }
 
@@ -266,4 +275,104 @@ func (m *MockStateDB) Commit() error {
 
 func (m *MockStateDB) Logs() evmtypes.Logs {
 	panic("unimplemented")
+}
+
+var _ evmtypes.AccountKeeper = &MockAccountKeeper{}
+
+// mock account keeper for testing
+type MockAccountKeeper struct {
+	Codec    address.Codec
+	Accounts map[string]sdk.AccountI
+}
+
+// GetAccount implements types.AccountKeeper.
+func (k MockAccountKeeper) GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI {
+	str, _ := k.Codec.BytesToString(addr.Bytes())
+	return k.Accounts[str]
+}
+
+// HasAccount implements types.AccountKeeper.
+func (k MockAccountKeeper) HasAccount(ctx context.Context, addr sdk.AccAddress) bool {
+	str, _ := k.Codec.BytesToString(addr.Bytes())
+	_, ok := k.Accounts[str]
+	return ok
+}
+
+// NewAccount implements types.AccountKeeper.
+func (k *MockAccountKeeper) NewAccount(ctx context.Context, acc sdk.AccountI) sdk.AccountI {
+	acc.SetAccountNumber(uint64(len(k.Accounts)))
+	return acc
+}
+
+// NewAccountWithAddress implements types.AccountKeeper.
+func (k MockAccountKeeper) NewAccountWithAddress(ctx context.Context, addr sdk.AccAddress) sdk.AccountI {
+	return authtypes.NewBaseAccount(addr, nil, uint64(len(k.Accounts)), 0)
+}
+
+// NextAccountNumber implements types.AccountKeeper.
+func (k MockAccountKeeper) NextAccountNumber(ctx context.Context) uint64 {
+	return uint64(len(k.Accounts))
+}
+
+// SetAccount implements types.AccountKeeper.
+func (k MockAccountKeeper) SetAccount(ctx context.Context, acc sdk.AccountI) {
+	str, _ := k.Codec.BytesToString(acc.GetAddress().Bytes())
+	k.Accounts[str] = acc
+}
+
+// RemoveAccount implements types.AccountKeeper.
+func (k MockAccountKeeper) RemoveAccount(ctx context.Context, acc sdk.AccountI) {
+	str, _ := k.Codec.BytesToString(acc.GetAddress().Bytes())
+	delete(k.Accounts, str)
+}
+
+var _ evmtypes.BankKeeper = &MockBankKeeper{}
+
+// mock bank keeper for testing
+type MockBankKeeper struct {
+	Codec            address.Codec
+	BlockedAddresses map[string]bool
+}
+
+// BlockedAddr implements types.BankKeeper.
+func (k MockBankKeeper) BlockedAddr(addr sdk.AccAddress) bool {
+	str, _ := k.Codec.BytesToString(addr.Bytes())
+	return k.BlockedAddresses[str]
+}
+
+var _ evmtypes.GRPCRouter = MockGRPCRouter{}
+
+type MockGRPCRouter struct {
+	Routes map[string]baseapp.GRPCQueryHandler
+}
+
+func (router MockGRPCRouter) Route(path string) baseapp.GRPCQueryHandler {
+	return router.Routes[path]
+}
+
+var _ evmtypes.ERC20DenomKeeper = &MockERC20DenomKeeper{}
+
+type MockERC20DenomKeeper struct {
+	DenomMap map[string]common.Address
+	AddrMap  map[common.Address]string
+}
+
+// GetContractAddrByDenom implements types.ERC20DenomKeeper.
+func (e *MockERC20DenomKeeper) GetContractAddrByDenom(_ context.Context, denom string) (common.Address, error) {
+	addr, found := e.DenomMap[denom]
+	if !found {
+		return common.Address{}, sdkerrors.ErrNotFound
+	}
+
+	return addr, nil
+}
+
+// GetDenomByContractAddr implements types.ERC20DenomKeeper.
+func (e *MockERC20DenomKeeper) GetDenomByContractAddr(_ context.Context, addr common.Address) (string, error) {
+	denom, found := e.AddrMap[addr]
+	if !found {
+		return "", sdkerrors.ErrNotFound
+	}
+
+	return denom, nil
 }

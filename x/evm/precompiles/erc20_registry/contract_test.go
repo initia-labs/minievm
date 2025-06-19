@@ -1,3 +1,6 @@
+// +build test
+
+//go:build test
 package erc20registryprecompile_test
 
 import (
@@ -17,6 +20,7 @@ import (
 
 	contracts "github.com/initia-labs/minievm/x/evm/contracts/i_erc20_registry"
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"
+	precompiletesting "github.com/initia-labs/minievm/x/evm/precompiles/testing"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -71,7 +75,7 @@ func (e ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddres
 func Test_ERC20RegistryPrecompile(t *testing.T) {
 	ctx, k := setup()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	registry, err := precompiles.NewERC20RegistryPrecompile(stateDB, k)
 	require.NoError(t, err)
 
