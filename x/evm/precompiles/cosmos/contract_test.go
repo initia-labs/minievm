@@ -1,3 +1,6 @@
+// +build test
+
+//go:build test
 package cosmosprecompile_test
 
 import (
@@ -33,6 +36,7 @@ import (
 
 	contracts "github.com/initia-labs/minievm/x/evm/contracts/i_cosmos"
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/cosmos"
+	precompiletesting "github.com/initia-labs/minievm/x/evm/precompiles/testing"
 	"github.com/initia-labs/minievm/x/evm/types"
 
 	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
@@ -57,15 +61,15 @@ func setup() (sdk.Context, codec.Codec, address.Codec, types.AccountKeeper, type
 	ac := codecaddress.NewBech32Codec("init")
 
 	return ctx, cdc, ac,
-		&MockAccountKeeper{ac: ac, accounts: make(map[string]sdk.AccountI)},
-		&MockBankKeeper{ac: ac, blockedAddresses: make(map[string]bool)}
+		&precompiletesting.MockAccountKeeper{Codec: ac, Accounts: make(map[string]sdk.AccountI)},
+		&precompiletesting.MockBankKeeper{Codec: ac, BlockedAddresses: make(map[string]bool)}
 }
 
 func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -81,11 +85,11 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS-1, true)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS-1, true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err := abi.Unpack(precompiles.METHOD_IS_BLOCKED_ADDRESS, retBz)
@@ -93,13 +97,13 @@ func Test_CosmosPrecompile_IsBlockedAddress(t *testing.T) {
 	require.False(t, ret[0].(bool))
 
 	// block address
-	bk.(*MockBankKeeper).blockedAddresses[cosmosAddr] = true
+	bk.(*precompiletesting.MockBankKeeper).BlockedAddresses[cosmosAddr] = true
 
 	// is blocked address
 	inputBz, err = abi.Pack(precompiles.METHOD_IS_BLOCKED_ADDRESS, evmAddr)
 	require.NoError(t, err)
 
-	retBz, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_BLOCKED_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err = abi.Unpack(precompiles.METHOD_IS_BLOCKED_ADDRESS, retBz)
@@ -111,7 +115,7 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -127,11 +131,11 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS-1, true)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_MODULE_ADDRESS_GAS-1, true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_MODULE_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err := abi.Unpack(precompiles.METHOD_IS_MODULE_ADDRESS, retBz)
@@ -139,13 +143,13 @@ func Test_CosmosPrecompile_IsModuleAddress(t *testing.T) {
 	require.False(t, ret[0].(bool))
 
 	// module address
-	ak.(*MockAccountKeeper).accounts[cosmosAddr] = authtypes.NewEmptyModuleAccount("test")
+	ak.(*precompiletesting.MockAccountKeeper).Accounts[cosmosAddr] = authtypes.NewEmptyModuleAccount("test")
 
 	// is module address
 	inputBz, err = abi.Pack(precompiles.METHOD_IS_MODULE_ADDRESS, evmAddr)
 	require.NoError(t, err)
 
-	retBz, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_MODULE_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_MODULE_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err = abi.Unpack(precompiles.METHOD_IS_MODULE_ADDRESS, retBz)
@@ -157,7 +161,7 @@ func Test_CosmosPrecompile_IsAuthorityAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -172,11 +176,11 @@ func Test_CosmosPrecompile_IsAuthorityAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS-1, true)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS-1, true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err := abi.Unpack(precompiles.METHOD_IS_AUTHORITY_ADDRESS, retBz)
@@ -188,7 +192,7 @@ func Test_CosmosPrecompile_IsAuthorityAddress(t *testing.T) {
 	inputBz, err = abi.Pack(precompiles.METHOD_IS_AUTHORITY_ADDRESS, authorityEVMAddr)
 	require.NoError(t, err)
 
-	retBz, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.IS_AUTHORITY_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err = abi.Unpack(precompiles.METHOD_IS_AUTHORITY_ADDRESS, retBz)
@@ -200,7 +204,7 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -216,11 +220,11 @@ func Test_CosmosPrecompile_ToCosmosAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_COSMOS_ADDRESS_GAS-1, true)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_COSMOS_ADDRESS_GAS-1, true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_COSMOS_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_COSMOS_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err := abi.Unpack(precompiles.METHOD_TO_COSMOS_ADDRESS, retBz)
@@ -232,7 +236,7 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -248,11 +252,11 @@ func Test_CosmosPrecompile_ToEVMAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_EVM_ADDRESS_GAS-1, true)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_EVM_ADDRESS_GAS-1, true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_EVM_ADDRESS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_EVM_ADDRESS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	ret, err := abi.Unpack(precompiles.METHOD_TO_EVM_ADDRESS, retBz)
@@ -264,7 +268,7 @@ func Test_ExecuteCosmos(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -292,29 +296,29 @@ func Test_ExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS-1, false)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// cannot call execute in readonly mode
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
+	_, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 
 	// failed with disabled error
 	stateDB.EVM().SetDisallowCosmosDispatch(true)
-	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	ret, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, types.NewRevertError(ret).Error(), types.ErrExecuteCosmosDisabled.Error())
 	stateDB.EVM().SetDisallowCosmosDispatch(false)
 
 	// succeed
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	_, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.NoError(t, err)
 
 	messages := stateDB.Context().Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
 	require.Len(t, *messages, 1)
 	require.Equal(t, (*messages)[0], types.ExecuteRequest{
-		Caller: vm.AccountRef(evmAddr),
+		Caller: evmAddr,
 		Msg: &banktypes.MsgSend{
 			FromAddress: cosmosAddr,
 			ToAddress:   "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
@@ -340,7 +344,7 @@ func Test_ExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// failed with unauthorized error
-	ret, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	ret, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
 }
@@ -349,7 +353,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -378,22 +382,22 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS-1, false)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// cannot call execute in readonly mode
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
+	_, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 
 	// succeed
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	_, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.NoError(t, err)
 
 	messages := stateDB.Context().Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
 	require.Len(t, *messages, 1)
 	require.Equal(t, (*messages)[0], types.ExecuteRequest{
-		Caller: vm.AccountRef(evmAddr),
+		Caller: evmAddr,
 		Msg: &banktypes.MsgSend{
 			FromAddress: cosmosAddr,
 			ToAddress:   "init1enjh88u7c9s08fgdu28wj6umz94cetjy0hpcxf",
@@ -419,7 +423,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	// failed with unauthorized error
-	ret, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	ret, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, contractExecGas+precompiles.EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, types.NewRevertError(ret).Error(), sdkerrors.ErrUnauthorized.Error())
 }
@@ -441,9 +445,9 @@ func Test_QueryCosmos(t *testing.T) {
 		},
 	}
 
-	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, MockGRPCRouter{
-		routes: map[string]baseapp.GRPCQueryHandler{
+	stateDB := precompiletesting.NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, precompiletesting.MockGRPCRouter{
+		Routes: map[string]baseapp.GRPCQueryHandler{
 			queryPath: func(ctx sdk.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
 				resBz, err := cdc.Marshal(&expectedRet)
 				if err != nil {
@@ -474,12 +478,12 @@ func Test_QueryCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.QUERY_COSMOS_GAS-1, false)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.QUERY_COSMOS_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// succeed
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.QUERY_COSMOS_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.QUERY_COSMOS_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	// unpack response
@@ -500,12 +504,12 @@ func Test_ToDenom(t *testing.T) {
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
 
-	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, &MockERC20DenomKeeper{
-		denomMap: map[string]common.Address{
+	stateDB := precompiletesting.NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, &precompiletesting.MockERC20DenomKeeper{
+		DenomMap: map[string]common.Address{
 			denom: erc20Addr,
 		},
-		addrMap: map[common.Address]string{
+		AddrMap: map[common.Address]string{
 			erc20Addr: denom,
 		},
 	}, nil, nil, authorityAddr)
@@ -521,12 +525,12 @@ func Test_ToDenom(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_DENOM_GAS-1, false)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_DENOM_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// succeed
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_DENOM_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_DENOM_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	// unpack response
@@ -542,12 +546,12 @@ func Test_ToErc20(t *testing.T) {
 	erc20Addr := common.HexToAddress("0x123")
 	denom := "evm/0000000000000000000000000000000000000123"
 
-	stateDB := NewMockStateDB(ctx)
-	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, &MockERC20DenomKeeper{
-		denomMap: map[string]common.Address{
+	stateDB := precompiletesting.NewMockStateDB(ctx)
+	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, &precompiletesting.MockERC20DenomKeeper{
+		DenomMap: map[string]common.Address{
 			denom: erc20Addr,
 		},
-		addrMap: map[common.Address]string{
+		AddrMap: map[common.Address]string{
 			erc20Addr: denom,
 		},
 	}, nil, nil, authorityAddr)
@@ -563,12 +567,12 @@ func Test_ToErc20(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas panic
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_ERC20_GAS-1, false)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_ERC20_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// succeed
-	retBz, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.TO_ERC20_GAS+uint64(len(inputBz)), true)
+	retBz, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.TO_ERC20_GAS+uint64(len(inputBz)), true)
 	require.NoError(t, err)
 
 	// unpack response
@@ -581,7 +585,7 @@ func Test_DisableExecuteCosmos(t *testing.T) {
 	ctx, cdc, ac, ak, bk := setup()
 	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, nil, nil, authorityAddr)
 	require.NoError(t, err)
 
@@ -595,12 +599,12 @@ func Test_DisableExecuteCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.DISABLE_EXECUTE_COSMOS_GAS-1, false)
+	output, _, err := cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.DISABLE_EXECUTE_COSMOS_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// success
-	_, _, err = cosmosPrecompile.ExtendedRun(vm.AccountRef(evmAddr), inputBz, precompiles.DISABLE_EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
+	_, _, err = cosmosPrecompile.ExtendedRun(evmAddr, inputBz, precompiles.DISABLE_EXECUTE_COSMOS_GAS+uint64(len(inputBz)), false)
 	require.NoError(t, err)
 
 	// check if execute cosmos is disabled
