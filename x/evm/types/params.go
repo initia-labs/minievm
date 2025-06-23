@@ -17,6 +17,7 @@ func DefaultParams() Params {
 		FeeDenom:             sdk.DefaultBondDenom,
 		GasRefundRatio:       math.LegacyNewDecWithPrec(5, 1),
 		NumRetainBlockHashes: 256,
+		// no limit of gas price and gas limit
 	}
 }
 
