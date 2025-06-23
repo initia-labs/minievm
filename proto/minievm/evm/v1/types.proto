@@ -59,14 +59,14 @@ message Params {
     (amino.dont_omitempty) = true
   ];
 
-  // max_gas_fee_cap defines the maximum gas price of one transaction (base fee + gas tip < max_gas_fee_cap).
+  // max_gas_fee_cap defines the maximum gas price of one evm message (base fee + gas tip < max_gas_fee_cap).
   // If the max gas price is "", there is no limit of gas price
   string max_gas_fee_cap = 8 [
     (gogoproto.moretags) = "yaml:\"max_gas_fee_cap\"",
     (amino.dont_omitempty) = true
   ];
 
-  // max_gas defines the maximum gas_limit of one transaction.
+  // max_gas defines the maximum gas_limit of one evm message.
   // If the max gas is "", there is no limit of gas
   uint64 max_gas_limit = 9 [
     (gogoproto.moretags) = "yaml:\"max_gas_limit\"",
