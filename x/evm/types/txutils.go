@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"slices"
 
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
@@ -26,12 +27,17 @@ import (
 // SignMode_SIGN_MODE_ETHEREUM is the sign mode for Ethereum transactions.
 const SignMode_SIGN_MODE_ETHEREUM = signing.SignMode(9999)
 
+type gasFeeCapMetadata struct {
+	Original string `json:"original"`
+	Applied  string `json:"applied"`
+}
+
 // txMetadata is the metadata of a Cosmos SDK transaction.
 type txMetadata struct {
-	Type      uint8  `json:"type"`
-	GasFeeCap string `json:"gas_fee_cap"` // original gas fee cap in ethTx
-	GasTipCap string `json:"gas_tip_cap"` // original gas tip cap in ethTx
-	GasLimit  uint64 `json:"gas_limit"`   // original gas limit in ethTx
+	Type      uint8             `json:"type"`
+	GasFeeCap gasFeeCapMetadata `json:"gas_fee_cap"` // gas fee cap configuration
+	GasTipCap string            `json:"gas_tip_cap"` // original gas tip cap in ethTx
+	GasLimit  uint64            `json:"gas_limit"`   // original gas limit in ethTx
 }
 
 // LazyArgsGetterForConvertEthereumTxToCosmosTx is a function that returns the arguments for ConvertEthereumTxToCosmosTx.
@@ -42,7 +48,7 @@ type LazyArgsGetterForConvertEthereumTxToCosmosTx func() (params Params, feeDeci
 // use lazy args getter to avoid unnecessary params and decimals fetching
 type LazyArgsGetterForConvertCosmosTxToEthereumTx func() (params Params, feeDecimals uint8, err error)
 
-func initGasMetadata(params *Params, ethTx *coretypes.Transaction) (*txMetadata, uint64, *big.Int, error) {
+func initGasMetadata(params *Params, ethSender common.Address, ethTx *coretypes.Transaction) (*txMetadata, uint64, *big.Int, error) {
 	metadata := txMetadata{
 		Type: ethTx.Type(),
 	}
@@ -55,7 +61,10 @@ func initGasMetadata(params *Params, ethTx *coretypes.Transaction) (*txMetadata,
 	if gasFeeCap == nil {
 		gasFeeCap = big.NewInt(0)
 	}
-	metadata.GasFeeCap = gasFeeCap.String()
+	metadata.GasFeeCap = gasFeeCapMetadata{
+		Original: gasFeeCap.String(),
+		Applied:  gasFeeCap.String(),
+	}
 
 	gasTipCap := ethTx.GasTipCap()
 	if gasTipCap == nil {
@@ -64,7 +73,18 @@ func initGasMetadata(params *Params, ethTx *coretypes.Transaction) (*txMetadata,
 	metadata.GasTipCap = gasTipCap.String()
 
 	// set max gas fee cap
-	maxGasFeeCap := params.MaxGasFeeCap
+	gasEnforcement := params.GasEnforcement
+	if gasEnforcement == nil {
+		return &metadata, gasLimit, gasFeeCap, nil
+	}
+
+	// check if sender is unlimited gas sender
+	if slices.Contains(gasEnforcement.UnlimitedGasSenders, ethSender.String()) {
+		return &metadata, gasLimit, gasFeeCap, nil
+	}
+
+	// set max gas fee cap and limit
+	maxGasFeeCap := gasEnforcement.MaxGasFeeCap
 	if maxGasFeeCap != "" {
 		maxGasFeeCapInt, ok := big.NewInt(0).SetString(maxGasFeeCap, 10)
 		if !ok {
@@ -73,10 +93,10 @@ func initGasMetadata(params *Params, ethTx *coretypes.Transaction) (*txMetadata,
 		if gasFeeCap.Cmp(maxGasFeeCapInt) > 0 {
 			gasFeeCap = maxGasFeeCapInt
 		}
+		metadata.GasFeeCap.Applied = gasFeeCap.String()
 	}
 
-	// set max gas limit
-	maxGasLimit := params.MaxGasLimit
+	maxGasLimit := gasEnforcement.MaxGasLimit
 	if maxGasLimit != 0 {
 		if gasLimit > maxGasLimit {
 			gasLimit = maxGasLimit
@@ -100,7 +120,17 @@ func ConvertEthereumTxToCosmosTx(
 		return nil, err
 	}
 
-	metadata, gasLimit, gasFeeCap, err := initGasMetadata(&params, ethTx)
+	// signer
+	ethChainID := ConvertCosmosChainIDToEthereumChainID(chainID)
+	signer := coretypes.LatestSignerForChainID(ethChainID)
+
+	// get tx sender
+	ethSender, err := coretypes.Sender(signer, ethTx)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, gasLimit, gasFeeCap, err := initGasMetadata(&params, ethSender, ethTx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,15 +145,6 @@ func ConvertEthereumTxToCosmosTx(
 		return nil, ErrInvalidValue.Wrap("failed to convert value to token unit without dropping precision")
 	}
 
-	// signer
-	ethChainID := ConvertCosmosChainIDToEthereumChainID(chainID)
-	signer := coretypes.LatestSignerForChainID(ethChainID)
-
-	// get tx sender
-	ethSender, err := coretypes.Sender(signer, ethTx)
-	if err != nil {
-		return nil, err
-	}
 	// sig bytes
 	v, r, s := ethTx.RawSignatureValues()
 	sigBytes := make([]byte, 65)
@@ -291,7 +312,12 @@ func ConvertCosmosTxToEthereumTx(
 
 	// extract original gas limit, fee cap and tip cap from metadata
 	gasLimit := md.GasLimit
-	gasFeeCap, ok := new(big.Int).SetString(md.GasFeeCap, 10)
+	gasFeeCap, ok := new(big.Int).SetString(md.GasFeeCap.Original, 10)
+	if !ok {
+		return nil, nil, err
+	}
+
+	appliedGasFeeCap, ok := new(big.Int).SetString(md.GasFeeCap.Applied, 10)
 	if !ok {
 		return nil, nil, err
 	}
@@ -302,8 +328,8 @@ func ConvertCosmosTxToEthereumTx(
 	}
 
 	// check if the fee amount is correctly converted
-	gas := authTx.GetGas()
-	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(gasFeeCap, gas, feeDecimals))))
+	appliedGasLimit := authTx.GetGas()
+	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(appliedGasFeeCap, appliedGasLimit, feeDecimals))))
 	if !feeAmount.Equal(computedFeeAmount) {
 		return nil, nil, ErrTxConversionFailed.Wrap("fee amount manipulation detected")
 	}

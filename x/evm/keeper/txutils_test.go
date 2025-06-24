@@ -47,7 +47,6 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	inputBz, err := abi.Pack("createERC20", "bar", "bar", uint8(6))
 	require.NoError(t, err)
 
-	// 1. Create a dynamic fee tx without max gas configuration
 	gasFeeCap := types.ToEthersUnit(decimals, feeAmount)
 	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(gasLimit))
 	value := types.ToEthersUnit(decimals, big.NewInt(100))
@@ -87,6 +86,7 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	}
 	addrBz := cosmosKey.PubKey().Address()
 
+	// 1. Create a dynamic fee tx without max gas configuration
 	// Convert to cosmos tx
 	sdkTx, err := keeper.NewTxUtils(&input.EVMKeeper).ConvertEthereumTxToCosmosTx(ctx, signedTx)
 	require.NoError(t, err)
@@ -146,27 +146,21 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	require.ErrorIs(t, err, types.ErrTxConversionFailed)
 
 	// 2. Set the max params of gas configuration
-	// Set the max gas limit and fee cap
-	maxGasLimit := uint64(500_000)
+	// Set the gas enforcement parameters
+	maxGasLimit := gasLimit / 2
 	params, err := input.EVMKeeper.Params.Get(ctx)
 	require.NoError(t, err)
-	params.MaxGasLimit = maxGasLimit
+	maxGasFeeCap := gasFeeCap.Div(gasFeeCap, big.NewInt(2))
 
+	gasEnforcement := &types.GasEnforcement{
+		MaxGasLimit:  maxGasLimit,
+		MaxGasFeeCap: maxGasFeeCap.String(),
+		UnlimitedGasSenders: []string{
+			common.BytesToAddress(addrBz.Bytes()).String(),
+		},
+	}
+	params.GasEnforcement = gasEnforcement
 	err = input.EVMKeeper.Params.Set(ctx, params)
-	require.NoError(t, err)
-
-	feeAmount = new(big.Int).Mul(
-		big.NewInt(int64(maxGasLimit)),
-		new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)-8), nil), // gas price is 1e-8
-	)
-
-	gasFeeCap = types.ToEthersUnit(decimals, feeAmount)
-	gasFeeCap = gasFeeCap.Quo(gasFeeCap, new(big.Int).SetUint64(maxGasLimit))
-	params.MaxGasFeeCap = gasFeeCap.String() // // gas price is 1e-8
-
-	dynTx.Gas = maxGasLimit
-	ethTx = coretypes.NewTx(dynTx)
-	signedTx, err = coretypes.SignTx(ethTx, signer, privKey)
 	require.NoError(t, err)
 
 	// Convert to cosmos tx
@@ -178,13 +172,11 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	msg, ok = msgs[0].(*types.MsgCall)
 	require.True(t, ok)
 
-	expectedMsg.Sender = sdk.AccAddress(addrBz).String()
 	require.Equal(t, msg, expectedMsg)
 
 	authTx = sdkTx.(authsigning.Tx)
 	expectedFeeAmount = sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1)))
 	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
-
 	sigs, err = authTx.GetSignaturesV2()
 	require.NoError(t, err)
 	require.Len(t, sigs, 1)
@@ -214,11 +206,61 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	require.Equal(t, common.BytesToAddress(addrBz), sender)
 	EqualEthTransaction(t, signedTx, ethTx2)
 
-	// manipulate the fee amount
-	txBuilder = sdkTx.(client.TxBuilder)
-	txBuilder.SetFeeAmount(expectedFeeAmount.Add(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1))))
-	_, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, txBuilder.GetTx())
-	require.ErrorIs(t, err, types.ErrTxConversionFailed)
+	// 3. Set without unlimited sender
+	// Set the gas enforcement parameters without unlimited sender
+	params, err = input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	gasEnforcement.UnlimitedGasSenders = []string{}
+	params.GasEnforcement = gasEnforcement
+	err = input.EVMKeeper.Params.Set(ctx, params)
+	require.NoError(t, err)
+
+	// feeAmount will be quarter of the original fee amount
+	expectedFeeAmount = sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount.Div(feeAmount, big.NewInt(4))).AddRaw(1)))
+
+	// Convert to cosmos tx
+	sdkTx, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertEthereumTxToCosmosTx(ctx, signedTx)
+	require.NoError(t, err)
+
+	msgs = sdkTx.GetMsgs()
+	require.Len(t, msgs, 1)
+	msg, ok = msgs[0].(*types.MsgCall)
+	require.True(t, ok)
+
+	expectedMsg.Sender = sdk.AccAddress(addrBz).String()
+	require.Equal(t, msg, expectedMsg)
+
+	authTx = sdkTx.(authsigning.Tx)
+	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
+
+	sigs, err = authTx.GetSignaturesV2()
+	require.NoError(t, err)
+	require.Len(t, sigs, 1)
+
+	sig = sigs[0]
+	require.Equal(t, sig.PubKey, cosmosKey.PubKey())
+	require.Equal(t, sig.Sequence, uint64(100))
+
+	v, r, s = signedTx.RawSignatureValues()
+	sigData = sig.Data.(*signing.SingleSignatureData)
+	require.Equal(t, sigData.SignMode, keeper.SignMode_SIGN_MODE_ETHEREUM)
+
+	sigBytes = make([]byte, 65)
+	copy(sigBytes[32-len(r.Bytes()):32], r.Bytes())
+	copy(sigBytes[64-len(s.Bytes()):64], s.Bytes())
+	sigBytes[64] = byte(v.Uint64())
+
+	require.Equal(t, sigData.Signature, sigBytes)
+
+	// Convert back to ethereum tx
+	ethTx2, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
+	require.NoError(t, err)
+
+	// Verify the signature to check sender is correct
+	sender, err = signer.Sender(ethTx2)
+	require.NoError(t, err)
+	require.Equal(t, common.BytesToAddress(addrBz), sender)
+	EqualEthTransaction(t, signedTx, ethTx2)
 }
 
 func Test_AccessTxConversion(t *testing.T) {
@@ -475,12 +517,13 @@ func Test_LegacyTxConversion(t *testing.T) {
 	require.Len(t, msgs, 1)
 	msg, ok := msgs[0].(*types.MsgCall)
 	require.True(t, ok)
-	require.Equal(t, msg, &types.MsgCall{
+	expectedMsg := &types.MsgCall{
 		Sender:       sdk.AccAddress(addrBz).String(),
 		ContractAddr: ethFactoryAddr.Hex(),
 		Input:        hexutil.Encode(inputBz),
 		Value:        math.NewInt(100),
-	})
+	}
+	require.Equal(t, msg, expectedMsg)
 
 	authTx := sdkTx.(authsigning.Tx)
 	expectedFeeAmount := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1)))
@@ -515,6 +558,63 @@ func Test_LegacyTxConversion(t *testing.T) {
 	txBuilder.SetFeeAmount(expectedFeeAmount.Add(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1))))
 	_, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, txBuilder.GetTx())
 	require.ErrorIs(t, err, types.ErrTxConversionFailed)
+
+	// 2. Set the max params of gas configuration
+	maxGasLimit := gasLimit / 2
+	params, err := input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	maxGasFeeCap := gasFeeCap.Div(gasFeeCap, big.NewInt(2))
+
+	gasEnforcement := &types.GasEnforcement{
+		MaxGasLimit:  maxGasLimit,
+		MaxGasFeeCap: maxGasFeeCap.String(),
+	}
+	params.GasEnforcement = gasEnforcement
+	err = input.EVMKeeper.Params.Set(ctx, params)
+	require.NoError(t, err)
+
+	// Convert to cosmos tx
+	sdkTx, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertEthereumTxToCosmosTx(ctx, signedTx)
+	require.NoError(t, err)
+
+	msgs = sdkTx.GetMsgs()
+	require.Len(t, msgs, 1)
+	msg, ok = msgs[0].(*types.MsgCall)
+	require.True(t, ok)
+	require.Equal(t, msg, expectedMsg)
+
+	authTx = sdkTx.(authsigning.Tx)
+	expectedFeeAmount = sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount.Div(feeAmount, big.NewInt(4))).AddRaw(1)))
+	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
+	sigs, err = authTx.GetSignaturesV2()
+	require.NoError(t, err)
+	require.Len(t, sigs, 1)
+
+	sig = sigs[0]
+	require.Equal(t, sig.PubKey, cosmosKey.PubKey())
+	require.Equal(t, sig.Sequence, uint64(100))
+
+	v, r, s = signedTx.RawSignatureValues()
+	sigData = sig.Data.(*signing.SingleSignatureData)
+	require.Equal(t, sigData.SignMode, keeper.SignMode_SIGN_MODE_ETHEREUM)
+
+	sigBytes = make([]byte, 65)
+	copy(sigBytes[32-len(r.Bytes()):32], r.Bytes())
+	copy(sigBytes[64-len(s.Bytes()):64], s.Bytes())
+	sigBytes[64] = byte(v.Uint64() - (35 + ethChainID.Uint64()*2))
+
+	require.Equal(t, sigData.Signature, sigBytes)
+
+	// Convert back to ethereum tx
+	ethTx2, _, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, sdkTx)
+	require.NoError(t, err)
+
+	// Verify the signature to check sender is correct
+	sender, err := signer.Sender(ethTx2)
+	require.NoError(t, err)
+	require.Equal(t, common.BytesToAddress(addrBz), sender)
+	EqualEthTransaction(t, signedTx, ethTx2)
+
 }
 
 func Test_IsEthereumTx(t *testing.T) {
