@@ -1,9 +1,12 @@
 package types
 
 import (
+	"strings"
+
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	"gopkg.in/yaml.v3"
 )
@@ -17,7 +20,7 @@ func DefaultParams() Params {
 		FeeDenom:             sdk.DefaultBondDenom,
 		GasRefundRatio:       math.LegacyNewDecWithPrec(5, 1),
 		NumRetainBlockHashes: 256,
-		// no limit of gas price and gas limit
+		// no limit on gas price or gas limit per evm transaction
 	}
 }
 
@@ -50,6 +53,19 @@ func (p Params) Validate(ac address.Codec) error {
 
 	if p.NumRetainBlockHashes != 0 && p.NumRetainBlockHashes < 256 {
 		return ErrInvalidNumRetainBlockHashes
+	}
+
+	if p.GasEnforcement != nil {
+		if p.GasEnforcement.MaxGasFeeCap.IsNegative() {
+			return ErrInvalidGasEnforcement
+		}
+
+		// Validate all UnlimitedGasSenders addresses
+		for _, addr := range p.GasEnforcement.UnlimitedGasSenders {
+			if !common.IsHexAddress(addr) || addr != strings.ToLower(addr) {
+				return ErrInvalidGasEnforcement
+			}
+		}
 	}
 
 	return nil

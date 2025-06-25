@@ -146,15 +146,15 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	require.ErrorIs(t, err, types.ErrTxConversionFailed)
 
 	// 2. Set the max params of gas configuration
-	// Set the gas enforcement parameters
+	// Set the gas enforcement parameters with unlimited sender
 	maxGasLimit := gasLimit / 2
 	params, err := input.EVMKeeper.Params.Get(ctx)
 	require.NoError(t, err)
-	maxGasFeeCap := gasFeeCap.Div(gasFeeCap, big.NewInt(2))
+	maxGasFeeCap := math.NewIntFromBigInt(gasFeeCap.Div(gasFeeCap, big.NewInt(2)))
 
 	gasEnforcement := &types.GasEnforcement{
 		MaxGasLimit:  maxGasLimit,
-		MaxGasFeeCap: maxGasFeeCap.String(),
+		MaxGasFeeCap: &maxGasFeeCap,
 		UnlimitedGasSenders: []string{
 			common.BytesToAddress(addrBz.Bytes()).String(),
 		},
@@ -164,6 +164,7 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	require.NoError(t, err)
 
 	// Convert to cosmos tx
+	// Since the sender is in the unlimited gas senders, the gas limit will be still the original gas limit
 	sdkTx, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertEthereumTxToCosmosTx(ctx, signedTx)
 	require.NoError(t, err)
 
@@ -177,6 +178,8 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	authTx = sdkTx.(authsigning.Tx)
 	expectedFeeAmount = sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount).AddRaw(1)))
 	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
+	require.Equal(t, authTx.GetGas(), gasLimit)
+
 	sigs, err = authTx.GetSignaturesV2()
 	require.NoError(t, err)
 	require.Len(t, sigs, 1)
@@ -219,6 +222,7 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	expectedFeeAmount = sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewIntFromBigInt(feeAmount.Div(feeAmount, big.NewInt(4))).AddRaw(1)))
 
 	// Convert to cosmos tx
+	// Since the sender is in the unlimited gas senders, the gas limit will be set to maxGasLimit
 	sdkTx, err = keeper.NewTxUtils(&input.EVMKeeper).ConvertEthereumTxToCosmosTx(ctx, signedTx)
 	require.NoError(t, err)
 
@@ -231,6 +235,7 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 	require.Equal(t, msg, expectedMsg)
 
 	authTx = sdkTx.(authsigning.Tx)
+	require.Equal(t, authTx.GetGas(), maxGasLimit)
 	require.Equal(t, authTx.GetFee(), expectedFeeAmount)
 
 	sigs, err = authTx.GetSignaturesV2()
@@ -563,11 +568,11 @@ func Test_LegacyTxConversion(t *testing.T) {
 	maxGasLimit := gasLimit / 2
 	params, err := input.EVMKeeper.Params.Get(ctx)
 	require.NoError(t, err)
-	maxGasFeeCap := gasFeeCap.Div(gasFeeCap, big.NewInt(2))
+	maxGasFeeCap := math.NewIntFromBigInt(gasFeeCap.Div(gasFeeCap, big.NewInt(2)))
 
 	gasEnforcement := &types.GasEnforcement{
 		MaxGasLimit:  maxGasLimit,
-		MaxGasFeeCap: maxGasFeeCap.String(),
+		MaxGasFeeCap: &maxGasFeeCap,
 	}
 	params.GasEnforcement = gasEnforcement
 	err = input.EVMKeeper.Params.Set(ctx, params)

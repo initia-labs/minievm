@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cometbft/cometbft/crypto/ed25519"
@@ -20,7 +21,7 @@ func Test_ParamsValidate(t *testing.T) {
 	ac := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
 	err := params.Validate(ac)
 	require.NoError(t, err)
-
+	
 	seed := make([]byte, 8)
 	binary.BigEndian.PutUint64(seed, rand.Uint64())
 
@@ -30,7 +31,15 @@ func Test_ParamsValidate(t *testing.T) {
 
 	params.AllowedPublishers = append(params.AllowedPublishers, addr.String())
 	params.AllowedCustomERC20s = append(params.AllowedCustomERC20s, addr.String())
-
+	maxGasFeeCap := math.NewInt(1000000000)
+	params.GasEnforcement = &types.GasEnforcement{
+		MaxGasFeeCap: &maxGasFeeCap,
+		MaxGasLimit:  1000000,
+		UnlimitedGasSenders: []string{
+			"0x000000000000000000000000000000000000000a",
+			"0x000000000000000000000000000000000000000b",
+		},
+	}
 	err = params.Validate(ac)
 	require.NoError(t, err)
 
@@ -43,6 +52,18 @@ func Test_ParamsValidate(t *testing.T) {
 	// invalid erc20 address
 	params.AllowedPublishers = params.AllowedPublishers[:1]
 	params.AllowedCustomERC20s = append(params.AllowedCustomERC20s, addr.String()+"abc")
+	err = params.Validate(ac)
+	require.Error(t, err)
+
+	// invalid gas enforcement
+	params.GasEnforcement = &types.GasEnforcement{
+		MaxGasFeeCap: &maxGasFeeCap,
+		MaxGasLimit:  1000000,
+		UnlimitedGasSenders: []string{
+			"0x000000000000000000000000000000000000000a",
+			"0x000000000000000000000000000000000000000B",
+		},
+	}
 	err = params.Validate(ac)
 	require.Error(t, err)
 }
