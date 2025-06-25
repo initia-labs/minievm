@@ -10,7 +10,7 @@ ARG COMMIT
 ENV MIMALLOC_VERSION=v2.2.2
 
 # Install necessary packages
-RUN set -eux; apk add --no-cache ca-certificates build-base git cmake
+RUN set -eux; apk add --no-cache ca-certificates build-base git cmake curl
 
 WORKDIR /code
 COPY . /code/
