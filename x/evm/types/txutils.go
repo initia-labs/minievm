@@ -85,16 +85,20 @@ func ConvertEthereumTxToCosmosTx(
 		return nil, err
 	}
 
-	// set actual gas limit and fee cap from params 
+	// set actual gas limit and fee cap from params
 	gasLimit := ethTx.Gas()
 	gasFeeCap := ethTx.GasFeeCap()
 	if gasFeeCap == nil {
 		gasFeeCap = big.NewInt(0)
 	}
-	actualGasLimit, actualGasFeeCap := getActualGasMetadata(&params, ethSender, gasLimit, gasFeeCap)
+	gasTipCap := ethTx.GasTipCap()
+	if gasTipCap == nil {
+		gasTipCap = big.NewInt(0)
+	}
 
-	ethFeeAmount := computeGasFeeAmount(actualGasFeeCap, actualGasLimit, feeDecimals)
-	feeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(ethFeeAmount)))
+	actualGasLimit, actualGasFeeCap := getActualGasMetadata(&params, ethSender, gasLimit, gasFeeCap)
+	gasFeeAmount := computeGasFeeAmount(actualGasFeeCap, actualGasLimit, feeDecimals)
+	feeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(gasFeeAmount)))
 	// convert value unit from wei to cosmos fee unit
 	value := FromEthersUnit(feeDecimals, ethTx.Value())
 
@@ -184,7 +188,7 @@ func ConvertEthereumTxToCosmosTx(
 		Type:      ethTx.Type(),
 		GasLimit:  gasLimit,
 		GasFeeCap: gasFeeCap,
-		GasTipCap: ethTx.GasTipCap(),
+		GasTipCap: gasTipCap,
 	})
 	if err != nil {
 		return nil, err

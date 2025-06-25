@@ -1,12 +1,9 @@
 package types
 
 import (
-	"strings"
-
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
 
 	"gopkg.in/yaml.v3"
 )
@@ -56,15 +53,16 @@ func (p Params) Validate(ac address.Codec) error {
 	}
 
 	if p.GasEnforcement != nil {
-		if p.GasEnforcement.MaxGasFeeCap.IsNegative() {
+		if p.GasEnforcement.MaxGasFeeCap != nil && p.GasEnforcement.MaxGasFeeCap.IsNegative() {
 			return ErrInvalidGasEnforcement
 		}
-
-		// Validate all UnlimitedGasSenders addresses
-		for _, addr := range p.GasEnforcement.UnlimitedGasSenders {
-			if !common.IsHexAddress(addr) || addr != strings.ToLower(addr) {
-				return ErrInvalidGasEnforcement
+		
+		for i, addrStr := range p.GasEnforcement.UnlimitedGasSenders {
+			contractAddr, err := ContractAddressFromString(ac, addrStr)
+			if err != nil {
+				return ErrInvalidGasEnforcement.Wrapf("invalid unlimited gas sender address: %s", addrStr)
 			}
+			p.GasEnforcement.UnlimitedGasSenders[i] = contractAddr.String()
 		}
 	}
 
