@@ -51,8 +51,7 @@ func getActualGasMetadata(params *Params, sender common.Address, gasLimit uint64
 	}
 	// set max gas fee cap and limit
 	gasLimit = min(gasEnforcement.MaxGasLimit, gasLimit)
-	maxGasFeeCap := gasEnforcement.MaxGasFeeCap
-	if maxGasFeeCap != nil {
+	if maxGasFeeCap := gasEnforcement.MaxGasFeeCap; maxGasFeeCap != nil {
 		if gasFeeCap.Cmp(maxGasFeeCap.BigInt()) > 0 {
 			gasFeeCap = maxGasFeeCap.BigInt()
 		}

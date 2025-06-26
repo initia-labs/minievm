@@ -66,9 +66,7 @@ func (k ERC20StoresKeeper) Register(ctx context.Context, contractAddr common.Add
 	// but if allowedCustomERC20s is set, only allow those
 	if len(params.AllowedCustomERC20s) > 0 {
 		if idx := slices.IndexFunc(params.AllowedCustomERC20s, func(s string) bool {
-			// skip error checking here because it's already checked in the params.Validate
-			allowedERC20Addr, _ := types.ContractAddressFromString(k.ac, s)
-			return contractAddr == allowedERC20Addr
+			return contractAddr.String() == s
 		}); idx == -1 {
 			return types.ErrCustomERC20NotAllowed
 		}

@@ -3,6 +3,7 @@ package types_test
 import (
 	"encoding/binary"
 	"math/rand"
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -21,7 +22,7 @@ func Test_ParamsValidate(t *testing.T) {
 	ac := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
 	err := params.Validate(ac)
 	require.NoError(t, err)
-	
+
 	seed := make([]byte, 8)
 	binary.BigEndian.PutUint64(seed, rand.Uint64())
 
@@ -40,6 +41,7 @@ func Test_ParamsValidate(t *testing.T) {
 			"0x000000000000000000000000000000000000000b",
 		},
 	}
+	params.NormalizeAddresses(ac)
 	err = params.Validate(ac)
 	require.NoError(t, err)
 
@@ -66,4 +68,48 @@ func Test_ParamsValidate(t *testing.T) {
 	}
 	err = params.Validate(ac)
 	require.Error(t, err)
+}
+
+func Test_ParamsNormalizeAddresses(t *testing.T) {
+	params := types.DefaultParams()
+	ac := authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
+
+	var testAddrs []string
+	var expectedAddrs []string
+	for i := range 3 {
+		seed := make([]byte, 8)
+		binary.BigEndian.PutUint64(seed, rand.Uint64())
+		key := ed25519.GenPrivKeyFromSecret(seed)
+		pub := key.PubKey()
+		addr := sdk.AccAddress(pub.Address())
+		bech32Addr := addr.String()
+		ethAddr, _ := types.ContractAddressFromString(ac, bech32Addr)
+		expectedChecksum := ethAddr.Hex()
+		expectedAddrs = append(expectedAddrs, expectedChecksum)
+		// testaddrs: checksum, lower, bech32
+		switch i {
+		case 0:
+			testAddrs = append(testAddrs, expectedChecksum)
+		case 1:
+			testAddrs = append(testAddrs, strings.ToLower(expectedChecksum))
+		default:
+			testAddrs = append(testAddrs, bech32Addr)
+		}
+	}
+
+	// set the test addresses in params
+	params.AllowedPublishers = testAddrs
+	params.AllowedCustomERC20s = testAddrs
+	params.GasEnforcement = &types.GasEnforcement{
+		UnlimitedGasSenders: testAddrs,
+	}
+
+	err := params.NormalizeAddresses(ac)
+	require.NoError(t, err)
+	require.Equal(t, expectedAddrs, params.AllowedPublishers)
+	require.Equal(t, expectedAddrs, params.AllowedCustomERC20s)
+	require.Equal(t, expectedAddrs, params.GasEnforcement.UnlimitedGasSenders)
+
+	err = params.Validate(ac)
+	require.NoError(t, err)
 }
