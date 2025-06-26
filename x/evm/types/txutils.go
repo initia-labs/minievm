@@ -281,8 +281,11 @@ func ConvertCosmosTxToEthereumTx(
 	gasLimit := md.GasLimit
 	gasFeeCap := md.GasFeeCap
 	gasTipCap := md.GasTipCap
-	actualGasLimit, actualGasFeeCap := getActualGasMetadata(&params, sender, gasLimit, gasFeeCap)
 
+	if gasTipCap == nil || gasFeeCap == nil {
+		return nil, nil, nil
+	}
+	actualGasLimit, actualGasFeeCap := getActualGasMetadata(&params, sender, gasLimit, gasFeeCap)
 	// check if the fee amount is correctly converted
 	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(actualGasFeeCap, actualGasLimit, feeDecimals))))
 	if !feeAmount.Equal(computedFeeAmount) {

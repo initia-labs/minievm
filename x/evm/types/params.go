@@ -57,10 +57,10 @@ func (p *Params) NormalizeAddresses(ac address.Codec) error {
 }
 
 func (p Params) Validate(ac address.Codec) error {
-	if err := validateCheckSumHexAddrs(ac, p.AllowedPublishers); err != nil {
+	if err := validateChecksumHexAddrs(ac, p.AllowedPublishers); err != nil {
 		return err
 	}
-	if err := validateCheckSumHexAddrs(ac, p.AllowedCustomERC20s); err != nil {
+	if err := validateChecksumHexAddrs(ac, p.AllowedCustomERC20s); err != nil {
 		return err
 	}
 	if p.GasRefundRatio.IsNegative() || p.GasRefundRatio.GT(math.LegacyOneDec()) {
@@ -75,7 +75,7 @@ func (p Params) Validate(ac address.Codec) error {
 		if p.GasEnforcement.MaxGasFeeCap != nil && p.GasEnforcement.MaxGasFeeCap.IsNegative() {
 			return ErrInvalidGasEnforcement
 		}
-		if err := validateCheckSumHexAddrs(ac, p.GasEnforcement.UnlimitedGasSenders); err != nil {
+		if err := validateChecksumHexAddrs(ac, p.GasEnforcement.UnlimitedGasSenders); err != nil {
 			return err
 		}
 	}
@@ -92,7 +92,7 @@ func (p Params) ToExtraEIPs() []int {
 	return extraEIPs
 }
 
-func validateCheckSumHexAddrs(ac address.Codec, addrs []string) error {
+func validateChecksumHexAddrs(ac address.Codec, addrs []string) error {
 	for _, addr := range addrs {
 		ethAddr, err := ContractAddressFromString(ac, addr)
 		if err != nil || ethAddr == (common.Address{}) {
