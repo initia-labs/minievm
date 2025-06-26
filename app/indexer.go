@@ -28,7 +28,7 @@ func setupIndexer(
 	indexerDB, kvindexerDB dbm.DB,
 ) (evmindexer.EVMIndexer, *kvindexerkeeper.Keeper, *kvindexermodule.AppModuleBasic, *storetypes.StreamingManager, error) {
 	// setup evm indexer
-	evmIndexer, err := evmindexer.NewEVMIndexer(indexerDB, app.appCodec, app.Logger(), app.txConfig, app.EVMKeeper)
+	evmIndexer, err := evmindexer.NewEVMIndexer(indexerDB, app.ac, app.appCodec, app.Logger(), app.txConfig, app.EVMKeeper)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

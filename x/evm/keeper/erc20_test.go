@@ -48,6 +48,7 @@ func deployERC20WithSalt(t *testing.T, ctx sdk.Context, input TestKeepers, calle
 
 	// compute the address of the contract
 	inputBz, err := abi.Pack("computeERC20Address", caller, symbol, symbol, uint8(6), salt)
+	require.NoError(t, err)
 	expected, err := input.EVMKeeper.EVMStaticCall(ctx, caller, factoryAddr, inputBz, nil)
 	require.NoError(t, err)
 
