@@ -20,6 +20,22 @@ func RegisterUpgradeHandlers(app upgrades.MinitiaApp) {
 		upgradeName,
 		func(ctx context.Context, _ upgradetypes.Plan, versionMap module.VersionMap) (module.VersionMap, error) {
 
+			// 0. update params with normalized address
+			params, err := app.GetEVMKeeper().Params.Get(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			err = params.NormalizeAddresses(app.GetAccountKeeper().AddressCodec())
+			if err != nil {
+				return nil, err
+			}
+
+			err = app.GetEVMKeeper().Params.Set(ctx, params)
+			if err != nil {
+				return nil, err
+			}
+
 			// 1. update erc20 wrapper contract
 			wrapperAddr, err := app.GetEVMKeeper().GetERC20WrapperAddr(ctx)
 			if err != nil {
