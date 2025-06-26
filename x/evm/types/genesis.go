@@ -22,5 +22,10 @@ func (genState *GenesisState) Validate(ac address.Codec) error {
 		}
 	}
 
+	// normalize addresses to check sum hex addresses
+	if err := genState.Params.NormalizeAddresses(ac); err != nil {
+		return err
+	}
+
 	return genState.Params.Validate(ac)
 }

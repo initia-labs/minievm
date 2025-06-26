@@ -12,6 +12,7 @@ import (
 	"github.com/holiman/uint256"
 
 	"cosmossdk.io/collections"
+	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -36,7 +37,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// check the sender is allowed publisher
-	err = assertAllowedPublishers(params, msg.Sender)
+	err = assertAllowedPublishers(ms.ac, params, msg.Sender)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +80,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// check the sender is allowed publisher
-	err = assertAllowedPublishers(params, msg.Sender)
+	err = assertAllowedPublishers(ms.ac, params, msg.Sender)
 	if err != nil {
 		return nil, err
 	}
@@ -169,6 +170,11 @@ func (ms *msgServerImpl) UpdateParams(ctx context.Context, msg *types.MsgUpdateP
 	cacheCtx, _ := sdkCtx.CacheContext()
 	err := ms.testFeeDenom(cacheCtx, msg.Params)
 	if err != nil {
+		return nil, err
+	}
+
+	// normalize addresses
+	if err := msg.Params.NormalizeAddresses(ms.ac); err != nil {
 		return nil, err
 	}
 
@@ -277,10 +283,15 @@ func (ms *msgServerImpl) validateArguments(
 }
 
 // assertAllowedPublishers asserts the sender is allowed to deploy a contract.
-func assertAllowedPublishers(params types.Params, sender string) error {
+func assertAllowedPublishers(ac address.Codec, params types.Params, sender string) error {
 	// assert deploy authorization
-	if len(params.AllowedPublishers) != 0 && !slices.Contains(params.AllowedPublishers, sender) {
-		return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", sender)
+	senderAddr, err := types.ContractAddressFromString(ac, sender)
+	if err != nil {
+		return err
+	}
+	senderAddrHex := senderAddr.Hex()
+	if len(params.AllowedPublishers) != 0 && !slices.Contains(params.AllowedPublishers, senderAddrHex) {
+		return sdkerrors.ErrUnauthorized.Wrapf("`%s` is not allowed to deploy a contract", senderAddrHex)
 	}
 
 	return nil

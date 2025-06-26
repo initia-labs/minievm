@@ -40,6 +40,7 @@ func Test_MsgServer_Create(t *testing.T) {
 	// update params to set allowed publishers
 	params := types.DefaultParams()
 	params.AllowedPublishers = []string{addr.String()}
+	params.NormalizeAddresses(input.AccountKeeper.AddressCodec())
 	err = input.EVMKeeper.Params.Set(ctx, params)
 	require.NoError(t, err)
 
@@ -171,6 +172,9 @@ func Test_MsgServer_UpdateParams(t *testing.T) {
 	})
 	require.NoError(t, err)
 	resParams, err := input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	// normalize addresses to compare results
+	err = params.NormalizeAddresses(input.AccountKeeper.AddressCodec())
 	require.NoError(t, err)
 	require.Equal(t, params, resParams)
 
