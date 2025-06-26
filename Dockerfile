@@ -10,7 +10,7 @@ ARG COMMIT
 ENV MIMALLOC_VERSION=v2.2.2
 
 # Install necessary packages
-RUN set -eux; apk add --no-cache ca-certificates build-base git cmake curl
+RUN set -eux; apk add --no-cache ca-certificates build-base git cmake
 
 WORKDIR /code
 COPY . /code/
@@ -22,6 +22,9 @@ ENV MIMALLOC_RESERVE_HUGE_OS_PAGES=4
 RUN VERSION=${VERSION} COMMIT=${COMMIT} LEDGER_ENABLED=false GOARCH=${GOARCH} LDFLAGS="-linkmode=external -extldflags \"-L/code/mimalloc/build -lmimalloc -Wl,-z,muldefs -static\"" make build
 
 FROM alpine:3.20
+
+# install curl for health check
+RUN apk add curl
 
 RUN addgroup minitia \
     && adduser -G minitia -D -h /minitia minitia
