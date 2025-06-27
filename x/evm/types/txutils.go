@@ -49,12 +49,17 @@ func getActualGasMetadata(params *Params, sender common.Address, gasLimit uint64
 	if gasEnforcement == nil || slices.Contains(gasEnforcement.UnlimitedGasSenders, sender.String()) {
 		return gasLimit, gasFeeCap
 	}
-	// set max gas fee cap and limit
-	gasLimit = min(gasEnforcement.MaxGasLimit, gasLimit)
-	if maxGasFeeCap := gasEnforcement.MaxGasFeeCap; maxGasFeeCap != nil {
-		if gasFeeCap.Cmp(maxGasFeeCap.BigInt()) > 0 {
-			gasFeeCap = maxGasFeeCap.BigInt()
-		}
+
+	// cap gas limit if enforcement is set
+	if gasEnforcement.MaxGasLimit > 0 {
+		gasLimit = min(gasEnforcement.MaxGasLimit, gasLimit)
+	}
+
+	// cap gas fee if enforcement is set and exceeded
+	if !gasEnforcement.MaxGasFeeCap.IsNil() &&
+		gasEnforcement.MaxGasFeeCap.IsPositive() &&
+		gasFeeCap.Cmp(gasEnforcement.MaxGasFeeCap.BigInt()) > 0 {
+		gasFeeCap = gasEnforcement.MaxGasFeeCap.BigInt()
 	}
 
 	return gasLimit, gasFeeCap
@@ -227,7 +232,8 @@ func ConvertCosmosTxToEthereumTx(
 	if err := decoder.Decode(&md); err != nil {
 		return nil, nil, nil
 	}
-	if md.GasFeeCap == nil || md.GasTipCap == nil || md.Type > 0x02 {
+	// check for early return cases (0x02 is dynamic fee tx type)
+	if md.GasFeeCap == nil || md.GasTipCap == nil || md.Type > coretypes.DynamicFeeTxType {
 		return nil, nil, nil
 	}
 

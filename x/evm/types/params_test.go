@@ -34,7 +34,7 @@ func Test_ParamsValidate(t *testing.T) {
 	params.AllowedCustomERC20s = append(params.AllowedCustomERC20s, addr.String())
 	maxGasFeeCap := math.NewInt(1000000000)
 	params.GasEnforcement = &types.GasEnforcement{
-		MaxGasFeeCap: &maxGasFeeCap,
+		MaxGasFeeCap: maxGasFeeCap,
 		MaxGasLimit:  1000000,
 		UnlimitedGasSenders: []string{
 			"0x000000000000000000000000000000000000000a",
@@ -59,7 +59,7 @@ func Test_ParamsValidate(t *testing.T) {
 
 	// invalid gas enforcement
 	params.GasEnforcement = &types.GasEnforcement{
-		MaxGasFeeCap: &maxGasFeeCap,
+		MaxGasFeeCap: maxGasFeeCap,
 		MaxGasLimit:  1000000,
 		UnlimitedGasSenders: []string{
 			"0x000000000000000000000000000000000000000a",
@@ -102,6 +102,8 @@ func Test_ParamsNormalizeAddresses(t *testing.T) {
 	params.AllowedCustomERC20s = testAddrs
 	params.GasEnforcement = &types.GasEnforcement{
 		UnlimitedGasSenders: testAddrs,
+		MaxGasFeeCap:        math.NewInt(0),
+		MaxGasLimit:         0,
 	}
 
 	err := params.NormalizeAddresses(ac)
