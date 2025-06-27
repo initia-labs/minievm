@@ -35,7 +35,7 @@ func (k Keeper) NewStateDB(ctx context.Context, evm *vm.EVM, fee types.Fee) (*ev
 }
 
 func (k Keeper) chargeIntrinsicGas(gasBalance uint64, isContractCreation bool, data []byte, list coretype.AccessList, rules params.Rules) (uint64, error) {
-	intrinsicGas, err := core.IntrinsicGas(data, list, isContractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+	intrinsicGas, err := core.IntrinsicGas(data, list, []coretype.SetCodeAuthorization{}, isContractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
 	if err != nil {
 		return 0, err
 	}
@@ -100,7 +100,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 			evm.IncreaseDepth()
 			defer func() { evm.DecreaseDepth() }()
 
-			retBz, _, err := evm.StaticCall(vm.AccountRef(types.NullAddress), fee.Contract(), inputBz, 100000)
+			retBz, _, err := evm.StaticCall(types.NullAddress, fee.Contract(), inputBz, 100000)
 			if err != nil {
 				k.Logger(ctx).Warn("failed to check balance", "error", err)
 				return false
@@ -132,7 +132,7 @@ func (k Keeper) buildBlockContext(ctx context.Context, defaultBlockCtx vm.BlockC
 			evm.IncreaseDepth()
 			defer func() { evm.DecreaseDepth() }()
 
-			_, _, err = evm.Call(vm.AccountRef(a1), fee.Contract(), inputBz, 100000, uint256.NewInt(0))
+			_, _, err = evm.Call(a1, fee.Contract(), inputBz, 100000, uint256.NewInt(0))
 			if err != nil {
 				k.Logger(ctx).Warn("failed to transfer token", "error", err)
 				panic(err)
@@ -212,7 +212,6 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address) (context.C
 	// NOTE: need to check if the EVM is correctly initialized with empty context and stateDB
 	evm := vm.NewEVM(
 		defaultBlockContext,
-		txContext,
 		nil,
 		chainConfig,
 		vmConfig,
@@ -222,22 +221,24 @@ func (k Keeper) CreateEVM(ctx context.Context, caller common.Address) (context.C
 	if err != nil {
 		return ctx, nil, func() {}, err
 	}
-	evm.StateDB, err = k.NewStateDB(ctx, evm, fee)
+
+	stateDB, err := k.NewStateDB(ctx, evm, fee)
 	if err != nil {
 		return ctx, nil, func() {}, err
 	}
 
+	cleanup, err := trySetupTracing(ctx, evm, stateDB)
+	if err != nil {
+		return ctx, nil, func() {}, err
+	}
+
+	evm.SetTxContext(txContext)
 	rules := chainConfig.Rules(evm.Context.BlockNumber, evm.Context.Random != nil, evm.Context.Time)
-	precompiles, err := k.precompiles(rules, evm.StateDB.(types.StateDB))
+	precompiles, err := k.precompiles(rules, stateDB)
 	if err != nil {
 		return ctx, nil, func() {}, err
 	}
 	evm.SetPrecompiles(precompiles)
-
-	cleanup, err := prepareTracing(ctx, evm)
-	if err != nil {
-		return ctx, nil, func() {}, err
-	}
 
 	return ctx, evm, cleanup, nil
 }
@@ -261,22 +262,24 @@ func prepareSDKContext(ctx sdk.Context) (sdk.Context, error) {
 	return ctx.WithValue(types.CONTEXT_KEY_RECURSIVE_DEPTH, depth), nil
 }
 
-// prepareTracing prepares the tracing for the EVM execution.
+// trySetupTracing setup the tracing for the EVM execution if there is tracing configuration or not return evm without tracing.
 // 1. sets the tracer to the EVM and the stateDB to the tracing VMContext.
 // 2. returns a cleanup function to rollback the tracing.
-func prepareTracing(ctx context.Context, evm *vm.EVM) (func(), error) {
+func trySetupTracing(ctx context.Context, evm *vm.EVM, stateDB *evmstate.StateDB) (func(), error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// if tracing is not enabled, return the evm with pure stateDB
 	if sdkCtx.Value(types.CONTEXT_KEY_TRACING) == nil || sdkCtx.Value(types.CONTEXT_KEY_TRACE_EVM) == nil {
+		evm.StateDB = stateDB
 		return func() {}, nil
 	}
-
+	// setup hooked stateDB and cleanup function
 	tracing := sdkCtx.Value(types.CONTEXT_KEY_TRACING).(*types.Tracing)
 	evmPointer := sdkCtx.Value(types.CONTEXT_KEY_TRACE_EVM).(**vm.EVM)
 
-	evm.Config.Tracer = tracing.Tracer()
-	evm.StateDB.(types.StateDB).SetTracer(tracing.Tracer())
-
 	originalStateDB := tracing.VMContext().StateDB
+
+	evm.Config.Tracer = tracing.Tracer()
+	evm.StateDB = evmstate.NewHookedState(stateDB, tracing.Tracer())
 	tracing.VMContext().StateDB = evm.StateDB
 
 	originalEVM := *evmPointer
@@ -311,7 +314,7 @@ func (k Keeper) EVMStaticCall(ctx context.Context, caller common.Address, contra
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs(rules), accessList)
 
 	retBz, gasRemaining, err := evm.StaticCall(
-		vm.AccountRef(caller),
+		caller,
 		contractAddr,
 		inputBz,
 		gasRemaining,
@@ -356,7 +359,7 @@ func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, &contractAddr, k.precompileAddrs(rules), accessList)
 
 	retBz, gasRemaining, err := evm.Call(
-		vm.AccountRef(caller),
+		caller,
 		contractAddr,
 		inputBz,
 		gasRemaining,
@@ -389,7 +392,7 @@ func (k Keeper) EVMCall(ctx context.Context, caller common.Address, contractAddr
 	}
 
 	// commit state transition
-	stateDB := evm.StateDB.(*evmstate.StateDB)
+	stateDB := evm.StateDB.(types.StateDB)
 	if err := stateDB.Commit(); err != nil {
 		return nil, nil, err
 	}
@@ -471,14 +474,14 @@ func (k Keeper) evmCreate(ctx context.Context, caller common.Address, codeBz []b
 	evm.StateDB.Prepare(rules, caller, types.NullAddress, nil, k.precompileAddrs(rules), accessList)
 	if salt == nil {
 		retBz, contractAddr, gasRemaining, err = evm.Create(
-			vm.AccountRef(caller),
+			caller,
 			codeBz,
 			gasRemaining,
 			value,
 		)
 	} else {
 		retBz, contractAddr, gasRemaining, err = evm.Create2(
-			vm.AccountRef(caller),
+			caller,
 			codeBz,
 			gasRemaining,
 			value,
@@ -512,7 +515,7 @@ func (k Keeper) evmCreate(ctx context.Context, caller common.Address, codeBz []b
 	}
 
 	// commit state transition
-	stateDB := evm.StateDB.(*evmstate.StateDB)
+	stateDB := evm.StateDB.(types.StateDB)
 	err = stateDB.Commit()
 	if err != nil {
 		return nil, common.Address{}, nil, err
@@ -642,7 +645,7 @@ func (k Keeper) dispatchMessage(parentCtx sdk.Context, request types.ExecuteRequ
 			}
 
 			var callbackLogs types.Logs
-			_, callbackLogs, err = k.EVMCall(parentCtx, caller.Address(), caller.Address(), inputBz, nil, nil)
+			_, callbackLogs, err = k.EVMCall(parentCtx, caller, caller, inputBz, nil, nil)
 			if err != nil {
 				return
 			}
