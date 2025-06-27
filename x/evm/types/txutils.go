@@ -49,12 +49,17 @@ func getActualGasMetadata(params *Params, sender common.Address, gasLimit uint64
 	if gasEnforcement == nil || slices.Contains(gasEnforcement.UnlimitedGasSenders, sender.String()) {
 		return gasLimit, gasFeeCap
 	}
-	// set max gas fee cap and limit
-	gasLimit = min(gasEnforcement.MaxGasLimit, gasLimit)
-	if maxGasFeeCap := gasEnforcement.MaxGasFeeCap; maxGasFeeCap != nil {
-		if gasFeeCap.Cmp(maxGasFeeCap.BigInt()) > 0 {
-			gasFeeCap = maxGasFeeCap.BigInt()
-		}
+
+	// cap gas limit if enforcement is set
+	if gasEnforcement.MaxGasLimit > 0 {
+		gasLimit = min(gasEnforcement.MaxGasLimit, gasLimit)
+	}
+
+	// cap gas fee if enforcement is set and exceeded
+	if !gasEnforcement.MaxGasFeeCap.IsNil() &&
+		gasEnforcement.MaxGasFeeCap.IsPositive() &&
+		gasFeeCap.Cmp(gasEnforcement.MaxGasFeeCap.BigInt()) > 0 {
+		gasFeeCap = gasEnforcement.MaxGasFeeCap.BigInt()
 	}
 
 	return gasLimit, gasFeeCap
@@ -227,6 +232,10 @@ func ConvertCosmosTxToEthereumTx(
 	if err := decoder.Decode(&md); err != nil {
 		return nil, nil, nil
 	}
+	// check for early return cases (0x02 is dynamic fee tx type)
+	if md.GasFeeCap == nil || md.GasTipCap == nil || md.Type > coretypes.DynamicFeeTxType {
+		return nil, nil, nil
+	}
 
 	sigs, err := authTx.GetSignaturesV2()
 	if err != nil {
@@ -281,10 +290,6 @@ func ConvertCosmosTxToEthereumTx(
 	gasLimit := md.GasLimit
 	gasFeeCap := md.GasFeeCap
 	gasTipCap := md.GasTipCap
-
-	if gasTipCap == nil || gasFeeCap == nil {
-		return nil, nil, nil
-	}
 	actualGasLimit, actualGasFeeCap := getActualGasMetadata(&params, sender, gasLimit, gasFeeCap)
 	// check if the fee amount is correctly converted
 	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(actualGasFeeCap, actualGasLimit, feeDecimals))))

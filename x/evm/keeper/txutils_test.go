@@ -154,7 +154,7 @@ func Test_DynamicFeeTxConversion(t *testing.T) {
 
 	gasEnforcement := &types.GasEnforcement{
 		MaxGasLimit:  maxGasLimit,
-		MaxGasFeeCap: &maxGasFeeCap,
+		MaxGasFeeCap: maxGasFeeCap,
 		UnlimitedGasSenders: []string{
 			common.BytesToAddress(addrBz.Bytes()).String(),
 		},
@@ -572,7 +572,7 @@ func Test_LegacyTxConversion(t *testing.T) {
 
 	gasEnforcement := &types.GasEnforcement{
 		MaxGasLimit:  maxGasLimit,
-		MaxGasFeeCap: &maxGasFeeCap,
+		MaxGasFeeCap: maxGasFeeCap,
 	}
 	params.GasEnforcement = gasEnforcement
 	err = input.EVMKeeper.Params.Set(ctx, params)
