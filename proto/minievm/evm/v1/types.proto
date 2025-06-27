@@ -59,8 +59,8 @@ message Params {
     (amino.dont_omitempty) = true
   ];
 
-  // gas_enforcement specifies the rules for enforcing gas usage on EVM transactions.  
-  // If this field is null, gas enforcement is disabled and no restrictions will be applied.  
+  // gas_enforcement specifies the rules for enforcing gas usage on EVM transactions.
+  // If this field is null, gas enforcement is disabled and no restrictions will be applied.
   GasEnforcement gas_enforcement = 8 [
     (gogoproto.nullable) = true,
     (gogoproto.moretags) = "yaml:\"gas_enforcement\""
@@ -68,22 +68,23 @@ message Params {
 }
 
 message GasEnforcement {
-  // max_gas_fee_cap sets an upper bound on the gas price (base fee + tip) for a single EVM transaction.  
-  // If set to an empty string, no gas price cap is enforced.  
+  // max_gas_fee_cap sets an upper bound on the gas price (base fee + tip) for a single EVM transaction.
+  // If set to 0, no gas price cap is enforced.
   string max_gas_fee_cap = 1 [
     (gogoproto.moretags) = "yaml:\"max_gas_fee_cap\"",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
 
-  // max_gas_limit sets the maximum gas limit allowed for a single EVM transaction.  
-  // If set to 0, no gas limit restriction is applied.  
+  // max_gas_limit sets the maximum gas limit allowed for a single EVM transaction.
+  // If set to 0, no gas limit restriction is applied.
   uint64 max_gas_limit = 2 [
     (gogoproto.moretags) = "yaml:\"max_gas_limit\"",
     (amino.dont_omitempty) = true
   ];
 
-  // unlimited_gas_senders is a list of addresses that are exempt from gas price and limit restrictions.  
+  // unlimited_gas_senders is a list of addresses that are exempt from gas price and limit restrictions.
   repeated string unlimited_gas_senders = 3 [
     (gogoproto.moretags) = "yaml:\"unlimited_gas_senders\"",
     (amino.dont_omitempty) = true

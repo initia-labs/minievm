@@ -40085,6 +40085,37 @@ paths:
 
 
                       minimum is 256 and 0 means no limit.
+                  gas_enforcement:
+                    description: >-
+                      gas_enforcement specifies the rules for enforcing gas
+                      usage on EVM transactions.
+
+                      If this field is null, gas enforcement is disabled and no
+                      restrictions will be applied.
+                    type: object
+                    properties:
+                      max_gas_fee_cap:
+                        type: string
+                        description: >-
+                          max_gas_fee_cap sets an upper bound on the gas price
+                          (base fee + tip) for a single EVM transaction.
+
+                          If set to 0, no gas price cap is enforced.
+                      max_gas_limit:
+                        type: string
+                        format: uint64
+                        description: >-
+                          max_gas_limit sets the maximum gas limit allowed for a
+                          single EVM transaction.
+
+                          If set to 0, no gas limit restriction is applied.
+                      unlimited_gas_senders:
+                        type: array
+                        items:
+                          type: string
+                        description: >-
+                          unlimited_gas_senders is a list of addresses that are
+                          exempt from gas price and limit restrictions.
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -70236,6 +70267,31 @@ definitions:
         type: string
       token_uri:
         type: string
+  minievm.evm.v1.GasEnforcement:
+    type: object
+    properties:
+      max_gas_fee_cap:
+        type: string
+        description: >-
+          max_gas_fee_cap sets an upper bound on the gas price (base fee + tip)
+          for a single EVM transaction.
+
+          If set to 0, no gas price cap is enforced.
+      max_gas_limit:
+        type: string
+        format: uint64
+        description: >-
+          max_gas_limit sets the maximum gas limit allowed for a single EVM
+          transaction.
+
+          If set to 0, no gas limit restriction is applied.
+      unlimited_gas_senders:
+        type: array
+        items:
+          type: string
+        description: >-
+          unlimited_gas_senders is a list of addresses that are exempt from gas
+          price and limit restrictions.
   minievm.evm.v1.Log:
     type: object
     properties:
@@ -70296,6 +70352,37 @@ definitions:
           for the evm opcode `BLOCKHASH`.
 
           minimum is 256 and 0 means no limit.
+      gas_enforcement:
+        description: >-
+          gas_enforcement specifies the rules for enforcing gas usage on EVM
+          transactions.
+
+          If this field is null, gas enforcement is disabled and no restrictions
+          will be applied.
+        type: object
+        properties:
+          max_gas_fee_cap:
+            type: string
+            description: >-
+              max_gas_fee_cap sets an upper bound on the gas price (base fee +
+              tip) for a single EVM transaction.
+
+              If set to 0, no gas price cap is enforced.
+          max_gas_limit:
+            type: string
+            format: uint64
+            description: >-
+              max_gas_limit sets the maximum gas limit allowed for a single EVM
+              transaction.
+
+              If set to 0, no gas limit restriction is applied.
+          unlimited_gas_senders:
+            type: array
+            items:
+              type: string
+            description: >-
+              unlimited_gas_senders is a list of addresses that are exempt from
+              gas price and limit restrictions.
     description: Params defines the set of move parameters.
   minievm.evm.v1.QueryCallRequest:
     type: object
@@ -70590,6 +70677,37 @@ definitions:
 
 
               minimum is 256 and 0 means no limit.
+          gas_enforcement:
+            description: >-
+              gas_enforcement specifies the rules for enforcing gas usage on EVM
+              transactions.
+
+              If this field is null, gas enforcement is disabled and no
+              restrictions will be applied.
+            type: object
+            properties:
+              max_gas_fee_cap:
+                type: string
+                description: >-
+                  max_gas_fee_cap sets an upper bound on the gas price (base fee
+                  + tip) for a single EVM transaction.
+
+                  If set to 0, no gas price cap is enforced.
+              max_gas_limit:
+                type: string
+                format: uint64
+                description: >-
+                  max_gas_limit sets the maximum gas limit allowed for a single
+                  EVM transaction.
+
+                  If set to 0, no gas limit restriction is applied.
+              unlimited_gas_senders:
+                type: array
+                items:
+                  type: string
+                description: >-
+                  unlimited_gas_senders is a list of addresses that are exempt
+                  from gas price and limit restrictions.
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
   minievm.evm.v1.QueryStateResponse:
     type: object

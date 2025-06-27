@@ -72,7 +72,7 @@ func (p Params) Validate(ac address.Codec) error {
 	}
 
 	if p.GasEnforcement != nil {
-		if p.GasEnforcement.MaxGasFeeCap != nil && p.GasEnforcement.MaxGasFeeCap.IsNegative() {
+		if p.GasEnforcement.MaxGasFeeCap.IsNil() || p.GasEnforcement.MaxGasFeeCap.IsNegative() {
 			return ErrInvalidGasEnforcement
 		}
 		if err := validateChecksumHexAddrs(ac, p.GasEnforcement.UnlimitedGasSenders); err != nil {
