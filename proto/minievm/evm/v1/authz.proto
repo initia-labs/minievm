@@ -1,0 +1,18 @@
+syntax = "proto3";
+package minievm.evm.v1;
+
+import "amino/amino.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "minievm/evm/v1/types.proto";
+
+option go_package = "github.com/initia-labs/minievm/x/evm/types";
+
+// CallAuthorization defines authorization for call a contract.
+message CallAuthorization {
+  option (cosmos_proto.implements_interface) = "Authorization";
+  option (amino.name) = "evm/CallAuthorization";
+
+  // empty means all contracts are allowed
+  repeated string contracts = 1 [(amino.dont_omitempty) = true];
+}
