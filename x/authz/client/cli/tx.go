@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -83,6 +84,14 @@ Examples:
 			contracts := []string{}
 			if contractsStr != "" {
 				contracts = strings.Split(contractsStr, ",")
+				for i, contract := range contracts {
+					contracts[i] = strings.TrimSpace(contract)
+				}
+
+				// Remove empty strings
+				contracts = slices.DeleteFunc(contracts, func(c string) bool {
+					return c == ""
+				})
 			}
 
 			authorization := evmtypes.NewCallAuthorization(contracts)

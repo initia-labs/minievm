@@ -55,9 +55,24 @@ func TestRegisterLegacyAminoCodec(t *testing.T) {
 			require.NotEmpty(t, bz)
 
 			// Try to unmarshal back into a new object of the same type
-			newObj := tc.obj
-			err = cdc.Unmarshal(bz, newObj)
-			require.NoError(t, err)
+			switch tc.name {
+			case "ContractAccount":
+				var newObj ContractAccount
+				err = cdc.Unmarshal(bz, &newObj)
+				require.NoError(t, err)
+				require.Equal(t, tc.obj.(*ContractAccount).BaseAccount.Address, newObj.BaseAccount.Address)
+			case "ShorthandAccount":
+				var newObj ShorthandAccount
+				err = cdc.Unmarshal(bz, &newObj)
+				require.NoError(t, err)
+				require.Equal(t, tc.obj.(*ShorthandAccount).BaseAccount.Address, newObj.BaseAccount.Address)
+				require.Equal(t, tc.obj.(*ShorthandAccount).OriginalAddress, newObj.OriginalAddress)
+			case "CallAuthorization":
+				var newObj CallAuthorization
+				err = cdc.Unmarshal(bz, &newObj)
+				require.NoError(t, err)
+				require.Equal(t, tc.obj.(*CallAuthorization).Contracts, newObj.Contracts)
+			}
 		})
 	}
 }
