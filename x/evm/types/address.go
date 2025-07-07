@@ -32,9 +32,17 @@ var JSONUtilsPrecompileAddress common.Address = common.HexToAddress("0xf3")
 func ContractAddressFromString(ac address.Codec, contractAddrInString string) (contractAddr common.Address, err error) {
 	if common.IsHexAddress(contractAddrInString) {
 		contractAddr = common.HexToAddress(contractAddrInString)
-	} else if contractAddrBytes, err := ac.StringToBytes(contractAddrInString); err != nil {
-		return common.Address{}, err
 	} else {
+		contractAddrBytes, err := ac.StringToBytes(contractAddrInString)
+		if err != nil {
+			return common.Address{}, err
+		}
+
+		// Enforce 20 bytes length for non-hex addresses
+		if len(contractAddrBytes) != common.AddressLength {
+			return common.Address{}, ErrInvalidAddressLength
+		}
+
 		contractAddr = common.BytesToAddress(contractAddrBytes)
 	}
 

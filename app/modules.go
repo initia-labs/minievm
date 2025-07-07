@@ -10,7 +10,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
-	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
@@ -58,6 +57,7 @@ import (
 	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
 
 	// local imports
+	authzmodule "github.com/initia-labs/minievm/x/authz/module"
 	"github.com/initia-labs/minievm/x/bank"
 	"github.com/initia-labs/minievm/x/evm"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
