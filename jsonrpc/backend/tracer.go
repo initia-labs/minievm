@@ -397,7 +397,7 @@ func (b *JSONRPCBackend) runTxWithTracer(
 		gasUsed := sdkCtx.GasMeter().GasConsumedToLimit()
 		if tracer.OnExit != nil {
 			if revertErr, ok := err.(*evmtypes.RevertError); ok {
-				tracer.OnExit(0, revertErr.Ret(), gasUsed, vm.ErrExecutionReverted, true)
+				tracer.OnExit(0, []byte(revertErr.Error()), gasUsed, vm.ErrExecutionReverted, true)
 			} else {
 				tracer.OnExit(0, nil, gasUsed, err, false)
 			}

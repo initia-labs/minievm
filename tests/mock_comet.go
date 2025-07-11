@@ -9,10 +9,13 @@ import (
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/skip-mev/block-sdk/v2/block"
 
 	minitiaapp "github.com/initia-labs/minievm/app"
+	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 
 	"github.com/cosmos/cosmos-sdk/client"
 )
@@ -167,11 +170,44 @@ func (m *MockCometRPC) Validators(ctx context.Context, height *int64, page, perP
 	panic("implement me")
 }
 
+// for only mock comet rpc, use evm indexer db to get transactions
 func (m *MockCometRPC) Block(ctx context.Context, height *int64) (*ctypes.ResultBlock, error) {
-	panic("implement me")
+	h := m.app.LastBlockHeight()
+	if height != nil {
+		h = *height
+	}
+
+	txs := types.Txs{}
+	err := m.app.EVMIndexer().IterateBlockTxs(ctx, uint64(h), func(tx *rpctypes.RPCTransaction) (bool, error) {
+		ethTx := tx.ToTransaction()
+		cosmosTx, err := evmkeeper.NewTxUtils(m.app.EVMKeeper).ConvertEthereumTxToCosmosTx(ctx, ethTx)
+		if err != nil {
+			return true, err
+		}
+
+		bz, err := m.app.TxConfig().TxEncoder()(cosmosTx)
+		if err != nil {
+			return true, err
+		}
+
+		txs = append(txs, bz)
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	block := &types.Block{Data: types.Data{Txs: txs}}
+	return &ctypes.ResultBlock{BlockID: types.BlockID{}, Block: block}, nil
 }
 func (m *MockCometRPC) BlockByHash(ctx context.Context, hash []byte) (*ctypes.ResultBlock, error) {
-	panic("implement me")
+	blockNumber, err := m.app.EVMIndexer().BlockHashToNumber(ctx, common.BytesToHash(hash))
+	if err != nil {
+		return nil, err
+	}
+
+	h := int64(blockNumber)
+	return m.Block(ctx, &h)
 }
 func (m *MockCometRPC) BlockResults(ctx context.Context, height *int64) (*ctypes.ResultBlockResults, error) {
 	panic("implement me")

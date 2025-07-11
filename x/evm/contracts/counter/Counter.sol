@@ -49,7 +49,7 @@ contract Counter is IIBCAsyncCallback {
     }
 
     function execute_cosmos(
-        string memory exec_msg, 
+        string memory exec_msg,
         uint64 gas_limit,
         bool call_revert
     ) external {
@@ -74,16 +74,16 @@ contract Counter is IIBCAsyncCallback {
     }
 
     function disable_and_execute(
-        string memory exec_msg, 
+        string memory exec_msg,
         uint64 gas_limit
     ) external {
         COSMOS_CONTRACT.disable_execute_cosmos();
         COSMOS_CONTRACT.execute_cosmos(exec_msg, gas_limit);
     }
 
-     function disable_and_execute_in_child(
+    function disable_and_execute_in_child(
         address test_addr,
-        string memory exec_msg, 
+        string memory exec_msg,
         uint64 gas_limit
     ) external {
         COSMOS_CONTRACT.disable_execute_cosmos();
@@ -94,7 +94,7 @@ contract Counter is IIBCAsyncCallback {
 
     function disable_and_execute_in_parent(
         address test_addr,
-        string memory exec_msg, 
+        string memory exec_msg,
         uint64 gas_limit
     ) external {
         // execute other contract which is disabling execute cosmos
@@ -123,14 +123,21 @@ contract Counter is IIBCAsyncCallback {
             return;
         }
 
-        
-        COSMOS_CONTRACT.execute_cosmos(_recursive(n), uint64(n * (2**(n+1)-1) * (30_000 + 10_000 * n)));
+        COSMOS_CONTRACT.execute_cosmos(
+            _recursive(n),
+            uint64(n * (2 ** (n + 1) - 1) * (30_000 + 10_000 * n))
+        );
 
         // to test branching
-        COSMOS_CONTRACT.execute_cosmos(_recursive(n), uint64(n * (2**(n+1)-1) * (30_000 + 10_000 * n)));
+        COSMOS_CONTRACT.execute_cosmos(
+            _recursive(n),
+            uint64(n * (2 ** (n + 1) - 1) * (30_000 + 10_000 * n))
+        );
     }
 
-    function _recursive(uint64 n) internal view returns (string memory message) {
+    function _recursive(
+        uint64 n
+    ) internal view returns (string memory message) {
         message = string(
             abi.encodePacked(
                 '{"@type": "/minievm.evm.v1.MsgCall",',
@@ -162,8 +169,17 @@ contract Counter is IIBCAsyncCallback {
     }
 
     function nested_recursive_revert(uint64 n) external {
-        COSMOS_CONTRACT.execute_cosmos(_recursive(n), uint64(n * (2**(n+1)-1) * (30_000 + 10_000 * n)));
+        COSMOS_CONTRACT.execute_cosmos(
+            _recursive(n),
+            uint64(n * (2 ** (n + 1) - 1) * (30_000 + 10_000 * n))
+        );
 
         revert();
-    }    
+    }
+
+    function loop() external {
+        while (true) {
+            increase();
+        }
+    }
 }
