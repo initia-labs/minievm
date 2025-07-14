@@ -33,7 +33,7 @@ func Test_txMetadata_EncodingDecoding(t *testing.T) {
 func Test_getActualGasMetadata(t *testing.T) {
 	tests := []struct {
 		name              string
-		params            *Params
+		params            Params
 		sender            common.Address
 		gasLimit          uint64
 		gasFeeCap         *big.Int
@@ -42,7 +42,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 	}{
 		{
 			name:              "no enforcement - return original values",
-			params:            &Params{GasEnforcement: nil},
+			params:            Params{GasEnforcement: nil},
 			sender:            common.HexToAddress("0x1234567890123456789012345678901234567890"),
 			gasLimit:          100,
 			gasFeeCap:         big.NewInt(100),
@@ -51,7 +51,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "unlimited gas sender - return original values",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         50,
 					MaxGasFeeCap:        math.NewInt(50),
@@ -66,7 +66,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "gas limit capped - below max",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         50,
 					MaxGasFeeCap:        math.NewInt(100),
@@ -81,7 +81,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "gas limit capped - above max",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         50,
 					MaxGasFeeCap:        math.NewInt(100),
@@ -96,7 +96,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "gas fee cap enforced - below max",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         100,
 					MaxGasFeeCap:        math.NewInt(100),
@@ -111,7 +111,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "gas fee cap enforced - above max",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         100,
 					MaxGasFeeCap:        math.NewInt(50),
@@ -126,7 +126,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "both gas limit and fee cap enforced",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         50,
 					MaxGasFeeCap:        math.NewInt(50),
@@ -141,7 +141,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "zero gas fee cap - no enforcement",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         50,
 					MaxGasFeeCap:        math.ZeroInt(),
@@ -156,7 +156,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 		},
 		{
 			name: "zero max gas limit - no limit enforcement",
-			params: &Params{
+			params: Params{
 				GasEnforcement: &GasEnforcement{
 					MaxGasLimit:         0,
 					MaxGasFeeCap:        math.NewInt(50),
@@ -173,7 +173,7 @@ func Test_getActualGasMetadata(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actualGasLimit, actualGasFeeCap := getActualGasMetadata(tt.params, tt.sender, tt.gasLimit, tt.gasFeeCap)
+			actualGasLimit, actualGasFeeCap := applyGasEnforcement(tt.params, tt.sender, tt.gasLimit, tt.gasFeeCap)
 
 			require.Equal(t, tt.expectedGasLimit, actualGasLimit)
 
