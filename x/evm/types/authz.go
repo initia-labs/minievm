@@ -30,9 +30,7 @@ func (a CallAuthorization) MsgTypeURL() string {
 }
 
 func (a CallAuthorization) ValidateBasic() error {
-	// TODO - cannot retrieve address codec here
-	ac := codec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
-	if err := validateChecksumHexAddrs(ac, a.Contracts); err != nil {
+	if err := validateChecksumHexAddrs(a.Contracts); err != nil {
 		return errors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid contract address: %s", err)
 	}
 	return nil
