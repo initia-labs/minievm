@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
+	"github.com/initia-labs/minievm/x/evm/contracts/infinite_loop_erc20"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
@@ -692,4 +694,97 @@ func Test_ERC20MetadataUpdate(t *testing.T) {
 	// update metadata again should fail
 	err = updateMetadataERC20(t, ctx, input, authorityEVMAddr, fooDenom, "new name", "new symbol", 18)
 	require.Error(t, err)
+}
+
+func Test_ERC20StaticCallGas(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	params, err := input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	params.AllowCustomERC20 = true
+	require.NoError(t, input.EVMKeeper.Params.Set(ctx, params))
+
+	evmAddr := common.BytesToAddress(addr.Bytes())
+	bz, err := hexutil.Decode(infinite_loop_erc20.InfiniteLoopErc20MetaData.Bin)
+	require.NoError(t, err)
+
+	abi, err := infinite_loop_erc20.InfiniteLoopErc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Constructor.Inputs.Pack("test", "test", uint8(18))
+	require.NoError(t, err)
+
+	bz = append(bz, inputBz...)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, bz, nil, nil)
+	require.NoError(t, err)
+
+	testDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+contractAddr.Hex()[2:], testDenom)
+
+	// mint token to address
+	inputBz, err = abi.Pack("mint", evmAddr, math.NewInt(100).BigInt())
+	require.NoError(t, err)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	// return 0 balance due to out of gas
+	balance, err := input.EVMKeeper.ERC20Keeper().GetBalance(ctx, addr, testDenom)
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(0), balance)
+
+	// return 0 supply due to out of gas
+	supply, err := input.EVMKeeper.ERC20Keeper().GetSupply(ctx, testDenom)
+	require.NoError(t, err)
+	require.Equal(t, math.NewInt(0), supply)
+
+	// return 0 decimals due to out of gas
+	decimals, err := input.EVMKeeper.ERC20Keeper().GetDecimals(ctx, testDenom)
+	require.NoError(t, err)
+	require.Equal(t, uint8(0), decimals)
+
+	// return empty strings for metadata
+	metadata, err := input.EVMKeeper.ERC20Keeper().GetMetadata(ctx, testDenom)
+	require.NoError(t, err)
+	require.Equal(t, banktypes.Metadata{
+		Name:    "",
+		Symbol:  "",
+		Base:    testDenom,
+		Display: testDenom,
+		DenomUnits: []*banktypes.DenomUnit{
+			{
+				Denom:    testDenom,
+				Exponent: 0,
+			},
+			{
+				Denom:    "",
+				Exponent: 0,
+			},
+		},
+	}, metadata)
+
+	// supply should not contain the token
+	err = input.EVMKeeper.ERC20Keeper().IterateSupply(ctx, func(supply sdk.Coin) (bool, error) {
+		require.True(t, supply.Denom != testDenom || supply.Amount.IsZero())
+		return false, nil
+	})
+	require.NoError(t, err)
+
+	// balance should not contain the token
+	err = input.EVMKeeper.ERC20Keeper().IterateAccountBalances(ctx, addr, func(balance sdk.Coin) (bool, error) {
+		require.True(t, balance.Denom != testDenom)
+		return false, nil
+	})
+	require.NoError(t, err)
+
+	// paginated supply should not contain the token
+	totalSupply, _, err := input.EVMKeeper.ERC20Keeper().GetPaginatedSupply(ctx, nil)
+	require.NoError(t, err)
+	require.True(t, totalSupply.AmountOf(testDenom).IsZero())
+
+	// paginated balances should not contain the token
+	balances, _, err := input.EVMKeeper.ERC20Keeper().GetPaginatedBalances(ctx, nil, addr)
+	require.NoError(t, err)
+	require.True(t, balances.AmountOf(testDenom).IsZero())
 }
