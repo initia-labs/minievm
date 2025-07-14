@@ -116,5 +116,5 @@ indexer-cache-size = {{ .EVMConfig.IndexerCacheSize }}
 indexer-retain-height = {{ .EVMConfig.IndexerRetainHeight }}
 
 # TracerTimeout is the timeout for the tracer.
-tracer-timeout = {{ .EVMConfig.TracerTimeout }}
+tracer-timeout = "{{ .EVMConfig.TracerTimeout }}"
 `
