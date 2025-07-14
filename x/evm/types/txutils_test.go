@@ -186,3 +186,55 @@ func Test_getActualGasMetadata(t *testing.T) {
 		})
 	}
 }
+
+func Test_computeGasFeeAmount(t *testing.T) {
+	t.Run("zero gas fee cap", func(t *testing.T) {
+		amt := computeGasFeeAmount(big.NewInt(0), 100, 18)
+		require.Equal(t, big.NewInt(0), amt)
+	})
+
+	t.Run("nonzero gas fee cap and gas", func(t *testing.T) {
+		amt := computeGasFeeAmount(big.NewInt(1e18), 2, 18)
+		// (1e18 * 2) = 2e18, FromEthersUnit(18, 2e18) = 2e18, +1 = 2000000000000000001
+		require.Equal(t, big.NewInt(2000000000000000001), amt)
+	})
+
+	t.Run("rounding up", func(t *testing.T) {
+		amt := computeGasFeeAmount(big.NewInt(3), 2, 0)
+		// (3*2) = 6, FromEthersUnit(0, 6) = 0, +1 = 1
+		require.Equal(t, big.NewInt(1), amt)
+	})
+}
+
+func Test_ConvertCosmosAccessListToEth_and_ConvertEthAccessListToCosmos(t *testing.T) {
+	cosmosList := []AccessTuple{
+		{
+			Address:     "0x1234567890123456789012345678901234567890",
+			StorageKeys: []string{"0x1", "0x2"},
+		},
+		{
+			Address:     "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+			StorageKeys: []string{"0x3"},
+		},
+	}
+
+	ethList := ConvertCosmosAccessListToEth(cosmosList)
+	require.Len(t, ethList, 2)
+	require.Equal(t, common.HexToAddress("0x1234567890123456789012345678901234567890"), ethList[0].Address)
+	require.Equal(t, common.HexToHash("0x1"), ethList[0].StorageKeys[0])
+	require.Equal(t, common.HexToHash("0x2"), ethList[0].StorageKeys[1])
+	require.Equal(t, common.HexToAddress("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"), ethList[1].Address)
+	require.Equal(t, common.HexToHash("0x3"), ethList[1].StorageKeys[0])
+
+	cosmosList2 := ConvertEthAccessListToCosmos(ethList)
+	// The round-trip will produce 32-byte padded storage keys and checksum addresses
+	require.Equal(t, "0x1234567890123456789012345678901234567890", cosmosList2[0].Address)
+	require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000001", cosmosList2[0].StorageKeys[0])
+	require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000002", cosmosList2[0].StorageKeys[1])
+	require.Equal(t, "0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD", cosmosList2[1].Address)
+	require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000003", cosmosList2[1].StorageKeys[0])
+
+	// Test empty input
+	require.Nil(t, ConvertCosmosAccessListToEth(nil))
+	require.Nil(t, ConvertEthAccessListToCosmos(nil))
+}

@@ -3,12 +3,13 @@ package types
 import (
 	"fmt"
 
+	"gopkg.in/yaml.v3"
+
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
 
-	"gopkg.in/yaml.v3"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // MAX_RECURSIVE_DEPTH is the maximum depth of the x/evm call stack.
@@ -57,10 +58,10 @@ func (p *Params) NormalizeAddresses(ac address.Codec) error {
 }
 
 func (p Params) Validate(ac address.Codec) error {
-	if err := validateChecksumHexAddrs(ac, p.AllowedPublishers); err != nil {
+	if err := validateChecksumHexAddrs(p.AllowedPublishers); err != nil {
 		return err
 	}
-	if err := validateChecksumHexAddrs(ac, p.AllowedCustomERC20s); err != nil {
+	if err := validateChecksumHexAddrs(p.AllowedCustomERC20s); err != nil {
 		return err
 	}
 	if p.GasRefundRatio.IsNegative() || p.GasRefundRatio.GT(math.LegacyOneDec()) {
@@ -75,7 +76,7 @@ func (p Params) Validate(ac address.Codec) error {
 		if p.GasEnforcement.MaxGasFeeCap.IsNil() || p.GasEnforcement.MaxGasFeeCap.IsNegative() {
 			return ErrInvalidGasEnforcement
 		}
-		if err := validateChecksumHexAddrs(ac, p.GasEnforcement.UnlimitedGasSenders); err != nil {
+		if err := validateChecksumHexAddrs(p.GasEnforcement.UnlimitedGasSenders); err != nil {
 			return err
 		}
 	}
@@ -92,12 +93,13 @@ func (p Params) ToExtraEIPs() []int {
 	return extraEIPs
 }
 
-func validateChecksumHexAddrs(ac address.Codec, addrs []string) error {
+func validateChecksumHexAddrs(addrs []string) error {
 	for _, addr := range addrs {
-		ethAddr, err := ContractAddressFromString(ac, addr)
-		if err != nil || ethAddr == (common.Address{}) {
-			return fmt.Errorf("invalid address: %s: %w", addr, err)
+		if !common.IsHexAddress(addr) {
+			return fmt.Errorf("address must be in ethereum checksum hex format: %s", addr)
 		}
+
+		ethAddr := common.HexToAddress(addr)
 		if addr != ethAddr.Hex() {
 			return fmt.Errorf("address must be in ethereum checksum hex format: %s", addr)
 		}
