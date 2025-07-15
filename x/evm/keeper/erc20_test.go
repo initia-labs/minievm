@@ -696,6 +696,44 @@ func Test_ERC20MetadataUpdate(t *testing.T) {
 	require.Error(t, err)
 }
 
+func Test_ERC20TransferGas(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+	params, err := input.EVMKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	params.AllowCustomERC20 = true
+	require.NoError(t, input.EVMKeeper.Params.Set(ctx, params))
+
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	bz, err := hexutil.Decode(infinite_loop_erc20.InfiniteLoopErc20MetaData.Bin)
+	require.NoError(t, err)
+
+	abi, err := infinite_loop_erc20.InfiniteLoopErc20MetaData.GetAbi()
+	require.NoError(t, err)
+
+	inputBz, err := abi.Constructor.Inputs.Pack("test", "test", uint8(18))
+	require.NoError(t, err)
+
+	bz = append(bz, inputBz...)
+	_, contractAddr, _, err := input.EVMKeeper.EVMCreate(ctx, evmAddr, bz, nil, nil)
+	require.NoError(t, err)
+
+	testDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, contractAddr)
+	require.NoError(t, err)
+	require.Equal(t, "evm/"+contractAddr.Hex()[2:], testDenom)
+
+	// mint token to address
+	inputBz, err = abi.Pack("mint", evmAddr, math.NewInt(100).BigInt())
+	require.NoError(t, err)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, inputBz, nil, nil)
+	require.NoError(t, err)
+
+	// should fail to send coins due to out of gas
+	err = input.EVMKeeper.ERC20Keeper().SendCoins(ctx, addr, addr, sdk.NewCoins(sdk.NewCoin(testDenom, math.NewInt(100))))
+	require.ErrorContains(t, err, "out of gas")
+}
+
 func Test_ERC20StaticCallGas(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()

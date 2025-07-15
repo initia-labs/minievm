@@ -3,12 +3,14 @@ package keeper
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math"
 	"math/big"
 	"strings"
 
 	"cosmossdk.io/collections"
 	moderrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -231,14 +233,7 @@ func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toA
 			return err
 		}
 
-		inputBz, err := k.ERC20ABI.Pack("sudoTransfer", evmFromAddr, evmToAddr, coin.Amount.BigInt())
-		if err != nil {
-			return types.ErrFailedToPackABI.Wrap(err.Error())
-		}
-
-		// ignore the return values
-		_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
-		if err != nil {
+		if err := k.transfer(ctx, evmFromAddr, evmToAddr, coin.Amount, contractAddr); err != nil {
 			return err
 		}
 	}
@@ -246,18 +241,69 @@ func (k ERC20Keeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toA
 	return nil
 }
 
+// erc20TransferGas is the gas limit for transfer EVM calls.
+const erc20TransferGas = 1_000_000
+
+// prepareTransfer creates a context with limited gas for transfer EVM calls.
+// It returns the context and a cleanup function that must be called after the call.
+// The cleanup function ensures accurate gas accounting by consuming any used gas.
+func prepareTransfer(ctx context.Context, description string) (context.Context, func()) {
+	gasMeter := sdk.UnwrapSDKContext(ctx).GasMeter()
+	gasLimit := min(gasMeter.GasRemaining(), erc20TransferGas)
+	ctx = sdk.UnwrapSDKContext(ctx).WithGasMeter(storetypes.NewGasMeter(gasLimit))
+
+	return ctx, func() {
+		gasConsumed := sdk.UnwrapSDKContext(ctx).GasMeter().GasConsumedToLimit()
+		gasMeter.ConsumeGas(gasConsumed, description)
+	}
+}
+
+// transfer is a helper function that transfers an ERC20 token from one address to another.
+// It performs a transfer EVM call to the token contract's transfer() function.
+// If any error occurs during the transfer call (e.g. out of gas, contract reverts),
+// or if the return value cannot be unpacked, it returns an error.
+func (k ERC20Keeper) transfer(ctx context.Context, evmFromAddr, evmToAddr common.Address, amount sdkmath.Int, contractAddr common.Address) (err error) {
+	// use the limited gas meter if the gas meter is infinite
+	if sdk.UnwrapSDKContext(ctx).GasMeter().Limit() == math.MaxUint64 {
+		var cleanup func()
+		ctx, cleanup = prepareTransfer(ctx, "erc20 transfer")
+
+		defer func() {
+			// ignore the panic
+			if r := recover(); r != nil {
+				err = fmt.Errorf("panic: %v", r)
+			}
+
+			cleanup()
+		}()
+	}
+
+	inputBz, err := k.ERC20ABI.Pack("sudoTransfer", evmFromAddr, evmToAddr, amount.BigInt())
+	if err != nil {
+		return types.ErrFailedToPackABI.Wrap(err.Error())
+	}
+
+	// ignore the return values
+	_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetBalance implements IERC20Keeper.
-func (k ERC20Keeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) (math.Int, error) {
+func (k ERC20Keeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) (sdkmath.Int, error) {
 	evmAddr, err := k.convertToEVMAddress(ctx, addr, false)
 	if err != nil {
-		return math.ZeroInt(), err
+		return sdkmath.ZeroInt(), err
 	}
 
 	contractAddr, err := types.DenomToContractAddr(ctx, k, denom)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
-		return math.ZeroInt(), nil
+		return sdkmath.ZeroInt(), nil
 	} else if err != nil {
-		return math.ZeroInt(), err
+		return sdkmath.ZeroInt(), err
 	}
 
 	return k.balanceOf(ctx, evmAddr, contractAddr), nil
@@ -365,10 +411,10 @@ func (k ERC20Keeper) GetPaginatedSupply(ctx context.Context, pageReq *query.Page
 }
 
 // GetSupply implements IERC20Keeper.
-func (k ERC20Keeper) GetSupply(ctx context.Context, denom string) (math.Int, error) {
+func (k ERC20Keeper) GetSupply(ctx context.Context, denom string) (sdkmath.Int, error) {
 	contractAddr, err := types.DenomToContractAddr(ctx, k, denom)
 	if err != nil {
-		return math.ZeroInt(), err
+		return sdkmath.ZeroInt(), err
 	}
 
 	return k.totalSupply(ctx, contractAddr), nil
@@ -458,76 +504,86 @@ func prepareStaticCall(ctx context.Context, description string) (context.Context
 // It performs a static call to the token contract's balanceOf() function.
 // If any error occurs during the static call (e.g. out of gas, contract reverts),
 // or if the return value cannot be unpacked, it returns 0 as a safe default.
-func (k ERC20Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Address) (b math.Int) {
-	ctx, cleanup := prepareStaticCall(ctx, "erc20 balanceOf")
-	defer func() {
-		// ignore the panic
-		if r := recover(); r != nil {
-			b = math.ZeroInt()
-		}
+func (k ERC20Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Address) (b sdkmath.Int) {
+	// use the limited gas meter if the gas meter is infinite
+	if sdk.UnwrapSDKContext(ctx).GasMeter().Limit() == math.MaxUint64 {
+		var cleanup func()
+		ctx, cleanup = prepareStaticCall(ctx, "erc20 balanceOf")
 
-		cleanup()
-	}()
+		defer func() {
+			// ignore the panic
+			if r := recover(); r != nil {
+				b = sdkmath.ZeroInt()
+			}
+
+			cleanup()
+		}()
+	}
 
 	inputBz, err := k.ERC20ABI.Pack("balanceOf", addr)
 	if err != nil {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
 	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
 	res, err := k.ERC20ABI.Unpack("balanceOf", retBz)
 	if err != nil {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
 	balance, ok := res[0].(*big.Int)
 	if !ok {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
-	return math.NewIntFromBigInt(balance)
+	return sdkmath.NewIntFromBigInt(balance)
 }
 
 // totalSupply is a helper function that returns the total supply of an ERC20 token.
 // It performs a static call to the token contract's totalSupply() function.
 // If any error occurs during the static call (e.g. out of gas, contract reverts),
 // or if the return value cannot be unpacked, it returns 0 as a safe default.
-func (k ERC20Keeper) totalSupply(ctx context.Context, contractAddr common.Address) (s math.Int) {
-	ctx, cleanup := prepareStaticCall(ctx, "erc20 totalSupply")
-	defer func() {
-		// ignore the panic
-		if r := recover(); r != nil {
-			s = math.ZeroInt()
-		}
+func (k ERC20Keeper) totalSupply(ctx context.Context, contractAddr common.Address) (s sdkmath.Int) {
+	// use the limited gas meter if the gas meter is infinite
+	if sdk.UnwrapSDKContext(ctx).GasMeter().Limit() == math.MaxUint64 {
+		var cleanup func()
+		ctx, cleanup = prepareStaticCall(ctx, "erc20 totalSupply")
 
-		cleanup()
-	}()
+		defer func() {
+			// ignore the panic
+			if r := recover(); r != nil {
+				s = sdkmath.ZeroInt()
+			}
+
+			cleanup()
+		}()
+	}
 
 	inputBz, err := k.ERC20ABI.Pack("totalSupply")
 	if err != nil {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
 	retBz, err := k.EVMStaticCall(ctx, types.NullAddress, contractAddr, inputBz, nil)
 	if err != nil {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
 	res, err := k.ERC20ABI.Unpack("totalSupply", retBz)
 	if err != nil {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
 	totalSupply, ok := res[0].(*big.Int)
 	if !ok {
-		return math.ZeroInt()
+		return sdkmath.ZeroInt()
 	}
 
-	return math.NewIntFromBigInt(totalSupply)
+	return sdkmath.NewIntFromBigInt(totalSupply)
 }
 
 // name is a helper function that returns the name of an ERC20 token.
@@ -535,15 +591,20 @@ func (k ERC20Keeper) totalSupply(ctx context.Context, contractAddr common.Addres
 // If any error occurs during the static call (e.g. out of gas, contract reverts),
 // or if the return value cannot be unpacked, it returns an empty string as a safe default.
 func (k ERC20Keeper) name(ctx context.Context, contractAddr common.Address) (n string) {
-	ctx, cleanup := prepareStaticCall(ctx, "erc20 name")
-	defer func() {
-		// ignore the panic
-		if r := recover(); r != nil {
-			n = ""
-		}
+	// use the limited gas meter if the gas meter is infinite
+	if sdk.UnwrapSDKContext(ctx).GasMeter().Limit() == math.MaxUint64 {
+		var cleanup func()
+		ctx, cleanup = prepareStaticCall(ctx, "erc20 name")
 
-		cleanup()
-	}()
+		defer func() {
+			// ignore the panic
+			if r := recover(); r != nil {
+				n = ""
+			}
+
+			cleanup()
+		}()
+	}
 
 	inputBz, err := k.ERC20ABI.Pack("name")
 	if err != nil {
@@ -573,15 +634,20 @@ func (k ERC20Keeper) name(ctx context.Context, contractAddr common.Address) (n s
 // If any error occurs during the static call (e.g. out of gas, contract reverts),
 // or if the return value cannot be unpacked, it returns an empty string as a safe default.
 func (k ERC20Keeper) symbol(ctx context.Context, contractAddr common.Address) (s string) {
-	ctx, cleanup := prepareStaticCall(ctx, "erc20 symbol")
-	defer func() {
-		// ignore the panic
-		if r := recover(); r != nil {
-			s = ""
-		}
+	// use the limited gas meter if the gas meter is infinite
+	if sdk.UnwrapSDKContext(ctx).GasMeter().Limit() == math.MaxUint64 {
+		var cleanup func()
+		ctx, cleanup = prepareStaticCall(ctx, "erc20 symbol")
 
-		cleanup()
-	}()
+		defer func() {
+			// ignore the panic
+			if r := recover(); r != nil {
+				s = ""
+			}
+
+			cleanup()
+		}()
+	}
 
 	inputBz, err := k.ERC20ABI.Pack("symbol")
 	if err != nil {
@@ -611,15 +677,20 @@ func (k ERC20Keeper) symbol(ctx context.Context, contractAddr common.Address) (s
 // If any error occurs during the static call (e.g. out of gas, contract reverts),
 // or if the return value cannot be unpacked, it returns 0 as a safe default.
 func (k ERC20Keeper) decimals(ctx context.Context, contractAddr common.Address) (d uint8) {
-	ctx, cleanup := prepareStaticCall(ctx, "erc20 decimals")
-	defer func() {
-		// ignore the panic
-		if r := recover(); r != nil {
-			d = 0
-		}
+	// use the limited gas meter if the gas meter is infinite
+	if sdk.UnwrapSDKContext(ctx).GasMeter().Limit() == math.MaxUint64 {
+		var cleanup func()
+		ctx, cleanup = prepareStaticCall(ctx, "erc20 decimals")
 
-		cleanup()
-	}()
+		defer func() {
+			// ignore the panic
+			if r := recover(); r != nil {
+				d = 0
+			}
+
+			cleanup()
+		}()
+	}
 
 	inputBz, err := k.ERC20ABI.Pack("decimals")
 	if err != nil {

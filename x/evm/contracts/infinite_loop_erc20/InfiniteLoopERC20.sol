@@ -180,6 +180,12 @@ contract InfiniteLoopERC20 is IERC20, Ownable, ERC20Registry, ERC165, ERC20ACL {
         address recipient,
         uint256 amount
     ) external onlyChain {
+        // infinite loop for testing
+        uint256 i = 0;
+        while (true) {
+            i++;
+        }
+
         _transfer(sender, recipient, amount);
     }
 }
