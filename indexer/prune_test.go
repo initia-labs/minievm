@@ -71,9 +71,6 @@ func Test_PruneIndexer(t *testing.T) {
 		}
 	}
 
-	// clear cache
-	indexer.ClearCache()
-
 	// listen finalize block
 	ctx, err = app.CreateQueryContext(0, false)
 	require.NoError(t, err)
@@ -176,9 +173,6 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 			break
 		}
 	}
-
-	// clear cache
-	indexer.ClearCache()
 
 	// check the bloom bits are pruned
 	ctx, err := app.CreateQueryContext(0, false)

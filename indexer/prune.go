@@ -144,8 +144,3 @@ func (e *EVMIndexerImpl) SetRetainHeight(height uint64) {
 func (e *EVMIndexerImpl) IsPruningRunning() bool {
 	return e.pruningRunning.Load()
 }
-
-// Clear cache for testing
-func (e *EVMIndexerImpl) ClearCache() error {
-	return e.store.cache.Reset()
-}

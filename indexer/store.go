@@ -1,14 +1,12 @@
 package indexer
 
 import (
-	"context"
 	"sync"
 
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/store/cachekv"
 	"cosmossdk.io/store/dbadapter"
 	storetypes "cosmossdk.io/store/types"
-	"github.com/allegro/bigcache/v3"
 	dbm "github.com/cosmos/cosmos-db"
 )
 
@@ -23,28 +21,17 @@ const (
 // database operations.
 type CacheStoreWithBatch struct {
 	store storetypes.CacheKVStore // Core CacheKVStore interface for standard operations
-	cache *bigcache.BigCache      // Fast in-memory cache for frequently accessed data
 	batch dbm.Batch               // Batch accumulator for database operations
 	db    dbm.DB                  // Underlying persistent database
 	mtx   sync.RWMutex
 }
 
 // NewCacheStoreWithBatch creates a new cache store with batched write capabilities.
-func NewCacheStoreWithBatch(db dbm.DB, capacity int) *CacheStoreWithBatch {
-	// default with no eviction and custom hard max cache capacity
-	cacheCfg := bigcache.DefaultConfig(0)
-	cacheCfg.Verbose = false
-	cacheCfg.HardMaxCacheSize = capacity
-
-	cache, err := bigcache.New(context.Background(), cacheCfg)
-	if err != nil {
-		panic(err)
-	}
-
+func NewCacheStoreWithBatch(db dbm.DB) *CacheStoreWithBatch {
 	return &CacheStoreWithBatch{
 		store: cachekv.NewStore(dbadapter.Store{DB: db}),
-		cache: cache,
 		db:    db,
+		batch: db.NewBatch(),
 	}
 }
 
@@ -53,44 +40,20 @@ func NewCacheStoreWithBatch(db dbm.DB, capacity int) *CacheStoreWithBatch {
 func (c *CacheStoreWithBatch) Get(key []byte) ([]byte, error) {
 	storetypes.AssertValidKey(key)
 
-	if value, err := c.cache.Get(string(key)); err == nil {
-		return value, nil
-	}
-
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
 
-	// if not in cache, get from kvstore
-	value := c.store.Get(key)
-	if value == nil {
-		return nil, nil
-	}
-
-	// cache for future reads, ignore error
-	_ = c.cache.Set(string(key), value)
-
-	return value, nil
+	return c.store.Get(key), nil
 }
 
 // Has checks if a key exists. Errors on a nil key.
 func (c *CacheStoreWithBatch) Has(key []byte) (bool, error) {
-	_, err := c.cache.Get(string(key))
-	if err == nil {
-		return true, nil
-	}
+	storetypes.AssertValidKey(key)
 
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
 
-	value := c.store.Get(key)
-	if value == nil {
-		return false, nil
-	}
-
-	// ignore cache error
-	_ = c.cache.Set(string(key), value)
-
-	return true, nil
+	return c.store.Get(key) != nil, nil
 }
 
 // Set stores a key-value pair and adds it to the writing batch.
@@ -102,23 +65,16 @@ func (c *CacheStoreWithBatch) Set(key, value []byte) error {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	// update both caches
-	_ = c.cache.Set(string(key), value)
-	c.store.Set(key, value)
-
-	// ensure batch is available
-	if c.batch == nil {
-		c.batch = c.db.NewBatch()
-	}
-
 	batchSizeAfter, err := c.estimateSizeAfterSetting(key, value)
 	if err != nil {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
 		c.writeBatchUnlocked()
-		c.batch = c.db.NewBatch()
 	}
+
+	// update cache store
+	c.store.Set(key, value)
 
 	// add to batch for persistence
 	return c.batch.Set(key, value)
@@ -132,44 +88,19 @@ func (c *CacheStoreWithBatch) Delete(key []byte) error {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	// update both caches
-	_ = c.cache.Delete(string(key))
-	c.store.Delete(key)
-
-	// ensure batch is available
-	if c.batch == nil {
-		c.batch = c.db.NewBatch()
-	}
-
 	batchSizeAfter, err := c.estimateSizeAfterSetting(key, []byte{})
 	if err != nil {
 		return err
 	}
 	if batchSizeAfter > DefaultBatchFlushThreshold {
 		c.writeBatchUnlocked()
-		c.batch = c.db.NewBatch()
 	}
+
+	// update cache store
+	c.store.Delete(key)
 
 	// add to batch for persistence
 	return c.batch.Delete(key)
-}
-
-// cacheIterator extends the standard iterator with cache awareness
-type cacheIterator struct {
-	storetypes.Iterator
-	cache *bigcache.BigCache
-}
-
-// Value returns the value at the current position
-func (i *cacheIterator) Value() []byte {
-	key := i.Key()
-
-	// try cache first
-	if value, err := i.cache.Get(string(key)); err == nil {
-		return value
-	}
-
-	return i.Iterator.Value()
 }
 
 // Iterator iterates over a domain of keys in ascending order. End is exclusive.
@@ -182,10 +113,7 @@ func (c *CacheStoreWithBatch) Iterator(start, end []byte) (storetypes.Iterator, 
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
 
-	return &cacheIterator{
-		Iterator: c.store.Iterator(start, end),
-		cache:    c.cache,
-	}, nil
+	return c.store.Iterator(start, end), nil
 }
 
 // ReverseIterator iterates over a domain of keys in descending order. End is exclusive.
@@ -197,10 +125,7 @@ func (c *CacheStoreWithBatch) ReverseIterator(start, end []byte) (storetypes.Ite
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
 
-	return &cacheIterator{
-		Iterator: c.store.ReverseIterator(start, end),
-		cache:    c.cache,
-	}, nil
+	return c.store.ReverseIterator(start, end), nil
 }
 
 // Write explicitly flushes the current batch to persistent storage.
@@ -214,15 +139,11 @@ func (c *CacheStoreWithBatch) Write() {
 // writeBatchUnlocked writes the batch to persistent storage and resets both the batch and cache,
 // assuming that the caller has already acquired the appropriate locks.
 func (c *CacheStoreWithBatch) writeBatchUnlocked() {
-	if c.batch == nil {
-		return
-	}
-
 	_ = c.batch.Write()
 	_ = c.batch.Close()
 
 	// clear the batch after writing
-	c.batch = nil
+	c.batch = c.db.NewBatch()
 
 	// also clear the cache after writing
 	c.store = cachekv.NewStore(dbadapter.Store{DB: c.db})
