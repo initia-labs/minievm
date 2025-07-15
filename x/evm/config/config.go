@@ -15,8 +15,6 @@ const (
 	DefaultContractSimulationGasLimit = uint64(3_000_000)
 	// DefaultIndexerDisable is the default flag to disable indexer
 	DefaultIndexerDisable = false
-	// DefaultIndexerCacheSize is the default maximum size (MiB) of the cache.
-	DefaultIndexerCacheSize = 100
 	// DefaultIndexerRetainHeight is the default height to retain indexer data.
 	DefaultIndexerRetainHeight = uint64(0)
 	// DefaultTracerTimeout is the default tracer timeout.
@@ -29,7 +27,6 @@ const (
 const (
 	flagContractSimulationGasLimit = "evm.contract-simulation-gas-limit"
 	flagIndexerDisable             = "evm.indexer-disable"
-	flagIndexerCacheSize           = "evm.indexer-cache-size"
 	flagIndexerRetainHeight        = "evm.indexer-retain-height"
 	flagTracerTimeout              = "evm.tracer-timeout"
 )
@@ -40,8 +37,6 @@ type EVMConfig struct {
 	ContractSimulationGasLimit uint64 `mapstructure:"contract-simulation-gas-limit"`
 	// IndexerDisable is the flag to disable indexer
 	IndexerDisable bool `mapstructure:"indexer-disable"`
-	// IndexerCacheSize is the maximum size (MiB) of the cache.
-	IndexerCacheSize int `mapstructure:"indexer-cache-size"`
 	// IndexerRetainHeight is the height to retain indexer data.
 	// If 0, it will retain all data.
 	IndexerRetainHeight uint64 `mapstructure:"indexer-retain-height"`
@@ -62,7 +57,6 @@ func DefaultEVMConfig() EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: DefaultContractSimulationGasLimit,
 		IndexerDisable:             DefaultIndexerDisable,
-		IndexerCacheSize:           DefaultIndexerCacheSize,
 		IndexerRetainHeight:        DefaultIndexerRetainHeight,
 		TracerTimeout:              DefaultTracerTimeout,
 	}
@@ -78,7 +72,6 @@ func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: cast.ToUint64(appOpts.Get(flagContractSimulationGasLimit)),
 		IndexerDisable:             cast.ToBool(appOpts.Get(flagIndexerDisable)),
-		IndexerCacheSize:           cast.ToInt(appOpts.Get(flagIndexerCacheSize)),
 		IndexerRetainHeight:        cast.ToUint64(appOpts.Get(flagIndexerRetainHeight)),
 		TracerTimeout:              tracerTimeout,
 	}
@@ -88,7 +81,6 @@ func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
 func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Uint64(flagContractSimulationGasLimit, DefaultContractSimulationGasLimit, "Maximum simulation gas amount for evm contract execution")
 	startCmd.Flags().Bool(flagIndexerDisable, DefaultIndexerDisable, "Disable evm indexer")
-	startCmd.Flags().Int(flagIndexerCacheSize, DefaultIndexerCacheSize, "Maximum size (MiB) of the indexer cache")
 	startCmd.Flags().Uint64(flagIndexerRetainHeight, DefaultIndexerRetainHeight, "Height to retain indexer data")
 	startCmd.Flags().Duration(flagTracerTimeout, DefaultTracerTimeout, "Timeout for the tracer")
 }
@@ -107,9 +99,6 @@ contract-simulation-gas-limit = "{{ .EVMConfig.ContractSimulationGasLimit }}"
 # IndexerDisable is the flag to disable indexer. If true, evm jsonrpc queries will return 
 # empty results for block, tx, and receipt queries.
 indexer-disable = {{ .EVMConfig.IndexerDisable }}
-
-# IndexerCacheSize is the maximum size (MiB) of the cache for evm indexer.
-indexer-cache-size = {{ .EVMConfig.IndexerCacheSize }}
 
 # IndexerRetainHeight is the height to retain indexer data.
 # If 0, it will retain all data.

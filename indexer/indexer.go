@@ -24,7 +24,6 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
-	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 )
 
@@ -152,11 +151,8 @@ func NewEVMIndexer(
 	evmKeeper *evmkeeper.Keeper,
 ) (EVMIndexer, error) {
 	cfg := evmKeeper.Config()
-	if cfg.IndexerCacheSize == 0 {
-		cfg.IndexerCacheSize = evmconfig.DefaultIndexerCacheSize
-	}
 
-	store := NewCacheStoreWithBatch(db, cfg.IndexerCacheSize)
+	store := NewCacheStoreWithBatch(db)
 	sb := collections.NewSchemaBuilderFromAccessor(
 		func(_ context.Context) corestoretypes.KVStore {
 			return store
@@ -250,12 +246,12 @@ func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, erro
 		}
 
 		if blockHeader.Valid() {
-			lastHeight, err := blockHeader.Key()
+			lastIndexedHeight, err = blockHeader.Key()
 			if err != nil {
 				return 0, err
 			}
 
-			e.lastIndexedHeight.Store(lastHeight)
+			e.lastIndexedHeight.Store(lastIndexedHeight)
 		}
 	}
 

@@ -9,7 +9,7 @@ import (
 
 func Test_StoreIO(t *testing.T) {
 	db := dbm.NewMemDB()
-	store := NewCacheStoreWithBatch(db, 100)
+	store := NewCacheStoreWithBatch(db)
 
 	key := []byte("key")
 	value := []byte("value")

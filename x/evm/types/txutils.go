@@ -43,7 +43,7 @@ type LazyArgsGetterForConvertEthereumTxToCosmosTx func() (params Params, feeDeci
 // use lazy args getter to avoid unnecessary params and decimals fetching
 type LazyArgsGetterForConvertCosmosTxToEthereumTx func() (params Params, feeDecimals uint8, err error)
 
-func getActualGasMetadata(params *Params, sender common.Address, gasLimit uint64, gasFeeCap *big.Int) (uint64, *big.Int) {
+func applyGasEnforcement(params Params, sender common.Address, gasLimit uint64, gasFeeCap *big.Int) (uint64, *big.Int) {
 	// if sender is unlimited gas sender, get original gas fee cap and gas limit,
 	gasEnforcement := params.GasEnforcement
 	if gasEnforcement == nil || slices.Contains(gasEnforcement.UnlimitedGasSenders, sender.String()) {
@@ -100,8 +100,8 @@ func ConvertEthereumTxToCosmosTx(
 		gasTipCap = big.NewInt(0)
 	}
 
-	actualGasLimit, actualGasFeeCap := getActualGasMetadata(&params, ethSender, gasLimit, gasFeeCap)
-	gasFeeAmount := computeGasFeeAmount(actualGasFeeCap, actualGasLimit, feeDecimals)
+	enforcedGasLimit, enforcedFeeCap := applyGasEnforcement(params, ethSender, gasLimit, gasFeeCap)
+	gasFeeAmount := computeGasFeeAmount(enforcedFeeCap, enforcedGasLimit, feeDecimals)
 	feeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(gasFeeAmount)))
 	// convert value unit from wei to cosmos fee unit
 	value := FromEthersUnit(feeDecimals, ethTx.Value())
@@ -182,7 +182,7 @@ func ConvertEthereumTxToCosmosTx(
 		return nil, err
 	}
 	txBuilder.SetFeeAmount(feeAmount)
-	txBuilder.SetGasLimit(actualGasLimit)
+	txBuilder.SetGasLimit(enforcedGasLimit)
 	if err = txBuilder.SetSignatures(sig); err != nil {
 		return nil, err
 	}
@@ -290,9 +290,9 @@ func ConvertCosmosTxToEthereumTx(
 	gasLimit := md.GasLimit
 	gasFeeCap := md.GasFeeCap
 	gasTipCap := md.GasTipCap
-	actualGasLimit, actualGasFeeCap := getActualGasMetadata(&params, sender, gasLimit, gasFeeCap)
+	enforcedGasLimit, enforcedFeeCap := applyGasEnforcement(params, sender, gasLimit, gasFeeCap)
 	// check if the fee amount is correctly converted
-	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(actualGasFeeCap, actualGasLimit, feeDecimals))))
+	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(enforcedFeeCap, enforcedGasLimit, feeDecimals))))
 	if !feeAmount.Equal(computedFeeAmount) {
 		return nil, nil, ErrTxConversionFailed.Wrap("fee amount manipulation detected")
 	}

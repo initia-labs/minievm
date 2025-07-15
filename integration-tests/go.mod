@@ -8,7 +8,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/initia-labs/initia v1.0.0
+	github.com/initia-labs/initia v1.1.2
 	github.com/initia-labs/minievm v1.0.7
 	github.com/stretchr/testify v1.10.0
 )
@@ -142,13 +142,13 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v1.1.0 // indirect
+	github.com/initia-labs/OPinit v1.1.1 // indirect
 	github.com/initia-labs/OPinit/api v1.1.0 // indirect
-	github.com/initia-labs/kvindexer v0.1.14 // indirect
-	github.com/initia-labs/kvindexer/submodules/block v0.1.4 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-nft v0.1.10 // indirect
-	github.com/initia-labs/kvindexer/submodules/evm-tx v0.2.2 // indirect
-	github.com/initia-labs/kvindexer/submodules/pair v0.1.5 // indirect
+	github.com/initia-labs/kvindexer v0.2.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/block v0.2.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-nft v0.2.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/evm-tx v0.3.0 // indirect
+	github.com/initia-labs/kvindexer/submodules/pair v0.2.0 // indirect
 	github.com/initia-labs/movevm v1.0.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -278,7 +278,7 @@ require github.com/cosmos/iavl v1.2.6 // indirect
 // connect
 // - https://github.com/initia-labs/connect/pull/1
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250423153228-2a8797de61ac
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250626080419-4947b17fd2fb
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250415174140-9fd233bcf847
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250502185204-604b1666eb18
