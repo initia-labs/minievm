@@ -327,24 +327,6 @@ func (b *JSONRPCBackend) runTxWithTracer(
 	gasLimit := feeTx.GetGas()
 	sdkCtx = sdkCtx.WithGasMeter(storetypes.NewGasMeter(gasLimit)).WithExecMode(sdk.ExecModeFinalize)
 
-	// ante handler state changes should be applied always
-	sdkCtx, err = b.app.AnteHandler()(sdkCtx, cosmosTx, false)
-	if err != nil {
-		return err
-	}
-
-	// create cache context for message handler and post handler
-	sdkCtx, commit := sdkCtx.CacheContext()
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("panic: %v", r)
-		}
-
-		if err == nil {
-			commit()
-		}
-	}()
-
 	// setup tracing
 	// execute OnTxStart and dummy OnEnter
 	if tracer != nil {
@@ -379,6 +361,24 @@ func (b *JSONRPCBackend) runTxWithTracer(
 			tracer.OnEnter(0, byte(vm.CALL), evmtypes.NullAddress, evmtypes.NullAddress, []byte{}, gasLimit, nil)
 		}
 	}
+
+	// ante handler state changes should be applied always
+	sdkCtx, err = b.app.AnteHandler()(sdkCtx, cosmosTx, false)
+	if err != nil {
+		return err
+	}
+
+	// create cache context for message handler and post handler
+	sdkCtx, commit := sdkCtx.CacheContext()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+
+		if err == nil {
+			commit()
+		}
+	}()
 
 	// run msgs with post handler
 	for _, msg := range cosmosTx.GetMsgs() {

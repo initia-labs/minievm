@@ -45,8 +45,10 @@ func (u *TxUtils) ConvertEthereumTxToCosmosTx(ctx context.Context, ethTx *corety
 // ConvertCosmosTxToEthereumTx converts a Cosmos SDK transaction to an Ethereum transaction.
 // It returns nil if the transaction is not an EVM transaction.
 func (u *TxUtils) ConvertCosmosTxToEthereumTx(ctx context.Context, sdkTx sdk.Tx) (*coretypes.Transaction, *common.Address, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	return types.ConvertCosmosTxToEthereumTx(
-		sdk.UnwrapSDKContext(ctx).ChainID(), u.ac, sdkTx,
+		sdkCtx.Value(types.CONTEXT_KEY_TRACING) != nil,
+		sdkCtx.ChainID(), u.ac, sdkTx,
 		func() (types.Params, uint8, error) {
 			params, err := u.Params.Get(ctx)
 			if err != nil {

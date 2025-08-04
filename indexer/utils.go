@@ -155,7 +155,7 @@ func extractEthTxInfo(
 
 	// convert cosmos tx to ethereum tx
 	ethTx, _, err := types.ConvertCosmosTxToEthereumTx(
-		args.chainID, args.ac, sdkTx,
+		false, args.chainID, args.ac, sdkTx,
 		func() (types.Params, uint8, error) {
 			return args.params, args.feeDecimals, nil
 		},
