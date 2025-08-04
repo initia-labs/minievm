@@ -35,6 +35,13 @@ type txMetadata struct {
 	GasLimit  uint64   `json:"gas_limit"`   // original gas limit in ethTx
 }
 
+// txMetadataLegacy is the metadata of a Cosmos SDK transaction.
+type txMetadataLegacy struct {
+	Type      uint8  `json:"type"`
+	GasFeeCap string `json:"gas_fee_cap"` // original gas fee cap in ethTx
+	GasTipCap string `json:"gas_tip_cap"` // original gas tip cap in ethTx
+}
+
 // LazyArgsGetterForConvertEthereumTxToCosmosTx is a function that returns the arguments for ConvertEthereumTxToCosmosTx.
 // use lazy args getter to avoid unnecessary params and decimals fetching
 type LazyArgsGetterForConvertEthereumTxToCosmosTx func() (params Params, feeDecimals uint8, err error)
@@ -205,6 +212,7 @@ func ConvertEthereumTxToCosmosTx(
 // ConvertCosmosTxToEthereumTx converts a Cosmos SDK transaction to an Ethereum transaction.
 // It returns nil if the transaction is not an EVM transaction.
 func ConvertCosmosTxToEthereumTx(
+	allowLegacy bool,
 	chainID string,
 	ac address.Codec,
 	sdkTx sdk.Tx,
@@ -230,7 +238,30 @@ func ConvertCosmosTxToEthereumTx(
 	decoder := json.NewDecoder(bytes.NewReader([]byte(memo)))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&md); err != nil {
-		return nil, nil, nil
+		if allowLegacy {
+			mdLegacy := txMetadataLegacy{}
+			decoderLegacy := json.NewDecoder(bytes.NewReader([]byte(memo)))
+			decoderLegacy.DisallowUnknownFields()
+			if err := decoderLegacy.Decode(&mdLegacy); err != nil {
+				return nil, nil, nil
+			}
+			gasFeeCap, ok := new(big.Int).SetString(mdLegacy.GasFeeCap, 10)
+			if !ok {
+				return nil, nil, nil
+			}
+			gasTipCap, ok := new(big.Int).SetString(mdLegacy.GasTipCap, 10)
+			if !ok {
+				return nil, nil, nil
+			}
+			md = txMetadata{
+				Type:      mdLegacy.Type,
+				GasFeeCap: gasFeeCap,
+				GasTipCap: gasTipCap,
+				GasLimit:  authTx.GetGas(),
+			}
+		} else {
+			return nil, nil, nil
+		}
 	}
 	// check for early return cases (0x02 is dynamic fee tx type)
 	if md.GasFeeCap == nil || md.GasTipCap == nil || md.Type > coretypes.DynamicFeeTxType {
