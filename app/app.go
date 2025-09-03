@@ -491,7 +491,7 @@ func (app *MinitiaApp) InterfaceRegistry() types.InterfaceRegistry {
 
 // InitializeIndexer initializes the EVM indexer.
 func (app *MinitiaApp) InitializeIndexer(clientCtx client.Context) error {
-	return app.evmIndexer.Initialize(clientCtx, app.BaseApp.CreateQueryContext)
+	return app.evmIndexer.Initialize(clientCtx, app.BaseApp.CreateQueryContext, app.BaseApp.GetConsensusParams)
 }
 
 // RegisterAPIRoutes registers all application module routes with the provided

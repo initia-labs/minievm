@@ -7,8 +7,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/jellydator/ttlcache/v3"
+
+	abci "github.com/cometbft/cometbft/abci/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
@@ -82,11 +84,14 @@ type EVMIndexer interface {
 	Wait()
 
 	// Initialize sets the client context.
-	Initialize(clientCtx client.Context, contextCreator contextCreator) error
+	Initialize(clientCtx client.Context, contextCreator contextCreator, consensusParamsGetter consensusParamsGetter) error
 }
 
 // contextCreator creates a new SDK context.
 type contextCreator func(height int64, prove bool) (sdk.Context, error)
+
+// consensusParamsGetter gets the consensus params from the SDK context.
+type consensusParamsGetter func(ctx sdk.Context) cmtproto.ConsensusParams
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
@@ -98,13 +103,15 @@ type EVMIndexerImpl struct {
 	bloomIndexingRunning *atomic.Bool
 	lastIndexedHeight    *atomic.Uint64
 
-	db             dbm.DB
-	logger         log.Logger
-	txConfig       client.TxConfig
-	ac             address.Codec
-	appCodec       codec.Codec
-	clientCtx      client.Context
-	contextCreator contextCreator
+	db       dbm.DB
+	logger   log.Logger
+	txConfig client.TxConfig
+	ac       address.Codec
+	appCodec codec.Codec
+
+	clientCtx             client.Context
+	contextCreator        contextCreator
+	consensusParamsGetter consensusParamsGetter
 
 	store     *CacheStoreWithBatch
 	evmKeeper *evmkeeper.Keeper
@@ -233,9 +240,10 @@ func NewEVMIndexer(
 }
 
 // Initialize initializes the EVM indexer.
-func (e *EVMIndexerImpl) Initialize(clientCtx client.Context, contextCreator contextCreator) error {
+func (e *EVMIndexerImpl) Initialize(clientCtx client.Context, contextCreator contextCreator, consensusParamsGetter consensusParamsGetter) error {
 	e.clientCtx = clientCtx
 	e.contextCreator = contextCreator
+	e.consensusParamsGetter = consensusParamsGetter
 
 	if e.backfillStartHeight != 0 {
 		lastIndexedHeight, err := e.GetLastIndexedHeight(context.Background())
