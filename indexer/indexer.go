@@ -19,6 +19,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -79,22 +80,31 @@ type EVMIndexer interface {
 
 	// Wait waits for all the indexing to finish.
 	Wait()
+
+	// Initialize sets the client context.
+	Initialize(clientCtx client.Context, contextCreator contextCreator) error
 }
+
+// contextCreator creates a new SDK context.
+type contextCreator func(height int64, prove bool) (sdk.Context, error)
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
-	enabled      bool
-	retainHeight uint64
+	enabled             bool
+	retainHeight        uint64
+	backfillStartHeight uint64
 
 	pruningRunning       *atomic.Bool
 	bloomIndexingRunning *atomic.Bool
 	lastIndexedHeight    *atomic.Uint64
 
-	db       dbm.DB
-	logger   log.Logger
-	txConfig client.TxConfig
-	ac       address.Codec
-	appCodec codec.Codec
+	db             dbm.DB
+	logger         log.Logger
+	txConfig       client.TxConfig
+	ac             address.Codec
+	appCodec       codec.Codec
+	clientCtx      client.Context
+	contextCreator contextCreator
 
 	store     *CacheStoreWithBatch
 	evmKeeper *evmkeeper.Keeper
@@ -161,8 +171,9 @@ func NewEVMIndexer(
 
 	logger.Info("EVM Indexer", "enable", !cfg.IndexerDisable)
 	indexer := &EVMIndexerImpl{
-		enabled:      !cfg.IndexerDisable,
-		retainHeight: cfg.IndexerRetainHeight,
+		enabled:             !cfg.IndexerDisable,
+		retainHeight:        cfg.IndexerRetainHeight,
+		backfillStartHeight: cfg.IndexerBackfillStartHeight,
 
 		pruningRunning:       &atomic.Bool{},
 		bloomIndexingRunning: &atomic.Bool{},
@@ -218,10 +229,36 @@ func NewEVMIndexer(
 	go indexer.pendingTxs.Start()
 	go indexer.queuedTxs.Start()
 
-	// start indexing loop
-	go indexer.indexingLoop()
-
 	return indexer, nil
+}
+
+// Initialize initializes the EVM indexer.
+func (e *EVMIndexerImpl) Initialize(clientCtx client.Context, contextCreator contextCreator) error {
+	e.clientCtx = clientCtx
+	e.contextCreator = contextCreator
+
+	if e.backfillStartHeight != 0 {
+		lastIndexedHeight, err := e.GetLastIndexedHeight(context.Background())
+		if err != nil {
+			e.logger.Error("failed to get last indexed height", "err", err)
+			return err
+		}
+
+		if e.backfillStartHeight < lastIndexedHeight {
+			err = e.Backfill(e.backfillStartHeight, lastIndexedHeight)
+			if err != nil {
+				e.logger.Error("failed to backfill", "err", err)
+				return err
+			}
+		}
+	}
+
+	e.logger.Info("EVM indexer initialized")
+
+	// start indexing loop
+	go e.indexingLoop()
+
+	return nil
 }
 
 // Subscribe returns channels to receive blocks and logs.

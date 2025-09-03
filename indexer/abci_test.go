@@ -141,7 +141,7 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	_, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 
-	// 4. Test that failed Cosmo transactions are not indexed
+	// 4. Test that failed Cosmos transactions are not indexed
 	tx = tests.GenerateCosmosTx(t, app, privKeys[0], []sdk.Msg{
 		&banktypes.MsgSend{
 			FromAddress: sdk.AccAddress(addrs[0].Bytes()).String(),
