@@ -14,10 +14,6 @@ import (
 func (e *EVMIndexerImpl) Backfill(startHeight uint64, endHeight uint64) error {
 	e.logger.Info("backfilling", "startHeight", startHeight, "endHeight", endHeight)
 	for startHeight <= endHeight {
-		if startHeight%100 == 0 {
-			e.logger.Info("backfilling", "height", startHeight)
-		}
-
 		ctx, err := e.contextCreator(int64(startHeight), false)
 		if err != nil {
 			return fmt.Errorf("failed to create context: %w", err)
