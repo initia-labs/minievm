@@ -13,6 +13,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -66,6 +67,8 @@ func setup(db *dbm.DB, withGenesis bool) (*MinitiaApp, GenesisState) {
 		evmconfig.DefaultEVMConfig(),
 		EmptyAppOptions{},
 	)
+
+	app.InitializeIndexer(client.Context{})
 
 	if withGenesis {
 		return app, NewDefaultGenesisState(encCdc.Codec, app.BasicModuleManager, types.BaseDenom)
