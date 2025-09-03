@@ -68,7 +68,7 @@ func setup(db *dbm.DB, withGenesis bool) (*MinitiaApp, GenesisState) {
 		EmptyAppOptions{},
 	)
 
-	app.InitializeIndexer(client.Context{})
+	_ = app.InitializeIndexer(client.Context{})
 
 	if withGenesis {
 		return app, NewDefaultGenesisState(encCdc.Codec, app.BasicModuleManager, types.BaseDenom)
