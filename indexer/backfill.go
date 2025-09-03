@@ -60,7 +60,8 @@ func (e *EVMIndexerImpl) Backfill(startHeight uint64, endHeight uint64) error {
 			TxResults: blockResults.TxsResults,
 		}
 
-		blockGasMeter := storetypes.NewInfiniteGasMeter()
+		consensusParams := e.consensusParamsGetter(sdk.UnwrapSDKContext(ctx))
+		blockGasMeter := storetypes.NewGasMeter(storetypes.Gas(consensusParams.Block.MaxGas))
 		blockGasMeter.ConsumeGas(uint64(gasUsed), "block gas")
 
 		task := &indexingTask{
