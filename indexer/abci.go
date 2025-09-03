@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -165,12 +166,14 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 	if blockHeight > 1 {
 		parentNumber := uint64(blockHeight - 1)
 		parentHeader, err_ := e.BlockHeaderByNumber(ctx, parentNumber)
-		if err_ != nil {
+		if err_ != nil && errors.Is(err_, collections.ErrNotFound) {
+			parentHash = common.Hash{}
+		} else if err_ != nil {
 			err = fmt.Errorf("failed to get parent header: %w", err_)
 			return
+		} else {
+			parentHash = parentHeader.Hash()
 		}
-
-		parentHash = parentHeader.Hash()
 	}
 
 	hasher := trie.NewStackTrie(nil)
