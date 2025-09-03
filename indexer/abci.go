@@ -87,16 +87,19 @@ func (e *EVMIndexerImpl) indexingLoop() {
 			lastIndexedHeight, err := e.GetLastIndexedHeight(context.Background())
 			if err != nil {
 				e.logger.Error("failed to get last indexed height", "err", err)
+				continue
 			}
 			err = e.Backfill(uint64(lastIndexedHeight+1), uint64(task.args.blockHeight-1))
 			if err != nil {
 				e.logger.Error("failed to backfill", "err", err)
+				continue
 			}
 
 			// retry the indexing
 			_, err = e.doIndexing(task.args, task.req, task.res)
 			if err != nil {
 				e.logger.Error("indexingLoop error", "err", err)
+				continue
 			}
 		}
 
