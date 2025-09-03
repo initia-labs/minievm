@@ -80,9 +80,19 @@ func (e *EVMIndexerImpl) ListenFinalizeBlock(ctx context.Context, req abci.Reque
 // indexingLoop is the main loop for indexing.
 func (e *EVMIndexerImpl) indexingLoop() {
 	for task := range e.indexingChan {
-		err := e.doIndexing(task.args, task.req, task.res)
+		needBackfill, err := e.doIndexing(task.args, task.req, task.res)
 		if err != nil {
 			e.logger.Error("indexingLoop error", "err", err)
+		} else if needBackfill {
+			lastIndexedHeight, err := e.GetLastIndexedHeight(context.Background())
+			if err != nil {
+				e.logger.Error("failed to get last indexed height", "err", err)
+			}
+			e.logger.Info("need backfill", "blockHeight", task.args.blockHeight, "lastIndexedHeight", lastIndexedHeight)
+			err = e.Backfill(uint64(lastIndexedHeight+1), uint64(task.args.blockHeight))
+			if err != nil {
+				e.logger.Error("failed to backfill", "err", err)
+			}
 		}
 
 		// done with the indexing
@@ -91,7 +101,7 @@ func (e *EVMIndexerImpl) indexingLoop() {
 }
 
 // doIndexing is the main function for indexing.
-func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinalizeBlock, res *abci.ResponseFinalizeBlock) (err error) {
+func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinalizeBlock, res *abci.ResponseFinalizeBlock) (needBackfill bool, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("doIndexing panic: %v", r)
@@ -167,13 +177,13 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		parentNumber := uint64(blockHeight - 1)
 		parentHeader, err_ := e.BlockHeaderByNumber(ctx, parentNumber)
 		if err_ != nil && errors.Is(err_, collections.ErrNotFound) {
-			parentHash = common.Hash{}
+			return true, nil
 		} else if err_ != nil {
 			err = fmt.Errorf("failed to get parent header: %w", err_)
 			return
-		} else {
-			parentHash = parentHeader.Hash()
 		}
+
+		parentHash = parentHeader.Hash()
 	}
 
 	hasher := trie.NewStackTrie(nil)
@@ -281,5 +291,5 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 
 	e.logger.Info("evm indexer indexed", "blockHeight", blockHeight)
 
-	return nil
+	return false, nil
 }
