@@ -93,18 +93,18 @@ type EVMIndexerImpl struct {
 	enabled             bool
 	retainHeight        uint64
 	backfillStartHeight uint64
-	contextCreator      contextCreator
 
 	pruningRunning       *atomic.Bool
 	bloomIndexingRunning *atomic.Bool
 	lastIndexedHeight    *atomic.Uint64
 
-	db        dbm.DB
-	logger    log.Logger
-	txConfig  client.TxConfig
-	ac        address.Codec
-	appCodec  codec.Codec
-	clientCtx client.Context
+	db             dbm.DB
+	logger         log.Logger
+	txConfig       client.TxConfig
+	ac             address.Codec
+	appCodec       codec.Codec
+	clientCtx      client.Context
+	contextCreator contextCreator
 
 	store     *CacheStoreWithBatch
 	evmKeeper *evmkeeper.Keeper
