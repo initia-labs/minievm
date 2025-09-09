@@ -1,7 +1,4 @@
-// +build test
-
-//go:build test
-package testing
+package precompiletesting
 
 import (
 	"context"

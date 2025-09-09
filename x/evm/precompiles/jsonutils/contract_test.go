@@ -1,6 +1,3 @@
-// +build test
-
-//go:build test
 package jsonutils_test
 
 import (

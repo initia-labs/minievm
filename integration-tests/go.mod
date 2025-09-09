@@ -280,7 +280,7 @@ replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.0.0-20250724054804-4480c844bbb4
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.0.0-20250415174140-9fd233bcf847
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.0.0-20250313020428-36b81501adfc
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v0.0.0-20250619031829-fe756c2b95c8
+	github.com/ethereum/go-ethereum => ../../go-ethereum
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
 
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line

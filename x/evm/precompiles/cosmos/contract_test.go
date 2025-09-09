@@ -1,6 +1,3 @@
-// +build test
-
-//go:build test
 package cosmosprecompile_test
 
 import (

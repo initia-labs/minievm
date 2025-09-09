@@ -86,6 +86,7 @@ func tracingContext(evm *vm.EVM) *tracing.VMContext {
 		BlockNumber: evm.Context.BlockNumber,
 		Time:        evm.Context.Time,
 		Random:      evm.Context.Random,
+		BaseFee:     evm.Context.BaseFee,
 		StateDB:     evm.StateDB,
 	}
 }

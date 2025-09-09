@@ -1,6 +1,3 @@
-// +build test
-
-//go:build test
 package erc20registryprecompile_test
 
 import (
