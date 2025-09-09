@@ -7,9 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
@@ -41,7 +43,14 @@ var DefaultLaunchStepFactories = []launchtools.LauncherStepFuncFactory[*launchto
 	steps.InitializeKeyring,
 
 	// Run the app
-	steps.RunApp,
+	steps.RunAppWithPostAction(func(app launchtools.ExpectedApp, _ *server.Context, clientCtx client.Context, _ context.Context, _ *errgroup.Group) error {
+		if app, ok := app.(*minitiaapp.MinitiaApp); ok {
+			if err := app.InitializeIndexer(clientCtx); err != nil {
+				return err
+			}
+		}
+		return nil
+	}),
 
 	// Establish IBC channels for fungible and NFT transfer
 	steps.EstablishIBCChannelsWithNFTTransfer(func() (string, string, string) {

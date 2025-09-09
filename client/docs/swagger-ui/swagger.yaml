@@ -10942,130 +10942,6 @@ paths:
           type: boolean
       tags:
         - Service
-  /cosmos/params/v1beta1/params:
-    get:
-      summary: |-
-        Params queries a specific parameter of a module, given its subspace and
-        key.
-      operationId: Params
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              param:
-                description: param defines the queried parameter.
-                type: object
-                properties:
-                  subspace:
-                    type: string
-                  key:
-                    type: string
-                  value:
-                    type: string
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: subspace
-          description: subspace defines the module to query the parameter for.
-          in: query
-          required: false
-          type: string
-        - name: key
-          description: key defines the key of the parameter in the subspace.
-          in: query
-          required: false
-          type: string
-      tags:
-        - Query
-  /cosmos/params/v1beta1/subspaces:
-    get:
-      summary: >-
-        Subspaces queries for all registered subspaces and all keys for a
-        subspace.
-      description: 'Since: cosmos-sdk 0.46'
-      operationId: Subspaces
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              subspaces:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    subspace:
-                      type: string
-                    keys:
-                      type: array
-                      items:
-                        type: string
-                  description: >-
-                    Subspace defines a parameter subspace name and all the keys
-                    that exist for
-
-                    the subspace.
-
-
-                    Since: cosmos-sdk 0.46
-            description: >-
-              QuerySubspacesResponse defines the response types for querying for
-              all
-
-              registered subspaces and all keys for a subspace.
-
-
-              Since: cosmos-sdk 0.46
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      tags:
-        - Query
   /cosmos/tx/v1beta1/decode:
     post:
       summary: TxDecode decodes the transaction.
@@ -40085,6 +39961,37 @@ paths:
 
 
                       minimum is 256 and 0 means no limit.
+                  gas_enforcement:
+                    description: >-
+                      gas_enforcement specifies the rules for enforcing gas
+                      usage on EVM transactions.
+
+                      If this field is null, gas enforcement is disabled and no
+                      restrictions will be applied.
+                    type: object
+                    properties:
+                      max_gas_fee_cap:
+                        type: string
+                        description: >-
+                          max_gas_fee_cap sets an upper bound on the gas price
+                          (base fee + tip) for a single EVM transaction.
+
+                          If set to 0, no gas price cap is enforced.
+                      max_gas_limit:
+                        type: string
+                        format: uint64
+                        description: >-
+                          max_gas_limit sets the maximum gas limit allowed for a
+                          single EVM transaction.
+
+                          If set to 0, no gas limit restriction is applied.
+                      unlimited_gas_senders:
+                        type: array
+                        items:
+                          type: string
+                        description: >-
+                          unlimited_gas_senders is a list of addresses that are
+                          exempt from gas price and limit restrictions.
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -54847,73 +54754,6 @@ definitions:
       application's
 
       state transition machine.
-  cosmos.params.v1beta1.ParamChange:
-    type: object
-    properties:
-      subspace:
-        type: string
-      key:
-        type: string
-      value:
-        type: string
-    description: |-
-      ParamChange defines an individual parameter change, for use in
-      ParameterChangeProposal.
-  cosmos.params.v1beta1.QueryParamsResponse:
-    type: object
-    properties:
-      param:
-        description: param defines the queried parameter.
-        type: object
-        properties:
-          subspace:
-            type: string
-          key:
-            type: string
-          value:
-            type: string
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
-  cosmos.params.v1beta1.QuerySubspacesResponse:
-    type: object
-    properties:
-      subspaces:
-        type: array
-        items:
-          type: object
-          properties:
-            subspace:
-              type: string
-            keys:
-              type: array
-              items:
-                type: string
-          description: >-
-            Subspace defines a parameter subspace name and all the keys that
-            exist for
-
-            the subspace.
-
-
-            Since: cosmos-sdk 0.46
-    description: |-
-      QuerySubspacesResponse defines the response types for querying for all
-      registered subspaces and all keys for a subspace.
-
-      Since: cosmos-sdk 0.46
-  cosmos.params.v1beta1.Subspace:
-    type: object
-    properties:
-      subspace:
-        type: string
-      keys:
-        type: array
-        items:
-          type: string
-    description: |-
-      Subspace defines a parameter subspace name and all the keys that exist for
-      the subspace.
-
-      Since: cosmos-sdk 0.46
   cosmos.base.abci.v1beta1.ABCIMessageLog:
     type: object
     properties:
@@ -70236,6 +70076,31 @@ definitions:
         type: string
       token_uri:
         type: string
+  minievm.evm.v1.GasEnforcement:
+    type: object
+    properties:
+      max_gas_fee_cap:
+        type: string
+        description: >-
+          max_gas_fee_cap sets an upper bound on the gas price (base fee + tip)
+          for a single EVM transaction.
+
+          If set to 0, no gas price cap is enforced.
+      max_gas_limit:
+        type: string
+        format: uint64
+        description: >-
+          max_gas_limit sets the maximum gas limit allowed for a single EVM
+          transaction.
+
+          If set to 0, no gas limit restriction is applied.
+      unlimited_gas_senders:
+        type: array
+        items:
+          type: string
+        description: >-
+          unlimited_gas_senders is a list of addresses that are exempt from gas
+          price and limit restrictions.
   minievm.evm.v1.Log:
     type: object
     properties:
@@ -70296,6 +70161,37 @@ definitions:
           for the evm opcode `BLOCKHASH`.
 
           minimum is 256 and 0 means no limit.
+      gas_enforcement:
+        description: >-
+          gas_enforcement specifies the rules for enforcing gas usage on EVM
+          transactions.
+
+          If this field is null, gas enforcement is disabled and no restrictions
+          will be applied.
+        type: object
+        properties:
+          max_gas_fee_cap:
+            type: string
+            description: >-
+              max_gas_fee_cap sets an upper bound on the gas price (base fee +
+              tip) for a single EVM transaction.
+
+              If set to 0, no gas price cap is enforced.
+          max_gas_limit:
+            type: string
+            format: uint64
+            description: >-
+              max_gas_limit sets the maximum gas limit allowed for a single EVM
+              transaction.
+
+              If set to 0, no gas limit restriction is applied.
+          unlimited_gas_senders:
+            type: array
+            items:
+              type: string
+            description: >-
+              unlimited_gas_senders is a list of addresses that are exempt from
+              gas price and limit restrictions.
     description: Params defines the set of move parameters.
   minievm.evm.v1.QueryCallRequest:
     type: object
@@ -70590,6 +70486,37 @@ definitions:
 
 
               minimum is 256 and 0 means no limit.
+          gas_enforcement:
+            description: >-
+              gas_enforcement specifies the rules for enforcing gas usage on EVM
+              transactions.
+
+              If this field is null, gas enforcement is disabled and no
+              restrictions will be applied.
+            type: object
+            properties:
+              max_gas_fee_cap:
+                type: string
+                description: >-
+                  max_gas_fee_cap sets an upper bound on the gas price (base fee
+                  + tip) for a single EVM transaction.
+
+                  If set to 0, no gas price cap is enforced.
+              max_gas_limit:
+                type: string
+                format: uint64
+                description: >-
+                  max_gas_limit sets the maximum gas limit allowed for a single
+                  EVM transaction.
+
+                  If set to 0, no gas limit restriction is applied.
+              unlimited_gas_senders:
+                type: array
+                items:
+                  type: string
+                description: >-
+                  unlimited_gas_senders is a list of addresses that are exempt
+                  from gas price and limit restrictions.
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
   minievm.evm.v1.QueryStateResponse:
     type: object

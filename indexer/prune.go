@@ -11,10 +11,6 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const (
-	pruneStoreKey = iota
-)
-
 // doPrune triggers pruning in a goroutine. If pruning is already running,
 // it does nothing.
 func (e *EVMIndexerImpl) doPrune(ctx context.Context, height uint64) {
@@ -147,9 +143,4 @@ func (e *EVMIndexerImpl) SetRetainHeight(height uint64) {
 // Check if pruning is running
 func (e *EVMIndexerImpl) IsPruningRunning() bool {
 	return e.pruningRunning.Load()
-}
-
-// Clear cache for testing
-func (e *EVMIndexerImpl) ClearCache() error {
-	return e.store.cache.Reset()
 }

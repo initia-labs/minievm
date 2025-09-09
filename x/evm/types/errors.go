@@ -41,6 +41,7 @@ var (
 	ErrFailedToGetConnectOracleAddr = errorsmod.Register(ModuleName, 32, "Failed to get ConnectOracle address")
 	ErrInvalidSalt                  = errorsmod.Register(ModuleName, 33, "Invalid salt")
 	ErrExecuteCosmosDisabled        = errorsmod.Register(ModuleName, 34, "Execute cosmos is disabled")
+	ErrInvalidGasEnforcement        = errorsmod.Register(ModuleName, 35, "Invalid gas enforcement parameters")
 )
 
 // ModError is a wrapper for the errorsmod.Error

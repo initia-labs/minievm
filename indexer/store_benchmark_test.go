@@ -1,15 +1,16 @@
 package indexer
 
 import (
-	dbm "github.com/cosmos/cosmos-db"
 	"testing"
+
+	dbm "github.com/cosmos/cosmos-db"
 )
 
 func BenchmarkCacheStore(b *testing.B) {
 	// Create a memory DB for testing
 	db := dbm.NewMemDB()
-	store := NewCacheStoreWithBatch(db, 100*1024*1024) // 100MB cache
-	defer store.Write()                                // Cleanup
+	store := NewCacheStoreWithBatch(db)
+	defer store.Write() // Cleanup
 
 	// Benchmark Set operations with batch
 	b.Run("SetWithBatch", func(b *testing.B) {

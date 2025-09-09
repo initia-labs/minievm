@@ -24,10 +24,7 @@ func (k Keeper) LoadFee(ctx context.Context, params types.Params) (types.Fee, er
 	if (feeContract != common.Address{} &&
 		// erc20Keeper.Decimals is also calling LoadFee, so we need to check this call is not recursive
 		sdk.UnwrapSDKContext(ctx).Value(types.CONTEXT_KEY_LOAD_DECIMALS) == nil) {
-		decimals, err = k.erc20Keeper.Decimals(ctx, feeContract)
-		if err != nil {
-			return types.Fee{}, err
-		}
+		decimals = k.erc20Keeper.Decimals(ctx, feeContract)
 	}
 
 	return types.NewFee(params.FeeDenom, feeContract, decimals), nil

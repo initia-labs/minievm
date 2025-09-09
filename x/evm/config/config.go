@@ -15,12 +15,12 @@ const (
 	DefaultContractSimulationGasLimit = uint64(3_000_000)
 	// DefaultIndexerDisable is the default flag to disable indexer
 	DefaultIndexerDisable = false
-	// DefaultIndexerCacheSize is the default maximum size (MiB) of the cache.
-	DefaultIndexerCacheSize = 100
 	// DefaultIndexerRetainHeight is the default height to retain indexer data.
 	DefaultIndexerRetainHeight = uint64(0)
 	// DefaultTracerTimeout is the default tracer timeout.
 	DefaultTracerTimeout = 10 * time.Second
+	// DefaultIndexerBackfillStartHeight is the default height to start backfilling indexer data.
+	DefaultIndexerBackfillStartHeight = uint64(0)
 
 	// SectionSize is the size of the section for bloom indexing
 	SectionSize = uint64(4096)
@@ -29,9 +29,9 @@ const (
 const (
 	flagContractSimulationGasLimit = "evm.contract-simulation-gas-limit"
 	flagIndexerDisable             = "evm.indexer-disable"
-	flagIndexerCacheSize           = "evm.indexer-cache-size"
 	flagIndexerRetainHeight        = "evm.indexer-retain-height"
 	flagTracerTimeout              = "evm.tracer-timeout"
+	flagIndexerBackfillStartHeight = "evm.indexer-backfill-start-height"
 )
 
 // EVMConfig is the extra config required for evm
@@ -40,13 +40,14 @@ type EVMConfig struct {
 	ContractSimulationGasLimit uint64 `mapstructure:"contract-simulation-gas-limit"`
 	// IndexerDisable is the flag to disable indexer
 	IndexerDisable bool `mapstructure:"indexer-disable"`
-	// IndexerCacheSize is the maximum size (MiB) of the cache.
-	IndexerCacheSize int `mapstructure:"indexer-cache-size"`
 	// IndexerRetainHeight is the height to retain indexer data.
 	// If 0, it will retain all data.
 	IndexerRetainHeight uint64 `mapstructure:"indexer-retain-height"`
 	// TracerTimeout is the timeout for the tracer.
 	TracerTimeout time.Duration `mapstructure:"tracer-timeout"`
+	// IndexerBackfillStartHeight is the height to start backfilling indexer data.
+	// If non-zero, it will start backfilling from this height until last indexed height.
+	IndexerBackfillStartHeight uint64 `mapstructure:"indexer-backfill-start-height"`
 }
 
 func (c EVMConfig) Validate() error {
@@ -62,9 +63,9 @@ func DefaultEVMConfig() EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: DefaultContractSimulationGasLimit,
 		IndexerDisable:             DefaultIndexerDisable,
-		IndexerCacheSize:           DefaultIndexerCacheSize,
 		IndexerRetainHeight:        DefaultIndexerRetainHeight,
 		TracerTimeout:              DefaultTracerTimeout,
+		IndexerBackfillStartHeight: DefaultIndexerBackfillStartHeight,
 	}
 }
 
@@ -78,9 +79,9 @@ func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
 	return EVMConfig{
 		ContractSimulationGasLimit: cast.ToUint64(appOpts.Get(flagContractSimulationGasLimit)),
 		IndexerDisable:             cast.ToBool(appOpts.Get(flagIndexerDisable)),
-		IndexerCacheSize:           cast.ToInt(appOpts.Get(flagIndexerCacheSize)),
 		IndexerRetainHeight:        cast.ToUint64(appOpts.Get(flagIndexerRetainHeight)),
 		TracerTimeout:              tracerTimeout,
+		IndexerBackfillStartHeight: cast.ToUint64(appOpts.Get(flagIndexerBackfillStartHeight)),
 	}
 }
 
@@ -88,9 +89,9 @@ func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
 func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Uint64(flagContractSimulationGasLimit, DefaultContractSimulationGasLimit, "Maximum simulation gas amount for evm contract execution")
 	startCmd.Flags().Bool(flagIndexerDisable, DefaultIndexerDisable, "Disable evm indexer")
-	startCmd.Flags().Int(flagIndexerCacheSize, DefaultIndexerCacheSize, "Maximum size (MiB) of the indexer cache")
 	startCmd.Flags().Uint64(flagIndexerRetainHeight, DefaultIndexerRetainHeight, "Height to retain indexer data")
 	startCmd.Flags().Duration(flagTracerTimeout, DefaultTracerTimeout, "Timeout for the tracer")
+	startCmd.Flags().Uint64(flagIndexerBackfillStartHeight, DefaultIndexerBackfillStartHeight, "Height to start backfilling indexer data")
 }
 
 // DefaultConfigTemplate default config template for evm
@@ -108,13 +109,14 @@ contract-simulation-gas-limit = "{{ .EVMConfig.ContractSimulationGasLimit }}"
 # empty results for block, tx, and receipt queries.
 indexer-disable = {{ .EVMConfig.IndexerDisable }}
 
-# IndexerCacheSize is the maximum size (MiB) of the cache for evm indexer.
-indexer-cache-size = {{ .EVMConfig.IndexerCacheSize }}
-
 # IndexerRetainHeight is the height to retain indexer data.
 # If 0, it will retain all data.
 indexer-retain-height = {{ .EVMConfig.IndexerRetainHeight }}
 
 # TracerTimeout is the timeout for the tracer.
-tracer-timeout = {{ .EVMConfig.TracerTimeout }}
+tracer-timeout = "{{ .EVMConfig.TracerTimeout }}"
+
+# IndexerBackfillStartHeight is the height to start backfilling indexer data.
+# If non-zero, it will start backfilling from this height until last indexed height.
+indexer-backfill-start-height = {{ .EVMConfig.IndexerBackfillStartHeight }}
 `

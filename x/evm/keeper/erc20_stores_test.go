@@ -31,7 +31,7 @@ func deployCustomERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller 
 	if success {
 		require.NoError(t, err)
 	} else {
-		require.Error(t, err)
+		require.ErrorContains(t, err, types.ErrCustomERC20NotAllowed.Error())
 	}
 
 	return contractAddr
@@ -62,7 +62,13 @@ func Test_CanDeployCustomERC20(t *testing.T) {
 
 	// limit allowed custom erc20s
 	estimatedContractAddr := crypto.CreateAddress(evmAddr2, 0)
-	params.AllowedCustomERC20s = []string{"foo", estimatedContractAddr.Hex()}
+	params.AllowedCustomERC20s = []string{estimatedContractAddr.Hex()}
+	err = params.NormalizeAddresses(input.AccountKeeper.AddressCodec())
+	require.NoError(t, err)
+
+	err = params.Validate(input.AccountKeeper.AddressCodec())
+	require.NoError(t, err)
+
 	err = input.EVMKeeper.Params.Set(ctx, params)
 	require.NoError(t, err)
 

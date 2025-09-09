@@ -23,6 +23,9 @@ RUN VERSION=${VERSION} COMMIT=${COMMIT} LEDGER_ENABLED=false GOARCH=${GOARCH} LD
 
 FROM alpine:3.20
 
+# install curl for health check
+RUN apk add curl
+
 RUN addgroup minitia \
     && adduser -G minitia -D -h /minitia minitia
 

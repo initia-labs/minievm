@@ -204,6 +204,11 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 				return err
 			}
 
+			// set client context for the evm Indexer
+			if err := a.App().(*minitiaapp.MinitiaApp).InitializeIndexer(clientCtx); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	})

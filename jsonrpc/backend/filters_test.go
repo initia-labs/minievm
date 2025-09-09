@@ -65,7 +65,7 @@ func Test_BloomStatus(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes1.TxResults[0], true)
 	height1 := app.LastBlockHeight()
 
-	for i := uint64(0); i < evmconfig.SectionSize; i++ {
+	for range evmconfig.SectionSize {
 		tests.IncreaseBlockHeight(t, app)
 	}
 

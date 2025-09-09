@@ -7,10 +7,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/jellydator/ttlcache/v3"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+
 	"cosmossdk.io/collections"
+	"cosmossdk.io/core/address"
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	snapshot "cosmossdk.io/store/snapshots/types"
@@ -24,7 +27,6 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
-	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 )
 
@@ -80,12 +82,22 @@ type EVMIndexer interface {
 
 	// Wait waits for all the indexing to finish.
 	Wait()
+
+	// Initialize sets the client context.
+	Initialize(clientCtx client.Context, contextCreator contextCreator, consensusParamsGetter consensusParamsGetter) error
 }
+
+// contextCreator creates a new SDK context.
+type contextCreator func(height int64, prove bool) (sdk.Context, error)
+
+// consensusParamsGetter gets the consensus params from the SDK context.
+type consensusParamsGetter func(ctx sdk.Context) cmtproto.ConsensusParams
 
 // EVMIndexerImpl implements EVMIndexer.
 type EVMIndexerImpl struct {
-	enabled      bool
-	retainHeight uint64
+	enabled             bool
+	retainHeight        uint64
+	backfillStartHeight uint64
 
 	pruningRunning       *atomic.Bool
 	bloomIndexingRunning *atomic.Bool
@@ -94,7 +106,12 @@ type EVMIndexerImpl struct {
 	db       dbm.DB
 	logger   log.Logger
 	txConfig client.TxConfig
+	ac       address.Codec
 	appCodec codec.Codec
+
+	clientCtx             client.Context
+	contextCreator        contextCreator
+	consensusParamsGetter consensusParamsGetter
 
 	store     *CacheStoreWithBatch
 	evmKeeper *evmkeeper.Keeper
@@ -135,39 +152,35 @@ type EVMIndexerImpl struct {
 
 // indexingTask is a task to be indexed.
 type indexingTask struct {
-	ctx context.Context
 	req *abci.RequestFinalizeBlock
 	res *abci.ResponseFinalizeBlock
+
+	// state dependent args for extractEthTxInfo
+	args *indexingArgs
 }
 
 func NewEVMIndexer(
 	db dbm.DB,
+	ac address.Codec,
 	appCodec codec.Codec,
 	logger log.Logger,
 	txConfig client.TxConfig,
 	evmKeeper *evmkeeper.Keeper,
 ) (EVMIndexer, error) {
 	cfg := evmKeeper.Config()
-	if cfg.IndexerCacheSize == 0 {
-		cfg.IndexerCacheSize = evmconfig.DefaultIndexerCacheSize
-	}
 
-	store := NewCacheStoreWithBatch(db, cfg.IndexerCacheSize)
+	store := NewCacheStoreWithBatch(db)
 	sb := collections.NewSchemaBuilderFromAccessor(
-		func(ctx context.Context) corestoretypes.KVStore {
-			// if there is prune store in context, use it
-			if pruneStore := sdk.UnwrapSDKContext(ctx).Value(pruneStoreKey); pruneStore != nil {
-				return pruneStore.(corestoretypes.KVStore)
-			}
-
+		func(_ context.Context) corestoretypes.KVStore {
 			return store
 		},
 	)
 
 	logger.Info("EVM Indexer", "enable", !cfg.IndexerDisable)
 	indexer := &EVMIndexerImpl{
-		enabled:      !cfg.IndexerDisable,
-		retainHeight: cfg.IndexerRetainHeight,
+		enabled:             !cfg.IndexerDisable,
+		retainHeight:        cfg.IndexerRetainHeight,
+		backfillStartHeight: cfg.IndexerBackfillStartHeight,
 
 		pruningRunning:       &atomic.Bool{},
 		bloomIndexingRunning: &atomic.Bool{},
@@ -177,6 +190,7 @@ func NewEVMIndexer(
 		store:    store,
 		logger:   logger.With("module", "evm-indexer"),
 		txConfig: txConfig,
+		ac:       ac,
 		appCodec: appCodec,
 
 		evmKeeper: evmKeeper,
@@ -222,10 +236,37 @@ func NewEVMIndexer(
 	go indexer.pendingTxs.Start()
 	go indexer.queuedTxs.Start()
 
-	// start indexing loop
-	go indexer.indexingLoop()
-
 	return indexer, nil
+}
+
+// Initialize initializes the EVM indexer.
+func (e *EVMIndexerImpl) Initialize(clientCtx client.Context, contextCreator contextCreator, consensusParamsGetter consensusParamsGetter) error {
+	e.clientCtx = clientCtx
+	e.contextCreator = contextCreator
+	e.consensusParamsGetter = consensusParamsGetter
+
+	if e.backfillStartHeight != 0 {
+		lastIndexedHeight, err := e.GetLastIndexedHeight(context.Background())
+		if err != nil {
+			e.logger.Error("failed to get last indexed height", "err", err)
+			return err
+		}
+
+		if e.backfillStartHeight < lastIndexedHeight {
+			err = e.Backfill(e.backfillStartHeight, lastIndexedHeight)
+			if err != nil {
+				e.logger.Error("failed to backfill", "err", err)
+				return err
+			}
+		}
+	}
+
+	e.logger.Info("EVM indexer initialized")
+
+	// start indexing loop
+	go e.indexingLoop()
+
+	return nil
 }
 
 // Subscribe returns channels to receive blocks and logs.
@@ -250,12 +291,12 @@ func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, erro
 		}
 
 		if blockHeader.Valid() {
-			lastHeight, err := blockHeader.Key()
+			lastIndexedHeight, err = blockHeader.Key()
 			if err != nil {
 				return 0, err
 			}
 
-			e.lastIndexedHeight.Store(lastHeight)
+			e.lastIndexedHeight.Store(lastIndexedHeight)
 		}
 	}
 

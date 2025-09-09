@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	comettypes "github.com/cometbft/cometbft/types"
 
 	collcodec "cosmossdk.io/collections/codec"
+	"cosmossdk.io/core/address"
 	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 
 	"github.com/valyala/fastjson"
@@ -37,15 +39,33 @@ type EthTxInfo struct {
 	CosmosTxHash []byte
 }
 
+// indexingArgs is the arguments for indexing.
+type indexingArgs struct {
+	// chain info
+	chainID string
+
+	// chain tools
+	ac        address.Codec
+	txDecoder sdk.TxDecoder
+
+	// state dependent args
+	params      types.Params
+	baseFee     *big.Int
+	feeDecimals uint8
+
+	// block info
+	blockHeight   int64
+	blockTime     time.Time
+	blockGasMeter storetypes.GasMeter
+}
+
 // extractEthTxInfos extracts Ethereum transaction information from the finalize block request and response.
 // It uses a worker pool to extract the transaction information in parallel.
 func extractEthTxInfos(
-	sdkCtx sdk.Context,
 	logger log.Logger,
-	txDecoder sdk.TxDecoder,
-	evmKeeper keeper.Keeper,
-	req abci.RequestFinalizeBlock,
-	res abci.ResponseFinalizeBlock,
+	args *indexingArgs,
+	req *abci.RequestFinalizeBlock,
+	res *abci.ResponseFinalizeBlock,
 ) ([]*EthTxInfo, error) {
 	numTxs := len(req.Txs)
 	if numTxs == 0 {
@@ -70,7 +90,7 @@ func extractEthTxInfos(
 	for range workerCount {
 		go func() {
 			for job := range jobs {
-				ethTxInfo, err := extractEthTxInfo(sdkCtx, txDecoder, evmKeeper, job.txBytes, job.result)
+				ethTxInfo, err := extractEthTxInfo(args, job.txBytes, job.result)
 				if err != nil {
 					logger.Error("failed to extract tx info",
 						"height", req.Height,
@@ -119,13 +139,11 @@ func extractEthTxInfos(
 // For non-Ethereum Cosmos transactions, it processes EVM events if the transaction was successful and
 // creates a fake Ethereum transaction for indexing purposes.
 func extractEthTxInfo(
-	ctx sdk.Context,
-	txDecoder sdk.TxDecoder,
-	evmKeeper keeper.Keeper,
+	args *indexingArgs,
 	txBytes []byte,
 	txResult *abci.ExecTxResult,
 ) (*EthTxInfo, error) {
-	sdkTx, err := txDecoder(txBytes)
+	sdkTx, err := args.txDecoder(txBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +154,12 @@ func extractEthTxInfo(
 	}
 
 	// convert cosmos tx to ethereum tx
-	ethTx, _, err := evmKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, sdkTx)
+	ethTx, _, err := types.ConvertCosmosTxToEthereumTx(
+		false, args.chainID, args.ac, sdkTx,
+		func() (types.Params, uint8, error) {
+			return args.params, args.feeDecimals, nil
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

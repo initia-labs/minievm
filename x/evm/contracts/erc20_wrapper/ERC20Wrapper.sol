@@ -71,9 +71,14 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         // remoteDenom -> remoteToken
         address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
 
-        // check balance of remote token
+        // load balance and allowance of remote token
+        uint remoteAllowance = ERC20(remoteToken).allowance(msg.sender, address(this));
         uint remoteBalance = ERC20(remoteToken).balanceOf(msg.sender);
-        return toLocal(receiver, remoteDenom, remoteBalance, _remoteDecimals);
+
+        // use min(remoteAllowance, remoteBalance) as the remote amount
+        uint remoteAmount = remoteAllowance > remoteBalance ? remoteBalance : remoteAllowance;
+
+        toLocal(receiver, remoteDenom, remoteAmount, _remoteDecimals);
     }
 
     /**
