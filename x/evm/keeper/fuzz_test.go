@@ -56,7 +56,7 @@ func Fuzz_Concurrent_Counter(f *testing.F) {
 				defer wg.Done()
 
 				// call with value
-				res, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+				res, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 				require.NoError(t, err)
 				require.Empty(t, res)
 				assertLogs(t, contractAddr, logs)

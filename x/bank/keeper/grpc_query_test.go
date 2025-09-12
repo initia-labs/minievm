@@ -164,7 +164,7 @@ func TestQueryDenomMetadata(t *testing.T) {
 
 	erc20WrapperAddr, err := input.EVMKeeper.ERC20FactoryAddr.Get(ctx)
 	require.NoError(t, err)
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, common.BytesToAddress(erc20WrapperAddr), callBz, nil, nil)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, common.BytesToAddress(erc20WrapperAddr), callBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, retBz)
 

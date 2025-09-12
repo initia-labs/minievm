@@ -12,7 +12,9 @@ import (
 	corestoretypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -379,12 +381,15 @@ func (s *StateDB) GetCode(addr common.Address) []byte {
 // It is always used in conjunction with CreateContract, so don't need to check account conversion.
 func (s *StateDB) SetCode(addr common.Address, code []byte) []byte {
 	acc := s.getOrNewAccount(addr)
-	if evmtypes.IsEmptyAccount(acc) {
-		an := acc.GetAccountNumber()
+
+	// convert base account to contract account
+	if bacc, isBaseAccount := acc.(*authtypes.BaseAccount); isBaseAccount {
 		acc = evmtypes.NewContractAccountWithAddress(addr.Bytes())
-		if err := acc.SetAccountNumber(an); err != nil {
-			panic(err)
-		}
+		acc.(*evmtypes.ContractAccount).AccountNumber = bacc.AccountNumber
+		acc.(*evmtypes.ContractAccount).Sequence = bacc.Sequence
+
+		// allow pubkey setting for contract accounts specifically for set code authorization.
+		acc.(*evmtypes.ContractAccount).PubKey = bacc.PubKey
 	}
 
 	// cast to contract account
@@ -478,6 +483,20 @@ func (s *StateDB) SetNonce(addr common.Address, nonce uint64, _ tracing.NonceCha
 	acc := s.getOrNewAccount(addr)
 	if err := acc.SetSequence(nonce); err != nil {
 		panic(err)
+	}
+	s.accountKeeper.SetAccount(s.ctx, acc)
+}
+
+// SetNonceAndPubKey sets the nonce and pubkey of the account with addr
+func (s *StateDB) SetNonceAndPubKey(addr common.Address, nonce uint64, pubKey cryptotypes.PubKey, _ tracing.NonceChangeReason) {
+	acc := s.getOrNewAccount(addr)
+	if err := acc.SetSequence(nonce); err != nil {
+		panic(err)
+	}
+	if acc.GetPubKey() == nil {
+		if err := acc.SetPubKey(pubKey); err != nil {
+			panic(err)
+		}
 	}
 	s.accountKeeper.SetAccount(s.ctx, acc)
 }

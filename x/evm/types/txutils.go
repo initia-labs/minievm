@@ -7,6 +7,8 @@ import (
 	"math/big"
 	"slices"
 
+	"github.com/holiman/uint256"
+
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,6 +20,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
@@ -124,7 +127,7 @@ func ConvertEthereumTxToCosmosTx(
 	switch ethTx.Type() {
 	case coretypes.LegacyTxType:
 		sigBytes[64] = byte(new(big.Int).Sub(v, new(big.Int).Add(new(big.Int).Add(ethChainID, ethChainID), big.NewInt(35))).Uint64())
-	case coretypes.AccessListTxType, coretypes.DynamicFeeTxType:
+	case coretypes.AccessListTxType, coretypes.DynamicFeeTxType, coretypes.SetCodeTxType:
 		sigBytes[64] = byte(v.Uint64())
 	default:
 		return nil, sdkerrors.ErrorInvalidSigner.Wrapf("unsupported tx type: %d", ethTx.Type())
@@ -165,6 +168,15 @@ func ConvertEthereumTxToCosmosTx(
 
 	// convert access list
 	accessList := ConvertEthAccessListToCosmos(ethTx.AccessList())
+	authList := ConvertEthSetCodeAuthorizationsToCosmos(ethTx.SetCodeAuthorizations())
+	if ethTx.Type() == coretypes.SetCodeTxType {
+		if ethTx.To() == nil {
+			return nil, fmt.Errorf("%w (sender %v)", core.ErrSetCodeTxCreate, sender)
+		}
+		if len(authList) == 0 {
+			return nil, fmt.Errorf("%w (sender %v)", core.ErrEmptyAuthList, sender)
+		}
+	}
 
 	sdkMsgs := []sdk.Msg{}
 	if ethTx.To() == nil {
@@ -181,6 +193,7 @@ func ConvertEthereumTxToCosmosTx(
 			Input:        hexutil.Encode(ethTx.Data()),
 			Value:        math.NewIntFromBigInt(value),
 			AccessList:   accessList,
+			AuthList:     authList,
 		})
 	}
 
@@ -264,7 +277,8 @@ func ConvertCosmosTxToEthereumTx(
 		}
 	}
 	// check for early return cases (0x02 is dynamic fee tx type)
-	if md.GasFeeCap == nil || md.GasTipCap == nil || md.Type > coretypes.DynamicFeeTxType {
+	supportedTypes := []uint8{coretypes.LegacyTxType, coretypes.AccessListTxType, coretypes.DynamicFeeTxType, coretypes.SetCodeTxType}
+	if md.GasFeeCap == nil || md.GasTipCap == nil || !slices.Contains(supportedTypes, md.Type) {
 		return nil, nil, nil
 	}
 
@@ -332,6 +346,7 @@ func ConvertCosmosTxToEthereumTx(
 	var input []byte
 	var value *big.Int
 	var accessList coretypes.AccessList
+	var authList []coretypes.SetCodeAuthorization
 	switch typeUrl {
 	case "/minievm.evm.v1.MsgCall":
 		callMsg := msg.(*MsgCall)
@@ -352,6 +367,10 @@ func ConvertCosmosTxToEthereumTx(
 		// So we need to convert it back to wei to get original ethereum tx and verify signature.
 		value = ToEthersUnit(feeDecimals, callMsg.Value.BigInt())
 		accessList = ConvertCosmosAccessListToEth(callMsg.AccessList)
+		authList, err = ConvertCosmosSetCodeAuthorizationsToEth(callMsg.AuthList)
+		if err != nil {
+			return nil, nil, err
+		}
 
 	case "/minievm.evm.v1.MsgCreate":
 		createMsg := msg.(*MsgCreate)
@@ -397,7 +416,6 @@ func ConvertCosmosTxToEthereumTx(
 			S:          new(big.Int).SetBytes(s),
 			V:          new(big.Int).SetBytes(v),
 		}
-
 	case coretypes.DynamicFeeTxType:
 		txData = &coretypes.DynamicFeeTx{
 			ChainID:    ethChainID,
@@ -412,6 +430,31 @@ func ConvertCosmosTxToEthereumTx(
 			R:          new(big.Int).SetBytes(r),
 			S:          new(big.Int).SetBytes(s),
 			V:          new(big.Int).SetBytes(v),
+		}
+	case coretypes.SetCodeTxType:
+		// validate sender and auth list
+		if to == nil {
+			return nil, nil, fmt.Errorf("%w (sender %v)", core.ErrSetCodeTxCreate, sender)
+		}
+		if len(authList) == 0 {
+			return nil, nil, fmt.Errorf("%w (sender %v)", core.ErrEmptyAuthList, sender)
+		}
+
+		// create set code tx
+		txData = &coretypes.SetCodeTx{
+			ChainID:    uint256.MustFromBig(ethChainID),
+			Nonce:      sig.Sequence,
+			GasTipCap:  uint256.MustFromBig(gasTipCap),
+			GasFeeCap:  uint256.MustFromBig(gasFeeCap),
+			Gas:        gasLimit,
+			To:         *to,
+			Data:       input,
+			Value:      uint256.MustFromBig(value),
+			AccessList: accessList,
+			AuthList:   authList,
+			R:          uint256.MustFromBig(new(big.Int).SetBytes(r)),
+			S:          uint256.MustFromBig(new(big.Int).SetBytes(s)),
+			V:          uint256.MustFromBig(new(big.Int).SetBytes(v)),
 		}
 
 	default:
@@ -471,4 +514,81 @@ func ConvertEthAccessListToCosmos(ethAccessList coretypes.AccessList) []AccessTu
 		}
 	}
 	return accessList
+}
+
+// ConvertEthSetCodeAuthorizationsToCosmos converts an Ethereum set code authorizations to a Cosmos SDK set code authorizations.
+func ConvertEthSetCodeAuthorizationsToCosmos(ethSetCodeAuthorizations []coretypes.SetCodeAuthorization) []SetCodeAuthorization {
+	if len(ethSetCodeAuthorizations) == 0 {
+		return nil
+	}
+	setCodeAuthorizations := make([]SetCodeAuthorization, len(ethSetCodeAuthorizations))
+	for i, auth := range ethSetCodeAuthorizations {
+		r := auth.R.Bytes32()
+		s := auth.S.Bytes32()
+		v := auth.V
+
+		setCodeAuthorizations[i] = SetCodeAuthorization{
+			ChainId:   auth.ChainID.String(),
+			Address:   auth.Address.String(),
+			Nonce:     auth.Nonce,
+			Signature: append(append(r[:], s[:]...), v),
+		}
+	}
+
+	return setCodeAuthorizations
+}
+
+// ConvertCosmosSetCodeAuthorizationsToEth converts a Cosmos SDK set code authorizations to an Ethereum set code authorizations.
+func ConvertCosmosSetCodeAuthorizationsToEth(cosmosSetCodeAuthorizations []SetCodeAuthorization) ([]coretypes.SetCodeAuthorization, error) {
+	if len(cosmosSetCodeAuthorizations) == 0 {
+		return nil, nil
+	}
+	ethSetCodeAuthorizations := make([]coretypes.SetCodeAuthorization, len(cosmosSetCodeAuthorizations))
+	for i, auth := range cosmosSetCodeAuthorizations {
+		chainID, err := uint256.FromDecimal(auth.ChainId)
+		if err != nil {
+			return nil, err
+		}
+
+		addr, err := hexutil.Decode(auth.Address)
+		if err != nil {
+			return nil, err
+		}
+		if len(addr) != common.AddressLength {
+			return nil, fmt.Errorf("invalid address length in set code authorization")
+		}
+
+		if len(auth.Signature) != 65 {
+			return nil, fmt.Errorf("invalid signature length in set code authorization")
+		}
+
+		ethSetCodeAuthorizations[i] = coretypes.SetCodeAuthorization{
+			ChainID: *chainID,
+			Address: common.BytesToAddress(addr),
+			Nonce:   auth.Nonce,
+			V:       auth.Signature[64],
+			R:       *uint256.MustFromBig(new(big.Int).SetBytes(auth.Signature[:32])),
+			S:       *uint256.MustFromBig(new(big.Int).SetBytes(auth.Signature[32:64])),
+		}
+	}
+
+	return ethSetCodeAuthorizations, nil
+}
+
+// ValidateAuthorization validates the given set code authorization.
+func ValidateAuthorization(ctx sdk.Context, auth coretypes.SetCodeAuthorization) (err error) {
+	chainID := ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
+	// Verify chain ID is null or equal to current chain ID.
+	if !auth.ChainID.IsZero() && auth.ChainID.CmpBig(chainID) != 0 {
+		return core.ErrAuthorizationWrongChainID
+	}
+	// Limit nonce to 2^64-1 per EIP-2681.
+	if auth.Nonce+1 < auth.Nonce {
+		return core.ErrAuthorizationNonceOverflow
+	}
+	_, err = auth.Authority()
+	if err != nil {
+		return err
+	}
+	return nil
 }

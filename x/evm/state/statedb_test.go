@@ -193,12 +193,12 @@ func Test_SelfDestruct(t *testing.T) {
 	require.NoError(t, err)
 
 	// call with value
-	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100), nil)
+	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100), nil, nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.NotEmpty(t, logs)
 
-	res, logs, err = input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr2, inputBz, uint256.NewInt(100), nil)
+	res, logs, err = input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr2, inputBz, uint256.NewInt(100), nil, nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.NotEmpty(t, logs)
@@ -255,7 +255,7 @@ func Test_Selfdestruct6780_InDifferentTx(t *testing.T) {
 	require.NoError(t, err)
 
 	// call with value
-	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100), nil)
+	res, logs, err := input.EVMKeeper.EVMCall(sdkCtx, caller, contractAddr, inputBz, uint256.NewInt(100), nil, nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.NotEmpty(t, logs)
