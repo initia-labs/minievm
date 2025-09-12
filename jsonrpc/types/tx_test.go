@@ -32,7 +32,7 @@ func TestLegacyTxTypeRPCTransaction(t *testing.T) {
 		S:        nil,
 	})
 
-	signedTx, err := coretypes.SignTx(tx, coretypes.NewCancunSigner(chainID), privateKey)
+	signedTx, err := coretypes.SignTx(tx, coretypes.NewPragueSigner(chainID), privateKey)
 	if err != nil {
 		t.Fatalf("Failed to sign transaction: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestAccessListTypeRPCTransaction(t *testing.T) {
 		S:          nil,
 	})
 
-	signedTx, err := coretypes.SignTx(tx, coretypes.NewCancunSigner(chainID), privateKey)
+	signedTx, err := coretypes.SignTx(tx, coretypes.NewPragueSigner(chainID), privateKey)
 	if err != nil {
 		t.Fatalf("Failed to sign transaction: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestDynamicFeeTxTypeRPCTransaction(t *testing.T) {
 		S:          nil,
 	})
 
-	signedTx, err := coretypes.SignTx(tx, coretypes.NewCancunSigner(chainID), privateKey)
+	signedTx, err := coretypes.SignTx(tx, coretypes.NewPragueSigner(chainID), privateKey)
 	if err != nil {
 		t.Fatalf("Failed to sign transaction: %v", err)
 	}

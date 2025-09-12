@@ -139,6 +139,10 @@ message MsgCall {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+
+  // AuthList is a list of authorizations that allow code deployment at specific addresses.
+  // Uses amino omitempty to seamlessly work with existing libraries.
+  repeated SetCodeAuthorization auth_list = 6 [(gogoproto.nullable) = false];
 }
 
 // MsgCallResponse defines the Msg/Call response type.

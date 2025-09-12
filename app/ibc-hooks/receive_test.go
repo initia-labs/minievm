@@ -222,7 +222,7 @@ func Test_onReceivePacket_memo_ICS721(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the contract state
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, evmAddr, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)

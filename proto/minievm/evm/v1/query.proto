@@ -199,6 +199,8 @@ message QueryCallRequest {
   // whether to trace the call
   // `nil` means no trace
   TraceOptions trace_options = 6;
+  // AuthList is a list of authorizations that allow code deployment at specific addresses.
+  repeated SetCodeAuthorization auth_list = 7 [(gogoproto.nullable) = false];
 }
 
 // TraceOption is the option for tracing

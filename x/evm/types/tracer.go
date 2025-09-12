@@ -86,8 +86,7 @@ func tracingContext(evm *vm.EVM) *tracing.VMContext {
 		BlockNumber: evm.Context.BlockNumber,
 		Time:        evm.Context.Time,
 		Random:      evm.Context.Random,
-		GasPrice:    evm.TxContext.GasPrice,
-		ChainConfig: evm.ChainConfig(),
+		BaseFee:     evm.Context.BaseFee,
 		StateDB:     evm.StateDB,
 	}
 }

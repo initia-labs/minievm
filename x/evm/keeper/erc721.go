@@ -123,7 +123,7 @@ func (k ERC721Keeper) Transfers(ctx context.Context, sender, receiver sdk.AccAdd
 		}
 
 		// ignore the return values
-		_, _, err = k.EVMCall(ctx, senderAddr, contractAddr, inputBz, nil, nil)
+		_, _, err = k.EVMCall(ctx, senderAddr, contractAddr, inputBz, nil, nil, nil)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (k ERC721Keeper) Burn(
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	_, _, err = k.EVMCall(ctx, owner, contractAddr, inputBz, nil, nil)
+	_, _, err = k.EVMCall(ctx, owner, contractAddr, inputBz, nil, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func (k ERC721Keeper) Mint(
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
 
-	_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil)
+	_, _, err = k.EVMCall(ctx, types.StdAddress, contractAddr, inputBz, nil, nil, nil)
 	if err != nil {
 		return err
 	}

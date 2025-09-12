@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/holiman/uint256"
 
 	"cosmossdk.io/collections"
@@ -54,7 +55,7 @@ func (ms *msgServerImpl) Create(ctx context.Context, msg *types.MsgCreate) (*typ
 	}
 
 	// argument validation
-	caller, codeBz, value, accessList, err := ms.validateArguments(ctx, sender, msg.Code, msg.Value, msg.AccessList, true)
+	caller, codeBz, value, accessList, _, err := ms.validateArguments(ctx, sender, msg.Code, msg.Value, msg.AccessList, nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +107,7 @@ func (ms *msgServerImpl) Create2(ctx context.Context, msg *types.MsgCreate2) (*t
 	}
 
 	// argument validation
-	caller, codeBz, value, accessList, err := ms.validateArguments(ctx, sender, msg.Code, msg.Value, msg.AccessList, true)
+	caller, codeBz, value, accessList, _, err := ms.validateArguments(ctx, sender, msg.Code, msg.Value, msg.AccessList, nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +144,13 @@ func (ms *msgServerImpl) Call(ctx context.Context, msg *types.MsgCall) (*types.M
 	}
 
 	// argument validation
-	caller, inputBz, value, accessList, err := ms.validateArguments(ctx, sender, msg.Input, msg.Value, msg.AccessList, false)
+	caller, inputBz, value, accessList, authList, err := ms.validateArguments(ctx, sender, msg.Input, msg.Value, msg.AccessList, msg.AuthList, false)
 	if err != nil {
 		return nil, err
 	}
 
 	// call a contract
-	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList)
+	retBz, logs, err := ms.EVMCall(ctx, caller, contractAddr, inputBz, value, accessList, authList)
 	if err != nil {
 		return nil, err
 	}
@@ -259,27 +260,42 @@ func (k *msgServerImpl) handleSequenceIncremented(ctx context.Context, sender sd
 }
 
 // validateArguments validates the arguments of create, create2, and call messages.
-func (ms *msgServerImpl) validateArguments(
-	ctx context.Context, sender []byte, data string,
-	value math.Int, accessList []types.AccessTuple, isCreate bool,
-) (common.Address, []byte, *uint256.Int, coretypes.AccessList, error) {
-	caller, err := ms.convertToEVMAddress(ctx, sender, true)
+func (k Keeper) validateArguments(
+	ctx context.Context, sender []byte, data string, value math.Int,
+	accessList []types.AccessTuple, setCodeAuthorizations []types.SetCodeAuthorization, isCreate bool,
+) (common.Address, []byte, *uint256.Int, coretypes.AccessList, []coretypes.SetCodeAuthorization, error) {
+	caller, err := k.convertToEVMAddress(ctx, sender, true)
 	if err != nil {
-		return common.Address{}, nil, nil, nil, err
+		return common.Address{}, nil, nil, nil, nil, err
 	}
 	if isCreate && len(data) == 0 {
-		return common.Address{}, nil, nil, nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
+		return common.Address{}, nil, nil, nil, nil, sdkerrors.ErrInvalidRequest.Wrap("empty code bytes")
 	}
 	dataBz, err := hexutil.Decode(data)
 	if err != nil {
-		return common.Address{}, nil, nil, nil, types.ErrInvalidHexString.Wrap(err.Error())
+		return common.Address{}, nil, nil, nil, nil, types.ErrInvalidHexString.Wrap(err.Error())
 	}
 	val, overflow := uint256.FromBig(value.BigInt())
 	if overflow {
-		return common.Address{}, nil, nil, nil, types.ErrInvalidValue.Wrap("value is out of range")
+		return common.Address{}, nil, nil, nil, nil, types.ErrInvalidValue.Wrap("value is out of range")
 	}
 
-	return caller, dataBz, val, types.ConvertCosmosAccessListToEth(accessList), nil
+	// validate set code authorizations
+	var authList []coretypes.SetCodeAuthorization
+	if len(setCodeAuthorizations) > 0 {
+		authList, err = types.ConvertCosmosSetCodeAuthorizationsToEth(setCodeAuthorizations)
+		if err != nil {
+			return common.Address{}, nil, nil, nil, nil, err
+		}
+		for _, auth := range authList {
+			err = types.ValidateAuthorization(sdk.UnwrapSDKContext(ctx), auth)
+			if err != nil {
+				return common.Address{}, nil, nil, nil, nil, err
+			}
+		}
+	}
+
+	return caller, dataBz, val, types.ConvertCosmosAccessListToEth(accessList), authList, nil
 }
 
 // assertAllowedPublishers asserts the sender is allowed to deploy a contract.

@@ -145,7 +145,7 @@ func (suite *KeeperTestSuite) createAndMintERC20(endpoint *ibctesting.Endpoint, 
 	inputBz, err := abi.Pack("createERC20", "foo", "foo", decimals)
 	suite.Require().NoError(err)
 
-	result, _, err := evmKeeper.EVMCall(ctx, toAddr, ethFactoryAddr, inputBz, nil, nil)
+	result, _, err := evmKeeper.EVMCall(ctx, toAddr, ethFactoryAddr, inputBz, nil, nil, nil)
 	suite.Require().NoError(err)
 	tokenAddr := common.BytesToAddress(result)
 
@@ -156,7 +156,7 @@ func (suite *KeeperTestSuite) createAndMintERC20(endpoint *ibctesting.Endpoint, 
 	inputBz, err = abi.Pack("mint", toAddr, amount)
 	suite.Require().NoError(err)
 
-	_, _, err = evmKeeper.EVMCall(ctx, toAddr, tokenAddr, inputBz, nil, nil)
+	_, _, err = evmKeeper.EVMCall(ctx, toAddr, tokenAddr, inputBz, nil, nil, nil)
 	suite.Require().NoError(err)
 
 	return tokenAddr
@@ -192,7 +192,7 @@ func (suite *KeeperTestSuite) wrapLocal(
 	// approve
 	inputBz, err := erc20Keeper.GetERC20ABI().Pack("approve", wrapperAddr, amount)
 	suite.Require().NoError(err)
-	_, _, err = evmKeeper.EVMCall(fromCtx, senderAddr, tokenAddress, inputBz, nil, nil)
+	_, _, err = evmKeeper.EVMCall(fromCtx, senderAddr, tokenAddress, inputBz, nil, nil, nil)
 	suite.Require().NoError(err)
 
 	// wrap 18dp token to 6dp token
@@ -461,7 +461,7 @@ func (suite *KeeperTestSuite) unwrapRemote(
 	// approve
 	inputBz, err := erc20Keeper.GetERC20ABI().Pack("approve", wrapperAddr, amount)
 	suite.Require().NoError(err)
-	_, _, err = evmKeeper.EVMCall(fromCtx, senderAddr, tokenAddress, inputBz, nil, nil)
+	_, _, err = evmKeeper.EVMCall(fromCtx, senderAddr, tokenAddress, inputBz, nil, nil, nil)
 	suite.Require().NoError(err)
 
 	// unwrap 18dp token to 6dp token

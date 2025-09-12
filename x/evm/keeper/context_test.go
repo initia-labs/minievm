@@ -1,23 +1,27 @@
 package keeper_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/math"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/sha3"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/types"
 
-	"github.com/stretchr/testify/require"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/core/vm/program"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func Test_Create(t *testing.T) {
@@ -96,7 +100,7 @@ func Test_Call(t *testing.T) {
 	queryInputBz, err := parsed.Pack("count")
 	require.NoError(t, err)
 
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(0).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -105,7 +109,7 @@ func Test_Call(t *testing.T) {
 	require.NoError(t, err)
 
 	// call with value
-	res, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, uint256.NewInt(100), nil)
+	res, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, uint256.NewInt(100), nil, nil)
 	require.NoError(t, err)
 	require.Empty(t, res)
 	require.Len(t, logs, int(2))
@@ -115,7 +119,7 @@ func Test_Call(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, balance, math.NewInt(100))
 
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, uint256.NewInt(1).Bytes32(), [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -127,7 +131,7 @@ func Test_Call(t *testing.T) {
 	queryInputBz, err = erc20ABI.Pack("balanceOf", caller)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.ErrorContains(t, err, types.ErrReverted.Error())
 }
 
@@ -174,7 +178,7 @@ func Test_GetHash(t *testing.T) {
 	queryInputBz, err := parsed.Pack("get_blockhash", uint64(99))
 	require.NoError(t, err)
 
-	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, [32]byte{}, [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -183,7 +187,7 @@ func Test_GetHash(t *testing.T) {
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(100))
 	require.NoError(t, err)
 
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, hash100, [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -192,7 +196,7 @@ func Test_GetHash(t *testing.T) {
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(101))
 	require.NoError(t, err)
 
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, hash101, [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -201,7 +205,7 @@ func Test_GetHash(t *testing.T) {
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(356))
 	require.NoError(t, err)
 
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, hash356, [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -210,7 +214,7 @@ func Test_GetHash(t *testing.T) {
 	queryInputBz, err = parsed.Pack("get_blockhash", uint64(357))
 	require.NoError(t, err)
 
-	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil)
+	queryRes, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, queryInputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, [32]byte{}, [32]byte(queryRes))
 	require.Empty(t, logs)
@@ -237,7 +241,7 @@ func Test_RecursiveDepth(t *testing.T) {
 	inputBz, err := parsed.Pack("recursive", uint64(types.MAX_RECURSIVE_DEPTH-1))
 	require.NoError(t, err)
 
-	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, 1<<types.MAX_RECURSIVE_DEPTH-1, len(logs))
 
@@ -245,7 +249,7 @@ func Test_RecursiveDepth(t *testing.T) {
 	inputBz, err = parsed.Pack("recursive", uint64(types.MAX_RECURSIVE_DEPTH))
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.ErrorContains(t, err, types.ErrExceedMaxRecursiveDepth.Error())
 }
 
@@ -284,7 +288,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "revert reason dummy value for test")
 
@@ -305,7 +309,7 @@ func Test_RevertAfterExecuteCosmos(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, sdk.AccAddress(contractAddr.Bytes()), denom).Amount)
@@ -348,7 +352,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, logs, 1)
 
@@ -389,7 +393,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.Error(t, err)
 
 	// case 3. call execute_cosmos with options by sending valid amount
@@ -407,7 +411,7 @@ func Test_ExecuteCosmosWithOptions(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, logs, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, len(logs), 1)
 
@@ -451,7 +455,7 @@ func Test_Recursive_Audit_ExecuteRequestsNotCleanedOnRevert(t *testing.T) {
 	inputBz, err := parsed.Pack("recursive_revert", uint64(1))
 	require.NoError(t, err)
 
-	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, logs, 1)
 
@@ -497,7 +501,86 @@ func Test_Call_CallbackErrorPropagated(t *testing.T) {
 		uint64(7),
 	)
 	require.NoError(t, err)
-	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, logs, err := input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.Error(t, err)
 	require.Equal(t, 0, len(logs))
+}
+
+func Test_EIP7702(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	pk1, _, a1 := keyPubAddr()
+	pk2, _, a2 := keyPubAddr()
+	addr1 := common.BytesToAddress(a1.Bytes())
+	addr2 := common.BytesToAddress(a2.Bytes())
+	key1, err := crypto.ToECDSA(pk1.Bytes())
+	require.NoError(t, err)
+	key2, err := crypto.ToECDSA(pk2.Bytes())
+	require.NoError(t, err)
+	aa := common.HexToAddress("0xaa")
+	bb := common.HexToAddress("0xbb")
+
+	input.Faucet.Fund(ctx, a1, sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1000000000000000000)))
+	input.Faucet.Fund(ctx, a2, sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1000000000000000000)))
+
+	// code1 is a call to the addr2 code
+	code1 := program.New().Call(nil, addr2, 1, 0, 0, 0, 0).Bytes()
+	// code2 is a sstore to 0x42 on slot 0x42
+	code2 := program.New().Sstore(0x42, 0x42).Bytes()
+
+	_, evm, _, err := input.EVMKeeper.CreateEVM(ctx, types.StdAddress)
+	require.NoError(t, err)
+	require.NotNil(t, evm)
+
+	// set code to the addresses
+	evm.StateDB.SetCode(aa, code1)
+	evm.StateDB.SetCode(bb, code2)
+
+	// Sign authorization tuples.
+	// The way the auths are combined, it becomes
+	// 1. tx -> addr1 which is delegated to aa
+	// 2. addr1:aa calls into addr2:bb
+	// 3. addr2:bb writes to storage
+	ctx = ctx.WithChainID("minievm-1")
+	evmChainID := types.ConvertCosmosChainIDToEthereumChainID(ctx.ChainID())
+	auth1, _ := coretypes.SignSetCode(key1, coretypes.SetCodeAuthorization{
+		ChainID: *uint256.MustFromBig(evmChainID),
+		Address: aa,
+		Nonce:   0,
+	})
+	auth2, _ := coretypes.SignSetCode(key2, coretypes.SetCodeAuthorization{
+		Address: bb,
+		Nonce:   0,
+	})
+
+	// call addr1ErrAuthorizationNonceMismatch
+	_, _, err = input.EVMKeeper.EVMCall(
+		ctx,
+		addr1,
+		addr1,
+		nil,
+		nil,
+		nil,
+		[]coretypes.SetCodeAuthorization{auth1, auth2},
+	)
+	require.NoError(t, err)
+
+	_, evm, _, err = input.EVMKeeper.CreateEVM(ctx, types.StdAddress)
+	require.NoError(t, err)
+	require.NotNil(t, evm)
+
+	state := evm.StateDB
+	code, want := state.GetCode(addr1), coretypes.AddressToDelegation(auth1.Address)
+	if !bytes.Equal(code, want) {
+		t.Fatalf("addr1 code incorrect: got %s, want %s", common.Bytes2Hex(code), common.Bytes2Hex(want))
+	}
+	code, want = state.GetCode(addr2), coretypes.AddressToDelegation(auth2.Address)
+	if !bytes.Equal(code, want) {
+		t.Fatalf("addr2 code incorrect: got %s, want %s", common.Bytes2Hex(code), common.Bytes2Hex(want))
+	}
+
+	var (
+		fortyTwo = common.BytesToHash([]byte{0x42})
+		actual   = state.GetState(addr2, fortyTwo)
+	)
+	require.True(t, actual.Cmp(fortyTwo) == 0)
 }
