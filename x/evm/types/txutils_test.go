@@ -338,7 +338,10 @@ func createTestEthTx(txType uint8, to *common.Address, value *big.Int, data []by
 
 	// Generate a real private key and sign the transaction
 	randBytes := make([]byte, 64)
-	rand.Read(randBytes)
+	_, err := rand.Read(randBytes)
+	if err != nil {
+		panic(err)
+	}
 	reader := bytes.NewReader(randBytes)
 	privKey, _ := ecdsa.GenerateKey(crypto.S256(), reader)
 	signer := coretypes.LatestSignerForChainID(ethChainID)

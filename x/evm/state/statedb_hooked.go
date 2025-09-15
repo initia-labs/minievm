@@ -136,8 +136,10 @@ func (s *HookedStateDB) AddLog(log *evmtypes.Log) {
 }
 
 // override to emit balance change events
-func (s *HookedStateDB) Commit() error {
-	defer s.StateDB.Commit()
+func (s *HookedStateDB) Commit() (err error) {
+	defer func() {
+		err = s.StateDB.Commit()
+	}()
 
 	if s.hooks != nil && s.hooks.OnBalanceChange != nil {
 		return s.memStoreSelfDestruct.Walk(s.ctx, nil, func(key []byte) (stop bool, err error) {
