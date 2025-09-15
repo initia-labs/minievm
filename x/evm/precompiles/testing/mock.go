@@ -297,7 +297,10 @@ func (k MockAccountKeeper) HasAccount(ctx context.Context, addr sdk.AccAddress) 
 
 // NewAccount implements types.AccountKeeper.
 func (k *MockAccountKeeper) NewAccount(ctx context.Context, acc sdk.AccountI) sdk.AccountI {
-	acc.SetAccountNumber(uint64(len(k.Accounts)))
+	err := acc.SetAccountNumber(uint64(len(k.Accounts)))
+	if err != nil {
+		panic(err)
+	}
 	return acc
 }
 

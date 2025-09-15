@@ -1,9 +1,6 @@
 package types
 
 import (
-	"bytes"
-	"crypto/ecdsa"
-	"crypto/rand"
 	"encoding/json"
 	"math/big"
 	"testing"
@@ -337,13 +334,7 @@ func createTestEthTx(txType uint8, to *common.Address, value *big.Int, data []by
 	ethTx := coretypes.NewTx(txData)
 
 	// Generate a real private key and sign the transaction
-	randBytes := make([]byte, 64)
-	_, err := rand.Read(randBytes)
-	if err != nil {
-		panic(err)
-	}
-	reader := bytes.NewReader(randBytes)
-	privKey, _ := ecdsa.GenerateKey(crypto.S256(), reader)
+	privKey, _ := crypto.GenerateKey()
 	signer := coretypes.LatestSignerForChainID(ethChainID)
 	signedTx, _ := coretypes.SignTx(ethTx, signer, privKey)
 	return signedTx
@@ -713,11 +704,7 @@ func TestTransactionConversion_ComprehensiveScenarios(t *testing.T) {
 		ethTx := coretypes.NewTx(dynTx)
 
 		// Generate a real private key and sign the transaction
-		randBytes := make([]byte, 64)
-		_, err := rand.Read(randBytes)
-		require.NoError(t, err)
-		reader := bytes.NewReader(randBytes)
-		privKey, err := ecdsa.GenerateKey(crypto.S256(), reader)
+		privKey, err := crypto.GenerateKey()
 		require.NoError(t, err)
 
 		ethChainID := big.NewInt(3068811972085126)
@@ -808,11 +795,7 @@ func TestTransactionConversion_ComprehensiveScenarios(t *testing.T) {
 		ethTx := coretypes.NewTx(accessTx)
 
 		// Generate a real private key and sign the transaction
-		randBytes := make([]byte, 64)
-		_, err := rand.Read(randBytes)
-		require.NoError(t, err)
-		reader := bytes.NewReader(randBytes)
-		privKey, err := ecdsa.GenerateKey(crypto.S256(), reader)
+		privKey, err := crypto.GenerateKey()
 		require.NoError(t, err)
 
 		ethChainID := big.NewInt(3068811972085126)
@@ -936,14 +919,6 @@ func TestTransactionConversion_ComprehensiveScenarios(t *testing.T) {
 		gasTipCap := big.NewInt(1000000000)      // 1 gwei
 		value := big.NewInt(1000000000000000000) // 1 ETH
 
-		// Generate a real private key for authorization
-		randBytes := make([]byte, 64)
-		_, err := rand.Read(randBytes)
-		require.NoError(t, err)
-		reader := bytes.NewReader(randBytes)
-		_, err = ecdsa.GenerateKey(crypto.S256(), reader)
-		require.NoError(t, err)
-
 		// Create authorization list with real signature
 		authList := []coretypes.SetCodeAuthorization{
 			{
@@ -975,11 +950,7 @@ func TestTransactionConversion_ComprehensiveScenarios(t *testing.T) {
 		ethTx := coretypes.NewTx(setCodeTx)
 
 		// Generate a real private key and sign the transaction
-		randBytes2 := make([]byte, 64)
-		_, err = rand.Read(randBytes2)
-		require.NoError(t, err)
-		reader2 := bytes.NewReader(randBytes2)
-		privKey, err := ecdsa.GenerateKey(crypto.S256(), reader2)
+		privKey, err := crypto.GenerateKey()
 		require.NoError(t, err)
 
 		ethChainID := big.NewInt(3068811972085126)

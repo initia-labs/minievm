@@ -50,11 +50,12 @@ func (s *HookedStateDB) AddBalance(addr common.Address, amount *uint256.Int, rea
 
 // override to emit nonce change events
 func (s *HookedStateDB) SetNonce(address common.Address, nonce uint64, reason tracing.NonceChangeReason) {
+	prev := s.StateDB.GetNonce(address)
 	s.StateDB.SetNonce(address, nonce, reason)
 	if s.hooks != nil && s.hooks.OnNonceChangeV2 != nil {
-		s.hooks.OnNonceChangeV2(address, s.StateDB.GetNonce(address), nonce, reason)
+		s.hooks.OnNonceChangeV2(address, prev, nonce, reason)
 	} else if s.hooks != nil && s.hooks.OnNonceChange != nil {
-		s.hooks.OnNonceChange(address, s.StateDB.GetNonce(address), nonce)
+		s.hooks.OnNonceChange(address, prev, nonce)
 	}
 }
 

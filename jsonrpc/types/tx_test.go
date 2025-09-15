@@ -5,11 +5,14 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/holiman/uint256"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+
 	types "github.com/initia-labs/minievm/jsonrpc/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestLegacyTxTypeRPCTransaction(t *testing.T) {
@@ -108,6 +111,41 @@ func TestDynamicFeeTxTypeRPCTransaction(t *testing.T) {
 	rpcTx := types.NewRPCTransaction(signedTx, common.Hash{}, 0, 0, chainID)
 	ethTx := rpcTx.ToTransaction()
 
+	err = matchTx(signedTx, ethTx)
+	require.NoError(t, err)
+
+	_ = rpcTx.String()
+}
+
+func TestSetCodeTxTypeRPCTransaction(t *testing.T) {
+	privateKey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+
+	toAddress := crypto.PubkeyToAddress(privateKey.PublicKey)
+	chainID := big.NewInt(1)
+	tx := coretypes.NewTx(&coretypes.SetCodeTx{
+		ChainID:    uint256.MustFromBig(chainID),
+		Nonce:      0,
+		GasTipCap:  uint256.MustFromBig(big.NewInt(20)),
+		GasFeeCap:  uint256.MustFromBig(big.NewInt(100)),
+		Gas:        21000,
+		To:         toAddress,
+		Value:      uint256.MustFromBig(big.NewInt(1000)),
+		Data:       []byte{0x01, 0x02, 0x03, 0x04},
+		AccessList: nil,
+		V:          uint256.MustFromBig(big.NewInt(0)),
+		R:          uint256.MustFromBig(big.NewInt(0)),
+		S:          uint256.MustFromBig(big.NewInt(0)),
+	})
+
+	signedTx, err := coretypes.SignTx(tx, coretypes.NewPragueSigner(chainID), privateKey)
+	if err != nil {
+		t.Fatalf("Failed to sign transaction: %v", err)
+	}
+	rpcTx := types.NewRPCTransaction(signedTx, common.Hash{}, 0, 0, chainID)
+	ethTx := rpcTx.ToTransaction()
 	err = matchTx(signedTx, ethTx)
 	require.NoError(t, err)
 
