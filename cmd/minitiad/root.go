@@ -37,18 +37,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
+	minitiaapp "github.com/initia-labs/minievm/app"
 	"github.com/initia-labs/minievm/jsonrpc"
 	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
 	"github.com/initia-labs/initia/app/params"
 	initiakeyring "github.com/initia-labs/initia/crypto/keyring"
-	minitiaapp "github.com/initia-labs/minievm/app"
 
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
-	kvindexerconfig "github.com/initia-labs/kvindexer/config"
-	kvindexerstore "github.com/initia-labs/kvindexer/store"
-	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
 
 	cmtcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
 )
@@ -315,27 +312,13 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 		if err != nil {
 			panic(err)
 		}
-		kvindexerConfig := getKVIndexerDBConfig(appOpts)
-
-		// create KV indexer db if enabled
-		var kvindexerDB dbm.DB = nil
-		if kvindexerConfig.IsEnabled() {
-			db, err := kvindexerstore.OpenDB(dbDir, kvindexerkeeper.StoreName, kvindexerConfig.BackendConfig)
-			if err != nil {
-				panic(err)
-			}
-			kvindexerDB = db
-		}
-
 		evmConfig := evmconfig.GetConfig(appOpts)
 		if err := evmConfig.Validate(); err != nil {
 			panic(err)
 		}
 		app := minitiaapp.NewMinitiaApp(
-			logger, db, indexerDB, kvindexerDB, traceStore, true,
-			evmConfig,
-			appOpts,
-			baseappOptions...,
+			logger, db, indexerDB, traceStore, true,
+			evmConfig, appOpts, baseappOptions...,
 		)
 
 		// store app in creator
@@ -367,13 +350,13 @@ func (a appCreator) appExport(
 
 	var initiaApp *minitiaapp.MinitiaApp
 	if height != -1 {
-		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), dbm.NewMemDB(), traceStore, false, evmconfig.DefaultEVMConfig(), appOpts)
+		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), traceStore, false, evmconfig.DefaultEVMConfig(), appOpts)
 
 		if err := initiaApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), dbm.NewMemDB(), traceStore, true, evmconfig.DefaultEVMConfig(), appOpts)
+		initiaApp = minitiaapp.NewMinitiaApp(logger, db, dbm.NewMemDB(), traceStore, true, evmconfig.DefaultEVMConfig(), appOpts)
 	}
 
 	return initiaApp.ExportAppStateAndValidators(forZeroHeight, modulesToExport)
@@ -430,16 +413,6 @@ func getDBConfig(appOpts servertypes.AppOptions) (string, dbm.BackendType) {
 	dbBackend := server.GetAppDBBackend(appOpts)
 
 	return rootify(dbDir, rootDir), dbBackend
-}
-
-// getKVIndexerDBConfig returns the database configuration for the KV indexer
-func getKVIndexerDBConfig(appOpts servertypes.AppOptions) *kvindexerconfig.IndexerConfig {
-	dbBackend, err := kvindexerconfig.NewConfig(appOpts)
-	if err != nil {
-		panic(err)
-	}
-
-	return dbBackend
 }
 
 // helper function to make config creation independent of root dir
