@@ -18,7 +18,6 @@ const (
 	EventTypeERC721Burned  = "erc721_burned"
 
 	// NOTE: if there are changes on the list of event types,
-	// strongly recommended to update kvindexer/submodules/evm-tx to reflect changes and collect related addresses properly
 
 	AttributeKeyContract = "contract"
 	AttributeKeyAddress  = "address"

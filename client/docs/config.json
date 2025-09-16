@@ -174,21 +174,6 @@
         }
       },
       {
-        "url": "./tmp-swagger-gen/indexer/block/v1/query.swagger.json"
-      },
-      {
-        "url": "./tmp-swagger-gen/indexer/info/query.swagger.json"
-      },
-      {
-        "url": "./tmp-swagger-gen/indexer/pair/v1/query.swagger.json"
-      },
-      {
-        "url": "./tmp-swagger-gen/indexer/tx/v1/query.swagger.json"
-      },
-      {
-        "url": "./tmp-swagger-gen/indexer/nft/v1/query.swagger.json"
-      },
-      {
         "url": "./tmp-swagger-gen/sdk/auction/v1/query.swagger.json",
         "operationIds": {
           "rename": {
