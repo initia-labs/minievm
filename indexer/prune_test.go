@@ -136,7 +136,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	for {
 		time.Sleep(100 * time.Millisecond)
 		if indexer.GetLastBloomIndexedHeight() < nextSectionHeight {
-			continue
+			tests.IncreaseBlockHeight(t, app)
 		} else {
 			break
 		}
@@ -146,7 +146,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	for {
 		time.Sleep(100 * time.Millisecond)
 		if indexer.GetLastPrunedHeight() < nextSectionHeight {
-			continue
+			tests.IncreaseBlockHeight(t, app)
 		} else {
 			break
 		}
@@ -159,7 +159,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	for {
 		time.Sleep(100 * time.Millisecond)
 		if indexer.GetLastBloomIndexedHeight() < nextSectionHeight {
-			continue
+			tests.IncreaseBlockHeight(t, app)
 		} else {
 			break
 		}
@@ -169,7 +169,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	for {
 		time.Sleep(100 * time.Millisecond)
 		if indexer.GetLastPrunedHeight() < nextSectionHeight {
-			continue
+			tests.IncreaseBlockHeight(t, app)
 		} else {
 			break
 		}
