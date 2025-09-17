@@ -40,7 +40,9 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
 
+	cryptocodec "github.com/initia-labs/initia/crypto/codec"
 	"github.com/initia-labs/initia/crypto/ethsecp256k1"
+
 	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -83,6 +85,9 @@ func MakeEncodingConfig(_ testing.TB) EncodingConfig {
 
 	std.RegisterInterfaces(interfaceRegistry)
 	std.RegisterLegacyAminoCodec(legacyAmino)
+
+	cryptocodec.RegisterLegacyAminoCodec(legacyAmino)
+	cryptocodec.RegisterInterfaces(interfaceRegistry)
 
 	ModuleBasics.RegisterLegacyAminoCodec(legacyAmino)
 	ModuleBasics.RegisterInterfaces(interfaceRegistry)

@@ -50,7 +50,11 @@ func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 		return err
 	}
 
+	// write the changes to the store
 	e.store.Write()
+
+	// update the last pruned height
+	e.lastPrunedHeight.Store(curHeight)
 
 	return nil
 }

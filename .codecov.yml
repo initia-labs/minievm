@@ -38,3 +38,4 @@ ignore:
   - "x/evm/contracts"
   - "**/*.sol"
   - "tests/"
+  - "**/mock.go"

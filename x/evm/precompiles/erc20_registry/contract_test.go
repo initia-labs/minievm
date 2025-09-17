@@ -17,6 +17,7 @@ import (
 
 	contracts "github.com/initia-labs/minievm/x/evm/contracts/i_erc20_registry"
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"
+	precompiletesting "github.com/initia-labs/minievm/x/evm/precompiles/testing"
 	"github.com/initia-labs/minievm/x/evm/types"
 )
 
@@ -71,7 +72,7 @@ func (e ERC20StoresKeeper) RegisterStore(ctx context.Context, addr sdk.AccAddres
 func Test_ERC20RegistryPrecompile(t *testing.T) {
 	ctx, k := setup()
 
-	stateDB := NewMockStateDB(ctx)
+	stateDB := precompiletesting.NewMockStateDB(ctx)
 	registry, err := precompiles.NewERC20RegistryPrecompile(stateDB, k)
 	require.NoError(t, err)
 
@@ -87,16 +88,16 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS-1, false)
+	output, _, err := registry.ExtendedRun(erc20Addr, bz, precompiles.REGISTER_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// non read only method fail
-	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS+uint64(len(bz)), true)
+	_, _, err = registry.ExtendedRun(erc20Addr, bz, precompiles.REGISTER_GAS+uint64(len(bz)), true)
 	require.Error(t, err)
 
 	// success
-	_, usedGas, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_GAS+uint64(len(bz)), false)
+	_, usedGas, err := registry.ExtendedRun(erc20Addr, bz, precompiles.REGISTER_GAS+uint64(len(bz)), false)
 	require.NoError(t, err)
 	require.Equal(t, usedGas, uint64(precompiles.REGISTER_GAS)+uint64(len(bz)))
 
@@ -105,16 +106,16 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS-1, false)
+	output, _, err = registry.ExtendedRun(erc20FactoryAddr, bz, precompiles.REGISTER_FROM_FACTORY_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// non read only method fail
-	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS+uint64(len(bz)), true)
+	_, _, err = registry.ExtendedRun(erc20FactoryAddr, bz, precompiles.REGISTER_FROM_FACTORY_GAS+uint64(len(bz)), true)
 	require.Error(t, err)
 
 	// success
-	_, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20FactoryAddr), bz, precompiles.REGISTER_FROM_FACTORY_GAS+uint64(len(bz)), false)
+	_, usedGas, err = registry.ExtendedRun(erc20FactoryAddr, bz, precompiles.REGISTER_FROM_FACTORY_GAS+uint64(len(bz)), false)
 	require.NoError(t, err)
 	require.Equal(t, usedGas, uint64(precompiles.REGISTER_GAS)+uint64(len(bz)))
 
@@ -125,7 +126,7 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	bz, err = abi.Pack(precompiles.METHOD_IS_STORE_REGISTERED, accountAddr)
 	require.NoError(t, err)
 
-	resBz, usedGas, err := registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS+uint64(len(bz)), true)
+	resBz, usedGas, err := registry.ExtendedRun(erc20Addr, bz, precompiles.IS_STORE_REGISTERED_GAS+uint64(len(bz)), true)
 	require.NoError(t, err)
 	require.Equal(t, usedGas, uint64(precompiles.IS_STORE_REGISTERED_GAS)+uint64(len(bz)))
 
@@ -138,16 +139,16 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas error
-	output, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS-1, false)
+	output, _, err = registry.ExtendedRun(erc20Addr, bz, precompiles.REGISTER_STORE_GAS-1, false)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
 	// non read only method fail
-	_, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS+uint64(len(bz)), true)
+	_, _, err = registry.ExtendedRun(erc20Addr, bz, precompiles.REGISTER_STORE_GAS+uint64(len(bz)), true)
 	require.Error(t, err)
 
 	// success
-	_, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.REGISTER_STORE_GAS+uint64(len(bz)), false)
+	_, usedGas, err = registry.ExtendedRun(erc20Addr, bz, precompiles.REGISTER_STORE_GAS+uint64(len(bz)), false)
 	require.NoError(t, err)
 	require.Equal(t, usedGas, uint64(precompiles.REGISTER_STORE_GAS)+uint64(len(bz)))
 
@@ -156,11 +157,11 @@ func Test_ERC20RegistryPrecompile(t *testing.T) {
 	require.NoError(t, err)
 
 	// out of gas panic
-	output, _, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS-1, true)
+	output, _, err = registry.ExtendedRun(erc20Addr, bz, precompiles.IS_STORE_REGISTERED_GAS-1, true)
 	require.ErrorIs(t, err, vm.ErrExecutionReverted)
 	require.Contains(t, string(output), "out of gas")
 
-	resBz, usedGas, err = registry.ExtendedRun(vm.AccountRef(erc20Addr), bz, precompiles.IS_STORE_REGISTERED_GAS+uint64(len(bz)), true)
+	resBz, usedGas, err = registry.ExtendedRun(erc20Addr, bz, precompiles.IS_STORE_REGISTERED_GAS+uint64(len(bz)), true)
 	require.NoError(t, err)
 	require.Equal(t, usedGas, uint64(precompiles.IS_STORE_REGISTERED_GAS)+uint64(len(bz)))
 

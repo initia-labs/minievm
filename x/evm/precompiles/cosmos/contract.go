@@ -97,7 +97,7 @@ func (e *CosmosPrecompile) originAddress(ctx context.Context, addrBz []byte) (sd
 }
 
 // ExtendedRun implements vm.ExtendedPrecompiledContract.
-func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
+func (e *CosmosPrecompile) ExtendedRun(caller common.Address, input []byte, suppliedGas uint64, readOnly bool) (resBz []byte, usedGas uint64, err error) {
 	snapshot := e.stateDB.Snapshot()
 	ctx := e.stateDB.Context().WithGasMeter(storetypes.NewGasMeter(suppliedGas))
 
@@ -285,7 +285,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 		}
 
 		// convert shorthand account to original address
-		callerAddr, err := e.originAddress(ctx, caller.Address().Bytes())
+		callerAddr, err := e.originAddress(ctx, caller.Bytes())
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
@@ -294,7 +294,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller vm.ContractRef, input []byte, supp
 			if !bytes.Equal(callerAddr, signer) {
 				return nil, ctx.GasMeter().GasConsumedToLimit(), sdkerrors.ErrUnauthorized.Wrapf(
 					"required signer: `%s`, given signer: `%s`",
-					hexutil.Encode(signer), caller.Address(),
+					hexutil.Encode(signer), caller,
 				)
 			}
 		}

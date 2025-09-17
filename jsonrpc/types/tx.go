@@ -5,6 +5,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/holiman/uint256"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -130,6 +132,21 @@ func (rpcTx RPCTransaction) ToTransaction() *coretypes.Transaction {
 			V:          rpcTx.V.ToInt(),
 			R:          rpcTx.R.ToInt(),
 			S:          rpcTx.S.ToInt(),
+		}))
+	case coretypes.SetCodeTxType:
+		return coretypes.NewTx((&coretypes.SetCodeTx{
+			ChainID:    uint256.MustFromBig(rpcTx.ChainID.ToInt()),
+			Nonce:      uint64(rpcTx.Nonce),
+			GasTipCap:  uint256.MustFromBig(rpcTx.GasTipCap.ToInt()),
+			GasFeeCap:  uint256.MustFromBig(rpcTx.GasFeeCap.ToInt()),
+			Gas:        uint64(rpcTx.Gas),
+			To:         *rpcTx.To,
+			Value:      uint256.MustFromBig(rpcTx.Value.ToInt()),
+			Data:       rpcTx.Input,
+			AccessList: accessList,
+			V:          uint256.MustFromBig(rpcTx.V.ToInt()),
+			R:          uint256.MustFromBig(rpcTx.R.ToInt()),
+			S:          uint256.MustFromBig(rpcTx.S.ToInt()),
 		}))
 	default:
 		return nil

@@ -9,8 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/holiman/uint256"
-
 	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -44,16 +42,10 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	caller := common.Address{}
-	if req.Sender != "" {
-		senderBz, err := qs.ac.StringToBytes(req.Sender)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-
-		caller = common.BytesToAddress(senderBz)
+	sender, err := qs.ac.StringToBytes(req.Sender)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-
 	contractAddr := common.Address{}
 	if req.ContractAddr != "" {
 		contractAddr, err = types.ContractAddressFromString(qs.ac, req.ContractAddr)
@@ -61,18 +53,10 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
-
-	inputBz, err := hexutil.Decode(req.Input)
+	caller, inputBz, value, accessList, authList, err := qs.validateArguments(ctx, sender, req.Input, req.Value, req.AccessList, req.AuthList, false)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-
-	value, overflow := uint256.FromBig(req.Value.BigInt())
-	if overflow {
-		return nil, status.Error(codes.InvalidArgument, "value is out of range")
-	}
-
-	list := types.ConvertCosmosAccessListToEth(req.AccessList)
 
 	var tracer *tracing.Hooks
 	tracerOutput := new(strings.Builder)
@@ -129,9 +113,9 @@ func (qs *queryServerImpl) Call(ctx context.Context, req *types.QueryCallRequest
 	var logs []types.Log
 	if contractAddr == (common.Address{}) {
 		// if contract address is not provided, then it's a contract creation
-		retBz, _, logs, err = qs.EVMCreate(sdkCtx, caller, inputBz, value, list)
+		retBz, _, logs, err = qs.EVMCreate(sdkCtx, caller, inputBz, value, accessList)
 	} else {
-		retBz, logs, err = qs.EVMCall(sdkCtx, caller, contractAddr, inputBz, value, list)
+		retBz, logs, err = qs.EVMCall(sdkCtx, caller, contractAddr, inputBz, value, accessList, authList)
 	}
 
 	gasUsed := sdkCtx.GasMeter().GasConsumedToLimit()
