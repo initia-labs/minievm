@@ -3,13 +3,12 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
-
-	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type ExecuteRequest struct {
 	Msg    sdk.Msg
-	Caller vm.ContractRef
+	Caller common.Address
 
 	// options
 	AllowFailure bool

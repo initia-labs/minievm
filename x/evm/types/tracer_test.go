@@ -19,9 +19,6 @@ func TestNewTracing(t *testing.T) {
 				BlockNumber: big.NewInt(100),
 				Time:        1234567890,
 			},
-			TxContext: vm.TxContext{
-				GasPrice: big.NewInt(20000000000), // 20 gwei
-			},
 		}
 
 		// Create a mock tracer
@@ -39,7 +36,7 @@ func TestNewTracing(t *testing.T) {
 		require.Equal(t, evm.Context.Coinbase, tracing.vmContext.Coinbase)
 		require.Equal(t, evm.Context.BlockNumber, tracing.vmContext.BlockNumber)
 		require.Equal(t, evm.Context.Time, tracing.vmContext.Time)
-		require.Equal(t, evm.TxContext.GasPrice, tracing.vmContext.GasPrice)
+		require.Equal(t, evm.Context.BaseFee, tracing.vmContext.BaseFee)
 	})
 
 	t.Run("create_tracing_with_nil_tracer", func(t *testing.T) {
@@ -93,9 +90,6 @@ func TestTracingContext(t *testing.T) {
 				BlockNumber: big.NewInt(100),
 				Time:        1234567890,
 			},
-			TxContext: vm.TxContext{
-				GasPrice: big.NewInt(20000000000),
-			},
 		}
 
 		vmContext := tracingContext(evm)
@@ -104,7 +98,7 @@ func TestTracingContext(t *testing.T) {
 		require.Equal(t, evm.Context.Coinbase, vmContext.Coinbase)
 		require.Equal(t, evm.Context.BlockNumber, vmContext.BlockNumber)
 		require.Equal(t, evm.Context.Time, vmContext.Time)
-		require.Equal(t, evm.TxContext.GasPrice, vmContext.GasPrice)
+		require.Equal(t, evm.Context.BaseFee, vmContext.BaseFee)
 	})
 }
 

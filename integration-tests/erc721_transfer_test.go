@@ -77,7 +77,7 @@ func (suite *KeeperTestSuite) MintNft(
 	contractAddr, err := evmtypes.ContractAddressFromClassId(ctx, nftKeeper, classId)
 	suite.Require().NoError(err)
 
-	_, _, err = nftKeeper.EVMCall(ctx, createAccountAddr, contractAddr, inputBz, nil, nil)
+	_, _, err = nftKeeper.EVMCall(ctx, createAccountAddr, contractAddr, inputBz, nil, nil, nil)
 	suite.Require().NoError(err)
 }
 

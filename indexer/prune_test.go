@@ -126,14 +126,16 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	// set retain height to 1, only last block is indexed
 	indexer.SetRetainHeight(1)
 
-	for i := uint64(0); i < evmconfig.SectionSize; i++ {
+	startHeight := uint64(app.LastBlockHeight())
+	nextSectionHeight := (startHeight/evmconfig.SectionSize + 1) * evmconfig.SectionSize
+	for range evmconfig.SectionSize + 1 {
 		tests.IncreaseBlockHeight(t, app)
 	}
 
 	// wait for bloom indexing
 	for {
 		time.Sleep(100 * time.Millisecond)
-		if indexer.IsBloomIndexingRunning() {
+		if indexer.GetLastBloomIndexedHeight() < nextSectionHeight {
 			continue
 		} else {
 			break
@@ -143,21 +145,20 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	// wait for pruning
 	for {
 		time.Sleep(100 * time.Millisecond)
-
-		if indexer.IsPruningRunning() {
+		if indexer.GetLastPrunedHeight() < nextSectionHeight {
 			continue
 		} else {
 			break
 		}
 	}
 
-	// create a new block to trigger bloom indexing
+	// increase block height to trigger bloom indexing and pruning
 	tests.IncreaseBlockHeight(t, app)
 
 	// wait for bloom indexing
 	for {
 		time.Sleep(100 * time.Millisecond)
-		if indexer.IsBloomIndexingRunning() {
+		if indexer.GetLastBloomIndexedHeight() < nextSectionHeight {
 			continue
 		} else {
 			break
@@ -167,7 +168,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	// wait for pruning
 	for {
 		time.Sleep(100 * time.Millisecond)
-		if indexer.IsPruningRunning() {
+		if indexer.GetLastPrunedHeight() < nextSectionHeight {
 			continue
 		} else {
 			break

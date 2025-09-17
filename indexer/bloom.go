@@ -87,6 +87,9 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		return err
 	}
 
+	// update the last bloom indexed height
+	e.lastBloomIndexedHeight.Store(height)
+
 	return nil
 }
 

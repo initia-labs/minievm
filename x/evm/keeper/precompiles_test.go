@@ -63,7 +63,7 @@ func Test_ExecuteCosmosMessage(t *testing.T) {
 	`, addr, addr2), uint64(150_000))
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	balance := input.BankKeeper.GetBalance(ctx, addr2, "bar")
@@ -93,7 +93,7 @@ func Test_QueryCosmosMessage(t *testing.T) {
 	}`, addr))
 	require.NoError(t, err)
 
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["query_cosmos"].Outputs.Unpack(retBz)
@@ -137,7 +137,7 @@ func Test_QueryCosmosFromContract(t *testing.T) {
 	}`, addr))
 	require.NoError(t, err)
 
-	retBz, _, err = input.EVMKeeper.EVMCall(ctx, contractAddr, types.CosmosPrecompileAddress, inputBz, nil, nil)
+	retBz, _, err = input.EVMKeeper.EVMCall(ctx, contractAddr, types.CosmosPrecompileAddress, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["query_cosmos"].Outputs.Unpack(retBz)
@@ -173,7 +173,7 @@ func Test_ToDenom(t *testing.T) {
 	inputBz, err := abi.Pack("to_denom", contractAddr)
 	require.NoError(t, err)
 
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["to_denom"].Outputs.Unpack(retBz)
@@ -205,7 +205,7 @@ func Test_ToERC20(t *testing.T) {
 	inputBz, err := abi.Pack("to_erc20", "bar")
 	require.NoError(t, err)
 
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.CosmosPrecompileAddress, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["to_erc20"].Outputs.Unpack(retBz)
@@ -225,7 +225,7 @@ func Test_JSONMerge(t *testing.T) {
 	inputBz, err := abi.Pack("merge_json", `{"a": 1, "b": 2}`, `{"b": 3, "c": 4}`)
 	require.NoError(t, err)
 
-	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.JSONUtilsPrecompileAddress, inputBz, nil, nil)
+	retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.JSONUtilsPrecompileAddress, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["merge_json"].Outputs.Unpack(retBz)
@@ -269,7 +269,7 @@ func Test_PrecompileRevertError(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, sdkerrors.ErrUnauthorized.Error())
 
@@ -335,7 +335,7 @@ func Test_JSONUnmarshalObject(t *testing.T) {
 			inputBz, err := abi.Pack("unmarshal_to_object", tc.input)
 			require.NoError(t, err)
 
-			retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.JSONUtilsPrecompileAddress, inputBz, nil, nil)
+			retBz, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, types.JSONUtilsPrecompileAddress, inputBz, nil, nil, nil)
 			if tc.expectedErr {
 				require.Error(t, err)
 				return
@@ -375,7 +375,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	inputBz, err := abi.Pack("get_price", `BTC/USD`)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil, nil)
 	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "no price / nonce reported for CurrencyPair")
@@ -383,7 +383,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	inputBz, err = abi.Pack("get_price", `Error`)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil, nil)
 	require.ErrorContains(t, err, types.ErrPrecompileFailed.Error())
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, "incorrectly formatted CurrencyPair")
@@ -422,7 +422,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	inputBz, err = abi.Pack("get_price", `BTC/USD`)
 	require.NoError(t, err)
 
-	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	ret, _, err := input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err := abi.Methods["get_price"].Outputs.Unpack(ret)
@@ -442,7 +442,7 @@ func Test_ConnectOracle_GetPrice(t *testing.T) {
 	inputBz, err = abi.Pack("get_prices", []string{`BTC/USD`, `ETH/USD`})
 	require.NoError(t, err)
 
-	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil)
+	ret, _, err = input.EVMKeeper.EVMCall(ctx, evmAddr, oracleAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	unpackedRet, err = abi.Methods["get_prices"].Outputs.Unpack(ret)
@@ -510,7 +510,7 @@ func Test_ExecuteCosmosMessage_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, types.ErrExecuteCosmosDisabled.Error())
 
@@ -527,7 +527,7 @@ func Test_ExecuteCosmosMessage_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.ErrorIs(t, err, types.ErrReverted)
 	require.ErrorContains(t, err, types.ErrExecuteCosmosDisabled.Error())
 
@@ -548,7 +548,7 @@ func Test_ExecuteCosmosMessage_Disabled(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil)
+	_, _, err = input.EVMKeeper.EVMCall(ctx, caller, contractAddr, inputBz, nil, nil, nil)
 	require.NoError(t, err)
 
 	// check balance

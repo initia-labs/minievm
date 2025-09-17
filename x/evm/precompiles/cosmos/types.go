@@ -43,13 +43,8 @@ type ExecuteCosmosWithOptions struct {
 	Options  ExecuteOptions `abi:"options"`
 }
 
-//nolint:gosimple
 func (eco ExecuteCosmosWithOptions) ToExecuteCosmos() ExecuteCosmos {
-	return ExecuteCosmos{
-		Msg:      eco.Msg,
-		GasLimit: eco.GasLimit,
-		Options:  eco.Options,
-	}
+	return ExecuteCosmos(eco)
 }
 
 type ExecuteOptions struct {

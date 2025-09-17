@@ -198,7 +198,7 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 	blockHeader := coretypes.Header{
 		TxHash:      coretypes.DeriveSha(coretypes.Transactions(ethTxs), hasher),
 		ReceiptHash: coretypes.DeriveSha(coretypes.Receipts(receipts), hasher),
-		Bloom:       coretypes.CreateBloom(receipts),
+		Bloom:       coretypes.MergeBloom(receipts),
 		GasLimit:    blockGasMeter.Limit(),
 		GasUsed:     blockGasMeter.GasConsumedToLimit(),
 		Number:      big.NewInt(blockHeight),

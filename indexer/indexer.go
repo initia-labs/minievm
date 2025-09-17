@@ -99,9 +99,11 @@ type EVMIndexerImpl struct {
 	retainHeight        uint64
 	backfillStartHeight uint64
 
-	pruningRunning       *atomic.Bool
-	bloomIndexingRunning *atomic.Bool
-	lastIndexedHeight    *atomic.Uint64
+	pruningRunning         *atomic.Bool
+	bloomIndexingRunning   *atomic.Bool
+	lastIndexedHeight      *atomic.Uint64
+	lastPrunedHeight       *atomic.Uint64
+	lastBloomIndexedHeight *atomic.Uint64
 
 	db       dbm.DB
 	logger   log.Logger
@@ -182,9 +184,11 @@ func NewEVMIndexer(
 		retainHeight:        cfg.IndexerRetainHeight,
 		backfillStartHeight: cfg.IndexerBackfillStartHeight,
 
-		pruningRunning:       &atomic.Bool{},
-		bloomIndexingRunning: &atomic.Bool{},
-		lastIndexedHeight:    &atomic.Uint64{},
+		pruningRunning:         &atomic.Bool{},
+		bloomIndexingRunning:   &atomic.Bool{},
+		lastIndexedHeight:      &atomic.Uint64{},
+		lastPrunedHeight:       &atomic.Uint64{},
+		lastBloomIndexedHeight: &atomic.Uint64{},
 
 		db:       db,
 		store:    store,
@@ -301,6 +305,14 @@ func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, erro
 	}
 
 	return lastIndexedHeight, nil
+}
+
+func (e *EVMIndexerImpl) GetLastPrunedHeight() uint64 {
+	return e.lastPrunedHeight.Load()
+}
+
+func (e *EVMIndexerImpl) GetLastBloomIndexedHeight() uint64 {
+	return e.lastBloomIndexedHeight.Load()
 }
 
 // blockEvents is a struct to emit block events.

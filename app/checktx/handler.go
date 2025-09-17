@@ -169,7 +169,7 @@ func (w *CheckTxWrapper) flushQueue(sender *common.Address, nonce uint64) {
 
 func (w *CheckTxWrapper) validateTx(sdkCtx sdk.Context, tx sdk.Tx, ethTx *coretypes.Transaction, expectedSender common.Address) (*abci.ResponseCheckTx, error) {
 	// check intrinsic gas
-	intrGas, err := core.IntrinsicGas(ethTx.Data(), ethTx.AccessList(), ethTx.To() == nil, true, true, true)
+	intrGas, err := core.IntrinsicGas(ethTx.Data(), ethTx.AccessList(), []coretypes.SetCodeAuthorization{}, ethTx.To() == nil, true, true, true)
 	if err != nil {
 		return nil, err
 	}

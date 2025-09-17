@@ -82,7 +82,7 @@ func (k Keeper) DeployERC20Factory(ctx context.Context) error {
 			return err
 		}
 
-		_, _, err = k.EVMCall(ctx, types.StdAddress, common.BytesToAddress(wrapperAddr), inputBz, nil, nil)
+		_, _, err = k.EVMCall(ctx, types.StdAddress, common.BytesToAddress(wrapperAddr), inputBz, nil, nil, nil)
 		if err != nil {
 			return err
 		}
