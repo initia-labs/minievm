@@ -21,7 +21,6 @@ func tempApp() *MinitiaApp {
 		log.NewNopLogger(),
 		dbm.NewMemDB(),
 		dbm.NewMemDB(),
-		dbm.NewMemDB(),
 		nil,
 		false,
 		evmconfig.DefaultEVMConfig(),

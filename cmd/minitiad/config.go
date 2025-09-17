@@ -7,7 +7,6 @@ import (
 	tmcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 
-	indexerconfig "github.com/initia-labs/kvindexer/config"
 	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
@@ -18,7 +17,6 @@ import (
 type minitiaAppConfig struct {
 	serverconfig.Config
 	EVMConfig     evmconfig.EVMConfig         `mapstructure:"evm"`
-	IndexerConfig indexerconfig.IndexerConfig `mapstructure:"indexer"`
 	JSONRPCConfig jsonrpcconfig.JSONRPCConfig `mapstructure:"jsonrpc"`
 }
 
@@ -61,7 +59,6 @@ func initAppConfig() (string, interface{}) {
 	minitiaAppConfig := minitiaAppConfig{
 		Config:        *srvCfg,
 		EVMConfig:     evmCfg,
-		IndexerConfig: indexerconfig.DefaultConfig(),
 		JSONRPCConfig: jsonrpcconfig.DefaultJSONRPCConfig(),
 	}
 
@@ -70,7 +67,6 @@ func initAppConfig() (string, interface{}) {
 
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
 		evmconfig.DefaultConfigTemplate +
-		indexerconfig.DefaultConfigTemplate +
 		jsonrpcconfig.DefaultConfigTemplate
 
 	return minitiaAppTemplate, minitiaAppConfig

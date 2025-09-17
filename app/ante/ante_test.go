@@ -47,7 +47,7 @@ func (suite *AnteTestSuite) createTestApp(tempDir string) (*minievmapp.MinitiaAp
 	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	app := minievmapp.NewMinitiaApp(
-		log.NewNopLogger(), dbm.NewMemDB(), dbm.NewMemDB(), dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), appOptions,
+		log.NewNopLogger(), dbm.NewMemDB(), dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), appOptions,
 	)
 	ctx := app.BaseApp.NewUncachedContext(false, tmproto.Header{})
 	err := app.AccountKeeper.Params.Set(ctx, authtypes.DefaultParams())

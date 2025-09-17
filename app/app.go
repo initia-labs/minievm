@@ -69,10 +69,6 @@ import (
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
-	// kvindexer
-	kvindexermodule "github.com/initia-labs/kvindexer/x/kvindexer"
-	kvindexerkeeper "github.com/initia-labs/kvindexer/x/kvindexer/keeper"
-
 	// unnamed import of statik for swagger UI support
 	_ "github.com/initia-labs/minievm/client/docs/statik"
 )
@@ -116,11 +112,6 @@ type MinitiaApp struct {
 	// Override of BaseApp's CheckTx
 	checkTxHandler blockchecktx.CheckTx
 
-	// indexer keeper for graceful shutdown
-	kvIndexerKeeper *kvindexerkeeper.Keeper
-	// indexer module for grpc-gateway registration
-	kvIndexerModule *kvindexermodule.AppModuleBasic
-
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
 
@@ -136,7 +127,6 @@ func NewMinitiaApp(
 	logger log.Logger,
 	db dbm.DB,
 	indexerDB dbm.DB,
-	kvindexerDB dbm.DB,
 	traceStore io.Writer,
 	loadLatest bool,
 	evmConfig evmconfig.EVMConfig,
@@ -251,12 +241,9 @@ func NewMinitiaApp(
 	}
 
 	// setup indexer
-	evmIndexer, kvIndexerKeeper, kvIndexerModule, streamingManager, err := setupIndexer(app, appOpts, encodingConfig, indexerDB, kvindexerDB)
+	evmIndexer, streamingManager, err := setupIndexer(app, indexerDB)
 	if err != nil {
 		tmos.Exit(err.Error())
-	} else if kvIndexerKeeper != nil && kvIndexerModule != nil {
-		// register kvindexer keeper and module, and register services.
-		app.SetKVIndexer(kvIndexerKeeper, kvIndexerModule)
 	}
 
 	// register evm indexer
@@ -396,13 +383,6 @@ func (app *MinitiaApp) PostHandler() sdk.PostHandler {
 	return app.postHandler
 }
 
-// SetKVIndexer sets the kvindexer keeper and module for the app and registers the services.
-func (app *MinitiaApp) SetKVIndexer(kvIndexerKeeper *kvindexerkeeper.Keeper, kvIndexerModule *kvindexermodule.AppModuleBasic) {
-	app.kvIndexerKeeper = kvIndexerKeeper
-	app.kvIndexerModule = kvIndexerModule
-	app.kvIndexerModule.RegisterServices(app.configurator)
-}
-
 // SetEVMIndexer sets the evm indexer for the app.
 func (app *MinitiaApp) SetEVMIndexer(evmIndexer evmindexer.EVMIndexer) {
 	app.evmIndexer = evmIndexer
@@ -514,11 +494,6 @@ func (app *MinitiaApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.AP
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// Register grpc-gateway routes for indexer module.
-	if app.kvIndexerModule != nil {
-		app.kvIndexerModule.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
-	}
-
 	// register swagger API from root so that other applications can override easily
 	if apiConfig.Swagger {
 		RegisterSwaggerAPI(apiSvr.Router)
@@ -558,12 +533,6 @@ func (app *MinitiaApp) RegisterNodeService(clientCtx client.Context, cfg config.
 // This method blocks on the closure of both the prometheus server, and the oracle-service
 func (app *MinitiaApp) Close() error {
 	var errs []error
-
-	if app.kvIndexerKeeper != nil {
-		if err := app.kvIndexerKeeper.Close(); err != nil {
-			errs = append(errs, err)
-		}
-	}
 
 	if err := app.BaseApp.Close(); err != nil {
 		errs = append(errs, err)

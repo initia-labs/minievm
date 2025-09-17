@@ -64,11 +64,7 @@ func TestGetMaccPerms(t *testing.T) {
 func TestInitGenesisOnMigration(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewLogger(os.Stdout)
-	app := NewMinitiaApp(
-		logger, db, dbm.NewMemDB(), dbm.NewMemDB(),
-		nil, true, evmconfig.DefaultEVMConfig(),
-		EmptyAppOptions{},
-	)
+	app := NewMinitiaApp(logger, db, dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), EmptyAppOptions{})
 	ctx := app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
 
 	// Create a mock module. This module will serve as the new module we're
@@ -122,12 +118,7 @@ func TestUpgradeStateOnGenesis(t *testing.T) {
 
 func TestGetKey(t *testing.T) {
 	db := dbm.NewMemDB()
-	app := NewMinitiaApp(
-		log.NewLogger(os.Stdout),
-		db, dbm.NewMemDB(), dbm.NewMemDB(), nil, true,
-		evmconfig.DefaultEVMConfig(),
-		EmptyAppOptions{},
-	)
+	app := NewMinitiaApp(log.NewLogger(os.Stdout), db, dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), EmptyAppOptions{})
 
 	require.NotEmpty(t, app.GetKey(banktypes.StoreKey))
 	require.NotEmpty(t, app.GetMemKey(capabilitytypes.MemStoreKey))
