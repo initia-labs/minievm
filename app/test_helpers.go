@@ -136,7 +136,7 @@ func SetupWithGenesisAccounts(
 	opchildGenesis.Params.MinGasPrices = sdk.NewDecCoins(sdk.NewDecCoin(types.BaseDenom, math.NewInt(1_000_000_000)))
 
 	// set validators and delegations
-	opchildGenesis = *opchildtypes.NewGenesisState(opchildGenesis.Params, validators, nil)
+	opchildGenesis = *opchildtypes.NewGenesisState(opchildGenesis.Params, validators, nil, nil)
 	genesisState[opchildtypes.ModuleName] = app.AppCodec().MustMarshalJSON(&opchildGenesis)
 
 	// set evm genesis params
