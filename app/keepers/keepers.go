@@ -69,6 +69,7 @@ import (
 	// OPinit imports
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	opchildlanes "github.com/initia-labs/OPinit/x/opchild/lanes"
+	opchildmiddleware "github.com/initia-labs/OPinit/x/opchild/middleware/migration"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	// skip imports
@@ -422,13 +423,22 @@ func NewAppKeeper(
 			transferStack,
 		)
 
+		// create migration middleware for opchild
+		transferStack = opchildmiddleware.NewIBCMiddleware(
+			ac,
+			transferStack,
+			nil, /* ics4wrapper: not used */
+			appKeepers.BankKeeper,
+			appKeepers.OPChildKeeper,
+		)
+
 		// create evm middleware for transfer
 		transferStack = ibchooks.NewIBCMiddleware(
 			// receive: evm -> rate limit -> packet forward -> forwarding -> transfer
 			transferStack,
 			ibchooks.NewICS4Middleware(
 				nil, /* ics4wrapper: not used */
-				ibcevmhooks.NewEVMHooks(appCodec, ac, appKeepers.EVMKeeper),
+				ibcevmhooks.NewEVMHooks(appCodec, ac, appKeepers.EVMKeeper, appKeepers.OPChildKeeper),
 			),
 			appKeepers.IBCHooksKeeper,
 		)
@@ -469,7 +479,7 @@ func NewAppKeeper(
 			nftTransferIBCModule,
 			ibchooks.NewICS4Middleware(
 				nil, /* ics4wrapper: not used */
-				ibcevmhooks.NewEVMHooks(appCodec, ac, appKeepers.EVMKeeper),
+				ibcevmhooks.NewEVMHooks(appCodec, ac, appKeepers.EVMKeeper, appKeepers.OPChildKeeper),
 			),
 			appKeepers.IBCHooksKeeper,
 		)
