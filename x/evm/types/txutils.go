@@ -298,8 +298,7 @@ func ConvertCosmosTxToEthereumTx(
 		return nil, nil, err
 	}
 
-	//nolint:staticcheck
-	if !(len(feeAmount) == 0 || (len(feeAmount) == 1 && feeAmount[0].Denom == params.FeeDenom)) {
+	if len(feeAmount) != 0 && (len(feeAmount) != 1 || feeAmount[0].Denom != params.FeeDenom) {
 		return nil, nil, nil
 	}
 
