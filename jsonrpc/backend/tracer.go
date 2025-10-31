@@ -54,7 +54,7 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 	}
 
 	var (
-		cosmosTxs = cosmosBlock.Block.Data.Txs
+		cosmosTxs = cosmosBlock.Block.Txs
 		results   = make([]*rpctypes.TxTraceResult, 0, len(cosmosTxs))
 	)
 
@@ -140,7 +140,7 @@ func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.Trac
 	}
 
 	// iterate over the txs in the block
-	cosmosTxs := cosmosBlock.Block.Data.Txs
+	cosmosTxs := cosmosBlock.Block.Txs
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	for _, cosmosTxBytes := range cosmosTxs {
 		cosmosTxHash := cosmosTxBytes.Hash()
@@ -203,7 +203,7 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 	}
 
 	// iterate over the txs in the block
-	cosmosTxs := cosmosBlock.Block.Data.Txs
+	cosmosTxs := cosmosBlock.Block.Txs
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	found := false
 	for _, cosmosTxBytes := range cosmosTxs {

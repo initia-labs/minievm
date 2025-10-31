@@ -1,24 +1,32 @@
+version: "2"
+run:
+  tests: false
 linters:
-  disable-all: false
   disable:
     - thelper
     - varnamelen
     - tagliatelle
     - wrapcheck
-    - typecheck
-  errcheck:
-    exclude-functions:
-      - fmt:.*
-      - io/ioutil:^Read.*
-      - github.com/spf13/cobra:MarkFlagRequired
-      - github.com/spf13/viper:BindPFlag
-linters-settings:
-  gocyclo:
-    min-complexity: 11
-  golint:
-    min-confidence: 1.1
-issues:
-  exclude:
-    - composite
-run:
-  tests: false
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt:.*
+        - io/ioutil:^Read.*
+        - github.com/spf13/cobra:MarkFlagRequired
+        - github.com/spf13/viper:BindPFlag
+    gocyclo:
+      min-complexity: 11
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: (.+)\.go$
+        text: composite
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
