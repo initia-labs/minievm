@@ -81,7 +81,7 @@ func (e *JSONUtilsPrecompile) ExtendedRun(caller common.Address, input []byte, s
 		}
 	}()
 
-	method, err := e.ABI.MethodById(input)
+	method, err := e.MethodById(input)
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}

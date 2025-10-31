@@ -26,7 +26,7 @@ var (
 )
 
 func checkBalance(t *testing.T, app *minitiaapp.MinitiaApp, addr common.Address, balances sdk.Coins) {
-	ctxCheck := app.BaseApp.NewContext(true)
+	ctxCheck := app.NewContext(true)
 	require.True(t, balances.Equal(app.BankKeeper.GetAllBalances(ctxCheck, addr.Bytes())))
 }
 

@@ -306,9 +306,9 @@ func (api *FilterAPI) NewFilter(crit ethfilters.FilterCriteria) (rpc.ID, error) 
 	}
 
 	// we don't support pending logs
-	if !(from == rpc.LatestBlockNumber && to == rpc.LatestBlockNumber) &&
-		!(from >= 0 && to >= 0 && to >= from) &&
-		!(from >= 0 && to == rpc.LatestBlockNumber) {
+	if (from != rpc.LatestBlockNumber || to != rpc.LatestBlockNumber) &&
+		(from < 0 || to < 0 || to < from) &&
+		(from < 0 || to != rpc.LatestBlockNumber) {
 		return "", errInvalidBlockRange
 	}
 

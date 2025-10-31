@@ -30,7 +30,7 @@ func NewHookedState(stateDb *StateDB, hooks *tracing.Hooks) *HookedStateDB {
 func (s *HookedStateDB) SubBalance(addr common.Address, amount *uint256.Int, reason tracing.BalanceChangeReason) uint256.Int {
 	s.StateDB.SubBalance(addr, amount, reason)
 	if s.hooks != nil && s.hooks.OnBalanceChange != nil && !amount.IsZero() {
-		prev := s.StateDB.GetBalance(addr)
+		prev := s.GetBalance(addr)
 		newBalance := new(uint256.Int).Sub(prev, amount)
 		s.hooks.OnBalanceChange(addr, prev.ToBig(), newBalance.ToBig(), reason)
 	}
@@ -41,7 +41,7 @@ func (s *HookedStateDB) SubBalance(addr common.Address, amount *uint256.Int, rea
 func (s *HookedStateDB) AddBalance(addr common.Address, amount *uint256.Int, reason tracing.BalanceChangeReason) uint256.Int {
 	s.StateDB.AddBalance(addr, amount, reason)
 	if s.hooks != nil && s.hooks.OnBalanceChange != nil && !amount.IsZero() {
-		prev := s.StateDB.GetBalance(addr)
+		prev := s.GetBalance(addr)
 		newBalance := new(uint256.Int).Add(prev, amount)
 		s.hooks.OnBalanceChange(addr, prev.ToBig(), newBalance.ToBig(), reason)
 	}
@@ -50,7 +50,7 @@ func (s *HookedStateDB) AddBalance(addr common.Address, amount *uint256.Int, rea
 
 // override to emit nonce change events
 func (s *HookedStateDB) SetNonce(address common.Address, nonce uint64, reason tracing.NonceChangeReason) {
-	prev := s.StateDB.GetNonce(address)
+	prev := s.GetNonce(address)
 	s.StateDB.SetNonce(address, nonce, reason)
 	if s.hooks != nil && s.hooks.OnNonceChangeV2 != nil {
 		s.hooks.OnNonceChangeV2(address, prev, nonce, reason)
@@ -87,8 +87,8 @@ func (s *HookedStateDB) SelfDestruct(address common.Address) uint256.Int {
 	var prevCodeHash common.Hash
 
 	if s.hooks != nil && s.hooks.OnCodeChange != nil {
-		prevCode = s.StateDB.GetCode(address)
-		prevCodeHash = s.StateDB.GetCodeHash(address)
+		prevCode = s.GetCode(address)
+		prevCodeHash = s.GetCodeHash(address)
 	}
 
 	prev := s.StateDB.SelfDestruct(address)
@@ -110,8 +110,8 @@ func (s *HookedStateDB) SelfDestruct6780(address common.Address) (uint256.Int, b
 	var prevCodeHash common.Hash
 
 	if s.hooks != nil && s.hooks.OnCodeChange != nil {
-		prevCodeHash = s.StateDB.GetCodeHash(address)
-		prevCode = s.StateDB.GetCode(address)
+		prevCodeHash = s.GetCodeHash(address)
+		prevCode = s.GetCode(address)
 	}
 
 	prev, changed := s.StateDB.SelfDestruct6780(address)

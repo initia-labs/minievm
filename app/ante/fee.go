@@ -42,7 +42,7 @@ func (fd GasFreeFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	fees := feeTx.GetFee()
 	feeDenom, err := fd.ek.GetFeeDenom(ctx.WithGasMeter(storetypes.NewInfiniteGasMeter()))
-	if !(err == nil && len(fees) == 1 && fees[0].Denom == feeDenom) {
+	if err != nil || len(fees) != 1 || fees[0].Denom != feeDenom {
 		return fd.inner.AnteHandle(ctx, tx, simulate, next)
 	}
 

@@ -26,8 +26,8 @@ func NewSnapshot(ctx Context) *Snapshot {
 
 func (s *Snapshot) Commit() {
 	// propagate execute requests to parent
-	parentExecuteRequests := s.ctx.Context.Value(types.CONTEXT_KEY_PARENT_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
-	executeRequests := s.ctx.Context.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
+	parentExecuteRequests := s.ctx.Value(types.CONTEXT_KEY_PARENT_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
+	executeRequests := s.ctx.Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
 	*parentExecuteRequests = append(*parentExecuteRequests, *executeRequests...)
 
 	// commit cache

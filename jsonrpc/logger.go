@@ -36,11 +36,11 @@ func (l *logHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	switch r.Level {
 	case ethlog.LevelTrace, ethlog.LevelDebug:
-		l.Logger.Debug(r.Message, attrs...)
+		l.Debug(r.Message, attrs...)
 	case ethlog.LevelInfo, ethlog.LevelWarn:
-		l.Logger.Info(r.Message, attrs...)
+		l.Info(r.Message, attrs...)
 	case ethlog.LevelError, ethlog.LevelCrit:
-		l.Logger.Error(r.Message, attrs...)
+		l.Error(r.Message, attrs...)
 	}
 
 	return nil

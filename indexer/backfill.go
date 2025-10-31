@@ -42,8 +42,8 @@ func (e *EVMIndexerImpl) Backfill(startHeight uint64, endHeight uint64) error {
 			return err
 		}
 
-		txs := make([][]byte, len(block.Block.Data.Txs))
-		for i, tx := range block.Block.Data.Txs {
+		txs := make([][]byte, len(block.Block.Txs))
+		for i, tx := range block.Block.Txs {
 			txs[i] = []byte(tx)
 		}
 
@@ -80,7 +80,7 @@ func (e *EVMIndexerImpl) Backfill(startHeight uint64, endHeight uint64) error {
 				feeDecimals: feeDecimals,
 
 				blockHeight:   height,
-				blockTime:     block.Block.Header.Time,
+				blockTime:     block.Block.Time,
 				blockGasMeter: blockGasMeter,
 			},
 		}
