@@ -221,4 +221,10 @@ lint-fix:
 
 .PHONY: lint lint-fix
 
+###############################################################################
+###                                Testnet                                  ###
+###############################################################################
 
+testnet-initialize:
+	sh ./scripts/testnet.sh
+.PHONY: testnet-initialize
