@@ -209,5 +209,5 @@ func (b *JSONRPCBackend) isBlockIndexed(blockHeight uint64) (bool, error) {
 		return false, err
 	}
 
-	return blockHeight <= uint64(lastIndexedHeight), nil
+	return blockHeight <= lastIndexedHeight, nil
 }

@@ -88,9 +88,10 @@ func Test_Reader(t *testing.T) {
 	count := 0
 	err = indexer.IterateBlockTxs(ctx, uint64(finalizeReq.Height), func(tx *rpctypes.RPCTransaction) (bool, error) {
 		count++
-		if count == 1 {
+		switch count {
+		case 1:
 			require.Equal(t, evmTxHash, tx.Hash)
-		} else if count == 2 {
+		case 2:
 			require.Equal(t, evmTxHash2, tx.Hash)
 		}
 		return false, nil
@@ -112,9 +113,10 @@ func Test_Reader(t *testing.T) {
 	count = 0
 	err = indexer.IterateBlockTxReceipts(ctx, uint64(finalizeReq.Height), func(receipt *coretypes.Receipt) (bool, error) {
 		count++
-		if count == 1 {
+		switch count {
+		case 1:
 			require.Equal(t, receipt1, receipt)
-		} else if count == 2 {
+		case 2:
 			require.Equal(t, receipt2, receipt)
 		}
 		return false, nil

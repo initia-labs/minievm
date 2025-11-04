@@ -49,7 +49,7 @@ func (suite *PostHandlerTestSuite) createTestApp(tempDir string) (*minievmapp.Mi
 	app := minievmapp.NewMinitiaApp(
 		log.NewNopLogger(), dbm.NewMemDB(), dbm.NewMemDB(), nil, true, evmconfig.DefaultEVMConfig(), appOptions,
 	)
-	ctx := app.BaseApp.NewUncachedContext(false, tmproto.Header{})
+	ctx := app.NewUncachedContext(false, tmproto.Header{})
 	err := app.AccountKeeper.Params.Set(ctx, authtypes.DefaultParams())
 	suite.NoError(err)
 

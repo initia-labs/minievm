@@ -373,7 +373,7 @@ func (api *EthAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
 }
 
 // ChainId is the EIP-155 replay-protection chain id for the current ethereum chain config.
-func (api *EthAPI) ChainId() *hexutil.Big { //nolint
+func (api *EthAPI) ChainId() *hexutil.Big {
 	api.logger.Debug("eth_chainId")
 	chainId, err := api.backend.ChainID()
 	if err != nil {

@@ -72,7 +72,7 @@ func (e *ERC20RegistryPrecompile) ExtendedRun(caller common.Address, input []byt
 		}
 	}()
 
-	method, err := e.ABI.MethodById(input)
+	method, err := e.MethodById(input)
 	if err != nil {
 		return nil, 0, types.ErrPrecompileFailed.Wrap(err.Error())
 	}

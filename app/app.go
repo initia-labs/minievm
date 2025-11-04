@@ -471,7 +471,7 @@ func (app *MinitiaApp) InterfaceRegistry() types.InterfaceRegistry {
 
 // InitializeIndexer initializes the EVM indexer.
 func (app *MinitiaApp) InitializeIndexer(clientCtx client.Context) error {
-	return app.evmIndexer.Initialize(clientCtx, app.BaseApp.CreateQueryContext, app.BaseApp.GetConsensusParams)
+	return app.evmIndexer.Initialize(clientCtx, app.CreateQueryContext, app.GetConsensusParams)
 }
 
 // RegisterAPIRoutes registers all application module routes with the provided
@@ -503,7 +503,7 @@ func (app *MinitiaApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.AP
 // RegisterTxService implements the Application.RegisterTxService method.
 func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 	authtx.RegisterTxService(
-		app.BaseApp.GRPCQueryRouter(), clientCtx,
+		app.GRPCQueryRouter(), clientCtx,
 		app.Simulate, app.interfaceRegistry,
 	)
 
@@ -520,7 +520,7 @@ func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 func (app *MinitiaApp) RegisterTendermintService(clientCtx client.Context) {
 	cmtservice.RegisterTendermintService(
 		clientCtx,
-		app.BaseApp.GRPCQueryRouter(),
+		app.GRPCQueryRouter(),
 		app.interfaceRegistry, app.Query,
 	)
 }
