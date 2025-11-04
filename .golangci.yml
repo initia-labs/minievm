@@ -1,21 +1,20 @@
 version: "2"
-run:
-  tests: false
 linters:
-  disable:
-    - thelper
-    - varnamelen
-    - tagliatelle
-    - wrapcheck
+  enable:
+    - asciicheck
+    - bodyclose
+    - copyloopvar
+    - dogsled
+    - goconst
+    - misspell
+    - nolintlint
+    - staticcheck
+    - unconvert
   settings:
-    errcheck:
-      exclude-functions:
-        - fmt:.*
-        - io/ioutil:^Read.*
-        - github.com/spf13/cobra:MarkFlagRequired
-        - github.com/spf13/viper:BindPFlag
-    gocyclo:
-      min-complexity: 11
+    dogsled:
+      max-blank-identifiers: 3
+    misspell:
+      locale: US
   exclusions:
     generated: lax
     presets:
@@ -24,8 +23,24 @@ linters:
       - legacy
       - std-error-handling
     rules:
-      - path: (.+)\.go$
-        text: composite
+      - linters:
+          - staticcheck
+        text: 'ST1003:'
+      - linters:
+          - goconst
+        path: (.+)_test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-same-issues: 50
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
     paths:
       - third_party$
       - builtin$

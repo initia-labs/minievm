@@ -180,7 +180,7 @@ func (k ERC20Keeper) CreateERC20(ctx context.Context, denom string, decimals uin
 		return err
 	}
 
-	inputBz, err := k.ERC20FactoryABI.Pack("createERC20", denom, denom, uint8(decimals))
+	inputBz, err := k.ERC20FactoryABI.Pack("createERC20", denom, denom, decimals)
 	if err != nil {
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}

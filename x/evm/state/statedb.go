@@ -813,7 +813,5 @@ func (s *StateDB) AccessEvents() *state.AccessEvents {
 	return nil
 }
 
-// Finalise is called at the end of transaction processing to finalize any state changes.
-// In minievm, this is a no-op since all state changes are handled in the Commit method.
-// This matches the interface required by the EVM but does not need an implementation.
-func (s *StateDB) Finalise(bool) {}
+// unused in the current implementation
+func (s *StateDB) Finalise(bool) {} //nolint

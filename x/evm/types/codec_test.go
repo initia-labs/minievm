@@ -60,12 +60,12 @@ func TestRegisterLegacyAminoCodec(t *testing.T) {
 				var newObj ContractAccount
 				err = cdc.Unmarshal(bz, &newObj)
 				require.NoError(t, err)
-				require.Equal(t, tc.obj.(*ContractAccount).BaseAccount.Address, newObj.BaseAccount.Address)
+				require.Equal(t, tc.obj.(*ContractAccount).Address, newObj.Address)
 			case "ShorthandAccount":
 				var newObj ShorthandAccount
 				err = cdc.Unmarshal(bz, &newObj)
 				require.NoError(t, err)
-				require.Equal(t, tc.obj.(*ShorthandAccount).BaseAccount.Address, newObj.BaseAccount.Address)
+				require.Equal(t, tc.obj.(*ShorthandAccount).Address, newObj.Address)
 				require.Equal(t, tc.obj.(*ShorthandAccount).OriginalAddress, newObj.OriginalAddress)
 			case "CallAuthorization":
 				var newObj CallAuthorization

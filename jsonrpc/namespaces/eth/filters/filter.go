@@ -303,7 +303,7 @@ func (f *Filter) unindexedLogs(ctx context.Context, logChan chan *coretypes.Log)
 
 func (f *Filter) searchLogs(ctx context.Context, begin, end int64) ([]*coretypes.Log, error) {
 	logs := make([]*coretypes.Log, 0)
-	for ; begin <= int64(end); begin++ {
+	for ; begin <= end; begin++ {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()

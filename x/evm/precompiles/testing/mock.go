@@ -262,7 +262,7 @@ func (m *MockStateDB) AccessEvents() *corestate.AccessEvents {
 	panic("unimplemented")
 }
 
-func (m *MockStateDB) Finalise(_ bool) {
+func (m *MockStateDB) Finalise(_ bool) { //nolint
 	panic("unimplemented")
 }
 

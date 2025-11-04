@@ -132,7 +132,7 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 			case logs := <-logsChan:
 				logs = filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
 				for _, log := range logs {
-					log := log
+
 					_ = notifier.Notify(rpcSub.ID, &log)
 				}
 			case <-rpcSub.Err(): // client send an unsubscribe request
