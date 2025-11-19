@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 CHAIN_ID=testnet-1
 
 if sed --version >/dev/null 2>&1; then
