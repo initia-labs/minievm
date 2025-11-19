@@ -17,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
@@ -252,6 +253,7 @@ func NewAppKeeper(
 		ac,
 		vc,
 		cc,
+		authcodec.NewBech32Codec("init"),
 		logger,
 	)
 
@@ -328,6 +330,7 @@ func NewAppKeeper(
 	appKeepers.IBCHooksKeeper = ibchookskeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[ibchookstypes.StoreKey]),
+		runtime.NewTransientStoreService(appKeepers.tkeys[ibchookstypes.TStoreKey]),
 		authorityAddr,
 		ac,
 	)
@@ -351,7 +354,7 @@ func NewAppKeeper(
 	// Transfer configuration //
 	////////////////////////////
 	// Send   : transfer -> packet forward -> rate limit -> fee        -> channel
-	// Receive: channel  -> fee            -> evm        -> rate limit -> packet forward -> forwarding -> transfer
+	// Receive: channel  -> fee            -> evm        -> migration  -> rate limit -> packet forward -> forwarding -> transfer
 
 	var transferStack porttypes.IBCModule
 	{
@@ -426,6 +429,8 @@ func NewAppKeeper(
 		// create migration middleware for opchild
 		transferStack = opchildmiddleware.NewIBCMiddleware(
 			ac,
+			appCodec,
+			// receive: migration -> rate limit -> packet forward -> forwarding -> transfer
 			transferStack,
 			nil, /* ics4wrapper: not used */
 			appKeepers.BankKeeper,
@@ -434,7 +439,7 @@ func NewAppKeeper(
 
 		// create evm middleware for transfer
 		transferStack = ibchooks.NewIBCMiddleware(
-			// receive: evm -> rate limit -> packet forward -> forwarding -> transfer
+			// receive: evm -> migration -> rate limit -> packet forward -> forwarding -> transfer
 			transferStack,
 			ibchooks.NewICS4Middleware(
 				nil, /* ics4wrapper: not used */
@@ -445,7 +450,7 @@ func NewAppKeeper(
 
 		// create ibcfee middleware for transfer
 		transferStack = ibcfee.NewIBCMiddleware(
-			// receive: fee -> evm -> rate limit -> packet forward -> forwarding -> transfer
+			// receive: fee -> evm -> migration -> rate limit -> packet forward -> forwarding -> transfer
 			transferStack,
 			// ics4wrapper: transfer -> packet forward -> rate limit -> fee -> channel
 			*appKeepers.IBCFeeKeeper,
