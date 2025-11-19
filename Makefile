@@ -53,8 +53,24 @@ endif
 ifeq (cleveldb,$(findstring cleveldb,$(COSMOS_BUILD_OPTIONS)))
   build_tags += gcc
 endif
+# handle rocksdb
+define ROCKSDB_INSTRUCTIONS
+
+################################################################
+RocksDB support requires the RocksDB shared library and headers.
+macOS (Homebrew):
+  brew install rocksdb
+  export CGO_CFLAGS="-I/usr/local/opt/rocksdb/include"
+  export CGO_LDFLAGS="-L/usr/local/opt/rocksdb/lib"
+See https://github.com/rockset/rocksdb-cloud/blob/master/INSTALL.md for custom setups.
+################################################################
+
+endef
+
 ifeq (rocksdb,$(findstring rocksdb,$(COSMOS_BUILD_OPTIONS)))
-  build_tags += rocksdb
+  $(info $(ROCKSDB_INSTRUCTIONS))
+  CGO_ENABLED ?= 1
+  build_tags += rocksdb grocksdb_clean_link
 endif
 ifeq (boltdb,$(findstring boltdb,$(COSMOS_BUILD_OPTIONS)))
   build_tags += boltdb
@@ -76,27 +92,6 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=minievm \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
 			-X github.com/cometbft/cometbft/version.TMCoreSemVer=$(TM_VERSION)
-
-# DB backend selection
-ifeq (cleveldb,$(findstring cleveldb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
-endif
-ifeq (badgerdb,$(findstring badgerdb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=badgerdb
-endif
-# handle rocksdb
-ifeq (rocksdb,$(findstring rocksdb,$(COSMOS_BUILD_OPTIONS)))
-  $(info ################################################################)
-  $(info To use rocksdb, you need to install rocksdb first)
-  $(info Please follow this guide https://github.com/rockset/rocksdb-cloud/blob/master/INSTALL.md)
-  $(info ################################################################)
-  CGO_ENABLED=1
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=rocksdb
-endif
-# handle boltdb
-ifeq (boltdb,$(findstring boltdb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=boltdb
-endif
 
 ifeq (,$(findstring nostrip,$(COSMOS_BUILD_OPTIONS)))
   ldflags += -w -s
@@ -220,5 +215,4 @@ lint-fix:
 	golangci-lint run --fix --timeout=15m --tests=false
 
 .PHONY: lint lint-fix
-
 

@@ -11,11 +11,15 @@ import (
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
 	"github.com/initia-labs/minievm/types"
+
+	storecfg "github.com/initia-labs/store/config"
 )
 
 // minitiaAppConfig initia specify app config
 type minitiaAppConfig struct {
 	serverconfig.Config
+	MemIAVL       storecfg.MemIAVLConfig      `mapstructure:"memiavl"`
+	VersionDB     storecfg.VersionDBConfig    `mapstructure:"versiondb"`
 	EVMConfig     evmconfig.EVMConfig         `mapstructure:"evm"`
 	JSONRPCConfig jsonrpcconfig.JSONRPCConfig `mapstructure:"jsonrpc"`
 }
@@ -65,9 +69,15 @@ func initAppConfig() (string, interface{}) {
 	minitiaAppConfig.JSONRPCConfig.Address = "0.0.0.0:8545"
 	minitiaAppConfig.JSONRPCConfig.AddressWS = "0.0.0.0:8546"
 
+	// memiavl config
+	minitiaAppConfig.MemIAVL = storecfg.DefaultMemIAVLConfig()
+	minitiaAppConfig.VersionDB = storecfg.DefaultVersionDBConfig()
+
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
 		evmconfig.DefaultConfigTemplate +
-		jsonrpcconfig.DefaultConfigTemplate
+		jsonrpcconfig.DefaultConfigTemplate +
+		storecfg.DefaultMemIAVLConfigTemplate +
+		storecfg.DefaultVersionDBConfigTemplate
 
 	return minitiaAppTemplate, minitiaAppConfig
 }

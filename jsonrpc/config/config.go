@@ -159,7 +159,7 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Bool(flagJSONRPCEnableWS, DefaultEnableWS, "Enable the WebSocket server")
 	startCmd.Flags().String(flagJSONRPCAddressWS, DefaultAddressWS, "Address to listen on for the WebSocket server")
 	startCmd.Flags().Bool(flagJSONRPCEnableUnsafeCORS, DefaultEnableUnsafeCORS, "Enable unsafe CORS")
-	startCmd.Flags().StringSlice(flagJSONRPCAPIs, DefaultAPIs, "List of JSON-RPC namespaces that should be enabled")
+	startCmd.Flags().String(flagJSONRPCAPIs, strings.Join(DefaultAPIs, ","), "List of JSON-RPC namespaces that should be enabled")
 	startCmd.Flags().Duration(flagJSONRPCHTTPTimeout, DefaultHTTPTimeout, "Read/write timeout of http json-rpc server")
 	startCmd.Flags().Duration(flagJSONRPCHTTPIdleTimeout, DefaultHTTPIdleTimeout, "Idle timeout of http json-rpc server")
 	startCmd.Flags().Int(flagJSONRPCMaxOpenConnections, DefaultMaxOpenConnections, "Maximum number of simultaneous connections for the server listener")

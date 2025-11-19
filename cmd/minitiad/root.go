@@ -38,6 +38,7 @@ import (
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
 	minitiaapp "github.com/initia-labs/minievm/app"
+	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/jsonrpc"
 	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -48,6 +49,10 @@ import (
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
 
 	cmtcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
+
+	storeclient "github.com/initia-labs/store/client"
+	storeconfig "github.com/initia-labs/store/config"
+	storeopendb "github.com/initia-labs/store/opendb"
 )
 
 // NewRootCmd creates a new root command for initiad. It is called once in the
@@ -161,7 +166,17 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			initiaappTemplate, initiaappConfig := initAppConfig()
 			customTMConfig := initTendermintConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, initiaappTemplate, initiaappConfig, customTMConfig)
+			err = server.InterceptConfigsPreRunHandler(cmd, initiaappTemplate, initiaappConfig, customTMConfig)
+			if err != nil {
+				return err
+			}
+
+			// set the db dir for opendb
+			if serverCtx := cmd.Context().Value(server.ServerContextKey); serverCtx != nil {
+				storeopendb.DBDir = cast.ToString(serverCtx.(*server.Context).Viper.Get("db_dir"))
+			}
+
+			return nil
 		},
 	}
 
@@ -223,6 +238,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 
 			return nil
 		},
+		DBOpener: storeopendb.OpenDB,
 	})
 
 	// add keybase, auxiliary RPC, query, and tx child commands
@@ -238,10 +254,19 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 	rootCmd.AddCommand(LaunchCommand(a, encodingConfig, basicManager))
 	rootCmd.AddCommand(NewMultipleRollbackCmd(a.AppCreator()))
 	rootCmd.AddCommand(cmtcmd.FetchGenesisCmd)
+
+	// add store commands
+	if storeCmd := storeclient.ChangeSetGroupCmd(keepers.KVStoreKeys()); storeCmd != nil {
+		rootCmd.AddCommand(storeCmd)
+	}
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
 	crisis.AddModuleInitFlags(startCmd)
+	storeconfig.AddMemIAVLConfigFlags(startCmd)
+	storeconfig.AddVersionDBConfigFlags(startCmd)
+	evmconfig.AddConfigFlags(startCmd)
+	jsonrpcconfig.AddConfigFlags(startCmd)
 }
 
 func genesisCommand(encodingConfig params.EncodingConfig, basicManager module.BasicManager) *cobra.Command {
@@ -321,16 +346,18 @@ func (a *appCreator) AppCreator() servertypes.AppCreator {
 	return func(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
 		baseappOptions := server.DefaultBaseappOptions(appOpts)
 
-		// create EVM indexer db
-		dbDir, dbBackend := getDBConfig(appOpts)
-		indexerDB, err := dbm.NewDB("eth_index", dbBackend, dbDir)
-		if err != nil {
-			panic(err)
-		}
 		evmConfig := evmconfig.GetConfig(appOpts)
 		if err := evmConfig.Validate(); err != nil {
 			panic(err)
 		}
+
+		// create EVM indexer db
+		dbDir := getDBDir(appOpts)
+		indexerDB, err := dbm.NewDB("eth_index", dbm.BackendType(evmConfig.IndexerDBBackend), dbDir)
+		if err != nil {
+			panic(err)
+		}
+
 		app := minitiaapp.NewMinitiaApp(
 			logger, db, indexerDB, traceStore, true,
 			evmConfig, appOpts, baseappOptions...,
@@ -421,13 +448,12 @@ func readEnv(clientCtx client.Context) (client.Context, error) {
 	return clientCtx, nil
 }
 
-// getDBConfig returns the database configuration for the EVM indexer
-func getDBConfig(appOpts servertypes.AppOptions) (string, dbm.BackendType) {
-	rootDir := cast.ToString(appOpts.Get("home"))
+// getDBDir returns the database configuration for the EVM indexer
+func getDBDir(appOpts servertypes.AppOptions) string {
+	rootDir := cast.ToString(appOpts.Get(flags.FlagHome))
 	dbDir := cast.ToString(appOpts.Get("db_dir"))
-	dbBackend := server.GetAppDBBackend(appOpts)
 
-	return rootify(dbDir, rootDir), dbBackend
+	return rootify(dbDir, rootDir)
 }
 
 // helper function to make config creation independent of root dir
