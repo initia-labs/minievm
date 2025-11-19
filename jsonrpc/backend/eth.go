@@ -84,7 +84,7 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 
 	var value math.Int
 	if args.Value != nil {
-		value =  math.NewIntFromBigInt(args.Value.ToInt())
+		value = math.NewIntFromBigInt(args.Value.ToInt())
 	}
 
 	var list []types.AccessTuple

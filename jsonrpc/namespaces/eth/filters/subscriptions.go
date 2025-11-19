@@ -103,9 +103,9 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 	}
 
 	// we don't support pending logs
-	if !(from == rpc.LatestBlockNumber && to == rpc.LatestBlockNumber) &&
-		!(from >= 0 && to >= 0 && to >= from) &&
-		!(from >= 0 && to == rpc.LatestBlockNumber) {
+	if (from != rpc.LatestBlockNumber || to != rpc.LatestBlockNumber) &&
+		(from < 0 || to < 0 || to < from) &&
+		(from < 0 || to != rpc.LatestBlockNumber) {
 		return &rpc.Subscription{}, errInvalidBlockRange
 	}
 
@@ -132,7 +132,7 @@ func (api *FilterAPI) Logs(ctx context.Context, crit ethfilters.FilterCriteria) 
 			case logs := <-logsChan:
 				logs = filterLogs(logs, s.crit.FromBlock, s.crit.ToBlock, s.crit.Addresses, s.crit.Topics)
 				for _, log := range logs {
-					log := log
+
 					_ = notifier.Notify(rpcSub.ID, &log)
 				}
 			case <-rpcSub.Err(): // client send an unsubscribe request

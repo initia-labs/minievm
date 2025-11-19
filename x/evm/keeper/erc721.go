@@ -54,7 +54,7 @@ func (k ERC721Keeper) CreateOrUpdateClass(ctx context.Context, classId, classUri
 	if ok, err := k.isCollectionInitialized(ctx, classId); err != nil {
 		return err
 	} else if !ok {
-		inputBz, err := k.ABI.Pack("", classId, classId)
+		inputBz, err := k.Pack("", classId, classId)
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -117,7 +117,7 @@ func (k ERC721Keeper) Transfers(ctx context.Context, sender, receiver sdk.AccAdd
 		if !ok {
 			return types.ErrInvalidTokenId
 		}
-		inputBz, err := k.ABI.Pack("safeTransferFrom", senderAddr, receiverAddr, intTokenId)
+		inputBz, err := k.Pack("safeTransferFrom", senderAddr, receiverAddr, intTokenId)
 		if err != nil {
 			return types.ErrFailedToPackABI.Wrap(err.Error())
 		}
@@ -135,7 +135,7 @@ func (k ERC721Keeper) Burn(
 	ctx context.Context, owner common.Address,
 	tokenId *big.Int, contractAddr common.Address,
 ) error {
-	inputBz, err := k.ABI.Pack("burn", tokenId)
+	inputBz, err := k.Pack("burn", tokenId)
 	if err != nil {
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -187,7 +187,7 @@ func (k ERC721Keeper) Mint(
 	ctx context.Context, receiver common.Address,
 	tokenId *big.Int, tokenOriginId, tokenUri string, contractAddr common.Address,
 ) error {
-	inputBz, err := k.ABI.Pack("mint", receiver, tokenId, tokenUri, tokenOriginId)
+	inputBz, err := k.Pack("mint", receiver, tokenId, tokenUri, tokenOriginId)
 	if err != nil {
 		return types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -307,7 +307,7 @@ func (k ERC721Keeper) GetOriginTokenInfos(ctx context.Context, classId string, t
 }
 
 func (k ERC721Keeper) balanceOf(ctx context.Context, addr, contractAddr common.Address) (math.Int, error) {
-	inputBz, err := k.ABI.Pack("balanceOf", addr)
+	inputBz, err := k.Pack("balanceOf", addr)
 	if err != nil {
 		return math.ZeroInt(), types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -317,7 +317,7 @@ func (k ERC721Keeper) balanceOf(ctx context.Context, addr, contractAddr common.A
 		return math.ZeroInt(), err
 	}
 
-	res, err := k.ABI.Unpack("balanceOf", retBz)
+	res, err := k.Unpack("balanceOf", retBz)
 	if err != nil {
 		return math.ZeroInt(), types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -345,7 +345,7 @@ func (k ERC721Keeper) BalanceOf(ctx context.Context, addr sdk.AccAddress, classI
 }
 
 func (k ERC721Keeper) ownerOf(ctx context.Context, tokenId *big.Int, contractAddr common.Address) (common.Address, error) {
-	inputBz, err := k.ABI.Pack("ownerOf", tokenId)
+	inputBz, err := k.Pack("ownerOf", tokenId)
 	if err != nil {
 		return types.NullAddress, types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -355,7 +355,7 @@ func (k ERC721Keeper) ownerOf(ctx context.Context, tokenId *big.Int, contractAdd
 		return types.NullAddress, err
 	}
 
-	res, err := k.ABI.Unpack("ownerOf", retBz)
+	res, err := k.Unpack("ownerOf", retBz)
 	if err != nil {
 		return types.NullAddress, types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -383,7 +383,7 @@ func (k ERC721Keeper) OwnerOf(ctx context.Context, tokenId string, classId strin
 }
 
 func (k ERC721Keeper) name(ctx context.Context, contractAddr common.Address) (string, error) {
-	inputBz, err := k.ABI.Pack("name")
+	inputBz, err := k.Pack("name")
 	if err != nil {
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -393,7 +393,7 @@ func (k ERC721Keeper) name(ctx context.Context, contractAddr common.Address) (st
 		return "", err
 	}
 
-	res, err := k.ABI.Unpack("name", retBz)
+	res, err := k.Unpack("name", retBz)
 	if err != nil {
 		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -407,7 +407,7 @@ func (k ERC721Keeper) name(ctx context.Context, contractAddr common.Address) (st
 }
 
 func (k ERC721Keeper) tokenURI(ctx context.Context, tokenId *big.Int, contractAddr common.Address) (string, error) {
-	inputBz, err := k.ABI.Pack("tokenURI", tokenId)
+	inputBz, err := k.Pack("tokenURI", tokenId)
 	if err != nil {
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -417,7 +417,7 @@ func (k ERC721Keeper) tokenURI(ctx context.Context, tokenId *big.Int, contractAd
 		return "", err
 	}
 
-	res, err := k.ABI.Unpack("tokenURI", retBz)
+	res, err := k.Unpack("tokenURI", retBz)
 	if err != nil {
 		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}
@@ -431,7 +431,7 @@ func (k ERC721Keeper) tokenURI(ctx context.Context, tokenId *big.Int, contractAd
 }
 
 func (k ERC721Keeper) tokenOriginId(ctx context.Context, tokenId *big.Int, contractAddr common.Address) (string, error) {
-	inputBz, err := k.ABI.Pack("tokenOriginId", tokenId)
+	inputBz, err := k.Pack("tokenOriginId", tokenId)
 	if err != nil {
 		return "", types.ErrFailedToPackABI.Wrap(err.Error())
 	}
@@ -441,7 +441,7 @@ func (k ERC721Keeper) tokenOriginId(ctx context.Context, tokenId *big.Int, contr
 		return "", err
 	}
 
-	res, err := k.ABI.Unpack("tokenOriginId", retBz)
+	res, err := k.Unpack("tokenOriginId", retBz)
 	if err != nil {
 		return "", types.ErrFailedToUnpackABI.Wrap(err.Error())
 	}

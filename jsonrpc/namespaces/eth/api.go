@@ -27,8 +27,8 @@ type EthEthereumAPI interface {
 	//
 	// Retrieves information from a particular block in the blockchain.
 	BlockNumber() hexutil.Uint64
-	GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]interface{}, error)
-	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
+	GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]any, error)
+	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]any, error)
 
 	// Reading Transactions
 	//
@@ -36,7 +36,7 @@ type EthEthereumAPI interface {
 	// it is a user or a smart contract.
 	GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error)
 	GetTransactionCount(address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Uint64, error)
-	GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error)
+	GetTransactionReceipt(hash common.Hash) (map[string]any, error)
 	GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetBlockTransactionCountByHash(hash common.Hash) (*hexutil.Uint, error)
@@ -51,6 +51,7 @@ type EthEthereumAPI interface {
 	// Allows developers to both send ETH from one address to another, write data
 	// on-chain, and interact with smart contracts.
 	SendRawTransaction(data hexutil.Bytes) (common.Hash, error)
+	SendRawTransactionSync(data hexutil.Bytes, timeoutInMS int64) (map[string]any, error)
 	// SendTransaction(args rpctypes.TransactionArgs) (common.Hash, error)
 	// eth_sendPrivateTransaction
 	// eth_cancel	PrivateTransaction
@@ -81,7 +82,7 @@ type EthEthereumAPI interface {
 	ChainId() *hexutil.Big
 
 	// Other
-	Syncing() (interface{}, error)
+	Syncing() (any, error)
 	// Coinbase() (string, error)
 	// Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
 	// GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
@@ -133,18 +134,18 @@ func (api *EthAPI) BlockNumber() hexutil.Uint64 {
 }
 
 // GetBlockByNumber returns the block identified by number.
-func (api *EthAPI) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
+func (api *EthAPI) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]any, error) {
 	api.logger.Debug("eth_getBlockByNumber", "number", ethBlockNum, "full", fullTx)
 	return api.backend.GetBlockByNumber(ethBlockNum, fullTx)
 }
 
 // GetBlockByHash returns the block identified by hash.
-func (api *EthAPI) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
+func (api *EthAPI) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]any, error) {
 	api.logger.Debug("eth_getBlockByHash", "hash", hash.Hex(), "full", fullTx)
 	return api.backend.GetBlockByHash(hash, fullTx)
 }
 
-func (api *EthAPI) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
+func (api *EthAPI) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]any, error) {
 	api.logger.Debug("eth_getBlockReceipts", "block number or hash", blockNrOrHash)
 	return api.backend.GetBlockReceipts(blockNrOrHash)
 }
@@ -181,7 +182,7 @@ func (api *EthAPI) GetTransactionCount(address common.Address, blockNrOrHash rpc
 }
 
 // GetTransactionReceipt returns the transaction receipt identified by hash.
-func (api *EthAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
+func (api *EthAPI) GetTransactionReceipt(hash common.Hash) (map[string]any, error) {
 	hexTx := hash.Hex()
 	api.logger.Debug("eth_getTransactionReceipt", "hash", hexTx)
 	return api.backend.GetTransactionReceipt(hash)
@@ -219,6 +220,12 @@ func (api *EthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockNumber,
 func (api *EthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) {
 	api.logger.Debug("eth_sendRawTransaction", "length", len(data))
 	return api.backend.SendRawTransaction(data)
+}
+
+// SendRawTransactionSync send a raw Ethereum transaction and wait for the result synchronously.
+func (api *EthAPI) SendRawTransactionSync(data hexutil.Bytes, timeoutInMS int64) (map[string]any, error) {
+	api.logger.Debug("eth_sendRawTransactionSync", "length", len(data), "timeoutInMS", timeoutInMS)
+	return api.backend.SendRawTransactionSync(data, timeoutInMS)
 }
 
 // TODO: Implement eth_sendTransaction
@@ -373,7 +380,7 @@ func (api *EthAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
 }
 
 // ChainId is the EIP-155 replay-protection chain id for the current ethereum chain config.
-func (api *EthAPI) ChainId() *hexutil.Big { //nolint
+func (api *EthAPI) ChainId() *hexutil.Big {
 	api.logger.Debug("eth_chainId")
 	chainId, err := api.backend.ChainID()
 	if err != nil {
@@ -391,12 +398,12 @@ func (api *EthAPI) ChainId() *hexutil.Big { //nolint
 // *************************************
 
 // GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.
-func (api *EthAPI) GetUncleByBlockHashAndIndex(_ common.Hash, _ hexutil.Uint) map[string]interface{} {
+func (api *EthAPI) GetUncleByBlockHashAndIndex(_ common.Hash, _ hexutil.Uint) map[string]any {
 	return nil
 }
 
 // GetUncleByBlockNumberAndIndex returns the uncle identified by number and index. Always returns nil.
-func (api *EthAPI) GetUncleByBlockNumberAndIndex(_, _ hexutil.Uint) map[string]interface{} {
+func (api *EthAPI) GetUncleByBlockNumberAndIndex(_, _ hexutil.Uint) map[string]any {
 	return nil
 }
 
@@ -437,7 +444,7 @@ func (api *EthAPI) Mining() bool {
 // - highestBlock:  block number of the highest block header this node has received from peers
 // - pulledStates:  number of state entries processed until now
 // - knownStates:   number of known state entries that still need to be pulled
-func (e *EthAPI) Syncing() (interface{}, error) {
+func (e *EthAPI) Syncing() (any, error) {
 	e.logger.Debug("eth_syncing")
 	return e.backend.Syncing()
 }

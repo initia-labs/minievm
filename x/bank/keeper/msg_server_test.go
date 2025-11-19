@@ -59,7 +59,7 @@ func TestMsgUpdateParams(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
+
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := bankkeeper.NewMsgServerImpl(input.BankKeeper).UpdateParams(ctx, tc.input)
 
@@ -150,7 +150,7 @@ func TestMsgSend(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
+
 		t.Run(tc.name, func(t *testing.T) {
 
 			if tc.input.Amount.IsAllPositive() && tc.input.FromAddress != "" {

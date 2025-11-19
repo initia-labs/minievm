@@ -43,7 +43,7 @@ import (
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 
 	"github.com/initia-labs/initia/app/params"
-	initiakeyring "github.com/initia-labs/initia/crypto/keyring"
+	cryptokeyring "github.com/initia-labs/initia/crypto/keyring"
 
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
 
@@ -93,7 +93,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithHomeDir(minitiaapp.DefaultNodeHome).
 		WithViper(minitiaapp.EnvPrefix).
-		WithKeyringOptions(initiakeyring.EthSecp256k1Option())
+		WithKeyringOptions(cryptokeyring.EthSecp256k1Option())
 
 	rootCmd := &cobra.Command{
 		Use:   basename,
@@ -115,6 +115,18 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
+			// read home flag first to read proper client config
+			if initClientCtx.HomeDir == "" || cmd.Flags().Changed(flags.FlagHome) {
+				homeDir, _ := cmd.Flags().GetString(flags.FlagHome)
+				initClientCtx = initClientCtx.WithHomeDir(homeDir)
+			}
+
+			// read in client config file and override initClientCtx's values
+			initClientCtx, err = config.ReadFromClientConfig(initClientCtx)
+			if err != nil {
+				return err
+			}
+
 			// read persistent flags if they changed, and override the env configs.
 			initClientCtx, err = client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
 			if err != nil {
@@ -124,16 +136,19 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			// unsafe-reset-all is not working without viper set
 			viper.Set(tmcli.HomeFlag, initClientCtx.HomeDir)
 
-			initClientCtx, err = config.ReadFromClientConfig(initClientCtx)
-			if err != nil {
-				return err
-			}
-
 			// override the keyring if it's set
 			if initClientCtx.Keyring != nil {
-				kr, err := initiakeyring.NewKeyring(initClientCtx, initClientCtx.Keyring.Backend())
+				kr, err := cryptokeyring.NewKeyring(initClientCtx, initClientCtx.Keyring.Backend())
 				if err != nil {
 					return err
+				}
+
+				// Prevent keyring change from inner commands
+				// client/cmd.go:func GetClientTxContext
+				// client/cmd.go:func readTxCommandFlags
+				// client/cmd.go:func ReadPersistentCommandFlags
+				if keyringFlag := cmd.Flags().Lookup(flags.FlagKeyringBackend); keyringFlag != nil {
+					keyringFlag.Changed = false
 				}
 
 				initClientCtx = initClientCtx.WithKeyring(kr)
@@ -216,7 +231,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 		genesisCommand(encodingConfig, basicManager),
 		queryCommand(),
 		txCommand(),
-		initiakeyring.OverrideDefaultKeyType(keys.Commands()),
+		cryptokeyring.OverrideDefaultKeyType(keys.Commands()),
 	)
 
 	// add launch commands

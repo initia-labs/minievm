@@ -207,7 +207,7 @@ func (qs *queryServerImpl) State(ctx context.Context, req *types.QueryStateReque
 
 // ERC20Factory implements types.QueryServer.
 func (qs *queryServerImpl) ERC20Factory(ctx context.Context, req *types.QueryERC20FactoryRequest) (*types.QueryERC20FactoryResponse, error) {
-	factoryAddr, err := qs.Keeper.GetERC20FactoryAddr(ctx)
+	factoryAddr, err := qs.GetERC20FactoryAddr(ctx)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, err.Error())
 	} else if err != nil {
@@ -221,7 +221,7 @@ func (qs *queryServerImpl) ERC20Factory(ctx context.Context, req *types.QueryERC
 
 // ERC20Wrapper implements types.QueryServer.
 func (qs *queryServerImpl) ERC20Wrapper(ctx context.Context, req *types.QueryERC20WrapperRequest) (*types.QueryERC20WrapperResponse, error) {
-	wrapper, err := qs.Keeper.GetERC20WrapperAddr(ctx)
+	wrapper, err := qs.GetERC20WrapperAddr(ctx)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, err.Error())
 	} else if err != nil {
@@ -235,7 +235,7 @@ func (qs *queryServerImpl) ERC20Wrapper(ctx context.Context, req *types.QueryERC
 
 // ConnectOracle implements types.QueryServer.
 func (qs *queryServerImpl) ConnectOracle(ctx context.Context, req *types.QueryConnectOracleRequest) (*types.QueryConnectOracleResponse, error) {
-	oracle, err := qs.Keeper.GetConnectOracleAddr(ctx)
+	oracle, err := qs.GetConnectOracleAddr(ctx)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, err.Error())
 	} else if err != nil {
@@ -297,7 +297,7 @@ func (qs *queryServerImpl) ERC721ClassIdByContractAddr(ctx context.Context, req 
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	classId, err := qs.Keeper.GetClassIdByContractAddr(ctx, contractAddr)
+	classId, err := qs.GetClassIdByContractAddr(ctx, contractAddr)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, err.Error())
 	} else if err != nil {
@@ -317,7 +317,7 @@ func (qs *queryServerImpl) ERC721OriginTokenInfos(ctx context.Context, req *type
 		return nil, status.Error(codes.InvalidArgument, "empty token ids")
 	}
 
-	tokenOriginIds, tokenUris, err := qs.Keeper.GetOriginTokenInfos(ctx, req.ClassId, req.TokenIds)
+	tokenOriginIds, tokenUris, err := qs.GetOriginTokenInfos(ctx, req.ClassId, req.TokenIds)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, err.Error())
 	} else if err != nil {
@@ -360,7 +360,7 @@ func (qs *queryServerImpl) ERC721ClassInfo(ctx context.Context, req *types.Query
 
 // ERC721ClassInfos implements types.QueryServer.
 func (qs *queryServerImpl) ERC721ClassInfos(ctx context.Context, req *types.QueryERC721ClassInfosRequest) (*types.QueryERC721ClassInfosResponse, error) {
-	classInfos, pageRes, err := query.CollectionPaginate(ctx, qs.Keeper.ERC721ContractAddrsByClassId, req.Pagination, func(classId string, contractAddr []byte) (types.ERC721ClassInfo, error) {
+	classInfos, pageRes, err := query.CollectionPaginate(ctx, qs.ERC721ContractAddrsByClassId, req.Pagination, func(classId string, contractAddr []byte) (types.ERC721ClassInfo, error) {
 		className, classUri, classDescs, err := qs.erc721Keeper.GetClassInfo(ctx, classId)
 		if err != nil {
 			return types.ERC721ClassInfo{}, err

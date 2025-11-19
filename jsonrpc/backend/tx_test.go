@@ -3,10 +3,12 @@ package backend_test
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
+	backendpkg "github.com/initia-labs/minievm/jsonrpc/backend"
 	"github.com/initia-labs/minievm/tests"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -158,6 +160,99 @@ func Test_SendRawTransaction(t *testing.T) {
 	require.Len(t, txPool["pending"][addrs[1].Hex()], 1)
 	require.Equal(t, txPool["pending"][addrs[1].Hex()]["0"].Hash, txHash10)
 	require.Empty(t, txPool["queued"])
+}
+
+func Test_SendRawTransactionSync(t *testing.T) {
+	t.Run("returns receipt after transaction is mined", func(t *testing.T) {
+		input := setupBackend(t)
+		app, backend, addrs, privKeys := input.app, input.backend, input.addrs, input.privKeys
+
+		tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+		_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+		events := finalizeRes.TxResults[0].Events
+		createEvent := events[len(events)-3]
+		require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
+
+		contractAddrBz, err := hexutil.Decode(createEvent.Attributes[0].Value)
+		require.NoError(t, err)
+		contractAddr := common.BytesToAddress(contractAddrBz)
+
+		mintTx, _ := tests.GenerateMintERC20Tx(t, app, privKeys[0], contractAddr, addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+		_, finalizeRes = tests.ExecuteTxs(t, app, mintTx)
+		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+		ctx, err := app.CreateQueryContext(0, false)
+		require.NoError(t, err)
+
+		transferTx, txHash := tests.GenerateTransferERC20Tx(t, app, privKeys[0], contractAddr, addrs[1], new(big.Int).SetUint64(1_000_000))
+		evmTx, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, transferTx)
+		require.NoError(t, err)
+
+		txBz, err := evmTx.MarshalBinary()
+		require.NoError(t, err)
+
+		receiptCh := make(chan map[string]any, 1)
+		errCh := make(chan error, 1)
+		go func() {
+			receipt, err := backend.SendRawTransactionSync(txBz, 5000)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			receiptCh <- receipt
+		}()
+
+		_, finalizeRes = tests.ExecuteTxs(t, app, transferTx)
+		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+		select {
+		case err := <-errCh:
+			t.Fatalf("SendRawTransactionSync returned error: %v", err)
+		case receipt := <-receiptCh:
+			require.NotNil(t, receipt)
+			require.Equal(t, txHash, receipt["transactionHash"])
+		case <-time.After(3 * time.Second):
+			t.Fatal("timed out waiting for SendRawTransactionSync to return")
+		}
+	})
+
+	t.Run("returns timeout error if transaction is not mined", func(t *testing.T) {
+		input := setupBackend(t)
+		app, backend, addrs, privKeys := input.app, input.backend, input.addrs, input.privKeys
+
+		tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+		_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+		events := finalizeRes.TxResults[0].Events
+		createEvent := events[len(events)-3]
+		require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
+
+		contractAddrBz, err := hexutil.Decode(createEvent.Attributes[0].Value)
+		require.NoError(t, err)
+		contractAddr := common.BytesToAddress(contractAddrBz)
+
+		mintTx, _ := tests.GenerateMintERC20Tx(t, app, privKeys[0], contractAddr, addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+		_, finalizeRes = tests.ExecuteTxs(t, app, mintTx)
+		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+		ctx, err := app.CreateQueryContext(0, false)
+		require.NoError(t, err)
+
+		transferTx, _ := tests.GenerateTransferERC20Tx(t, app, privKeys[0], contractAddr, addrs[1], new(big.Int).SetUint64(1_000_000))
+		evmTx, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, transferTx)
+		require.NoError(t, err)
+
+		txBz, err := evmTx.MarshalBinary()
+		require.NoError(t, err)
+
+		receipt, err := backend.SendRawTransactionSync(txBz, 200)
+		require.Nil(t, receipt)
+		var timeoutErr *backendpkg.TimeoutError
+		require.ErrorAs(t, err, &timeoutErr)
+	})
 }
 
 func Test_GetTransactionCount(t *testing.T) {

@@ -89,7 +89,7 @@ func (e *EVMIndexerImpl) indexingLoop() {
 				e.logger.Error("failed to get last indexed height", "err", err)
 				continue
 			}
-			err = e.Backfill(uint64(lastIndexedHeight+1), uint64(task.args.blockHeight-1))
+			err = e.Backfill(lastIndexedHeight+1, uint64(task.args.blockHeight-1))
 			if err != nil {
 				e.logger.Error("failed to backfill", "err", err)
 				continue
@@ -251,7 +251,7 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 				log.BlockHash = blockHash
 				log.BlockNumber = uint64(blockHeight)
 				log.TxHash = txHash
-				log.TxIndex = uint(receipt.TransactionIndex)
+				log.TxIndex = receipt.TransactionIndex
 			}
 
 			blockLogs = append(blockLogs, receipt.Logs)
