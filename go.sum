@@ -1462,6 +1462,8 @@ github.com/initia-labs/forwarding/v2 v2.0.3-initia.3 h1:Uu1VqRsSwX7rgS2A4M3Snzyz
 github.com/initia-labs/forwarding/v2 v2.0.3-initia.3/go.mod h1:N3OzYf14ton71zCxomBmpR7tOxZ2dKwhsMxUmtuJuVQ=
 github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0 h1:qDaf7jqmism9WXe8OtqpDDxJckKrZFVYWRhKFWV8V9g=
 github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0/go.mod h1:G2z+Q6ZQSMcyHI2+BVcJdvfOupb09M2h/tgpXOEdY6k=
+github.com/initia-labs/initia v1.1.3-0.20251119030457-2471a717f37c h1:bXPjD51ZXTAw0ajTuWba/xaAPUQM4dDjSiuPy+h12Zk=
+github.com/initia-labs/initia v1.1.3-0.20251119030457-2471a717f37c/go.mod h1:nOpvBLVPXVa8VwnWPsZNoD/A1aLLgOCIqlISBcJv3ss=
 github.com/initia-labs/movevm v1.1.0 h1:PJkF06OqrhBFaf/9iR90rKafCjL0YRLCrOjiXyBbVfk=
 github.com/initia-labs/movevm v1.1.0/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
 github.com/jackpal/go-nat-pmp v1.0.2 h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7BdWus=
