@@ -33718,6 +33718,54 @@ paths:
           type: string
       tags:
         - Query
+  /ibc/apps/nft_transfer/v1/class_data/{hash}:
+    get:
+      summary: ClassData queries a class id data information.
+      operationId: ClassData
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              data:
+                type: string
+                description: data returns the requested class id data information.
+            description: >-
+              QueryClassDataResponse is the response type for the
+              Query/ClassData RPC
+
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: hash
+          description: hash (in hex format) of the class id trace information.
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
   /ibc/apps/nft_transfer/v1/class_hashes/{trace}:
     get:
       summary: ClassHash queries a class id hash information.
@@ -37399,6 +37447,15 @@ paths:
                         description: >-
                           Normally it is IBC channelID for permissioned IBC
                           relayer.
+                      bridge_disabled:
+                        type: boolean
+                        description: bridge_disabled is a flag to disable the bridge.
+                      bridge_disabled_at:
+                        type: string
+                        format: date-time
+                        description: >-
+                          bridge_disabled_at is the timestamp when the bridge is
+                          disabled.
             description: >-
               QueryBridgeInfoResponse is response type for the Query/BridgeInfo
               RPC method.
@@ -37596,6 +37653,239 @@ paths:
                           "@type": "type.googleapis.com/google.protobuf.Duration",
                           "value": "1.212s"
                         }
+      tags:
+        - Query
+  /opinit/opchild/v1/migration_info/by_denom:
+    get:
+      summary: MigrationInfo queries the migration information.
+      operationId: MigrationInfo
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              migration_info:
+                type: object
+                properties:
+                  denom:
+                    type: string
+                    description: denom is the denom of the token on l2 chain.
+                  ibc_channel_id:
+                    type: string
+                    description: >-
+                      ibc_channel_id is the IBC channel ID, which is allocated
+                      for l1 chain, in l2 chain state.
+                  ibc_port_id:
+                    type: string
+                    description: >-
+                      ibc_port_id is the IBC port ID, which is allocated for l1
+                      chain, in l2 chain state.
+                description: MigrationInfo defines the information of the migration.
+              ibc_denom:
+                type: string
+            description: >-
+              QueryMigrationInfoResponse is response type for the
+              Query/MigrationInfo RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                      description: >-
+                        A URL/resource name that uniquely identifies the type of
+                        the serialized
+
+                        protocol buffer message. This string must contain at
+                        least
+
+                        one "/" character. The last segment of the URL's path
+                        must represent
+
+                        the fully qualified name of the type (as in
+
+                        `path/google.protobuf.Duration`). The name should be in
+                        a canonical form
+
+                        (e.g., leading "." is not accepted).
+
+
+                        In practice, teams usually precompile into the binary
+                        all types that they
+
+                        expect it to use in the context of Any. However, for
+                        URLs which use the
+
+                        scheme `http`, `https`, or no scheme, one can optionally
+                        set up a type
+
+                        server that maps type URLs to message definitions as
+                        follows:
+
+
+                        * If no scheme is provided, `https` is assumed.
+
+                        * An HTTP GET on the URL must yield a
+                        [google.protobuf.Type][]
+                          value in binary format, or produce an error.
+                        * Applications are allowed to cache lookup results based
+                        on the
+                          URL, or have them precompiled into a binary to avoid any
+                          lookup. Therefore, binary compatibility needs to be preserved
+                          on changes to types. (Use versioned type names to manage
+                          breaking changes.)
+
+                        Note: this functionality is not currently available in
+                        the official
+
+                        protobuf release, and it is not used for type URLs
+                        beginning with
+
+                        type.googleapis.com.
+
+
+                        Schemes other than `http`, `https` (or the empty scheme)
+                        might be
+
+                        used with implementation specific semantics.
+                    value:
+                      type: string
+                      format: byte
+                      description: >-
+                        Must be a valid serialized protocol buffer of the above
+                        specified type.
+                  description: >-
+                    `Any` contains an arbitrary serialized protocol buffer
+                    message along with a
+
+                    URL that describes the type of the serialized message.
+
+
+                    Protobuf library provides support to pack/unpack Any values
+                    in the form
+
+                    of utility functions or additional generated methods of the
+                    Any type.
+
+
+                    Example 1: Pack and unpack a message in C++.
+
+                        Foo foo = ...;
+                        Any any;
+                        any.PackFrom(foo);
+                        ...
+                        if (any.UnpackTo(&foo)) {
+                          ...
+                        }
+
+                    Example 2: Pack and unpack a message in Java.
+
+                        Foo foo = ...;
+                        Any any = Any.pack(foo);
+                        ...
+                        if (any.is(Foo.class)) {
+                          foo = any.unpack(Foo.class);
+                        }
+                        // or ...
+                        if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                          foo = any.unpack(Foo.getDefaultInstance());
+                        }
+
+                    Example 3: Pack and unpack a message in Python.
+
+                        foo = Foo(...)
+                        any = Any()
+                        any.Pack(foo)
+                        ...
+                        if any.Is(Foo.DESCRIPTOR):
+                          any.Unpack(foo)
+                          ...
+
+                    Example 4: Pack and unpack a message in Go
+
+                         foo := &pb.Foo{...}
+                         any, err := anypb.New(foo)
+                         if err != nil {
+                           ...
+                         }
+                         ...
+                         foo := &pb.Foo{}
+                         if err := any.UnmarshalTo(foo); err != nil {
+                           ...
+                         }
+
+                    The pack methods provided by protobuf library will by
+                    default use
+
+                    'type.googleapis.com/full.type.name' as the type URL and the
+                    unpack
+
+                    methods only use the fully qualified type name after the
+                    last '/'
+
+                    in the type URL, for example "foo.bar.com/x/y.z" will yield
+                    type
+
+                    name "y.z".
+
+
+                    JSON
+
+
+                    The JSON representation of an `Any` value uses the regular
+
+                    representation of the deserialized, embedded message, with
+                    an
+
+                    additional field `@type` which contains the type URL.
+                    Example:
+
+                        package google.profile;
+                        message Person {
+                          string first_name = 1;
+                          string last_name = 2;
+                        }
+
+                        {
+                          "@type": "type.googleapis.com/google.profile.Person",
+                          "firstName": <string>,
+                          "lastName": <string>
+                        }
+
+                    If the embedded message type is well-known and has a custom
+                    JSON
+
+                    representation, that representation will be embedded adding
+                    a field
+
+                    `value` which holds the custom JSON in addition to the
+                    `@type`
+
+                    field. Example (for message [google.protobuf.Duration][]):
+
+                        {
+                          "@type": "type.googleapis.com/google.protobuf.Duration",
+                          "value": "1.212s"
+                        }
+      parameters:
+        - name: denom
+          in: query
+          required: false
+          type: string
       tags:
         - Query
   /opinit/opchild/v1/next_l1_sequence:
@@ -39319,6 +39609,7 @@ paths:
 
                         These keys represent specific storage slots in the
                         contract's storage that are accessed or modified.
+                  description: AccessTuple is the element type of an access list.
                 title: >-
                   AccessList is a predefined list of Ethereum addresses and
                   their corresponding storage slots that a transaction will
@@ -39341,6 +39632,27 @@ paths:
                   with_return_data:
                     type: boolean
                     title: whether to return data trace
+              auth_list:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    chain_id:
+                      type: string
+                    address:
+                      type: string
+                    nonce:
+                      type: string
+                      format: uint64
+                    signature:
+                      type: string
+                      format: byte
+                  description: >-
+                    SetCodeAuthorization is an authorization from an account to
+                    deploy code at its address.
+                description: >-
+                  AuthList is a list of authorizations that allow code
+                  deployment at specific addresses.
             title: |-
               QueryCallRequest is the request type for the Query/Call RPC
               method
@@ -64521,6 +64833,15 @@ definitions:
           receive_enabled enables or disables all cross-chain token transfers to
           this chain.
     description: Params defines the set of IBC nft transfer parameters.
+  ibc.applications.nft_transfer.v1.QueryClassDataResponse:
+    type: object
+    properties:
+      data:
+        type: string
+        description: data returns the requested class id data information.
+    description: |-
+      QueryClassDataResponse is the response type for the Query/ClassData RPC
+      method.
   ibc.applications.nft_transfer.v1.QueryClassHashResponse:
     type: object
     properties:
@@ -65537,7 +65858,31 @@ definitions:
             type: string
             format: byte
             description: Normally it is IBC channelID for permissioned IBC relayer.
+          bridge_disabled:
+            type: boolean
+            description: bridge_disabled is a flag to disable the bridge.
+          bridge_disabled_at:
+            type: string
+            format: date-time
+            description: bridge_disabled_at is the timestamp when the bridge is disabled.
     description: BridgeInfo defines the information of the bridge.
+  opinit.opchild.v1.MigrationInfo:
+    type: object
+    properties:
+      denom:
+        type: string
+        description: denom is the denom of the token on l2 chain.
+      ibc_channel_id:
+        type: string
+        description: >-
+          ibc_channel_id is the IBC channel ID, which is allocated for l1 chain,
+          in l2 chain state.
+      ibc_port_id:
+        type: string
+        description: >-
+          ibc_port_id is the IBC port ID, which is allocated for l1 chain, in l2
+          chain state.
+    description: MigrationInfo defines the information of the migration.
   opinit.opchild.v1.Params:
     type: object
     properties:
@@ -65670,9 +66015,43 @@ definitions:
                 type: string
                 format: byte
                 description: Normally it is IBC channelID for permissioned IBC relayer.
+              bridge_disabled:
+                type: boolean
+                description: bridge_disabled is a flag to disable the bridge.
+              bridge_disabled_at:
+                type: string
+                format: date-time
+                description: >-
+                  bridge_disabled_at is the timestamp when the bridge is
+                  disabled.
     description: >-
       QueryBridgeInfoResponse is response type for the Query/BridgeInfo RPC
       method.
+  opinit.opchild.v1.QueryMigrationInfoResponse:
+    type: object
+    properties:
+      migration_info:
+        type: object
+        properties:
+          denom:
+            type: string
+            description: denom is the denom of the token on l2 chain.
+          ibc_channel_id:
+            type: string
+            description: >-
+              ibc_channel_id is the IBC channel ID, which is allocated for l1
+              chain, in l2 chain state.
+          ibc_port_id:
+            type: string
+            description: >-
+              ibc_port_id is the IBC port ID, which is allocated for l1 chain,
+              in l2 chain state.
+        description: MigrationInfo defines the information of the migration.
+      ibc_denom:
+        type: string
+    description: >-
+      QueryMigrationInfoResponse is response type for the Query/MigrationInfo
+      RPC method.
   opinit.opchild.v1.QueryNextL1SequenceResponse:
     type: object
     properties:
@@ -66448,6 +66827,13 @@ definitions:
         type: string
         format: byte
         description: Normally it is IBC channelID for permissioned IBC relayer.
+      bridge_disabled:
+        type: boolean
+        description: bridge_disabled is a flag to disable the bridge.
+      bridge_disabled_at:
+        type: string
+        format: date-time
+        description: bridge_disabled_at is the timestamp when the bridge is disabled.
     description: BridgeConfig defines the set of bridge config.
   minievm.evm.v1.AccessTuple:
     type: object
@@ -66467,6 +66853,7 @@ definitions:
 
           These keys represent specific storage slots in the contract's storage
           that are accessed or modified.
+    description: AccessTuple is the element type of an access list.
   minievm.evm.v1.ERC721ClassInfo:
     type: object
     properties:
@@ -66637,6 +67024,7 @@ definitions:
 
                 These keys represent specific storage slots in the contract's
                 storage that are accessed or modified.
+          description: AccessTuple is the element type of an access list.
         title: >-
           AccessList is a predefined list of Ethereum addresses and their
           corresponding storage slots that a transaction will interact with
@@ -66659,6 +67047,27 @@ definitions:
           with_return_data:
             type: boolean
             title: whether to return data trace
+      auth_list:
+        type: array
+        items:
+          type: object
+          properties:
+            chain_id:
+              type: string
+            address:
+              type: string
+            nonce:
+              type: string
+              format: uint64
+            signature:
+              type: string
+              format: byte
+          description: >-
+            SetCodeAuthorization is an authorization from an account to deploy
+            code at its address.
+        description: >-
+          AuthList is a list of authorizations that allow code deployment at
+          specific addresses.
     title: |-
       QueryCallRequest is the request type for the Query/Call RPC
       method
@@ -66936,6 +67345,22 @@ definitions:
     title: |-
       QueryStateResponse is the response type for the Query/State RPC
       method
+  minievm.evm.v1.SetCodeAuthorization:
+    type: object
+    properties:
+      chain_id:
+        type: string
+      address:
+        type: string
+      nonce:
+        type: string
+        format: uint64
+      signature:
+        type: string
+        format: byte
+    description: >-
+      SetCodeAuthorization is an authorization from an account to deploy code at
+      its address.
   minievm.evm.v1.TraceOptions:
     type: object
     properties:
