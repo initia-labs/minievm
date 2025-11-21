@@ -87,10 +87,6 @@ func initAppConfig() (string, interface{}) {
 func initTendermintConfig() *tmcfg.Config {
 	cfg := tmcfg.DefaultConfig()
 
-	// empty block configure
-	cfg.Consensus.CreateEmptyBlocks = false
-	cfg.Consensus.CreateEmptyBlocksInterval = time.Minute
-
 	// rpc configure
 	cfg.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 	cfg.RPC.CORSAllowedOrigins = []string{"*"}
@@ -107,18 +103,12 @@ func initTendermintConfig() *tmcfg.Config {
 	cfg.Mempool.MaxTxsBytes = 10737418240
 	cfg.Mempool.MaxTxBytes = 2048576
 
-	// propose timeout to 1s
-	cfg.Consensus.TimeoutPropose = 1 * time.Second
-	cfg.Consensus.TimeoutProposeDelta = 500 * time.Millisecond
+	// propose timeout to 100ms to reduce block latency
+	cfg.Sequencing.BlockInterval = 100 * time.Millisecond
 
-	// do not wait straggler for prevote and precommit on l2
-	cfg.Consensus.TimeoutPrevote = 0 * time.Millisecond
-	cfg.Consensus.TimeoutPrevoteDelta = 0 * time.Millisecond
-	cfg.Consensus.TimeoutPrecommit = 0 * time.Millisecond
-	cfg.Consensus.TimeoutPrecommitDelta = 0 * time.Millisecond
-
-	// commit time to 0.5s
-	cfg.Consensus.TimeoutCommit = 500 * time.Millisecond
+	// empty block configure
+	cfg.Sequencing.CreateEmptyBlocks = false
+	cfg.Sequencing.CreateEmptyBlocksInterval = time.Minute
 
 	return cfg
 }

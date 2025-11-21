@@ -64,6 +64,20 @@ func (h EVMHooks) onRecvIcs20Packet(
 
 	msg.Sender = intermediateSender
 	localDenom := LocalDenom(packet, data.Denom)
+
+	// if the denom was migrated, then user will receive L2 denom instead of original IBC denom
+	if ok, err := h.opchildKeeper.HasIBCToL2DenomMap(ctx, localDenom); err != nil {
+		return newEmitErrorAcknowledgement(err)
+	} else if ok {
+		l2Denom, err := h.opchildKeeper.GetIBCToL2DenomMap(ctx, localDenom)
+		if err != nil {
+			return newEmitErrorAcknowledgement(err)
+		}
+
+		// use L2 denom
+		localDenom = l2Denom
+	}
+
 	_, err = h.approveERC20(ctx, intermediateSender, common.HexToAddress(msg.ContractAddr), localDenom, data.Amount)
 	if err != nil {
 		return newEmitErrorAcknowledgement(err)

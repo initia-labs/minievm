@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"time"
 
 	"cosmossdk.io/collections"
 	"github.com/ethereum/go-ethereum/common"
@@ -37,10 +38,40 @@ func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, e
 	return tx.Hash(), nil
 }
 
+// SendRawTransactionSync send a raw Ethereum transaction and wait for the result synchronously.
+func (b *JSONRPCBackend) SendRawTransactionSync(input hexutil.Bytes, timeoutInMS int64) (map[string]any, error) {
+	timeoutInMS = min(timeoutInMS, b.cfg.HTTPTimeout.Milliseconds())
+
+	txHash, err := b.SendRawTransaction(input)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutInMS)*time.Millisecond)
+	defer cancel()
+	timer := time.NewTicker(100 * time.Millisecond)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, NewTimeoutError("transaction not mined within the specified timeout")
+		case <-timer.C:
+			receipt, err := b.GetTransactionReceipt(txHash)
+			if err != nil {
+				return nil, err
+			}
+			if receipt != nil {
+				return receipt, nil
+			}
+		}
+	}
+}
+
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	queryCtx, err := b.getQueryCtx()
 	if err != nil {
-		return err
+		return NewReadinessError(err.Error())
 	}
 
 	cosmosTx, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertEthereumTxToCosmosTx(queryCtx, tx)
@@ -77,7 +108,10 @@ func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	if height >= uint64(num) {
+	if height > uint64(num) {
+		return nil, errors.New("requested height is greater than the latest block height")
+	}
+	if height == uint64(num) {
 		height = 0
 	}
 
@@ -133,7 +167,7 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 }
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
-func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
+func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]any, error) {
 	rpcTx, err := b.getTransaction(hash)
 	if err != nil {
 		return nil, err
@@ -284,7 +318,7 @@ func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, erro
 	return result, nil
 }
 
-func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
+func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]any, error) {
 	blockNumber, err := b.resolveBlockNrOrHash(blockNrOrHash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
@@ -314,7 +348,7 @@ func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) (
 		return nil, NewInternalError("mismatched number of transactions and receipts")
 	}
 
-	result := make([]map[string]interface{}, len(receipts))
+	result := make([]map[string]any, len(receipts))
 	for i, receipt := range receipts {
 		result[i] = marshalReceipt(receipt, txs[i])
 	}
@@ -409,7 +443,7 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 }
 
 // marshalReceipt marshals a transaction receipt into a JSON object.
-func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map[string]interface{} {
+func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map[string]any {
 	for idx, log := range receipt.Logs {
 		log.Index = uint(idx)
 		if tx.BlockHash != nil {
@@ -424,7 +458,7 @@ func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map
 		}
 	}
 
-	fields := map[string]interface{}{
+	fields := map[string]any{
 		"blockHash":         tx.BlockHash,
 		"blockNumber":       hexutil.Uint64(tx.BlockNumber.ToInt().Uint64()),
 		"transactionHash":   tx.Hash,
