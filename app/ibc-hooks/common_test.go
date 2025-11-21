@@ -181,6 +181,7 @@ type TestKeepers struct {
 	IBCHooksKeeper      *ibchookskeeper.Keeper
 	IBCHooksMiddleware  ibchooks.IBCMiddleware
 	EVMKeeper           evmkeeper.Keeper
+	OPChildKeeper       *MockOPChildKeeper
 
 	EncodingConfig EncodingConfig
 	Faucet         *TestFaucet
@@ -227,9 +228,7 @@ func _createTestInput(
 	for _, v := range keys {
 		ms.MountStoreWithDB(v, storetypes.StoreTypeIAVL, db)
 	}
-	tkeys := storetypes.NewTransientStoreKeys(
-		evmtypes.TStoreKey,
-	)
+	tkeys := storetypes.NewTransientStoreKeys(evmtypes.TStoreKey, ibchookstypes.TStoreKey)
 	for _, v := range tkeys {
 		ms.MountStoreWithDB(v, storetypes.StoreTypeTransient, db)
 	}
@@ -285,6 +284,7 @@ func _createTestInput(
 	ibcHooksKeeper := ibchookskeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[ibchookstypes.StoreKey]),
+		runtime.NewTransientStoreService(tkeys[ibchookstypes.TStoreKey]),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		ac,
 	)
@@ -331,7 +331,10 @@ func _createTestInput(
 
 	// ibc middleware setup
 	mockIBCMiddleware := mockIBCMiddleware{}
-	evmHooks := evmhooks.NewEVMHooks(appCodec, ac, evmKeeper)
+	mockOPChildKeeper := &MockOPChildKeeper{
+		IBCToL2DenomMap: map[string]string{},
+	}
+	evmHooks := evmhooks.NewEVMHooks(appCodec, ac, evmKeeper, mockOPChildKeeper)
 
 	middleware := ibchooks.NewICS4Middleware(mockIBCMiddleware, evmHooks)
 	ibcHookMiddleware := ibchooks.NewIBCMiddleware(mockIBCMiddleware, middleware, ibcHooksKeeper)
@@ -343,6 +346,7 @@ func _createTestInput(
 		IBCHooksMiddleware:  ibcHookMiddleware,
 		EVMKeeper:           *evmKeeper,
 		BankKeeper:          bankKeeper,
+		OPChildKeeper:       mockOPChildKeeper,
 		EncodingConfig:      encodingConfig,
 		Faucet:              faucet,
 		MultiStore:          ms,
@@ -445,4 +449,21 @@ type MockIBCHookKeeper struct{}
 
 func (k *MockIBCHookKeeper) SetAllowed(ctx context.Context, addr sdk.AccAddress, allowed bool) error {
 	return nil
+}
+
+type MockOPChildKeeper struct {
+	IBCToL2DenomMap map[string]string
+}
+
+func (k *MockOPChildKeeper) GetIBCToL2DenomMap(ctx context.Context, ibcDenom string) (string, error) {
+	l2Denom, ok := k.IBCToL2DenomMap[ibcDenom]
+	if !ok {
+		return "", nil
+	}
+	return l2Denom, nil
+}
+
+func (k *MockOPChildKeeper) HasIBCToL2DenomMap(ctx context.Context, ibcDenom string) (bool, error) {
+	_, ok := k.IBCToL2DenomMap[ibcDenom]
+	return ok, nil
 }

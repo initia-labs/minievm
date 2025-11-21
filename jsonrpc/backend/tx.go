@@ -108,7 +108,10 @@ func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	if height >= uint64(num) {
+	if height > uint64(num) {
+		return nil, errors.New("requested height is greater than the latest block height")
+	}
+	if height == uint64(num) {
 		height = 0
 	}
 

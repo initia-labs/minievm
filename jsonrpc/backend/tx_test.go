@@ -2,6 +2,7 @@ package backend_test
 
 import (
 	"math/big"
+	"sync"
 	"testing"
 	"time"
 
@@ -193,9 +194,13 @@ func Test_SendRawTransactionSync(t *testing.T) {
 		txBz, err := evmTx.MarshalBinary()
 		require.NoError(t, err)
 
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+
 		receiptCh := make(chan map[string]any, 1)
 		errCh := make(chan error, 1)
 		go func() {
+			wg.Done()
 			receipt, err := backend.SendRawTransactionSync(txBz, 5000)
 			if err != nil {
 				errCh <- err
@@ -203,6 +208,12 @@ func Test_SendRawTransactionSync(t *testing.T) {
 			}
 			receiptCh <- receipt
 		}()
+
+		// to be sure the goroutine is started
+		wg.Wait()
+
+		// wait to push the tx to mempool
+		time.Sleep(1 * time.Second)
 
 		_, finalizeRes = tests.ExecuteTxs(t, app, transferTx)
 		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)

@@ -24,10 +24,11 @@ type EVMHooks struct {
 	codec            codec.Codec
 	ac               address.Codec
 	evmKeeper        *evmkeeper.Keeper
+	opchildKeeper    OPChildKeeper
 	asyncCallbackABI *abi.ABI
 }
 
-func NewEVMHooks(codec codec.Codec, ac address.Codec, evmKeeper *evmkeeper.Keeper) *EVMHooks {
+func NewEVMHooks(codec codec.Codec, ac address.Codec, evmKeeper *evmkeeper.Keeper, opchildKeeper OPChildKeeper) *EVMHooks {
 	abi, err := i_ibc_async_callback.IIbcAsyncCallbackMetaData.GetAbi()
 	if err != nil {
 		panic(err)
@@ -37,6 +38,7 @@ func NewEVMHooks(codec codec.Codec, ac address.Codec, evmKeeper *evmkeeper.Keepe
 		codec:            codec,
 		ac:               ac,
 		evmKeeper:        evmKeeper,
+		opchildKeeper:    opchildKeeper,
 		asyncCallbackABI: abi,
 	}
 }
