@@ -34,7 +34,7 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/initia-labs/OPinit v1.2.2
 	github.com/initia-labs/initia v1.2.0
-	github.com/initia-labs/store v0.0.3
+	github.com/initia-labs/store v0.0.4
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/noble-assets/forwarding/v2 v2.0.3
 	github.com/pkg/errors v0.9.1

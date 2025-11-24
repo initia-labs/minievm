@@ -143,7 +143,7 @@ require (
 	github.com/initia-labs/OPinit v1.2.2 // indirect
 	github.com/initia-labs/OPinit/api v1.2.0 // indirect
 	github.com/initia-labs/movevm v1.1.0 // indirect
-	github.com/initia-labs/store v0.0.3 // indirect
+	github.com/initia-labs/store v0.0.4 // indirect
 	github.com/initia-labs/store/memiavl v0.0.2 // indirect
 	github.com/initia-labs/store/versiondb v0.0.2 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect

@@ -1426,8 +1426,8 @@ github.com/initia-labs/initia v1.2.0 h1:BGRHYjX6BzN1n5Z16aqpFJsNSL/2wg2kdwn3FU0J
 github.com/initia-labs/initia v1.2.0/go.mod h1:AcwFEFxhIvIe79mBhnFlYoxmnw8MtSByC8luszEWIPY=
 github.com/initia-labs/movevm v1.1.0 h1:PJkF06OqrhBFaf/9iR90rKafCjL0YRLCrOjiXyBbVfk=
 github.com/initia-labs/movevm v1.1.0/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
-github.com/initia-labs/store v0.0.3 h1:nYLDFqRo19xJtQJEc+c1LdDYpDUX0AMm296Qj+iGy2k=
-github.com/initia-labs/store v0.0.3/go.mod h1:zl1q/c/WpNMskcwHGCDgIq5SSr9UeNsyxNtl9g0vlos=
+github.com/initia-labs/store v0.0.4 h1:Hm7QhzCc+mpt1wHe7TiuGIJPjyeShl0gP/1p/yvVrkM=
+github.com/initia-labs/store v0.0.4/go.mod h1:zl1q/c/WpNMskcwHGCDgIq5SSr9UeNsyxNtl9g0vlos=
 github.com/initia-labs/store/memiavl v0.0.2 h1:74u6JRmX7gIiWfoEAix4jSHzVeRPovc8TBBsARLjyq4=
 github.com/initia-labs/store/memiavl v0.0.2/go.mod h1:510W4Nf6QAWmFLYPhqhOhO1tagdeocM0b89a/M0zMRk=
 github.com/initia-labs/store/versiondb v0.0.2 h1:vyNsdibpaTapUEnIHoGjEiBcbU/Hm/O7dHjKUAqGKqI=
