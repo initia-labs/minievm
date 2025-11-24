@@ -50,9 +50,9 @@ import (
 
 	cmtcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
 
-	storeclient "github.com/initia-labs/store/client"
-	storeconfig "github.com/initia-labs/store/config"
-	storeopendb "github.com/initia-labs/store/opendb"
+	initiastoreclient "github.com/initia-labs/store/client"
+	initiastoreconfig "github.com/initia-labs/store/config"
+	initiastoreopendb "github.com/initia-labs/store/opendb"
 )
 
 // NewRootCmd creates a new root command for initiad. It is called once in the
@@ -163,17 +163,17 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			initiaappTemplate, initiaappConfig := initAppConfig()
+			minitiaAppTemplate, minitiaAppConfig := initAppConfig()
 			customTMConfig := initTendermintConfig()
 
-			err = server.InterceptConfigsPreRunHandler(cmd, initiaappTemplate, initiaappConfig, customTMConfig)
+			err = server.InterceptConfigsPreRunHandler(cmd, minitiaAppTemplate, minitiaAppConfig, customTMConfig)
 			if err != nil {
 				return err
 			}
 
 			// set the db dir for opendb
 			if serverCtx := cmd.Context().Value(server.ServerContextKey); serverCtx != nil {
-				storeopendb.DBDir = cast.ToString(serverCtx.(*server.Context).Viper.Get("db_dir"))
+				initiastoreopendb.DBDir = cast.ToString(serverCtx.(*server.Context).Viper.Get("db_dir"))
 			}
 
 			return nil
@@ -238,7 +238,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 
 			return nil
 		},
-		DBOpener: storeopendb.OpenDB,
+		DBOpener: initiastoreopendb.OpenDB,
 	})
 
 	// add keybase, auxiliary RPC, query, and tx child commands
@@ -256,15 +256,15 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 	rootCmd.AddCommand(cmtcmd.FetchGenesisCmd)
 
 	// add store commands
-	if storeCmd := storeclient.ChangeSetGroupCmd(keepers.KVStoreKeys()); storeCmd != nil {
+	if storeCmd := initiastoreclient.ChangeSetGroupCmd(keepers.KVStoreKeys()); storeCmd != nil {
 		rootCmd.AddCommand(storeCmd)
 	}
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
 	crisis.AddModuleInitFlags(startCmd)
-	storeconfig.AddMemIAVLConfigFlags(startCmd)
-	storeconfig.AddVersionDBConfigFlags(startCmd)
+	initiastoreconfig.AddMemIAVLConfigFlags(startCmd)
+	initiastoreconfig.AddVersionDBConfigFlags(startCmd)
 	evmconfig.AddConfigFlags(startCmd)
 	jsonrpcconfig.AddConfigFlags(startCmd)
 }

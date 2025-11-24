@@ -92,6 +92,7 @@ func (app *MinitiaApp) CheckStateContextGetter() func() sdk.Context {
 	}
 }
 
+// GetQueryMultiStore returns the query multi store for the app.
 func (app *MinitiaApp) GetQueryMultiStore() storetypes.MultiStore {
 	return app.qms
 }

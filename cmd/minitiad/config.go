@@ -12,16 +12,16 @@ import (
 
 	"github.com/initia-labs/minievm/types"
 
-	storecfg "github.com/initia-labs/store/config"
+	initiastorecfg "github.com/initia-labs/store/config"
 )
 
 // minitiaAppConfig initia specify app config
 type minitiaAppConfig struct {
 	serverconfig.Config
-	MemIAVL       storecfg.MemIAVLConfig      `mapstructure:"memiavl"`
-	VersionDB     storecfg.VersionDBConfig    `mapstructure:"versiondb"`
-	EVMConfig     evmconfig.EVMConfig         `mapstructure:"evm"`
-	JSONRPCConfig jsonrpcconfig.JSONRPCConfig `mapstructure:"jsonrpc"`
+	MemIAVL       initiastorecfg.MemIAVLConfig   `mapstructure:"memiavl"`
+	VersionDB     initiastorecfg.VersionDBConfig `mapstructure:"versiondb"`
+	EVMConfig     evmconfig.EVMConfig            `mapstructure:"evm"`
+	JSONRPCConfig jsonrpcconfig.JSONRPCConfig    `mapstructure:"jsonrpc"`
 }
 
 // initAppConfig helps to override default appConfig template and configs.
@@ -60,24 +60,29 @@ func initAppConfig() (string, interface{}) {
 	evmCfg := evmconfig.DefaultEVMConfig()
 	evmCfg.ContractSimulationGasLimit = 10_000_000
 
+	jsonRPCConfig := jsonrpcconfig.DefaultJSONRPCConfig()
+	jsonRPCConfig.Address = "0.0.0.0:8545"
+	jsonRPCConfig.AddressWS = "0.0.0.0:8546"
+
+	memIAVLCfg := initiastorecfg.DefaultMemIAVLConfig()
+	versionDBCfg := initiastorecfg.DefaultVersionDBConfig()
+
 	minitiaAppConfig := minitiaAppConfig{
 		Config:        *srvCfg,
 		EVMConfig:     evmCfg,
-		JSONRPCConfig: jsonrpcconfig.DefaultJSONRPCConfig(),
+		JSONRPCConfig: jsonRPCConfig,
+		MemIAVL:       memIAVLCfg,
+		VersionDB:     versionDBCfg,
 	}
 
 	minitiaAppConfig.JSONRPCConfig.Address = "0.0.0.0:8545"
 	minitiaAppConfig.JSONRPCConfig.AddressWS = "0.0.0.0:8546"
 
-	// memiavl config
-	minitiaAppConfig.MemIAVL = storecfg.DefaultMemIAVLConfig()
-	minitiaAppConfig.VersionDB = storecfg.DefaultVersionDBConfig()
-
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
 		evmconfig.DefaultConfigTemplate +
 		jsonrpcconfig.DefaultConfigTemplate +
-		storecfg.DefaultMemIAVLConfigTemplate +
-		storecfg.DefaultVersionDBConfigTemplate
+		initiastorecfg.DefaultMemIAVLConfigTemplate +
+		initiastorecfg.DefaultVersionDBConfigTemplate
 
 	return minitiaAppTemplate, minitiaAppConfig
 }
