@@ -1,4 +1,4 @@
-package v1_2_0
+package v1_2_2
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 // TODO: change the upgrade name if we are ready to release v1.2.0
-const upgradeName = "v1.2.0"
+const upgradeName = "v1.2.2"
 
 // RegisterUpgradeHandlers registers the upgrade handlers for the app.
 func RegisterUpgradeHandlers(app upgrades.MinitiaApp) {
