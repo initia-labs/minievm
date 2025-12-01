@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -31,6 +33,7 @@ jobs:
           echo "GOARCH=${GOARCH}"
           echo "GOOS=${GOOS}"
           echo "VERSION=${VERSION}"
+          echo "ARCH_NAME=${ARCH_NAME}"
 
       - name: Build for Linux AMD64
         run: |
@@ -39,15 +42,12 @@ jobs:
           make build \
           && cd ./build \
           && tar -czvf minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz minitiad \
-          && mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz $GITHUB_WORKSPACE/ \
+          && mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz ${GITHUB_WORKSPACE}/ \
           && rm -rf ./minitiad
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: minievm-linux-amd64
-          path: minievm_${{ env.VERSION }}_Linux_${{ env.ARCH_NAME }}.tar.gz
+          path: minievm_*.tar.gz
           retention-days: 1
-        env:
-          VERSION: ${{ env.VERSION }}
-          ARCH_NAME: ${{ env.ARCH_NAME }}
