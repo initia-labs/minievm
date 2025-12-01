@@ -37,8 +37,6 @@ jobs:
 
       - name: Build for Linux AMD64
         run: |
-          export GOARCH=${GOARCH}
-          export GOOS=${GOOS}
           make build \
           && cd ./build \
           && tar -czvf minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz minitiad \
