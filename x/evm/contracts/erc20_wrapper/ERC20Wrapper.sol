@@ -18,7 +18,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     string constant NAME_PREFIX = "Wrapped";
     string constant SYMBOL_PREFIX = "W";
     ERC20Factory public factory;
-    
+
     // event
     event Converted(
         string srcDenom,
@@ -72,11 +72,16 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         address remoteToken = COSMOS_CONTRACT.to_erc20(remoteDenom);
 
         // load balance and allowance of remote token
-        uint remoteAllowance = ERC20(remoteToken).allowance(msg.sender, address(this));
+        uint remoteAllowance = ERC20(remoteToken).allowance(
+            msg.sender,
+            address(this)
+        );
         uint remoteBalance = ERC20(remoteToken).balanceOf(msg.sender);
 
         // use min(remoteAllowance, remoteBalance) as the remote amount
-        uint remoteAmount = remoteAllowance > remoteBalance ? remoteBalance : remoteAllowance;
+        uint remoteAmount = remoteAllowance > remoteBalance
+            ? remoteBalance
+            : remoteAllowance;
 
         toLocal(receiver, remoteDenom, remoteAmount, _remoteDecimals);
     }
@@ -365,6 +370,20 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             return;
         }
 
+        // check if the remote token has migration info for OPinit
+        string memory remoteDenom;
+        string memory migratedIBCDenom = _migration_info(remoteToken, channel);
+        if (bytes(migratedIBCDenom).length != 0) {
+            COSMOS_CONTRACT.execute_cosmos(
+                _migrate_token(remoteToken, remoteAmount),
+                500_000
+            );
+
+            remoteDenom = migratedIBCDenom;
+        } else {
+            remoteDenom = COSMOS_CONTRACT.to_denom(remoteToken);
+        }
+
         callbackId += 1;
 
         // store the callback data
@@ -377,7 +396,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
 
         string memory message = _ibc_transfer(
             channel,
-            remoteToken,
+            remoteDenom,
             remoteAmount,
             timeout,
             receiver,
@@ -535,7 +554,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
     // view
     function _ibc_transfer(
         string memory channel,
-        address token,
+        string memory denom,
         uint amount,
         uint timeout,
         string memory receiver,
@@ -566,7 +585,7 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 channel,
                 '",',
                 '"token": { "denom": "',
-                COSMOS_CONTRACT.to_denom(token),
+                denom,
                 '",',
                 '"amount": "',
                 Strings.toString(amount),
@@ -650,5 +669,79 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         } else {
             convertedAmount = amount;
         }
+    }
+
+    /**
+     * @notice Constructs a token migration message for OPinit
+     * @param token The address of the token to migrate
+     * @param amount The amount of tokens to migrate
+     * @return message The constructed migration message as a JSON string
+     */
+    function _migrate_token(
+        address token,
+        uint amount
+    ) internal view returns (string memory message) {
+        // Construct token migration message
+        message = string(
+            abi.encodePacked(
+                '{"@type": "/opinit.opchild.v1.MsgMigrateToken"',
+                ',"sender": "',
+                COSMOS_CONTRACT.to_cosmos_address(address(this)),
+                '","amount": {"denom": "',
+                COSMOS_CONTRACT.to_denom(token),
+                '","amount": "',
+                Strings.toString(amount),
+                '"}}'
+            )
+        );
+    }
+
+    /**
+     * @notice Queries migration information for a given token and channel from the Cosmos chain
+     * @param token The address of the token to query migration info for
+     * @param channel The IBC channel identifier to check migration info against
+     * @return result The migration information as a string, or an empty string if not found
+     */
+    function _migration_info(
+        address token,
+        string memory channel
+    ) internal view returns (string memory result) {
+        string memory path = "/opinit.opchild.v1.Query/MigrationInfo";
+        string memory req = string(
+            abi.encodePacked(
+                '{"denom": "',
+                COSMOS_CONTRACT.to_denom(token),
+                '"}'
+            )
+        );
+
+        try COSMOS_CONTRACT.query_cosmos(path, req) returns (
+            string memory queryRes
+        ) {
+            IJSONUtils.JSONObject memory res_obj = JSONUTILS_CONTRACT
+                .unmarshal_to_object(bytes(queryRes));
+            IJSONUtils.JSONObject memory info_obj = JSONUTILS_CONTRACT
+                .unmarshal_to_object(res_obj.elements[1].value);
+            string memory migrated_channel = JSONUTILS_CONTRACT
+                .unmarshal_to_string(info_obj.elements[1].value);
+            if (!areStringsEqual(migrated_channel, channel)) {
+                return "";
+            }
+            return
+                JSONUTILS_CONTRACT.unmarshal_to_string(
+                    res_obj.elements[0].value
+                );
+        } catch {
+            return "";
+        }
+    }
+
+    function areStringsEqual(
+        string memory _s1,
+        string memory _s2
+    ) internal pure returns (bool) {
+        return
+            keccak256(abi.encodePacked(_s1)) ==
+            keccak256(abi.encodePacked(_s2));
     }
 }
