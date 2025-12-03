@@ -35,19 +35,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-
-      - name: Build and push
+      # ============================
+      # 1) NORMAL BUILD (Dockerfile)
+      # ============================
+      - name: Build & Push normal image
         uses: docker/build-push-action@v6
         with:
           file: Dockerfile
           push: ${{ startsWith(github.ref, 'refs/tags') }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          labels: |
+            version=${{ github.ref_name }}
+          no-cache: true
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}
+
+      # ====================================
+      # 2) ROCKSDB BUILD (Dockerfile.rocksdb)
+      # ====================================
+      - name: Build & Push RocksDB image
+        uses: docker/build-push-action@v6
+        with:
+          file: Dockerfile.rocksdb
+          push: ${{ startsWith(github.ref, 'refs/tags') }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-rocksdb
+          labels: |
+            version=${{ github.ref_name }}-rocksdb
           no-cache: true
           build-args: |
             VERSION=${{ github.ref_name }}
