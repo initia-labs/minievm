@@ -4,6 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	proto "github.com/cosmos/gogoproto/proto"
 
+	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
+
 	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
 )
 
@@ -27,6 +29,10 @@ func DefaultQueryCosmosWhitelist() QueryCosmosWhitelist {
 	res["/connect.oracle.v2.Query/GetAllCurrencyPairs"] = ProtoSet{
 		Request:  &oracletypes.GetAllCurrencyPairsRequest{},
 		Response: &oracletypes.GetAllCurrencyPairsResponse{},
+	}
+	res["/opinit.opchild.v1.Query/MigrationInfo"] = ProtoSet{
+		Request:  &opchildtypes.QueryMigrationInfoRequest{},
+		Response: &opchildtypes.QueryMigrationInfoResponse{},
 	}
 
 	return res

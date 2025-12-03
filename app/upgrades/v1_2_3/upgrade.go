@@ -1,4 +1,4 @@
-package v1_2_2
+package v1_2_3
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/initia-labs/minievm/app/upgrades/contracts/erc20_wrapper"
 )
 
-const upgradeName = "v1.2.2"
+const upgradeName = "v1.2.3"
 
 // RegisterUpgradeHandlers registers the upgrade handlers for the app.
 func RegisterUpgradeHandlers(app upgrades.MinitiaApp) {
