@@ -11,13 +11,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          platforms: arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          go-version: "1.23"
 
       - name: Set environment variables
         run: |
@@ -31,46 +28,24 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "ARCH_NAME=aarch64" >> $GITHUB_ENV
 
-      - name: Build for ARM64
-        env:
-          DOCKER_BUILDKIT: 1
+      - name: Print environment variables
         run: |
-          # Activate BuildKit and create a new builder
-          docker buildx create --use --name arm64-builder --platform linux/arm64
-          docker buildx inspect --bootstrap
+          echo "GOARCH=${GOARCH}"
+          echo "GOOS=${GOOS}"
+          echo "VERSION=${VERSION}"
+          echo "ARCH_NAME=${ARCH_NAME}"
 
-          # Building images for ARM64
-          docker buildx build --platform linux/arm64 --load --tag minitia/minitiad-shared:arm64 . -f Dockerfile.arm64
-
-          # Extract build output using ARM64 images
-          mkdir -p ./build
-          docker create --name temp minitia/minitiad-shared:arm64
-          docker cp temp:/usr/local/bin/minitiad ./build/
-          docker rm temp
-
-          # Packaging of results
-          cd ./build \
+      - name: Build for ARM64
+        run: |
+          make build \
+          && cd ./build \
           && tar -czvf minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz minitiad \
-          && mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz $GITHUB_WORKSPACE/ \
+          && mv minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz ${GITHUB_WORKSPACE}/ \
           && rm -rf ./minitiad
-
-          # Check build results
-          cd ..
-          ls -l
-          file minievm_${VERSION}_Linux_${ARCH_NAME}.tar.gz
-
-          # Remove builder
-          docker buildx rm arm64-builder
-
-      - name: List files
-        run: ls -l
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: minievm-linux-arm64
-          path: minievm_${{ env.VERSION }}_Linux_${{ env.ARCH_NAME }}.tar.gz
+          path: minievm_*.tar.gz
           retention-days: 1
-        env:
-          VERSION: ${{ env.VERSION }}
-          ARCH_NAME: ${{ env.ARCH_NAME }}

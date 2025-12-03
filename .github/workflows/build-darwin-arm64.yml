@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -17,8 +17,6 @@ jobs:
           go-version: "1.23"
       - name: Set environment variables
         run: |
-          MINIWASM_NETWORK_NAME="minievm-1"
-          echo "MINIWASM_NETWORK_NAME=${MINIWASM_NETWORK_NAME}" >> $GITHUB_ENV 
           echo "GOARCH=arm64" >> $GITHUB_ENV
           echo "GOOS=darwin" >> $GITHUB_ENV
           if [[ "${{ github.ref }}" == "refs/tags/"* ]]; then
@@ -39,22 +37,18 @@ jobs:
           echo "GOOS=${GOOS}"
           echo "VERSION=${VERSION}"
           echo "ARCH_NAME=${ARCH_NAME}"
-          echo "MINIWASM_NETWORK_NAME=${MINIWASM_NETWORK_NAME}"
 
       - name: Build and Package for Darwin ARM64
         run: |
           make build \
           && cd ./build \
-          && tar -czvf minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz minitiad \
-          && mv ./minievm_"$VERSION"_Darwin_"$ARCH_NAME".tar.gz $GITHUB_WORKSPACE/ \
+          && tar -czvf minievm_"${VERSION}"_Darwin_"${ARCH_NAME}".tar.gz minitiad \
+          && mv ./minievm_"${VERSION}"_Darwin_"${ARCH_NAME}".tar.gz ${GITHUB_WORKSPACE}/ \
           && rm -rf ./minitiad
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: minievm-darwin-arm64
-          path: minievm_${{ env.VERSION }}_Darwin_${{ env.ARCH_NAME }}.tar.gz
+          path: minievm_*.tar.gz
           retention-days: 1
-        env:
-          VERSION: ${{ env.VERSION }}
-          ARCH_NAME: ${{ env.ARCH_NAME }}

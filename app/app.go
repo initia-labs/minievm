@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -65,7 +64,7 @@ import (
 	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
-	"github.com/initia-labs/minievm/app/upgrades/v1_1_16"
+	"github.com/initia-labs/minievm/app/upgrades/v1_2_3"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -263,7 +262,7 @@ func NewMinitiaApp(
 	// The cosmos upgrade handler attempts to create ${HOME}/.minitia/data to check for upgrade info,
 	// but this isn't required during initial encoding config setup.
 	if loadLatest {
-		v1_1_16.RegisterUpgradeHandlers(app)
+		v1_2_3.RegisterUpgradeHandlers(app)
 	}
 
 	// register executor change plans for later use
@@ -321,22 +320,7 @@ func NewMinitiaApp(
 	if err != nil {
 		// Once we switch to using protoreflect-based antehandlers, we might
 		// want to panic here instead of logging a warning.
-		errMsg := ""
-
-		// ignore injective proto annotations comes from github.com/cosoms/relayer
-		for _, s := range strings.Split(err.Error(), "\n") {
-			if strings.Contains(s, "injective") {
-				continue
-			}
-
-			errMsg += s + "\n"
-		}
-
-		if errMsg != "" {
-			// Once we switch to using protoreflect-based antehandlers, we might
-			// want to panic here instead of logging a warning.
-			fmt.Fprintln(os.Stderr, errMsg)
-		}
+		fmt.Fprintln(os.Stderr, err.Error())
 	}
 
 	// register snapshot extension
