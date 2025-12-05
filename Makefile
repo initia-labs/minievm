@@ -58,10 +58,12 @@ define ROCKSDB_INSTRUCTIONS
 
 ################################################################
 RocksDB support requires the RocksDB shared library and headers.
+
 macOS (Homebrew):
   brew install rocksdb
-  export CGO_CFLAGS="-I/usr/local/opt/rocksdb/include"
-  export CGO_LDFLAGS="-L/usr/local/opt/rocksdb/lib"
+  export CGO_CFLAGS="-I$$(brew --prefix rocksdb)/include"
+  export CGO_LDFLAGS="-L$$(brew --prefix rocksdb)/lib"
+
 See https://github.com/rockset/rocksdb-cloud/blob/master/INSTALL.md for custom setups.
 ################################################################
 
@@ -71,6 +73,20 @@ ifeq (rocksdb,$(findstring rocksdb,$(COSMOS_BUILD_OPTIONS)))
   $(info $(ROCKSDB_INSTRUCTIONS))
   CGO_ENABLED ?= 1
   build_tags += rocksdb grocksdb_clean_link
+
+  ifeq ($(shell uname -s),Darwin)
+    ifneq (,$(shell command -v brew 2>/dev/null))
+      ROCKSDB_PREFIX := $(shell brew --prefix rocksdb 2>/dev/null)
+      ifneq (,$(ROCKSDB_PREFIX))
+        CGO_CFLAGS ?= -I$(ROCKSDB_PREFIX)/include
+        CGO_LDFLAGS ?= -L$(ROCKSDB_PREFIX)/lib
+      else
+        $(warning rocksdb not installed via Homebrew; skipping CGO flags)
+      endif
+    else
+      $(warning Homebrew not found; skipping rocksdb CGO flags)
+    endif
+  endif
 endif
 ifeq (boltdb,$(findstring boltdb,$(COSMOS_BUILD_OPTIONS)))
   build_tags += boltdb
