@@ -44,6 +44,7 @@ jobs:
           file: Dockerfile
           push: ${{ startsWith(github.ref, 'refs/tags') }}
           tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           labels: |
             version=${{ github.ref_name }}
@@ -61,6 +62,7 @@ jobs:
           file: Dockerfile.rocksdb
           push: ${{ startsWith(github.ref, 'refs/tags') }}
           tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest-rocksdb
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-rocksdb
           labels: |
             version=${{ github.ref_name }}-rocksdb
