@@ -30,8 +30,9 @@ const (
 	flagContractSimulationGasLimit = "evm.contract-simulation-gas-limit"
 	flagIndexerDisable             = "evm.indexer-disable"
 	flagIndexerRetainHeight        = "evm.indexer-retain-height"
-	flagTracerTimeout              = "evm.tracer-timeout"
+	flagIndexerDBBackend           = "evm.indexer-db-backend"
 	flagIndexerBackfillStartHeight = "evm.indexer-backfill-start-height"
+	flagTracerTimeout              = "evm.tracer-timeout"
 )
 
 // EVMConfig is the extra config required for evm
@@ -43,16 +44,21 @@ type EVMConfig struct {
 	// IndexerRetainHeight is the height to retain indexer data.
 	// If 0, it will retain all data.
 	IndexerRetainHeight uint64 `mapstructure:"indexer-retain-height"`
-	// TracerTimeout is the timeout for the tracer.
-	TracerTimeout time.Duration `mapstructure:"tracer-timeout"`
+	// IndexerDBBackend is the db backend for indexer
+	IndexerDBBackend string `mapstructure:"indexer-db-backend"`
 	// IndexerBackfillStartHeight is the height to start backfilling indexer data.
 	// If non-zero, it will start backfilling from this height until last indexed height.
 	IndexerBackfillStartHeight uint64 `mapstructure:"indexer-backfill-start-height"`
+	// TracerTimeout is the timeout for the tracer.
+	TracerTimeout time.Duration `mapstructure:"tracer-timeout"`
 }
 
 func (c EVMConfig) Validate() error {
 	if c.IndexerRetainHeight%SectionSize != 0 {
 		return fmt.Errorf("indexer-retain-height must be a multiple of %d", SectionSize)
+	}
+	if c.IndexerDBBackend != "" && c.IndexerDBBackend != "goleveldb" && c.IndexerDBBackend != "rocksdb" {
+		return fmt.Errorf("indexer-db-backend must be either goleveldb or rocksdb")
 	}
 
 	return nil
@@ -76,12 +82,19 @@ func GetConfig(appOpts servertypes.AppOptions) EVMConfig {
 		tracerTimeout = DefaultTracerTimeout
 	}
 
+	// if indexer db backend is not set, fall back to the cometbft's db backend
+	indexerDBBackend := cast.ToString(appOpts.Get(flagIndexerDBBackend))
+	if len(indexerDBBackend) == 0 {
+		indexerDBBackend = cast.ToString(appOpts.Get("db_backend"))
+	}
+
 	return EVMConfig{
 		ContractSimulationGasLimit: cast.ToUint64(appOpts.Get(flagContractSimulationGasLimit)),
 		IndexerDisable:             cast.ToBool(appOpts.Get(flagIndexerDisable)),
 		IndexerRetainHeight:        cast.ToUint64(appOpts.Get(flagIndexerRetainHeight)),
-		TracerTimeout:              tracerTimeout,
+		IndexerDBBackend:           indexerDBBackend,
 		IndexerBackfillStartHeight: cast.ToUint64(appOpts.Get(flagIndexerBackfillStartHeight)),
+		TracerTimeout:              tracerTimeout,
 	}
 }
 
@@ -90,8 +103,9 @@ func AddConfigFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Uint64(flagContractSimulationGasLimit, DefaultContractSimulationGasLimit, "Maximum simulation gas amount for evm contract execution")
 	startCmd.Flags().Bool(flagIndexerDisable, DefaultIndexerDisable, "Disable evm indexer")
 	startCmd.Flags().Uint64(flagIndexerRetainHeight, DefaultIndexerRetainHeight, "Height to retain indexer data")
-	startCmd.Flags().Duration(flagTracerTimeout, DefaultTracerTimeout, "Timeout for the tracer")
+	startCmd.Flags().String(flagIndexerDBBackend, "", "Database backend for evm indexer (goleveldb|rocksdb)")
 	startCmd.Flags().Uint64(flagIndexerBackfillStartHeight, DefaultIndexerBackfillStartHeight, "Height to start backfilling indexer data")
+	startCmd.Flags().Duration(flagTracerTimeout, DefaultTracerTimeout, "Timeout for the tracer")
 }
 
 // DefaultConfigTemplate default config template for evm
@@ -113,10 +127,15 @@ indexer-disable = {{ .EVMConfig.IndexerDisable }}
 # If 0, it will retain all data.
 indexer-retain-height = {{ .EVMConfig.IndexerRetainHeight }}
 
-# TracerTimeout is the timeout for the tracer.
-tracer-timeout = "{{ .EVMConfig.TracerTimeout }}"
+# IndexerDBBackend is the db backend for indexer (goleveldb|rocksdb).
+# An empty string indicates that a fallback will be used. 
+# The fallback is the db_backend value set in CometBFT's config.toml.
+indexer-db-backend = "{{ .EVMConfig.IndexerDBBackend }}"
 
 # IndexerBackfillStartHeight is the height to start backfilling indexer data.
 # If non-zero, it will start backfilling from this height until last indexed height.
 indexer-backfill-start-height = {{ .EVMConfig.IndexerBackfillStartHeight }}
+
+# TracerTimeout is the timeout for the tracer.
+tracer-timeout = "{{ .EVMConfig.TracerTimeout }}"
 `

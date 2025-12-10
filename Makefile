@@ -22,6 +22,7 @@ endif
 
 TM_VERSION := $(shell go list -m github.com/cometbft/cometbft | sed 's:.* ::')
 
+export CGO_ENABLED = 1
 export GO111MODULE = on
 
 # process build tags
@@ -53,8 +54,39 @@ endif
 ifeq (cleveldb,$(findstring cleveldb,$(COSMOS_BUILD_OPTIONS)))
   build_tags += gcc
 endif
+# handle rocksdb
+define ROCKSDB_INSTRUCTIONS
+
+################################################################
+RocksDB support requires the RocksDB shared library and headers.
+
+macOS (Homebrew):
+  brew install rocksdb
+  export CGO_CFLAGS="-I$$(brew --prefix rocksdb)/include"
+  export CGO_LDFLAGS="-L$$(brew --prefix rocksdb)/lib"
+
+See https://github.com/rockset/rocksdb-cloud/blob/master/INSTALL.md for custom setups.
+################################################################
+
+endef
+
 ifeq (rocksdb,$(findstring rocksdb,$(COSMOS_BUILD_OPTIONS)))
-  build_tags += rocksdb
+  $(info $(ROCKSDB_INSTRUCTIONS))
+  build_tags += rocksdb grocksdb_clean_link
+
+  ifeq ($(shell uname -s),Darwin)
+    ifneq (,$(shell command -v brew 2>/dev/null))
+      ROCKSDB_PREFIX := $(shell brew --prefix rocksdb 2>/dev/null)
+      ifneq (,$(ROCKSDB_PREFIX))
+        CGO_CFLAGS ?= -I$(ROCKSDB_PREFIX)/include
+        CGO_LDFLAGS ?= -L$(ROCKSDB_PREFIX)/lib
+      else
+        $(warning rocksdb not installed via Homebrew; skipping CGO flags)
+      endif
+    else
+      $(warning Homebrew not found; skipping rocksdb CGO flags)
+    endif
+  endif
 endif
 ifeq (boltdb,$(findstring boltdb,$(COSMOS_BUILD_OPTIONS)))
   build_tags += boltdb
@@ -76,27 +108,6 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=minievm \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
 			-X github.com/cometbft/cometbft/version.TMCoreSemVer=$(TM_VERSION)
-
-# DB backend selection
-ifeq (cleveldb,$(findstring cleveldb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
-endif
-ifeq (badgerdb,$(findstring badgerdb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=badgerdb
-endif
-# handle rocksdb
-ifeq (rocksdb,$(findstring rocksdb,$(COSMOS_BUILD_OPTIONS)))
-  $(info ################################################################)
-  $(info To use rocksdb, you need to install rocksdb first)
-  $(info Please follow this guide https://github.com/rockset/rocksdb-cloud/blob/master/INSTALL.md)
-  $(info ################################################################)
-  CGO_ENABLED=1
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=rocksdb
-endif
-# handle boltdb
-ifeq (boltdb,$(findstring boltdb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=boltdb
-endif
 
 ifeq (,$(findstring nostrip,$(COSMOS_BUILD_OPTIONS)))
   ldflags += -w -s
