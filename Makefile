@@ -72,7 +72,6 @@ endef
 
 ifeq (rocksdb,$(findstring rocksdb,$(COSMOS_BUILD_OPTIONS)))
   $(info $(ROCKSDB_INSTRUCTIONS))
-  CGO_ENABLED ?= 1
   build_tags += rocksdb grocksdb_clean_link
 
   ifeq ($(shell uname -s),Darwin)
