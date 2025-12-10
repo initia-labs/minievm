@@ -7,6 +7,9 @@ BUILDDIR ?= $(CURDIR)/build
 DOCKER := $(shell which docker)
 CONTRACTS_DIR = ./x/evm/contracts
 
+# default to CGO_ENABLED=1 for ledger and rocksdb support
+CGO_ENABLED := 1
+
 # don't override user values of COMMIT and VERSION
 ifeq (,$(COMMIT))
   COMMIT := $(shell git log -1 --format='%H')
