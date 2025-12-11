@@ -25,8 +25,6 @@ RUN apt-get update && \
 
 COPY --from=go-builder /code/build/minitiad /usr/local/bin/minitiad
 COPY --from=go-builder /usr/local/lib/librocksdb.so /usr/local/lib/
-COPY --from=go-builder /usr/local/lib/libmovevm.x86_64.so /usr/local/lib/
-COPY --from=go-builder /usr/local/lib/libcompiler.x86_64.so /usr/local/lib/
 
 # Update shared lib cache
 RUN ldconfig
