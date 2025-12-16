@@ -8,7 +8,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.14
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.16.0
-	github.com/initia-labs/OPinit v1.2.3
+	github.com/initia-labs/OPinit v1.2.4
 	github.com/initia-labs/initia v1.2.2
 	github.com/initia-labs/minievm v1.2.0
 	github.com/stretchr/testify v1.11.1

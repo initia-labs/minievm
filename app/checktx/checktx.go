@@ -2,6 +2,7 @@ package checktx
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -47,7 +48,8 @@ type CheckTxWrapper struct {
 	responsesHeight uint64
 	responsesMut    sync.RWMutex
 
-	stop chan struct{}
+	stop    chan struct{}
+	stopped atomic.Bool
 }
 
 type txKey struct {
@@ -103,6 +105,11 @@ func NewCheckTxWrapper(
 }
 
 func (w *CheckTxWrapper) Stop() {
+	if w.stopped.Swap(true) {
+		return
+	}
+
+	w.logger.Info("CheckTxWrapper stopping...")
 	w.txQueue.Stop()
 	close(w.stop)
 }
