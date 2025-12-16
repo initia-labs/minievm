@@ -32,7 +32,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.3.2
-	github.com/initia-labs/OPinit v1.2.3
+	github.com/initia-labs/OPinit v1.2.4
 	github.com/initia-labs/initia v1.2.2
 	github.com/initia-labs/store v0.0.4
 	github.com/jellydator/ttlcache/v3 v3.3.0

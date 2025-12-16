@@ -1403,8 +1403,8 @@ github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c h1:qSH
 github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
 github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 h1:W9WBk7wlPfJLvMCdtV4zPulc4uCPrlywQOmbFOhgQNU=
 github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839/go.mod h1:xaLFMmpvUxqXtVkUJfg9QmT88cDaCJ3ZKgdZ78oO8Qo=
-github.com/initia-labs/OPinit v1.2.3 h1:rRSFk7rs0iWnQu3yh8tWhyVyFhRfXVSCeNFnb1oCCq0=
-github.com/initia-labs/OPinit v1.2.3/go.mod h1:28v9Z4Mn6UN0I4/I3nBlGy/8ufio7qO00RDg7C8s06o=
+github.com/initia-labs/OPinit v1.2.4 h1:8Svms4KPpDZ2TYnIbbhNmctKA1vwIsTMVspfQYxrJY8=
+github.com/initia-labs/OPinit v1.2.4/go.mod h1:28v9Z4Mn6UN0I4/I3nBlGy/8ufio7qO00RDg7C8s06o=
 github.com/initia-labs/OPinit/api v1.2.0 h1:puw1ppyQgg9oFYv2KrKva/eMwNUKfyLK077/erdKZ28=
 github.com/initia-labs/OPinit/api v1.2.0/go.mod h1:Qz11o6zlTtJe495JO7FhEyLhJLPit0rEuLN4pweKL24=
 github.com/initia-labs/cometbft v0.38.19-minitia.8 h1:/4wR1yJqhxxs9vXcr7urCTmzabMRK4YYsnegPVc4CZ0=

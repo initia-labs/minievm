@@ -150,6 +150,9 @@ type EVMIndexerImpl struct {
 
 	// indexingWg is a wait group to wait for all the indexing to finish.
 	indexingWg *sync.WaitGroup
+
+	// stopped indicates whether the indexer has been
+	stopped atomic.Bool
 }
 
 // indexingTask is a task to be indexed.
@@ -344,6 +347,12 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan 
 
 // Close stops the indexer.
 func (e *EVMIndexerImpl) Close() error {
+	if e.stopped.Swap(true) {
+		return nil
+	}
+
+	e.logger.Info("EVM indexer closing...")
+
 	if e.pendingTxs != nil {
 		e.pendingTxs.Stop()
 	}
