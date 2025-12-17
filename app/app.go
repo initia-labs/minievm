@@ -22,6 +22,7 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	tmos "github.com/cometbft/cometbft/libs/os"
+	cmtstate "github.com/cometbft/cometbft/state"
 
 	storetypes "cosmossdk.io/store/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -64,7 +65,7 @@ import (
 	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
-	"github.com/initia-labs/minievm/app/upgrades/v1_2_3"
+	"github.com/initia-labs/minievm/app/upgrades/v1_2_7"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -262,7 +263,7 @@ func NewMinitiaApp(
 	// The cosmos upgrade handler attempts to create ${HOME}/.minitia/data to check for upgrade info,
 	// but this isn't required during initial encoding config setup.
 	if loadLatest {
-		v1_2_3.RegisterUpgradeHandlers(app)
+		v1_2_7.RegisterUpgradeHandlers(app)
 	}
 
 	// register executor change plans for later use
@@ -290,6 +291,9 @@ func NewMinitiaApp(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.setPostHandler()
 	app.SetEndBlocker(app.EndBlocker)
+
+	// register context decorator for message router
+	app.RegisterMessageRouterContextDecorator()
 
 	// setup BlockSDK
 	mempool, anteHandler, checkTx, prepareProposalHandler, processProposalHandler, err := setupBlockSDK(app, mempoolMaxTxs)
@@ -593,4 +597,18 @@ func VerifyAddressLen() func(addr []byte) error {
 		}
 		return nil
 	}
+}
+
+// RegisterMessageRouterContextDecorator registers a context decorator for the message router
+func (app *MinitiaApp) RegisterMessageRouterContextDecorator() {
+	app.MsgServiceRouter().SetContextDecorator(func(ctx sdk.Context, msg sdk.Msg) sdk.Context {
+		if ctx.ExecMode() == sdk.ExecModeSimulate {
+			// in simulation mode, ctx.BlockTime() is referring previous block time
+			// so we need to adjust it to be at least now to avoid issues with
+			// time-based logic in messages
+			ctx = ctx.WithBlockTime(cmtstate.LocalTime(ctx.BlockTime()))
+		}
+
+		return ctx
+	})
 }
