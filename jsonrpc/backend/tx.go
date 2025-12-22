@@ -71,11 +71,11 @@ func (b *JSONRPCBackend) SendRawTransactionSync(input hexutil.Bytes, timeoutInMS
 
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	queryCtx, closer, err := b.getQueryCtx()
-	if err != nil {
-		return NewReadinessError(err.Error())
-	}
 	if closer != nil {
 		defer closer.Close()
+	}
+	if err != nil {
+		return NewReadinessError(err.Error())
 	}
 
 	cosmosTx, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertEthereumTxToCosmosTx(queryCtx, tx)
@@ -158,11 +158,11 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 		var err error
 		var closer io.Closer
 		queryCtx, closer, err = b.getQueryCtxWithHeight(uint64(blockNumber.Int64()))
-		if err != nil {
-			return nil, err
-		}
 		if closer != nil {
 			defer closer.Close()
+		}
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -289,11 +289,11 @@ func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.H
 
 func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	queryCtx, closer, err := b.getQueryCtx()
-	if err != nil {
-		return nil, err
-	}
 	if closer != nil {
 		defer closer.Close()
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	mc, ok := b.clientCtx.Client.(cmtrpcclient.MempoolClient)
