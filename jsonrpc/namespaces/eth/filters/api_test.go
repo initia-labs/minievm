@@ -90,7 +90,10 @@ func Test_NewPendingTransactionFilter_FullTx(t *testing.T) {
 
 	app, backend, addrs, privKeys := input.app, input.backend, input.addrs, input.privKeys
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
@@ -177,7 +180,10 @@ func Test_NewPendingTransactionFilter(t *testing.T) {
 
 	app, backend, addrs, privKeys := input.app, input.backend, input.addrs, input.privKeys
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])

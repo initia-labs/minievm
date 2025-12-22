@@ -150,7 +150,10 @@ func (b *JSONRPCBackend) feeFetcher() {
 			return nil
 		}
 
-		queryCtx, err := b.getQueryCtx()
+		queryCtx, closer, err := b.getQueryCtx()
+		if closer != nil {
+			defer closer.Close()
+		}
 		if err != nil {
 			return err
 		}

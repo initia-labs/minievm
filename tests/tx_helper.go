@@ -95,7 +95,10 @@ func GenerateTx(
 	value *big.Int,
 	opts ...Opt,
 ) (sdk.Tx, common.Hash) {
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	gasLimit := new(big.Int).SetUint64(1_000_000)
@@ -149,7 +152,10 @@ func GenerateCreateInitiaERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privK
 }
 
 func GenerateCreateERC20Tx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.PrivateKey, opts ...Opt) (sdk.Tx, common.Hash) {
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	ethFactoryAddr, err := app.EVMKeeper.GetERC20FactoryAddr(ctx)
@@ -249,7 +255,10 @@ func GenerateCosmosTx(t *testing.T, app *minitiaapp.MinitiaApp, privKey *ecdsa.P
 	ethPrivKey := ethsecp256k1.PrivKey{Key: crypto.FromECDSA(privKey)}
 	ethPubKey := ethPrivKey.PubKey()
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	account := app.AccountKeeper.GetAccount(ctx, sdk.AccAddress(ethPubKey.Address().Bytes()))

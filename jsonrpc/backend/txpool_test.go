@@ -34,7 +34,10 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// Acc: 0, Nonce: 4
@@ -175,7 +178,10 @@ func Test_TxPoolStatus(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// Acc: 0, Nonce: 4
@@ -298,7 +304,10 @@ func Test_TxPoolInspect(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// Acc: 0, Nonce: 4

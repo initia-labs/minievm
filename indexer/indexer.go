@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -88,7 +89,7 @@ type EVMIndexer interface {
 }
 
 // contextCreator creates a new SDK context.
-type contextCreator func(height int64, prove bool) (sdk.Context, error)
+type contextCreator func(height int64, prove bool) (sdk.Context, io.Closer, error)
 
 // consensusParamsGetter gets the consensus params from the SDK context.
 type consensusParamsGetter func(ctx sdk.Context) cmtproto.ConsensusParams

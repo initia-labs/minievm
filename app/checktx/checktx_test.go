@@ -26,7 +26,10 @@ func Test_CheckTxWrapper(t *testing.T) {
 		nonce := uint64(0)
 		txs := make([]sdk.Tx, 30)
 
-		ctx, err := app.CreateQueryContext(0, false)
+		ctx, closer, err := app.CreateQueryContext(0, false)
+		if closer != nil {
+			defer closer.Close()
+		}
 		require.NoError(t, err)
 
 		for i := range 10 {

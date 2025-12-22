@@ -34,7 +34,10 @@ func Test_Reader(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the tx is indexed
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	evmTx, err := indexer.TxByHash(ctx, evmTxHash)
@@ -59,7 +62,10 @@ func Test_Reader(t *testing.T) {
 	cosmosTxHash2 := cmtTx2.Hash()
 
 	// check the tx is indexed
-	ctx, err = app.CreateQueryContext(0, false)
+	ctx, closer, err = app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	evmTx, err = indexer.TxByHash(ctx, evmTxHash)

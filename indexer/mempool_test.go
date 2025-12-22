@@ -37,7 +37,10 @@ func Test_Mempool_Subscribe(t *testing.T) {
 		}
 	}()
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	ethTx, _, err := app.EVMKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, tx)
