@@ -13,8 +13,11 @@ import (
 // Backfill backfills the EVM indexer.
 func (e *EVMIndexerImpl) Backfill(startHeight uint64, endHeight uint64) error {
 	e.logger.Info("backfilling", "startHeight", startHeight, "endHeight", endHeight)
-	for startHeight <= endHeight {
-		ctx, err := e.contextCreator(int64(startHeight), false)
+	action := func(height int64) error {
+		ctx, closer, err := e.contextCreator(height, false)
+		if closer != nil {
+			defer closer.Close()
+		}
 		if err != nil {
 			return fmt.Errorf("failed to create context: %w", err)
 		}
@@ -32,7 +35,6 @@ func (e *EVMIndexerImpl) Backfill(startHeight uint64, endHeight uint64) error {
 			return fmt.Errorf("failed to load fee: %w", err)
 		}
 
-		height := int64(startHeight)
 		block, err := e.clientCtx.Client.Block(ctx, &height)
 		if err != nil {
 			return err
@@ -91,7 +93,13 @@ func (e *EVMIndexerImpl) Backfill(startHeight uint64, endHeight uint64) error {
 			return err
 		}
 
-		startHeight++
+		return nil
+	}
+
+	for ; startHeight <= endHeight; startHeight++ {
+		if err := action(int64(startHeight)); err != nil {
+			return err
+		}
 	}
 	return nil
 }

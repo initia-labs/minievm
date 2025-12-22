@@ -37,7 +37,10 @@ func Test_PruneIndexer(t *testing.T) {
 	require.NoError(t, err)
 
 	// listen finalize block
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// check the tx is indexed
@@ -72,7 +75,10 @@ func Test_PruneIndexer(t *testing.T) {
 	}
 
 	// listen finalize block
-	ctx, err = app.CreateQueryContext(0, false)
+	ctx, closer, err = app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// check the block header is indexed
@@ -176,7 +182,10 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	}
 
 	// check the bloom bits are pruned
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	err = indexer.BloomBits.Walk(ctx, nil, func(key collections.Pair[uint64, uint32], value []byte) (bool, error) {

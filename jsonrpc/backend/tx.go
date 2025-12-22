@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"io"
 	"time"
 
 	"cosmossdk.io/collections"
@@ -69,9 +70,12 @@ func (b *JSONRPCBackend) SendRawTransactionSync(input hexutil.Bytes, timeoutInMS
 }
 
 func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
-	queryCtx, err := b.getQueryCtx()
+	queryCtx, closer, err := b.getQueryCtx()
 	if err != nil {
 		return NewReadinessError(err.Error())
+	}
+	if closer != nil {
+		defer closer.Close()
 	}
 
 	cosmosTx, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertEthereumTxToCosmosTx(queryCtx, tx)
@@ -96,20 +100,20 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 
 // getQueryCtx returns a query context for the current block height.
 // This function should only be used when interacting with keepers, as it creates a context specifically configured for keeper queries.
-func (b *JSONRPCBackend) getQueryCtx() (context.Context, error) {
+func (b *JSONRPCBackend) getQueryCtx() (context.Context, io.Closer, error) {
 	return b.app.CreateQueryContext(0, false)
 }
 
 // getQueryCtxWithHeight returns a query context for the given block height.
 // This function should only be used when interacting with keepers, as it creates a context specifically configured for keeper queries.
-func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, error) {
+func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, io.Closer, error) {
 	// check whether the given height is bigger than the latest block height
 	num, err := b.BlockNumber()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if height > uint64(num) {
-		return nil, errors.New("requested height is greater than the latest block height")
+		return nil, nil, errors.New("requested height is greater than the latest block height")
 	}
 	if height == uint64(num) {
 		height = 0
@@ -152,9 +156,13 @@ func (b *JSONRPCBackend) GetTransactionCount(address common.Address, blockNrOrHa
 		}
 
 		var err error
-		queryCtx, err = b.getQueryCtxWithHeight(uint64(blockNumber.Int64()))
+		var closer io.Closer
+		queryCtx, closer, err = b.getQueryCtxWithHeight(uint64(blockNumber.Int64()))
 		if err != nil {
 			return nil, err
+		}
+		if closer != nil {
+			defer closer.Close()
 		}
 	}
 
@@ -280,9 +288,12 @@ func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.H
 }
 
 func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
-	queryCtx, err := b.getQueryCtx()
+	queryCtx, closer, err := b.getQueryCtx()
 	if err != nil {
 		return nil, err
+	}
+	if closer != nil {
+		defer closer.Close()
 	}
 
 	mc, ok := b.clientCtx.Client.(cmtrpcclient.MempoolClient)

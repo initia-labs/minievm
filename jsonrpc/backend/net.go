@@ -11,7 +11,10 @@ import (
 )
 
 func (b *JSONRPCBackend) Version() (string, error) {
-	queryCtx, err := b.getQueryCtx()
+	queryCtx, closer, err := b.getQueryCtx()
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return "", err
 	}

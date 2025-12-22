@@ -34,7 +34,7 @@ require (
 	github.com/holiman/uint256 v1.3.2
 	github.com/initia-labs/OPinit v1.2.4
 	github.com/initia-labs/initia v1.2.2
-	github.com/initia-labs/store v0.0.4
+	github.com/initia-labs/store v0.1.0
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/noble-assets/forwarding/v2 v2.0.3
 	github.com/pkg/errors v0.9.1
@@ -164,8 +164,8 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit/api v1.2.0 // indirect
 	github.com/initia-labs/movevm v1.1.1 // indirect
-	github.com/initia-labs/store/memiavl v0.0.2 // indirect
-	github.com/initia-labs/store/versiondb v0.0.2 // indirect
+	github.com/initia-labs/store/memiavl v0.1.0 // indirect
+	github.com/initia-labs/store/versiondb v0.1.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -289,7 +289,7 @@ require github.com/cosmos/iavl v1.2.6 // indirect
 // - https://github.com/initia-labs/connect/pull/1
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.38.19-minitia.9
-	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.50.14-initia.2
+	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.50.14-initia.3
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v1.15.11-initia.0
 	github.com/noble-assets/forwarding/simapp => github.com/initia-labs/forwarding/simapp v1.0.0

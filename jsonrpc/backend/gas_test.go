@@ -21,8 +21,12 @@ func Test_GasPrice(t *testing.T) {
 	input := setupBackend(t)
 	app, _, backend, _, _ := input.app, input.addrs, input.backend, input.addrs, input.privKeys
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
+
 	params, err := app.OPChildKeeper.Params.Get(ctx)
 	require.NoError(t, err)
 

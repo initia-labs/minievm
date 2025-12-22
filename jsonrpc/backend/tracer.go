@@ -35,7 +35,10 @@ func (b *JSONRPCBackend) TraceBlockByNumber(ethBlockNum rpc.BlockNumber, config 
 		return nil, errors.New("genesis is not traceable")
 	}
 
-	ctx, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	ctx, closer, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +130,10 @@ func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.Trac
 	if blockNumber < 2 {
 		return nil, errors.New("genesis is not traceable")
 	}
-	ctx, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	ctx, closer, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +196,10 @@ func (b *JSONRPCBackend) StorageRangeAt(blockNrOrHash rpc.BlockNumberOrHash, txI
 	}
 
 	// load the state snapshot
-	ctx, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	ctx, closer, err := b.getQueryCtxWithHeight(blockNumber - 1)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return rpctypes.StorageRangeResult{}, err
 	}

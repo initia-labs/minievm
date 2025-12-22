@@ -63,7 +63,10 @@ func Test_BloomIndexing(t *testing.T) {
 		}
 	}
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	for i := uint32(0); i < coretypes.BloomBitLength; i++ {

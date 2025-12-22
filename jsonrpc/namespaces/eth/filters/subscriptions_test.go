@@ -37,7 +37,10 @@ func Test_NewPendingTransactions_FullTx(t *testing.T) {
 
 	app, backend, privKeys := input.App, input.Backend, input.PrivKeys
 
-	queryCtx, err := app.CreateQueryContext(0, false)
+	queryCtx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	tx, txHash1 := tests.GenerateCreateERC20Tx(t, app, privKeys[0])

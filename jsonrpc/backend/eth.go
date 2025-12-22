@@ -21,7 +21,10 @@ func (b *JSONRPCBackend) GetBalance(address common.Address, blockNrOrHash rpc.Bl
 		return nil, err
 	}
 
-	queryCtx, err := b.getQueryCtxWithHeight(blockNumber)
+	queryCtx, closer, err := b.getQueryCtxWithHeight(blockNumber)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +61,10 @@ func (b *JSONRPCBackend) Call(args rpctypes.TransactionArgs, blockNrOrHash *rpc.
 		return nil, err
 	}
 
-	queryCtx, err := b.getQueryCtxWithHeight(blockNumber)
+	queryCtx, closer, err := b.getQueryCtxWithHeight(blockNumber)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +123,10 @@ func (b *JSONRPCBackend) GetStorageAt(address common.Address, key common.Hash, b
 		return nil, err
 	}
 
-	queryCtx, err := b.getQueryCtxWithHeight(blockNumber)
+	queryCtx, closer, err := b.getQueryCtxWithHeight(blockNumber)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +149,10 @@ func (b *JSONRPCBackend) GetCode(address common.Address, blockNrOrHash rpc.Block
 		return nil, err
 	}
 
-	queryCtx, err := b.getQueryCtxWithHeight(blockNumber)
+	queryCtx, closer, err := b.getQueryCtxWithHeight(blockNumber)
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +174,10 @@ func (b *JSONRPCBackend) ChainId() (*hexutil.Big, error) {
 }
 
 func (b *JSONRPCBackend) ChainID() (*big.Int, error) {
-	queryCtx, err := b.getQueryCtx()
+	queryCtx, closer, err := b.getQueryCtx()
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}

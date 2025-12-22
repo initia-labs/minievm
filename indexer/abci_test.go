@@ -40,7 +40,10 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NoError(t, err)
 
 	// listen finalize block
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// check the tx is indexed
@@ -55,7 +58,10 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	// listen finalize block
-	ctx, err = app.CreateQueryContext(0, false)
+	ctx, closer, err = app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// check the tx is indexed
@@ -239,7 +245,10 @@ func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the tx is indexed
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	receipt, err := indexer.TxReceiptByHash(ctx, evmTxHash)

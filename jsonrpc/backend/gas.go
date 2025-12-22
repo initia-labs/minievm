@@ -106,7 +106,10 @@ func (b *JSONRPCBackend) EstimateGas(args rpctypes.TransactionArgs, blockNrOrHas
 }
 
 func (b *JSONRPCBackend) GasPrice() (*hexutil.Big, error) {
-	queryCtx, err := b.getQueryCtx()
+	queryCtx, closer, err := b.getQueryCtx()
+	if closer != nil {
+		defer closer.Close()
+	}
 	if err != nil {
 		return nil, err
 	}

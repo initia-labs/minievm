@@ -48,7 +48,10 @@ func Test_SendRawTransaction(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// Acc: 0, Nonce: 4
@@ -184,7 +187,10 @@ func Test_SendRawTransactionSync(t *testing.T) {
 		_, finalizeRes = tests.ExecuteTxs(t, app, mintTx)
 		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
-		ctx, err := app.CreateQueryContext(0, false)
+		ctx, closer, err := app.CreateQueryContext(0, false)
+		if closer != nil {
+			defer closer.Close()
+		}
 		require.NoError(t, err)
 
 		transferTx, txHash := tests.GenerateTransferERC20Tx(t, app, privKeys[0], contractAddr, addrs[1], new(big.Int).SetUint64(1_000_000))
@@ -249,7 +255,10 @@ func Test_SendRawTransactionSync(t *testing.T) {
 		_, finalizeRes = tests.ExecuteTxs(t, app, mintTx)
 		tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
-		ctx, err := app.CreateQueryContext(0, false)
+		ctx, closer, err := app.CreateQueryContext(0, false)
+		if closer != nil {
+			defer closer.Close()
+		}
 		require.NoError(t, err)
 
 		transferTx, _ := tests.GenerateTransferERC20Tx(t, app, privKeys[0], contractAddr, addrs[1], new(big.Int).SetUint64(1_000_000))
@@ -467,8 +476,12 @@ func Test_GetRawTransaction(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, txByHash, txByHashAndIndex)
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
+
 	evmTx, _, err := evmkeeper.NewTxUtils(app.EVMKeeper).ConvertCosmosTxToEthereumTx(ctx, tx)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
@@ -500,7 +513,10 @@ func Test_PendingTransactions(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
 
 	// Acc: 0, Nonce: 3

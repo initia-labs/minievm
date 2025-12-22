@@ -37,8 +37,12 @@ func Test_FeeHistory(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	// multiple transfers
-	ctx, err := app.CreateQueryContext(0, false)
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
 	require.NoError(t, err)
+
 	params, err := app.OPChildKeeper.Params.Get(ctx)
 	require.NoError(t, err)
 
