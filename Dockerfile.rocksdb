@@ -33,6 +33,7 @@ RUN ldconfig
 WORKDIR /minitia
 RUN addgroup minitia \
     && adduser --ingroup minitia --disabled-password --home /minitia minitia
+RUN chown -R minitia:minitia /minitia
 USER minitia
 
 EXPOSE 1317 9090 26656 26657
