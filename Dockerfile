@@ -21,18 +21,15 @@ ENV MIMALLOC_RESERVE_HUGE_OS_PAGES=4
 
 RUN VERSION=${VERSION} COMMIT=${COMMIT} LEDGER_ENABLED=false GOARCH=${GOARCH} LDFLAGS="-linkmode=external -extldflags \"-L/code/mimalloc/build -lmimalloc -Wl,-z,muldefs -static\"" make build
 
-FROM alpine:3.20
+# use bullseye-slim as base image for rly binary at launch
+FROM debian:bullseye-slim
 
 # install curl for health check
-RUN apk add curl
-
-RUN addgroup minitia \
-    && adduser -G minitia -D -h /minitia minitia
-
+RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r minitia && useradd -r -g minitia -d /minitia minitia
 WORKDIR /minitia
 
 COPY --from=go-builder  /code/build/minitiad /usr/local/bin/minitiad
-
 USER minitia
 
 # rest server
