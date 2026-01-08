@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
+	evmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 )
 
@@ -44,6 +45,9 @@ func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 	evmAddr := common.BytesToAddress(addr.Bytes())
+	sourcePort := "transfer"
+	sourceChannel := "channel-0"
+	sequence := uint64(99)
 
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
@@ -71,10 +75,19 @@ func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 
 	dataBz, err := json.Marshal(&data)
 	require.NoError(t, err)
+	callbackBz, err := json.Marshal(evmhooks.AsyncCallback{
+		Id:              99,
+		ContractAddress: contractAddr.Hex(),
+	})
+	require.NoError(t, err)
+	require.NoError(t, input.IBCHooksKeeper.SetAsyncCallback(ctx, sourcePort, sourceChannel, sequence, callbackBz))
 
 	// hook should not be called to due to acl
 	err = input.IBCHooksMiddleware.OnTimeoutPacket(ctx, channeltypes.Packet{
-		Data: dataBz,
+		Data:          dataBz,
+		SourcePort:    sourcePort,
+		SourceChannel: sourceChannel,
+		Sequence:      sequence,
 	}, addr)
 	require.NoError(t, err)
 
@@ -88,10 +101,14 @@ func Test_onTimeoutIcs20Packet_memo(t *testing.T) {
 
 	// set acl
 	require.NoError(t, input.IBCHooksKeeper.SetAllowed(ctx, contractAddr[:], true))
+	require.NoError(t, input.IBCHooksKeeper.SetAsyncCallback(ctx, sourcePort, sourceChannel, sequence, callbackBz))
 
 	// success
 	err = input.IBCHooksMiddleware.OnTimeoutPacket(ctx, channeltypes.Packet{
-		Data: dataBz,
+		Data:          dataBz,
+		SourcePort:    sourcePort,
+		SourceChannel: sourceChannel,
+		Sequence:      sequence,
 	}, addr)
 	require.NoError(t, err)
 
@@ -132,6 +149,9 @@ func Test_onTimeoutPacket_memo_ICS721(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()
 	evmAddr := common.BytesToAddress(addr.Bytes())
+	sourcePort := "nft-transfer"
+	sourceChannel := "channel-1"
+	sequence := uint64(99)
 
 	codeBz, err := hexutil.Decode(counter.CounterBin)
 	require.NoError(t, err)
@@ -159,10 +179,19 @@ func Test_onTimeoutPacket_memo_ICS721(t *testing.T) {
 
 	dataBz, err := json.Marshal(&data)
 	require.NoError(t, err)
+	callbackBz, err := json.Marshal(evmhooks.AsyncCallback{
+		Id:              99,
+		ContractAddress: contractAddr.Hex(),
+	})
+	require.NoError(t, err)
+	require.NoError(t, input.IBCHooksKeeper.SetAsyncCallback(ctx, sourcePort, sourceChannel, sequence, callbackBz))
 
 	// hook should not be called to due to acl
 	err = input.IBCHooksMiddleware.OnTimeoutPacket(ctx, channeltypes.Packet{
-		Data: dataBz,
+		Data:          dataBz,
+		SourcePort:    sourcePort,
+		SourceChannel: sourceChannel,
+		Sequence:      sequence,
 	}, addr)
 	require.NoError(t, err)
 
@@ -176,10 +205,14 @@ func Test_onTimeoutPacket_memo_ICS721(t *testing.T) {
 
 	// set acl
 	require.NoError(t, input.IBCHooksKeeper.SetAllowed(ctx, contractAddr[:], true))
+	require.NoError(t, input.IBCHooksKeeper.SetAsyncCallback(ctx, sourcePort, sourceChannel, sequence, callbackBz))
 
 	// success
 	err = input.IBCHooksMiddleware.OnTimeoutPacket(ctx, channeltypes.Packet{
-		Data: dataBz,
+		Data:          dataBz,
+		SourcePort:    sourcePort,
+		SourceChannel: sourceChannel,
+		Sequence:      sequence,
 	}, addr)
 	require.NoError(t, err)
 

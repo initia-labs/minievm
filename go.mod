@@ -163,7 +163,8 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit/api v1.2.0 // indirect
-	github.com/initia-labs/movevm v1.1.1 // indirect
+	github.com/initia-labs/initia/api v1.3.0 // indirect
+	github.com/initia-labs/movevm v1.1.2 // indirect
 	github.com/initia-labs/store/memiavl v0.1.1 // indirect
 	github.com/initia-labs/store/versiondb v0.1.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
@@ -299,4 +300,10 @@ replace (
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
 	google.golang.org/grpc => google.golang.org/grpc v1.65.0
+)
+
+// TODO - remove before merge
+replace (
+	github.com/initia-labs/initia => github.com/initia-labs/initia v1.2.3-0.20260108051923-6ac7082d8661
+	github.com/initia-labs/initia/api => github.com/initia-labs/initia/api v0.0.0-20260108051923-6ac7082d8661
 )

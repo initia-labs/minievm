@@ -182,6 +182,7 @@ type TestKeepers struct {
 	IBCHooksMiddleware  ibchooks.IBCMiddleware
 	EVMKeeper           evmkeeper.Keeper
 	OPChildKeeper       *MockOPChildKeeper
+	MockIBCMiddleware   *mockIBCMiddleware
 
 	EncodingConfig EncodingConfig
 	Faucet         *TestFaucet
@@ -330,13 +331,13 @@ func _createTestInput(
 	faucet := NewTestFaucet(t, ctx, bankKeeper, authtypes.Minter, initialTotalSupply()...)
 
 	// ibc middleware setup
-	mockIBCMiddleware := mockIBCMiddleware{}
+	mockIBCMiddleware := &mockIBCMiddleware{}
 	mockOPChildKeeper := &MockOPChildKeeper{
 		IBCToL2DenomMap: map[string]string{},
 	}
 	evmHooks := evmhooks.NewEVMHooks(appCodec, ac, evmKeeper, mockOPChildKeeper)
 
-	middleware := ibchooks.NewICS4Middleware(mockIBCMiddleware, evmHooks)
+	middleware := ibchooks.NewICS4Middleware(mockIBCMiddleware, ibcHooksKeeper, evmHooks)
 	ibcHookMiddleware := ibchooks.NewIBCMiddleware(mockIBCMiddleware, middleware, ibcHooksKeeper)
 
 	keepers := TestKeepers{
@@ -347,6 +348,7 @@ func _createTestInput(
 		EVMKeeper:           *evmKeeper,
 		BankKeeper:          bankKeeper,
 		OPChildKeeper:       mockOPChildKeeper,
+		MockIBCMiddleware:   mockIBCMiddleware,
 		EncodingConfig:      encodingConfig,
 		Faucet:              faucet,
 		MultiStore:          ms,
@@ -367,69 +369,77 @@ func (k *MockCommunityPoolKeeper) FundCommunityPool(ctx context.Context, amount 
 }
 
 // do nothing ibc middleware
-var _ porttypes.IBCModule = mockIBCMiddleware{}
-var _ porttypes.ICS4Wrapper = mockIBCMiddleware{}
+var _ porttypes.IBCModule = (*mockIBCMiddleware)(nil)
+var _ porttypes.ICS4Wrapper = (*mockIBCMiddleware)(nil)
 
-type mockIBCMiddleware struct{}
+type mockIBCMiddleware struct {
+	lastData []byte
+	sequence uint64
+}
 
 // GetAppVersion implements types.ICS4Wrapper.
-func (m mockIBCMiddleware) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {
+func (m *mockIBCMiddleware) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {
 	return "", false
 }
 
 // SendPacket implements types.ICS4Wrapper.
-func (m mockIBCMiddleware) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (sequence uint64, err error) {
-	return 0, nil
+func (m *mockIBCMiddleware) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (sequence uint64, err error) {
+	m.lastData = data
+	return m.sequence, nil
 }
 
 // WriteAcknowledgement implements types.ICS4Wrapper.
-func (m mockIBCMiddleware) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
+func (m *mockIBCMiddleware) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
 	return nil
 }
 
 // OnAcknowledgementPacket implements types.IBCModule.
-func (m mockIBCMiddleware) OnAcknowledgementPacket(ctx sdk.Context, packet channeltypes.Packet, acknowledgement []byte, relayer sdk.AccAddress) error {
+func (m *mockIBCMiddleware) OnAcknowledgementPacket(ctx sdk.Context, packet channeltypes.Packet, acknowledgement []byte, relayer sdk.AccAddress) error {
 	return nil
 }
 
 // OnChanCloseConfirm implements types.IBCModule.
-func (m mockIBCMiddleware) OnChanCloseConfirm(ctx sdk.Context, portID string, channelID string) error {
+func (m *mockIBCMiddleware) OnChanCloseConfirm(ctx sdk.Context, portID string, channelID string) error {
 	return nil
 }
 
 // OnChanCloseInit implements types.IBCModule.
-func (m mockIBCMiddleware) OnChanCloseInit(ctx sdk.Context, portID string, channelID string) error {
+func (m *mockIBCMiddleware) OnChanCloseInit(ctx sdk.Context, portID string, channelID string) error {
 	return nil
 }
 
 // OnChanOpenAck implements types.IBCModule.
-func (m mockIBCMiddleware) OnChanOpenAck(ctx sdk.Context, portID string, channelID string, counterpartyChannelID string, counterpartyVersion string) error {
+func (m *mockIBCMiddleware) OnChanOpenAck(ctx sdk.Context, portID string, channelID string, counterpartyChannelID string, counterpartyVersion string) error {
 	return nil
 }
 
 // OnChanOpenConfirm implements types.IBCModule.
-func (m mockIBCMiddleware) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID string) error {
+func (m *mockIBCMiddleware) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID string) error {
 	return nil
 }
 
 // OnChanOpenInit implements types.IBCModule.
-func (m mockIBCMiddleware) OnChanOpenInit(ctx sdk.Context, order channeltypes.Order, connectionHops []string, portID string, channelID string, channelCap *capabilitytypes.Capability, counterparty channeltypes.Counterparty, version string) (string, error) {
+func (m *mockIBCMiddleware) OnChanOpenInit(ctx sdk.Context, order channeltypes.Order, connectionHops []string, portID string, channelID string, channelCap *capabilitytypes.Capability, counterparty channeltypes.Counterparty, version string) (string, error) {
 	return "", nil
 }
 
 // OnChanOpenTry implements types.IBCModule.
-func (m mockIBCMiddleware) OnChanOpenTry(ctx sdk.Context, order channeltypes.Order, connectionHops []string, portID string, channelID string, channelCap *capabilitytypes.Capability, counterparty channeltypes.Counterparty, counterpartyVersion string) (version string, err error) {
+func (m *mockIBCMiddleware) OnChanOpenTry(ctx sdk.Context, order channeltypes.Order, connectionHops []string, portID string, channelID string, channelCap *capabilitytypes.Capability, counterparty channeltypes.Counterparty, counterpartyVersion string) (version string, err error) {
 	return "", nil
 }
 
 // OnRecvPacket implements types.IBCModule.
-func (m mockIBCMiddleware) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) ibcexported.Acknowledgement {
+func (m *mockIBCMiddleware) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) ibcexported.Acknowledgement {
 	return channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 }
 
 // OnTimeoutPacket implements types.IBCModule.
-func (m mockIBCMiddleware) OnTimeoutPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) error {
+func (m *mockIBCMiddleware) OnTimeoutPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) error {
 	return nil
+}
+
+func (m *mockIBCMiddleware) setSequence(sequence uint64) {
+	m.sequence = sequence
 }
 
 type MockGasPriceKeeper struct {

@@ -50,32 +50,29 @@ func isIcs721Packet(packetData []byte) (isIcs721 bool, ics721data nfttransfertyp
 	}
 }
 
-func validateAndParseMemo(memo string) (
-	isEVMRouted bool,
-	hookData HookData,
-	err error,
-) {
-	isEVMRouted, metadata := jsonStringHasKey(memo, evmHookMemoKey)
-	if !isEVMRouted {
-		return
+func parseHookData(memo string) (*HookData, bool, error) {
+	if len(memo) == 0 {
+		return nil, false, nil
 	}
 
-	evmHookRaw := metadata[evmHookMemoKey]
-
-	// parse evm raw bytes to execute message
-	bz, err := json.Marshal(evmHookRaw)
-	if err != nil {
-		err = errors.Wrap(channeltypes.ErrInvalidPacket, err.Error())
-		return
+	var memoMap map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(memo), &memoMap); err != nil {
+		return nil, false, nil
 	}
 
-	err = json.Unmarshal(bz, &hookData)
-	if err != nil {
-		err = errors.Wrap(channeltypes.ErrInvalidPacket, err.Error())
-		return
+	raw, ok := memoMap[evmHookMemoKey]
+	if !ok {
+		return nil, false, nil
 	}
 
-	return
+	var hookData HookData
+	decoder := json.NewDecoder(strings.NewReader(string(raw)))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&hookData); err != nil {
+		return nil, true, errors.Wrap(channeltypes.ErrInvalidPacket, err.Error())
+	}
+
+	return &hookData, true, nil
 }
 
 func validateReceiver(msg *evmtypes.MsgCall, receiver string) error {
@@ -84,32 +81,6 @@ func validateReceiver(msg *evmtypes.MsgCall, receiver string) error {
 	}
 
 	return nil
-}
-
-// jsonStringHasKey parses the memo as a json object and checks if it contains the key.
-func jsonStringHasKey(memo, key string) (found bool, jsonObject map[string]interface{}) {
-	jsonObject = make(map[string]interface{})
-
-	// If there is no memo, the packet was either sent with an earlier version of IBC, or the memo was
-	// intentionally left blank. Nothing to do here. Ignore the packet and pass it down the stack.
-	if len(memo) == 0 {
-		return false, jsonObject
-	}
-
-	// the jsonObject must be a valid JSON object
-	err := json.Unmarshal([]byte(memo), &jsonObject)
-	if err != nil {
-		return false, jsonObject
-	}
-
-	// If the key doesn't exist, there's nothing to do on this hook. Continue by passing the packet
-	// down the stack
-	_, ok := jsonObject[key]
-	if !ok {
-		return false, jsonObject
-	}
-
-	return true, jsonObject
 }
 
 // newEmitErrorAcknowledgement creates a new error acknowledgement after having emitted an event with the

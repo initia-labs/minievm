@@ -42,7 +42,7 @@ func Test_isIcs20Packet(t *testing.T) {
 // 	require.False(t, ok)
 // }
 
-func Test_validateAndParseMemo_without_callback(t *testing.T) {
+func Test_parseHookData_without_callback(t *testing.T) {
 	memo := `{
 			"evm" : {
 				"message": {
@@ -52,10 +52,11 @@ func Test_validateAndParseMemo_without_callback(t *testing.T) {
 				}
 			}
 	}`
-	isEVMRouted, hookData, err := validateAndParseMemo(memo)
-	require.True(t, isEVMRouted)
+	hookData, routed, err := parseHookData(memo)
+	require.True(t, routed)
 	require.NoError(t, err)
-	require.Equal(t, HookData{
+	require.NotNil(t, hookData)
+	require.Equal(t, &HookData{
 		Message: &evmtypes.MsgCall{
 			Sender:       "init_addr",
 			ContractAddr: "contract_addr",
@@ -66,15 +67,15 @@ func Test_validateAndParseMemo_without_callback(t *testing.T) {
 	require.NoError(t, validateReceiver(hookData.Message, "contract_addr"))
 
 	// invalid receiver
-	require.NoError(t, err)
 	require.Error(t, validateReceiver(hookData.Message, "invalid_addr"))
 
-	isEVMRouted, _, err = validateAndParseMemo("hihi")
-	require.False(t, isEVMRouted)
+	hookData, routed, err = parseHookData("hihi")
+	require.False(t, routed)
 	require.NoError(t, err)
+	require.Nil(t, hookData)
 }
 
-func Test_validateAndParseMemo_with_callback(t *testing.T) {
+func Test_parseHookData_with_callback(t *testing.T) {
 	memo := `{
 			"evm" : {
 				"message": {
@@ -88,10 +89,11 @@ func Test_validateAndParseMemo_with_callback(t *testing.T) {
 				}
 			}
 	}`
-	isEVMRouted, hookData, err := validateAndParseMemo(memo)
-	require.True(t, isEVMRouted)
+	hookData, routed, err := parseHookData(memo)
+	require.True(t, routed)
 	require.NoError(t, err)
-	require.Equal(t, HookData{
+	require.NotNil(t, hookData)
+	require.Equal(t, &HookData{
 		Message: &evmtypes.MsgCall{
 			Sender:       "init_addr",
 			ContractAddr: "contract_addr",

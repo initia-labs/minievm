@@ -4,6 +4,8 @@ import (
 	"cosmossdk.io/core/address"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -18,6 +20,7 @@ var (
 	_ ibchooks.OnRecvPacketOverrideHooks            = EVMHooks{}
 	_ ibchooks.OnAcknowledgementPacketOverrideHooks = EVMHooks{}
 	_ ibchooks.OnTimeoutPacketOverrideHooks         = EVMHooks{}
+	_ ibchooks.SendPacketOverrideHooks              = EVMHooks{}
 )
 
 type EVMHooks struct {
@@ -53,6 +56,18 @@ func (h EVMHooks) OnRecvPacketOverride(im ibchooks.IBCMiddleware, ctx sdk.Contex
 	}
 
 	return im.App.OnRecvPacket(ctx, packet, relayer)
+}
+
+func (h EVMHooks) SendPacketOverride(im ibchooks.ICS4Middleware, ctx sdk.Context, chanCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
+	if isIcs20, ics20Data := isIcs20Packet(data); isIcs20 {
+		return h.sendIcs20Packet(ctx, im, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, ics20Data)
+	}
+
+	if isIcs721, ics721Data := isIcs721Packet(data); isIcs721 {
+		return h.sendIcs721Packet(ctx, im, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, ics721Data)
+	}
+
+	return im.ICS4Wrapper.SendPacket(ctx, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
 }
 
 func (h EVMHooks) OnAcknowledgementPacketOverride(im ibchooks.IBCMiddleware, ctx sdk.Context, packet channeltypes.Packet, acknowledgement []byte, relayer sdk.AccAddress) error {
