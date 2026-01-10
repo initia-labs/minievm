@@ -288,7 +288,7 @@ require github.com/cosmos/iavl v1.2.6 // indirect
 // connect
 // - https://github.com/initia-labs/connect/pull/1
 replace (
-	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.38.19-minitia.11
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.38.19-minitia.12
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.50.14-initia.3
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v1.15.11-initia.0
