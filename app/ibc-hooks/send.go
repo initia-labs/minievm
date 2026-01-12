@@ -12,6 +12,8 @@ import (
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
+
+	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 )
 
 func (h EVMHooks) sendIcs20Packet(
@@ -63,6 +65,9 @@ func (h EVMHooks) handleSendPacket(
 	}
 
 	asyncCallback := hookData.AsyncCallback
+	if _, err := evmtypes.ContractAddressFromString(h.ac, asyncCallback.ContractAddress); err != nil {
+		return 0, err
+	}
 
 	var memoMap map[string]any
 	// ignore error, it is already checked in parseHookData

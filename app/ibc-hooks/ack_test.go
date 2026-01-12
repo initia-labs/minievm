@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/collections"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
+	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 	evmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
@@ -42,6 +45,60 @@ func Test_onAckIcs20Packet_noMemo(t *testing.T) {
 		Data: dataBz,
 	}, ackBz, addr)
 	require.NoError(t, err)
+}
+
+func Test_onAckPacket_acl_not_allowed(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	_, _, addr := keyPubAddr()
+
+	sourcePort := "transfer"
+	sourceChannel := "channel-acl"
+	sequence := uint64(1)
+	contractAddr := common.BytesToAddress(addr.Bytes()).Hex()
+
+	callbackBz, err := json.Marshal(evmhooks.AsyncCallback{
+		Id:              sequence,
+		ContractAddress: contractAddr,
+	})
+	require.NoError(t, err)
+	require.NoError(t, input.IBCHooksKeeper.SetAsyncCallback(ctx, sourcePort, sourceChannel, sequence, callbackBz))
+
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
+
+	data := transfertypes.FungibleTokenPacketData{
+		Denom:    "foo",
+		Amount:   "1",
+		Sender:   addr.String(),
+		Receiver: addr.String(),
+		Memo:     "",
+	}
+
+	dataBz, err := json.Marshal(&data)
+	require.NoError(t, err)
+
+	ackBz := channeltypes.NewResultAcknowledgement([]byte{byte(1)}).Acknowledgement()
+
+	err = input.IBCHooksMiddleware.OnAcknowledgementPacket(ctx, channeltypes.Packet{
+		Data:          dataBz,
+		SourcePort:    sourcePort,
+		SourceChannel: sourceChannel,
+		Sequence:      sequence,
+	}, ackBz, addr)
+	require.NoError(t, err)
+
+	_, err = input.IBCHooksKeeper.GetAsyncCallback(ctx, sourcePort, sourceChannel, sequence)
+	require.Error(t, err)
+	require.True(t, errors.Is(err, collections.ErrNotFound))
+
+	events := ctx.EventManager().Events()
+	require.Len(t, events, 1)
+	event := events[0]
+	require.Equal(t, ibchookstypes.EventTypeHookFailed, event.Type)
+	require.Len(t, event.Attributes, 2)
+	require.Equal(t, ibchookstypes.AttributeKeyReason, string(event.Attributes[0].Key))
+	require.Equal(t, "failed to check ACL", string(event.Attributes[0].Value))
+	require.Equal(t, ibchookstypes.AttributeKeyError, string(event.Attributes[1].Key))
+	require.Equal(t, "not allowed", string(event.Attributes[1].Value))
 }
 
 func Test_onAckIcs20Packet_memo(t *testing.T) {

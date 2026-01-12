@@ -1427,10 +1427,10 @@ github.com/initia-labs/forwarding/v2 v2.0.3-initia.3 h1:Uu1VqRsSwX7rgS2A4M3Snzyz
 github.com/initia-labs/forwarding/v2 v2.0.3-initia.3/go.mod h1:N3OzYf14ton71zCxomBmpR7tOxZ2dKwhsMxUmtuJuVQ=
 github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0 h1:qDaf7jqmism9WXe8OtqpDDxJckKrZFVYWRhKFWV8V9g=
 github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0/go.mod h1:G2z+Q6ZQSMcyHI2+BVcJdvfOupb09M2h/tgpXOEdY6k=
-github.com/initia-labs/initia v1.2.3-0.20260108051923-6ac7082d8661 h1:jRTRP6NWVsL5AwC6OAmGmhOTNTJliQFt1xgNa2KIj+o=
-github.com/initia-labs/initia v1.2.3-0.20260108051923-6ac7082d8661/go.mod h1:LoACeFxbcT2vC+KurBrNJOQMrBfWfRlCtrykw8H7SH0=
-github.com/initia-labs/initia/api v0.0.0-20260108051923-6ac7082d8661 h1:sev3PIyaxq+8ur0w8ws8TVlScwV5c3RURFFSfQL+5YA=
-github.com/initia-labs/initia/api v0.0.0-20260108051923-6ac7082d8661/go.mod h1:vf+Mbeid/BZdbvhz3xs1u1X+ggRtzzcydP7uOYBytBg=
+github.com/initia-labs/initia v1.3.0-alpha.0 h1:7Qe1VQqAQOcl7qsw16JuYYNqd+cNC6YPfLNdgBzvTf8=
+github.com/initia-labs/initia v1.3.0-alpha.0/go.mod h1:LoACeFxbcT2vC+KurBrNJOQMrBfWfRlCtrykw8H7SH0=
+github.com/initia-labs/initia/api v1.3.0 h1:HMYHr/C3OqOqznAeDaObDDGpOQ1vPc8fv1M3rTpqSrs=
+github.com/initia-labs/initia/api v1.3.0/go.mod h1:vf+Mbeid/BZdbvhz3xs1u1X+ggRtzzcydP7uOYBytBg=
 github.com/initia-labs/movevm v1.1.2 h1:udIkzni6h0juPm9m3dM8eEUczxooTWU/OaW99fHSmEE=
 github.com/initia-labs/movevm v1.1.2/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
 github.com/initia-labs/store v0.1.1 h1:sc4PTv30oS99t0EWgFPy0pCFPYJsHngB2QfZS5XY/Xo=

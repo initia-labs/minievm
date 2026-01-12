@@ -53,6 +53,33 @@ func Test_SendPacket_asyncCallback_only(t *testing.T) {
 	require.Equal(t, expectedCallbackBz, callbackBz)
 }
 
+func Test_SendPacket_asyncCallback_invalid_contract_addr(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+
+	input.MockIBCMiddleware.setSequence(13)
+	input.MockIBCMiddleware.lastData = []byte("initial")
+
+	data := transfertypes.FungibleTokenPacketData{
+		Denom:    "foo",
+		Amount:   "10000",
+		Sender:   "sender",
+		Receiver: "receiver",
+		Memo:     `{"evm":{"async_callback":{"id":1,"contract_address":"invalid-address"}}}`,
+	}
+	dataBz, err := json.Marshal(&data)
+	require.NoError(t, err)
+
+	seq, err := input.IBCHooksMiddleware.ICS4Middleware.SendPacket(ctx, nil, "transfer", "channel-invalid", clienttypes.ZeroHeight(), 0, dataBz)
+	require.Error(t, err)
+	require.Zero(t, seq)
+
+	require.Equal(t, []byte("initial"), input.MockIBCMiddleware.lastData)
+
+	_, err = input.IBCHooksKeeper.GetAsyncCallback(ctx, "transfer", "channel-invalid", seq)
+	require.Error(t, err)
+	require.True(t, errors.Is(err, collections.ErrNotFound))
+}
+
 func Test_SendPacket_asyncCallback_with_message(t *testing.T) {
 	ctx, input := createDefaultTestInput(t)
 	_, _, addr := keyPubAddr()

@@ -33,7 +33,7 @@ require (
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.3.2
 	github.com/initia-labs/OPinit v1.2.4
-	github.com/initia-labs/initia v1.2.2
+	github.com/initia-labs/initia v1.3.0-alpha.0
 	github.com/initia-labs/store v0.1.1
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/noble-assets/forwarding/v2 v2.0.3
@@ -300,10 +300,4 @@ replace (
 	// cosmos/relayer seems having problem with the latest version of grpc; return nil in the below line
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
 	google.golang.org/grpc => google.golang.org/grpc v1.65.0
-)
-
-// TODO - remove before merge
-replace (
-	github.com/initia-labs/initia => github.com/initia-labs/initia v1.2.3-0.20260108051923-6ac7082d8661
-	github.com/initia-labs/initia/api => github.com/initia-labs/initia/api v0.0.0-20260108051923-6ac7082d8661
 )
