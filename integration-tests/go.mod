@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.16.0
 	github.com/initia-labs/OPinit v1.2.4
-	github.com/initia-labs/initia v1.2.2
+	github.com/initia-labs/initia v1.3.0-alpha.0
 	github.com/initia-labs/minievm v1.2.0
 	github.com/stretchr/testify v1.11.1
 )
@@ -142,7 +142,8 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit/api v1.2.0 // indirect
-	github.com/initia-labs/movevm v1.1.1 // indirect
+	github.com/initia-labs/initia/api v1.3.0 // indirect
+	github.com/initia-labs/movevm v1.1.2 // indirect
 	github.com/initia-labs/store v0.1.1 // indirect
 	github.com/initia-labs/store/memiavl v0.1.1 // indirect
 	github.com/initia-labs/store/versiondb v0.1.0 // indirect
