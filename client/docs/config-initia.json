@@ -1,0 +1,29 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Initia - REST docs",
+    "description": "A REST interface for state queries",
+    "version": "1.0.0"
+  },
+  "apis": [
+    {
+      "url": "./tmp-swagger-gen/initia/ibchooks/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "IBCHooksParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/initia/move/v1/query.swagger.json",
+      "operationIds": {
+        "rename": {
+          "Params": "MoveParams"
+        }
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/initia/abcipp/mempool/v1/query.swagger.json"
+    }
+  ]
+}
