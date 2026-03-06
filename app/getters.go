@@ -8,11 +8,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 
+	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
 	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
 	evmindexer "github.com/initia-labs/minievm/indexer"
@@ -37,6 +38,16 @@ func (app *MinitiaApp) GetEVMKeeper() *evmkeeper.Keeper {
 // GetUpgradeKeeper returns the upgrade keeper for the app.
 func (app *MinitiaApp) GetUpgradeKeeper() *upgradekeeper.Keeper {
 	return app.UpgradeKeeper
+}
+
+// GetOPChildKeeper returns the opchild keeper for the app.
+func (app *MinitiaApp) GetOPChildKeeper() *opchildkeeper.Keeper {
+	return app.OPChildKeeper
+}
+
+// SetStoreLoader sets the store loader for the app.
+func (app *MinitiaApp) SetStoreLoader(loader baseapp.StoreLoader) {
+	app.BaseApp.SetStoreLoader(loader)
 }
 
 // GetStakingKeeper returns the staking keeper for the app.
@@ -83,6 +94,11 @@ func (app *MinitiaApp) GetModuleManager() *module.Manager {
 // IndexerKeeper returns the evm indexer
 func (app *MinitiaApp) EVMIndexer() evmindexer.EVMIndexer {
 	return app.evmIndexer
+}
+
+// PendingTxChan returns a read-only channel for pending tx notifications.
+func (app *MinitiaApp) PendingTxChan() <-chan *rpctypes.RPCTransaction {
+	return app.pendingTxChan
 }
 
 // CheckStateContextGetter returns a function that returns a new Context for state checking.

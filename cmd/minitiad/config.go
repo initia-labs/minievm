@@ -6,6 +6,7 @@ import (
 
 	tmcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
+	"github.com/initia-labs/initia/abcipp"
 
 	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -18,6 +19,7 @@ import (
 // minitiaAppConfig initia specify app config
 type minitiaAppConfig struct {
 	serverconfig.Config
+	ABCIPP        abcipp.AppConfig               `mapstructure:"abcipp"`
 	MemIAVL       initiastorecfg.MemIAVLConfig   `mapstructure:"memiavl"`
 	VersionDB     initiastorecfg.VersionDBConfig `mapstructure:"versiondb"`
 	EVMConfig     evmconfig.EVMConfig            `mapstructure:"evm"`
@@ -64,6 +66,7 @@ func initAppConfig() (string, interface{}) {
 	jsonRPCConfig.Address = "0.0.0.0:8545"
 	jsonRPCConfig.AddressWS = "0.0.0.0:8546"
 
+	abcippCfg := abcipp.DefaultAppConfig()
 	memIAVLCfg := initiastorecfg.DefaultMemIAVLConfig()
 	versionDBCfg := initiastorecfg.DefaultVersionDBConfig()
 
@@ -71,6 +74,7 @@ func initAppConfig() (string, interface{}) {
 		Config:        *srvCfg,
 		EVMConfig:     evmCfg,
 		JSONRPCConfig: jsonRPCConfig,
+		ABCIPP:        abcippCfg,
 		MemIAVL:       memIAVLCfg,
 		VersionDB:     versionDBCfg,
 	}
@@ -79,6 +83,7 @@ func initAppConfig() (string, interface{}) {
 	minitiaAppConfig.JSONRPCConfig.AddressWS = "0.0.0.0:8546"
 
 	minitiaAppTemplate := serverconfig.DefaultConfigTemplate +
+		abcipp.DefaultConfigTemplate +
 		evmconfig.DefaultConfigTemplate +
 		jsonrpcconfig.DefaultConfigTemplate +
 		initiastorecfg.DefaultMemIAVLConfigTemplate +

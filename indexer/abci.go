@@ -240,10 +240,6 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 			return
 		}
 
-		// remove tx from the pending and queued after indexing
-		e.pendingTxs.Delete(ethTx.Hash())
-		e.queuedTxs.Delete(ethTx.Hash())
-
 		if len(e.logsChans) > 0 && len(receipt.Logs) > 0 {
 			for idx, log := range receipt.Logs {
 				// fill in missing fields before emitting

@@ -12,6 +12,8 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/initia-labs/initia/abcipp"
+
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -374,14 +376,9 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 		return tx, nil
 	}
 
-	// check if the transaction is in the queued txs
-	if tx := b.app.EVMIndexer().TxInQueued(hash); tx != nil {
-		return tx, nil
-	}
-
-	// check if the transaction is in the pending txs
-	if tx := b.app.EVMIndexer().TxInPending(hash); tx != nil {
-		return tx, nil
+	// check the mempool (pending + queued) for the transaction
+	if rpcTx := b.findTxInMempool(hash); rpcTx != nil {
+		return rpcTx, nil
 	}
 
 	tx, err := b.app.EVMIndexer().TxByHash(b.ctx, hash)
@@ -394,6 +391,46 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 
 	_ = b.txLookupCache.Add(hash, tx)
 	return tx, nil
+}
+
+// findTxInMempool searches the mempool for a transaction by its hash.
+func (b *JSONRPCBackend) findTxInMempool(hash common.Hash) *rpctypes.RPCTransaction {
+	mempool, ok := b.app.Mempool().(abcipp.Mempool)
+	if !ok {
+		return nil
+	}
+
+	queryCtx, closer, err := b.getQueryCtx()
+	if closer != nil {
+		defer closer.Close()
+	}
+	if err != nil {
+		return nil
+	}
+	sdkCtx := sdk.UnwrapSDKContext(queryCtx)
+	txUtils := keeper.NewTxUtils(b.app.EVMKeeper)
+
+	var found *rpctypes.RPCTransaction
+	search := func(_ string, _ uint64, tx sdk.Tx) bool {
+		ethTx, _, err := txUtils.ConvertCosmosTxToEthereumTx(sdkCtx, tx)
+		if err != nil || ethTx == nil {
+			return true
+		}
+		if ethTx.Hash() == hash {
+			found = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
+			return false
+		}
+		return true
+	}
+
+	mempool.IteratePendingTxs(search)
+	if found != nil {
+		return found
+	}
+
+	mempool.IterateQueuedTxs(search)
+
+	return found
 }
 
 func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error) {

@@ -10,6 +10,7 @@ import (
 	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	tmos "github.com/cometbft/cometbft/libs/os"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -68,14 +69,12 @@ import (
 	icaauthtypes "github.com/initia-labs/initia/x/intertx/types"
 
 	// OPinit imports
+	"github.com/initia-labs/OPinit/x/opchild"
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
-	opchildlanes "github.com/initia-labs/OPinit/x/opchild/lanes"
 	opchildmiddleware "github.com/initia-labs/OPinit/x/opchild/middleware/migration"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	// skip imports
-	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
-	auctiontypes "github.com/skip-mev/block-sdk/v2/x/auction/types"
 	marketmapkeeper "github.com/skip-mev/connect/v2/x/marketmap/keeper"
 	marketmaptypes "github.com/skip-mev/connect/v2/x/marketmap/types"
 	oraclekeeper "github.com/skip-mev/connect/v2/x/oracle/keeper"
@@ -120,7 +119,6 @@ type AppKeepers struct {
 	IBCFeeKeeper          *ibcfeekeeper.Keeper
 	EVMKeeper             *evmkeeper.Keeper
 	OPChildKeeper         *opchildkeeper.Keeper
-	AuctionKeeper         *auctionkeeper.Keeper // x/auction keeper used to process bids for POB auctions
 	PacketForwardKeeper   *packetforwardkeeper.Keeper
 	OracleKeeper          *oraclekeeper.Keeper // x/oracle keeper used for the connect oracle
 	MarketMapKeeper       *marketmapkeeper.Keeper
@@ -135,6 +133,7 @@ type AppKeepers struct {
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAAuthKeeper       capabilitykeeper.ScopedKeeper
+	ScopedOPChildKeeper       capabilitykeeper.ScopedKeeper
 }
 
 func NewAppKeeper(
@@ -185,6 +184,7 @@ func NewAppKeeper(
 	appKeepers.ScopedICAHostKeeper = appKeepers.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 	appKeepers.ScopedICAControllerKeeper = appKeepers.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
 	appKeepers.ScopedICAAuthKeeper = appKeepers.CapabilityKeeper.ScopeToModule(icaauthtypes.ModuleName)
+	appKeepers.ScopedOPChildKeeper = appKeepers.CapabilityKeeper.ScopeToModule(opchildtypes.ModuleName)
 
 	appKeepers.CapabilityKeeper.Seal()
 
@@ -310,6 +310,15 @@ func NewAppKeeper(
 		appKeepers.ScopedIBCKeeper,
 		authorityAddr,
 	)
+
+	if err := appKeepers.OPChildKeeper.SetIBCKeepers(
+		appKeepers.IBCKeeper.ClientKeeper,
+		appKeepers.IBCKeeper.PortKeeper,
+		appKeepers.ScopedOPChildKeeper,
+	); err != nil {
+		logger.Error("failed to setup IBCKeepers on OPChildKeeper", "error", err.Error())
+		tmos.Exit(err.Error())
+	}
 
 	// Set IBC post handler to receive validator set updates
 	appKeepers.IBCKeeper.ClientKeeper.SetPostUpdateHandler(
@@ -505,6 +514,15 @@ func NewAppKeeper(
 		)
 	}
 
+	///////////////////////////
+	// OPChild configuration //
+	///////////////////////////
+
+	opchildStack := ibcfee.NewIBCMiddleware(
+		opchild.NewIBCModule(*appKeepers.OPChildKeeper),
+		*appKeepers.IBCFeeKeeper,
+	)
+
 	///////////////////////
 	// ICA configuration //
 	///////////////////////
@@ -563,7 +581,8 @@ func NewAppKeeper(
 		AddRoute(icahosttypes.SubModuleName, icaHostStack).
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(icaauthtypes.ModuleName, icaControllerStack).
-		AddRoute(ibcnfttransfertypes.ModuleName, nftTransferStack)
+		AddRoute(ibcnfttransfertypes.ModuleName, nftTransferStack).
+		AddRoute(opchildtypes.ModuleName, opchildStack)
 
 	appKeepers.IBCKeeper.SetRouter(ibcRouter)
 	appKeepers.OPChildKeeper.
@@ -595,19 +614,6 @@ func NewAppKeeper(
 
 	// register token creation function
 	appKeepers.OPChildKeeper.WithTokenCreationFn(erc20Keeper.TokenCreationFn)
-
-	// x/auction module keeper initialization
-
-	// initialize the keeper
-	auctionKeeper := auctionkeeper.NewKeeperWithRewardsAddressProvider(
-		appCodec,
-		appKeepers.keys[auctiontypes.StoreKey],
-		appKeepers.AccountKeeper,
-		appKeepers.BankKeeper,
-		opchildlanes.NewRewardsAddressProvider(authtypes.FeeCollectorName),
-		authorityAddr,
-	)
-	appKeepers.AuctionKeeper = &auctionKeeper
 
 	return appKeepers
 }
