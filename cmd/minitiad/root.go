@@ -49,6 +49,8 @@ import (
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
 
 	cmtcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
+	cmtmempool "github.com/cometbft/cometbft/mempool"
+	"github.com/cometbft/cometbft/rpc/client/local"
 
 	initiastoreclient "github.com/initia-labs/store/client"
 	initiastoreconfig "github.com/initia-labs/store/config"
@@ -234,6 +236,15 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 			// set client context for the evm Indexer
 			if err := a.App().(*minitiaapp.MinitiaApp).InitializeIndexer(clientCtx); err != nil {
 				return err
+			}
+
+			// connect mempool events
+			if lc, ok := clientCtx.Client.(*local.Local); ok {
+				if ep, ok := lc.Mempool().(cmtmempool.EventProvider); ok {
+					if app, ok := a.App().(*minitiaapp.MinitiaApp); ok {
+						app.ConnectMempoolEvents(ep.AppEventCh())
+					}
+				}
 			}
 
 			return nil

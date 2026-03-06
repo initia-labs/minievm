@@ -18,7 +18,6 @@ import (
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 	"github.com/initia-labs/initia/app/genesis_markets"
 
-	auctiontypes "github.com/skip-mev/block-sdk/v2/x/auction/types"
 	connecttypes "github.com/skip-mev/connect/v2/pkg/types"
 	marketmaptypes "github.com/skip-mev/connect/v2/x/marketmap/types"
 	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
@@ -108,12 +107,6 @@ func (genState GenesisState) AddMarketData(cdc codec.JSONCodec, ac address.Codec
 }
 
 func (genState GenesisState) ConfigureDefaultDenom(cdc codec.JSONCodec, denom string) GenesisState {
-	var auctionGenState auctiontypes.GenesisState
-	cdc.MustUnmarshalJSON(genState[auctiontypes.ModuleName], &auctionGenState)
-	auctionGenState.Params.ReserveFee.Denom = denom
-	auctionGenState.Params.MinBidIncrement.Denom = denom
-	genState[auctiontypes.ModuleName] = cdc.MustMarshalJSON(&auctionGenState)
-
 	var evmGenState evmtypes.GenesisState
 	cdc.MustUnmarshalJSON(genState[evmtypes.ModuleName], &evmGenState)
 	evmGenState.Params.FeeDenom = denom

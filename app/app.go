@@ -56,17 +56,20 @@ import (
 	"github.com/initia-labs/initia/app/params"
 	cryptocodec "github.com/initia-labs/initia/crypto/codec"
 
-	// skip imports
-	blockchecktx "github.com/skip-mev/block-sdk/v2/abci/checktx"
-	"github.com/skip-mev/block-sdk/v2/block"
-	blockservice "github.com/skip-mev/block-sdk/v2/block/service"
+	// cometbft mempool
+	cmtmempool "github.com/cometbft/cometbft/mempool"
+
+	// initia abcipp
+	"github.com/initia-labs/initia/abcipp"
+
+	"github.com/ethereum/go-ethereum/common"
 
 	// local imports
-	"github.com/initia-labs/minievm/app/checktx"
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
-	"github.com/initia-labs/minievm/app/upgrades/v1_2_7"
+	"github.com/initia-labs/minievm/app/upgrades/v1_3_0"
 	evmindexer "github.com/initia-labs/minievm/indexer"
+	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
@@ -114,13 +117,13 @@ type MinitiaApp struct {
 	configurator module.Configurator
 
 	// Override of BaseApp's CheckTx
-	checkTxHandler blockchecktx.CheckTx
+	checkTxHandler abcipp.CheckTx
 
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
 
-	// checktx wrapper
-	checkTxWrapper *checktx.CheckTxWrapper
+	// pending tx channel
+	pendingTxChan chan *rpctypes.RPCTransaction
 
 	// post handler for tracing
 	postHandler sdk.PostHandler
@@ -180,6 +183,7 @@ func NewMinitiaApp(
 		appCodec:          appCodec,
 		txConfig:          txConfig,
 		interfaceRegistry: interfaceRegistry,
+		pendingTxChan:     make(chan *rpctypes.RPCTransaction, 256),
 
 		// codecs
 		ac: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
@@ -263,7 +267,7 @@ func NewMinitiaApp(
 	// The cosmos upgrade handler attempts to create ${HOME}/.minitia/data to check for upgrade info,
 	// but this isn't required during initial encoding config setup.
 	if loadLatest {
-		v1_2_7.RegisterUpgradeHandlers(app)
+		v1_3_0.RegisterUpgradeHandlers(app)
 	}
 
 	// register executor change plans for later use
@@ -295,8 +299,8 @@ func NewMinitiaApp(
 	// register context decorator for message router
 	app.RegisterMessageRouterContextDecorator()
 
-	// setup BlockSDK
-	mempool, anteHandler, checkTx, prepareProposalHandler, processProposalHandler, err := setupBlockSDK(app, mempoolMaxTxs)
+	// setup ABCIPP
+	mempool, anteHandler, prepareProposalHandler, processProposalHandler, checkTx, err := app.setupABCIPP(mempoolMaxTxs, appOpts)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
@@ -313,6 +317,13 @@ func NewMinitiaApp(
 
 	// override base-app's CheckTx
 	app.SetCheckTx(checkTx)
+
+	// wire PrepareCheckStater to promote queued txs after each block commit
+	if pm, ok := mempool.(*abcipp.PriorityMempool); ok {
+		app.SetPrepareCheckStater(func(ctx sdk.Context) {
+			pm.PromoteQueued(ctx)
+		})
+	}
 
 	// At startup, after all modules have been registered, check that all prot
 	// annotations are correct.
@@ -365,7 +376,7 @@ func (app *MinitiaApp) CheckTx(req *abci.RequestCheckTx) (*abci.ResponseCheckTx,
 }
 
 // SetCheckTx sets the checkTxHandler for the app.
-func (app *MinitiaApp) SetCheckTx(handler blockchecktx.CheckTx) {
+func (app *MinitiaApp) SetCheckTx(handler abcipp.CheckTx) {
 	app.checkTxHandler = handler
 }
 
@@ -489,8 +500,8 @@ func (app *MinitiaApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.AP
 	// Register node gRPC service for grpc-gateway.
 	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// Register the Block SDK mempool API routes.
-	blockservice.RegisterGRPCGatewayRoutes(apiSvr.ClientCtx, apiSvr.GRPCGatewayRouter)
+	// Register the ABCIPP mempool API routes.
+	abcipp.RegisterGRPCGatewayRoutes(apiSvr.ClientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register grpc-gateway routes for all modules.
 	app.BasicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
@@ -508,13 +519,13 @@ func (app *MinitiaApp) RegisterTxService(clientCtx client.Context) {
 		app.Simulate, app.interfaceRegistry,
 	)
 
-	mempool, ok := app.Mempool().(block.Mempool)
+	// Register the ABCIPP mempool query server.
+	mempool, ok := app.Mempool().(abcipp.Mempool)
 	if !ok {
-		panic("mempool is not a block.Mempool")
+		panic("mempool is not an abcipp.Mempool")
 	}
 
-	// Register the Block SDK mempool transaction service.
-	blockservice.RegisterMempoolService(app.GRPCQueryRouter(), mempool)
+	abcipp.RegisterQueryServer(app.GRPCQueryRouter(), mempool)
 }
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
@@ -542,6 +553,10 @@ func (app *MinitiaApp) SetQueryMultiStore(store storetypes.MultiStore) {
 func (app *MinitiaApp) Close() error {
 	var errs []error
 
+	if mempool, ok := app.Mempool().(interface{ Stop() }); ok {
+		mempool.Stop()
+	}
+
 	if err := app.BaseApp.Close(); err != nil {
 		errs = append(errs, err)
 	}
@@ -550,10 +565,6 @@ func (app *MinitiaApp) Close() error {
 		if err := app.evmIndexer.Close(); err != nil {
 			errs = append(errs, err)
 		}
-	}
-
-	if app.checkTxWrapper != nil {
-		app.checkTxWrapper.Stop()
 	}
 
 	for _, store := range []storetypes.MultiStore{app.CommitMultiStore(), app.qms} {
@@ -568,6 +579,47 @@ func (app *MinitiaApp) Close() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+// ConnectMempoolEvents wires cometbft ProxyMempool event channel to the app mempool.
+// It also intercepts EventTxInserted to emit pending tx notifications for eth_subscribe.
+func (app *MinitiaApp) ConnectMempoolEvents(eventCh chan cmtmempool.AppMempoolEvent) {
+	pm, ok := app.Mempool().(*abcipp.PriorityMempool)
+	if !ok {
+		return
+	}
+
+	proxyCh := make(chan cmtmempool.AppMempoolEvent, 8192)
+	go func() {
+		for event := range proxyCh {
+			eventCh <- event
+			if event.Type == cmtmempool.EventTxInserted && app.pendingTxChan != nil {
+				app.handlePendingTxEvent(event.Tx)
+			}
+		}
+	}()
+
+	pm.SetEventCh(proxyCh)
+}
+
+// handlePendingTxEvent converts a raw tx to an RPC transaction and sends it to the pending channel.
+func (app *MinitiaApp) handlePendingTxEvent(txBytes []byte) {
+	sdkTx, err := app.txConfig.TxDecoder()(txBytes)
+	if err != nil {
+		return
+	}
+
+	ctx := app.GetContextForCheckTx(nil)
+	ethTx, _, err := app.EVMKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, sdkTx)
+	if err != nil || ethTx == nil {
+		return
+	}
+
+	rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
+	select {
+	case app.pendingTxChan <- rpcTx:
+	default:
+	}
 }
 
 // RegisterSwaggerAPI registers swagger route with API Server

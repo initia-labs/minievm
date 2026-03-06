@@ -63,7 +63,7 @@ type FilterAPI struct {
 	// channels for block and log events
 	blockChan   chan *coretypes.Header
 	logsChan    chan []*coretypes.Log
-	pendingChan chan *rpctypes.RPCTransaction
+	pendingChan <-chan *rpctypes.RPCTransaction
 }
 
 // NewFiltersAPI returns a new instance
@@ -86,7 +86,8 @@ func NewFilterAPI(ctx context.Context, app *app.MinitiaApp, backend *backend.JSO
 
 	go api.clearUnusedFilters()
 
-	api.blockChan, api.logsChan, api.pendingChan = app.EVMIndexer().Subscribe()
+	api.blockChan, api.logsChan = app.EVMIndexer().Subscribe()
+	api.pendingChan = app.PendingTxChan()
 	go api.eventLoop()
 
 	return api

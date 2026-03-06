@@ -6,7 +6,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
+	"github.com/initia-labs/initia/abcipp"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	"github.com/initia-labs/minievm/x/evm/keeper"
 )
 
 func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpctypes.RPCTransaction, error) {
@@ -15,28 +20,50 @@ func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpct
 		"queued":  make(map[string]map[string]*rpctypes.RPCTransaction),
 	}
 
-	pendingTxs := b.app.EVMIndexer().PendingTxs()
-	for _, tx := range pendingTxs {
-		dump, ok := content["pending"][tx.From.Hex()]
-		if !ok {
-			dump = make(map[string]*rpctypes.RPCTransaction)
-			content["pending"][tx.From.Hex()] = dump
-		}
+	queryCtx, closer, err := b.getQueryCtx()
+	if closer != nil {
+		defer closer.Close()
+	}
+	if err != nil {
+		return nil, err
+	}
+	sdkCtx := sdk.UnwrapSDKContext(queryCtx)
+	txUtils := keeper.NewTxUtils(b.app.EVMKeeper)
 
-		dump[fmt.Sprintf("%d", tx.Nonce)] = tx
+	mempool, ok := b.app.Mempool().(abcipp.Mempool)
+	if !ok {
+		return content, nil
 	}
 
-	// load queued txs
-	queuedTxs := b.app.EVMIndexer().QueuedTxs()
-	for _, tx := range queuedTxs {
-		dump, ok := content["queued"][tx.From.Hex()]
+	mempool.IteratePendingTxs(func(_ string, _ uint64, tx sdk.Tx) bool {
+		ethTx, _, err := txUtils.ConvertCosmosTxToEthereumTx(sdkCtx, tx)
+		if err != nil || ethTx == nil {
+			return true
+		}
+		rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
+		dump, ok := content["pending"][rpcTx.From.Hex()]
 		if !ok {
 			dump = make(map[string]*rpctypes.RPCTransaction)
-			content["queued"][tx.From.Hex()] = dump
+			content["pending"][rpcTx.From.Hex()] = dump
 		}
+		dump[fmt.Sprintf("%d", rpcTx.Nonce)] = rpcTx
+		return true
+	})
 
-		dump[fmt.Sprintf("%d", tx.Nonce)] = tx
-	}
+	mempool.IterateQueuedTxs(func(_ string, _ uint64, tx sdk.Tx) bool {
+		ethTx, _, err := txUtils.ConvertCosmosTxToEthereumTx(sdkCtx, tx)
+		if err != nil || ethTx == nil {
+			return true
+		}
+		rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
+		dump, ok := content["queued"][rpcTx.From.Hex()]
+		if !ok {
+			dump = make(map[string]*rpctypes.RPCTransaction)
+			content["queued"][rpcTx.From.Hex()] = dump
+		}
+		dump[fmt.Sprintf("%d", rpcTx.Nonce)] = rpcTx
+		return true
+	})
 
 	return content, nil
 }
@@ -56,12 +83,24 @@ func (b *JSONRPCBackend) TxPoolContentFrom(addr common.Address) (map[string]map[
 
 // Status returns the number of pending and queued transaction in the pool.
 func (b *JSONRPCBackend) TxPoolStatus() (map[string]hexutil.Uint, error) {
-	numPendingTxs := b.app.EVMIndexer().NumPendingTxs()
-	numQueuedTxs := b.app.EVMIndexer().NumQueuedTxs()
+	numPending := 0
+	numQueued := 0
+
+	mempool, ok := b.app.Mempool().(abcipp.Mempool)
+	if ok {
+		mempool.IteratePendingTxs(func(_ string, _ uint64, _ sdk.Tx) bool {
+			numPending++
+			return true
+		})
+		mempool.IterateQueuedTxs(func(_ string, _ uint64, _ sdk.Tx) bool {
+			numQueued++
+			return true
+		})
+	}
 
 	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(numPendingTxs),
-		"queued":  hexutil.Uint(numQueuedTxs),
+		"pending": hexutil.Uint(numPending),
+		"queued":  hexutil.Uint(numQueued),
 	}, nil
 }
 

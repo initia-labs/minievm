@@ -12,11 +12,7 @@ import (
 
 	opchildante "github.com/initia-labs/OPinit/x/opchild/ante"
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
-	"github.com/initia-labs/initia/app/ante/accnum"
 	"github.com/initia-labs/initia/app/ante/sigverify"
-
-	auctionante "github.com/skip-mev/block-sdk/v2/x/auction/ante"
-	auctionkeeper "github.com/skip-mev/block-sdk/v2/x/auction/keeper"
 )
 
 // HandlerOptions extends the SDK's AnteHandler options by requiring the IBC
@@ -26,11 +22,7 @@ type HandlerOptions struct {
 	Codec         codec.BinaryCodec
 	IBCkeeper     *ibckeeper.Keeper
 	OPChildKeeper *opchildkeeper.Keeper
-	AuctionKeeper *auctionkeeper.Keeper
 	EVMKeeper     EVMKeeper
-
-	TxEncoder sdk.TxEncoder
-	MevLane   auctionante.MEVLane
 }
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
@@ -55,9 +47,6 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	if options.OPChildKeeper == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "OPChild keeper is required for ante builder")
 	}
-	if options.AuctionKeeper == nil {
-		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "Auction keeper is required for ante builder")
-	}
 
 	sigGasConsumer := options.SigGasConsumer
 	if sigGasConsumer == nil {
@@ -70,7 +59,6 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	}
 
 	anteDecorators := []sdk.AnteDecorator{
-		accnum.NewAccountNumberDecorator(options.AccountKeeper),
 		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		NewEthTxDecorator(options.EVMKeeper),
@@ -87,7 +75,6 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
 		NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCkeeper),
-		auctionante.NewAuctionDecorator(options.AuctionKeeper, options.TxEncoder, options.MevLane),
 		opchildante.NewRedundantBridgeDecorator(options.OPChildKeeper),
 	}
 
@@ -104,4 +91,15 @@ func CreateAnteHandlerForOPinit(ak ante.AccountKeeper, signModeHandler *txsignin
 		NewSigVerificationDecorator(ak, signModeHandler),
 		NewIncrementSequenceDecorator(ak),
 	)
+}
+
+// NewDualAnteHandler returns an AnteHandler that routes to the minimal handler
+// during CheckTx/ReCheckTx and to the full handler otherwise.
+func NewDualAnteHandler(minimal, full sdk.AnteHandler) sdk.AnteHandler {
+	return func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+		if ctx.IsCheckTx() || ctx.IsReCheckTx() {
+			return minimal(ctx, tx, simulate)
+		}
+		return full(ctx, tx, simulate)
+	}
 }
