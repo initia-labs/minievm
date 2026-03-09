@@ -300,3 +300,6 @@ replace (
 	// - https://github.com/cosmos/relayer/blob/4e4e9530800d28fb2c984f1cfc7b03f05eec618c/relayer/chains/cosmos/grpc_query.go#L30
 	google.golang.org/grpc => google.golang.org/grpc v1.65.0
 )
+
+// TODO: replace this with proper tag once https://github.com/initia-labs/initia/pull/486 is merged.
+replace github.com/initia-labs/initia => github.com/initia-labs/initia v1.4.0-beta.1.0.20260309101842-4639ddac3df6

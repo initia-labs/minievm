@@ -3,6 +3,7 @@ package backend_test
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -73,6 +74,9 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
+
 	// 2 in queued and 0 in pending
 	txPool, err := backend.TxPoolContentFrom(addrs[0])
 	require.NoError(t, err)
@@ -104,6 +108,9 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	// 2 in pending and 1 in queued
 	txPool, err = backend.TxPoolContentFrom(addrs[0])
@@ -137,6 +144,9 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	// 4 in pending and 0 in queued
 	txPool, err = backend.TxPoolContentFrom(addrs[0])
@@ -229,6 +239,9 @@ func Test_TxPoolStatus(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
+
 	// 2 in queued and 0 in pending
 	status, err := backend.TxPoolStatus()
 	require.NoError(t, err)
@@ -252,6 +265,9 @@ func Test_TxPoolStatus(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
+
 	// 3 in pending and 1 in queued
 	status, err = backend.TxPoolStatus()
 	require.NoError(t, err)
@@ -274,6 +290,9 @@ func Test_TxPoolStatus(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	// 5 in pending and 0 in queued
 	status, err = backend.TxPoolStatus()
@@ -355,6 +374,9 @@ func Test_TxPoolInspect(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
+
 	// 1 in pending, and 2 in queued
 	txPool, err := backend.TxPoolInspect()
 	require.NoError(t, err)
@@ -377,6 +399,9 @@ func Test_TxPoolInspect(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	// 3 in pending and 1 in queued
 	txPool, err = backend.TxPoolInspect()
@@ -401,6 +426,9 @@ func Test_TxPoolInspect(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	// 5 in pending and 0 in queued
 	txPool, err = backend.TxPoolInspect()

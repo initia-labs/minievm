@@ -54,6 +54,9 @@ type EVMIndexer interface {
 	// event subscription
 	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log)
 
+	// mempool cache
+	MempoolCache() *MempoolTxCache
+
 	// last indexed height
 	GetLastIndexedHeight(ctx context.Context) (uint64, error)
 
@@ -125,6 +128,8 @@ type EVMIndexerImpl struct {
 	blockChans []chan *coretypes.Header
 	logsChans  []chan []*coretypes.Log
 
+	mempoolCache *MempoolTxCache
+
 	// indexingChan is a channel to receive indexing tasks.
 	indexingChan chan *indexingTask
 
@@ -195,6 +200,8 @@ func NewEVMIndexer(
 		blockChans: nil,
 		logsChans:  nil,
 
+		mempoolCache: NewMempoolTxCache(),
+
 		// use buffered channel to avoid blocking the main thread
 		indexingChan: make(chan *indexingTask, 10),
 
@@ -239,6 +246,11 @@ func (e *EVMIndexerImpl) Initialize(clientCtx client.Context, contextCreator con
 	go e.indexingLoop()
 
 	return nil
+}
+
+// MempoolCache returns the in-memory mempool transaction cache.
+func (e *EVMIndexerImpl) MempoolCache() *MempoolTxCache {
+	return e.mempoolCache
 }
 
 // Subscribe returns channels to receive blocks and logs.

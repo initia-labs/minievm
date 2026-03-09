@@ -12,13 +12,9 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/initia-labs/initia/abcipp"
-
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
-
-	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -290,45 +286,7 @@ func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.H
 }
 
 func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
-	queryCtx, closer, err := b.getQueryCtx()
-	if closer != nil {
-		defer closer.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	mc, ok := b.clientCtx.Client.(cmtrpcclient.MempoolClient)
-	if !ok {
-		return nil, errors.New("mempool client not available")
-	}
-
-	res, err := mc.UnconfirmedTxs(b.ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*rpctypes.RPCTransaction, 0, len(res.Txs))
-	for _, txBz := range res.Txs {
-		tx, err := b.clientCtx.TxConfig.TxDecoder()(txBz)
-		if err != nil {
-			return nil, err
-		}
-
-		sdkCtx := sdk.UnwrapSDKContext(queryCtx)
-		ethTx, _, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertCosmosTxToEthereumTx(sdkCtx, tx)
-		if err != nil {
-			return nil, err
-		}
-		if ethTx != nil {
-			result = append(
-				result,
-				rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId()),
-			)
-		}
-	}
-
-	return result, nil
+	return b.app.EVMIndexer().MempoolCache().AllPending(), nil
 }
 
 func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]any, error) {
@@ -393,44 +351,9 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 	return tx, nil
 }
 
-// findTxInMempool searches the mempool for a transaction by its hash.
+// findTxInMempool searches the mempool cache for a transaction by its hash.
 func (b *JSONRPCBackend) findTxInMempool(hash common.Hash) *rpctypes.RPCTransaction {
-	mempool, ok := b.app.Mempool().(abcipp.Mempool)
-	if !ok {
-		return nil
-	}
-
-	queryCtx, closer, err := b.getQueryCtx()
-	if closer != nil {
-		defer closer.Close()
-	}
-	if err != nil {
-		return nil
-	}
-	sdkCtx := sdk.UnwrapSDKContext(queryCtx)
-	txUtils := keeper.NewTxUtils(b.app.EVMKeeper)
-
-	var found *rpctypes.RPCTransaction
-	search := func(_ string, _ uint64, tx sdk.Tx) bool {
-		ethTx, _, err := txUtils.ConvertCosmosTxToEthereumTx(sdkCtx, tx)
-		if err != nil || ethTx == nil {
-			return true
-		}
-		if ethTx.Hash() == hash {
-			found = rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
-			return false
-		}
-		return true
-	}
-
-	mempool.IteratePendingTxs(search)
-	if found != nil {
-		return found
-	}
-
-	mempool.IterateQueuedTxs(search)
-
-	return found
+	return b.app.EVMIndexer().MempoolCache().FindByHash(hash)
 }
 
 func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error) {

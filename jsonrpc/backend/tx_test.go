@@ -99,6 +99,9 @@ func Test_SendRawTransaction(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
+
 	// 1 in pending, and 2 in queued
 	txPool, err := backend.TxPoolContent()
 	require.NoError(t, err)
@@ -124,6 +127,9 @@ func Test_SendRawTransaction(t *testing.T) {
 	// execute recheck txs
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	// 3 in pending and 1 in queued
 	txPool, err = backend.TxPoolContent()
@@ -152,6 +158,9 @@ func Test_SendRawTransaction(t *testing.T) {
 	// execute recheck txs
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	// 5 in pending and 0 in queued
 	txPool, err = backend.TxPoolContent()
@@ -551,6 +560,9 @@ func Test_PendingTransactions(t *testing.T) {
 	require.NoError(t, err)
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
+
+	// wait for async cache update
+	time.Sleep(200 * time.Millisecond)
 
 	pendingTxs, err := backend.PendingTransactions()
 	require.NoError(t, err)

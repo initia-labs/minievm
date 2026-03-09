@@ -56,13 +56,8 @@ import (
 	"github.com/initia-labs/initia/app/params"
 	cryptocodec "github.com/initia-labs/initia/crypto/codec"
 
-	// cometbft mempool
-	cmtmempool "github.com/cometbft/cometbft/mempool"
-
 	// initia abcipp
 	"github.com/initia-labs/initia/abcipp"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	// local imports
 	"github.com/initia-labs/minievm/app/keepers"
@@ -579,47 +574,6 @@ func (app *MinitiaApp) Close() error {
 	}
 
 	return errors.Join(errs...)
-}
-
-// ConnectMempoolEvents wires cometbft ProxyMempool event channel to the app mempool.
-// It also intercepts EventTxInserted to emit pending tx notifications for eth_subscribe.
-func (app *MinitiaApp) ConnectMempoolEvents(eventCh chan cmtmempool.AppMempoolEvent) {
-	pm, ok := app.Mempool().(*abcipp.PriorityMempool)
-	if !ok {
-		return
-	}
-
-	proxyCh := make(chan cmtmempool.AppMempoolEvent, 8192)
-	go func() {
-		for event := range proxyCh {
-			eventCh <- event
-			if event.Type == cmtmempool.EventTxInserted && app.pendingTxChan != nil {
-				app.handlePendingTxEvent(event.Tx)
-			}
-		}
-	}()
-
-	pm.SetEventCh(proxyCh)
-}
-
-// handlePendingTxEvent converts a raw tx to an RPC transaction and sends it to the pending channel.
-func (app *MinitiaApp) handlePendingTxEvent(txBytes []byte) {
-	sdkTx, err := app.txConfig.TxDecoder()(txBytes)
-	if err != nil {
-		return
-	}
-
-	ctx := app.GetContextForCheckTx(nil)
-	ethTx, _, err := app.EVMKeeper.TxUtils().ConvertCosmosTxToEthereumTx(ctx, sdkTx)
-	if err != nil || ethTx == nil {
-		return
-	}
-
-	rpcTx := rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId())
-	select {
-	case app.pendingTxChan <- rpcTx:
-	default:
-	}
 }
 
 // RegisterSwaggerAPI registers swagger route with API Server
