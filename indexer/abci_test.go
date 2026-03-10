@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -260,13 +261,17 @@ func Test_ListenFinalizeBlock_Subscribe_CancelBeforeDrain(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
 
-	// Channels should never receive after cancel (no goroutine leak / panic)
+	// Channels must not receive after cancel even after blockEventsEmitter
+	// (launched as a goroutine by doIndexing) has had time to run.
+	// A zero-time default could pass before a send arrives, so use a short
+	// bounded wait: any delivery within the window is a bug.
 	select {
 	case <-blockChan:
 		t.Fatal("expected no block delivery after cancel")
 	case <-logsChan:
 		t.Fatal("expected no log delivery after cancel")
-	default:
+	case <-time.After(200 * time.Millisecond):
+		// no delivery — correct behaviour
 	}
 }
 
