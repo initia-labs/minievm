@@ -13,6 +13,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	cmtmempool "github.com/cometbft/cometbft/mempool"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -62,6 +64,14 @@ func setupFilterAPI(t *testing.T) testInput {
 
 	backend, err := backend.NewJSONRPCBackend(ctx, app, app.Logger(), svrCtx, clientCtx, cfg)
 	require.NoError(t, err)
+
+	// wire mempool events so the indexer cache is populated.
+	eventCh := make(chan cmtmempool.AppMempoolEvent, 8192)
+	app.ConnectMempoolEvents(eventCh)
+	go func() {
+		for range eventCh {
+		}
+	}()
 
 	filterAPI := filters.NewFilterAPI(ctx, app, backend, app.Logger())
 

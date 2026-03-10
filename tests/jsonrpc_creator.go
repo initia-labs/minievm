@@ -15,6 +15,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	cmtmempool "github.com/cometbft/cometbft/mempool"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	minitiaapp "github.com/initia-labs/minievm/app"
@@ -70,6 +72,14 @@ func CreateAppWithJSONRPC(t *testing.T) TestInput {
 
 	backend, err := backend.NewJSONRPCBackend(ctx, app, app.Logger(), svrCtx, clientCtx, cfg)
 	require.NoError(t, err)
+
+	// wire mempool events so the indexer cache is populated.
+	eventCh := make(chan cmtmempool.AppMempoolEvent, 8192)
+	app.ConnectMempoolEvents(eventCh)
+	go func() {
+		for range eventCh {
+		}
+	}()
 
 	g, ctx := errgroup.WithContext(ctx)
 	err = jsonrpc.StartJSONRPC(ctx, g, app, svrCtx, clientCtx, cfg, false)
