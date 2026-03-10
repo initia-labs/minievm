@@ -87,7 +87,7 @@ func NewFilterAPI(ctx context.Context, app *app.MinitiaApp, backend *backend.JSO
 	go api.clearUnusedFilters()
 
 	api.blockChan, api.logsChan = app.EVMIndexer().Subscribe()
-	api.pendingChan = app.PendingTxChan()
+	api.pendingChan = app.SubscribePendingTx()
 	go api.eventLoop()
 
 	return api

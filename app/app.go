@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -118,8 +119,10 @@ type MinitiaApp struct {
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
 
-	// pending tx channel
-	pendingTxChan chan *rpctypes.RPCTransaction
+	// pending tx fan-out
+	pendingTxChan  chan *rpctypes.RPCTransaction   // internal broadcast source
+	pendingTxSubs  []chan *rpctypes.RPCTransaction // subscriber channels
+	pendingTxSubMu sync.Mutex
 
 	// post handler for tracing
 	postHandler sdk.PostHandler

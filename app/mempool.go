@@ -22,6 +22,25 @@ func (app *MinitiaApp) ConnectMempoolEvents(eventCh chan cmtmempool.AppMempoolEv
 
 	cache := app.evmIndexer.MempoolCache()
 	cache.StartEventConsumer(appCh, app.convertTxBytesToRPCTx, app.pendingTxChan)
+
+	app.startPendingTxBroadcast()
+}
+
+// startPendingTxBroadcast fans out pending tx notifications from the internal
+// channel to all subscribers registered via SubscribePendingTx.
+func (app *MinitiaApp) startPendingTxBroadcast() {
+	go func() {
+		for tx := range app.pendingTxChan {
+			app.pendingTxSubMu.Lock()
+			for _, ch := range app.pendingTxSubs {
+				select {
+				case ch <- tx:
+				default:
+				}
+			}
+			app.pendingTxSubMu.Unlock()
+		}
+	}()
 }
 
 // convertTxBytesToRPCTx decodes raw cosmos tx bytes and converts to an eth RPCTransaction.

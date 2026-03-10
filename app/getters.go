@@ -96,9 +96,17 @@ func (app *MinitiaApp) EVMIndexer() evmindexer.EVMIndexer {
 	return app.evmIndexer
 }
 
-// PendingTxChan returns a read-only channel for pending tx notifications.
-func (app *MinitiaApp) PendingTxChan() <-chan *rpctypes.RPCTransaction {
-	return app.pendingTxChan
+// SubscribePendingTx creates and returns a new channel that receives pending tx
+// notifications. Each subscriber gets its own channel in a fan-out pattern.
+// Multiple consumers (e.g., http and ws filter api) don't compete.
+func (app *MinitiaApp) SubscribePendingTx() <-chan *rpctypes.RPCTransaction {
+	ch := make(chan *rpctypes.RPCTransaction, 256)
+
+	app.pendingTxSubMu.Lock()
+	app.pendingTxSubs = append(app.pendingTxSubs, ch)
+	app.pendingTxSubMu.Unlock()
+
+	return ch
 }
 
 // CheckStateContextGetter returns a function that returns a new Context for state checking.
