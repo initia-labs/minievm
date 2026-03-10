@@ -61,10 +61,10 @@ type FilterAPI struct {
 	uninstall chan *subscription // remove filter for event notification
 
 	// channels for block and log events
-	blockChan        chan *coretypes.Header
-	logsChan         chan []*coretypes.Log
-	pendingChan      <-chan *rpctypes.RPCTransaction
-	cancelSubs       []func() // unregister functions called on shutdown
+	blockChan   chan *coretypes.Header
+	logsChan    chan []*coretypes.Log
+	pendingChan <-chan *rpctypes.RPCTransaction
+	cancelSubs  []func() // unregister functions called on shutdown
 }
 
 // NewFiltersAPI returns a new instance
