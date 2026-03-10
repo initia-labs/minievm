@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
-
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
@@ -66,7 +64,6 @@ import (
 	"github.com/initia-labs/minievm/app/posthandler"
 	"github.com/initia-labs/minievm/app/upgrades/v1_3_0"
 	evmindexer "github.com/initia-labs/minievm/indexer"
-	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
 
@@ -118,11 +115,6 @@ type MinitiaApp struct {
 
 	// evm indexer
 	evmIndexer evmindexer.EVMIndexer
-
-	// pending tx fan-out
-	pendingTxChan  chan *rpctypes.RPCTransaction   // internal broadcast source
-	pendingTxSubs  []chan *rpctypes.RPCTransaction // subscriber channels
-	pendingTxSubMu sync.Mutex
 
 	// post handler for tracing
 	postHandler sdk.PostHandler
@@ -183,7 +175,6 @@ func NewMinitiaApp(
 		appCodec:          appCodec,
 		txConfig:          txConfig,
 		interfaceRegistry: interfaceRegistry,
-		pendingTxChan:     make(chan *rpctypes.RPCTransaction, 256),
 
 		// codecs
 		ac: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
