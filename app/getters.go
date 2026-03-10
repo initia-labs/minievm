@@ -11,8 +11,6 @@ import (
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
-	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
-
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
 	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
@@ -94,19 +92,6 @@ func (app *MinitiaApp) GetModuleManager() *module.Manager {
 // IndexerKeeper returns the evm indexer
 func (app *MinitiaApp) EVMIndexer() evmindexer.EVMIndexer {
 	return app.evmIndexer
-}
-
-// SubscribePendingTx creates and returns a new channel that receives pending tx
-// notifications. Each subscriber gets its own channel in a fan-out pattern.
-// Multiple consumers (e.g., http and ws filter api) don't compete.
-func (app *MinitiaApp) SubscribePendingTx() <-chan *rpctypes.RPCTransaction {
-	ch := make(chan *rpctypes.RPCTransaction, 256)
-
-	app.pendingTxSubMu.Lock()
-	app.pendingTxSubs = append(app.pendingTxSubs, ch)
-	app.pendingTxSubMu.Unlock()
-
-	return ch
 }
 
 // CheckStateContextGetter returns a function that returns a new Context for state checking.

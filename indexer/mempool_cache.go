@@ -31,6 +31,10 @@ type MempoolTxCache struct {
 
 	pendingCount atomic.Int64
 	queuedCount  atomic.Int64
+
+	// pending tx subscribers
+	subMu sync.RWMutex
+	subs  []chan *rpctypes.RPCTransaction
 }
 
 // NewMempoolTxCache creates a new MempoolTxCache.
@@ -253,12 +257,36 @@ func (c *MempoolTxCache) removeFromQueuedLocked(from common.Address, nonce uint6
 	c.queuedCount.Add(-1)
 }
 
+// Subscribe returns a channel that receives newly inserted pending transactions
+// and a cancel function to unsubscribe.
+func (c *MempoolTxCache) Subscribe() (<-chan *rpctypes.RPCTransaction, func()) {
+	ch := make(chan *rpctypes.RPCTransaction, 256)
+	c.subMu.Lock()
+	c.subs = append(c.subs, ch)
+	c.subMu.Unlock()
+
+	cancel := func() {
+		c.subMu.Lock()
+		for i, s := range c.subs {
+			if s != ch {
+				continue
+			}
+
+			c.subs = append(c.subs[:i], c.subs[i+1:]...)
+			close(ch)
+			break
+		}
+		c.subMu.Unlock()
+	}
+	return ch, cancel
+}
+
 // TxConverter converts raw cosmos tx bytes into an RPCTransaction.
 // Returns nil for non evm tx or on error.
 type TxConverter func(txBytes []byte) *rpctypes.RPCTransaction
 
 // StartEventConsumer processes mempool events and updates the cache.
-func (c *MempoolTxCache) StartEventConsumer(events <-chan cmtmempool.AppMempoolEvent, convert TxConverter, pendingTxChan chan<- *rpctypes.RPCTransaction) {
+func (c *MempoolTxCache) StartEventConsumer(events <-chan cmtmempool.AppMempoolEvent, convert TxConverter) {
 	go func() {
 		for event := range events {
 			cosmosTxKey := fmt.Sprintf("%x", event.TxKey)
@@ -268,12 +296,14 @@ func (c *MempoolTxCache) StartEventConsumer(events <-chan cmtmempool.AppMempoolE
 				rpcTx := convert(event.Tx)
 				if rpcTx != nil {
 					c.HandleInserted(rpcTx, cosmosTxKey)
-					if pendingTxChan != nil {
+					c.subMu.RLock()
+					for _, ch := range c.subs {
 						select {
-						case pendingTxChan <- rpcTx:
+						case ch <- rpcTx:
 						default:
 						}
 					}
+					c.subMu.RUnlock()
 				}
 
 			case cmtmempool.EventTxQueued:
