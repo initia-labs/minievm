@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -52,7 +53,7 @@ type EVMIndexer interface {
 	TxHashByCosmosTxHash(ctx context.Context, hash []byte) (common.Hash, error)
 
 	// event subscription
-	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log)
+	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, func())
 
 	// mempool cache
 	MempoolCache() *MempoolTxCache
@@ -125,8 +126,8 @@ type EVMIndexerImpl struct {
 	BloomBits            collections.Map[collections.Pair[uint64, uint32], []byte]
 	BloomBitsNextSection collections.Sequence
 
-	blockChans []chan *coretypes.Header
-	logsChans  []chan []*coretypes.Log
+	subMu sync.RWMutex
+	subs  []blockLogsSub
 
 	mempoolCache *MempoolTxCache
 
@@ -197,8 +198,7 @@ func NewEVMIndexer(
 		BloomBits:                collections.NewMap(sb, prefixBloomBits, "bloom_bits", collections.PairKeyCodec(collections.Uint64Key, collections.Uint32Key), collections.BytesValue),
 		BloomBitsNextSection:     collections.NewSequence(sb, prefixBloomBitsNextSection, "bloom_bits_next_section"),
 
-		blockChans: nil,
-		logsChans:  nil,
+		subs: nil,
 
 		mempoolCache: NewMempoolTxCache(),
 
@@ -253,14 +253,39 @@ func (e *EVMIndexerImpl) MempoolCache() *MempoolTxCache {
 	return e.mempoolCache
 }
 
-// Subscribe returns channels to receive blocks and logs.
-func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.Log) {
-	blockChan := make(chan *coretypes.Header)
-	logsChan := make(chan []*coretypes.Log)
+// blockLogsSub is a subscriber entry for block and log events.
+type blockLogsSub struct {
+	blockChan chan *coretypes.Header
+	logsChan  chan []*coretypes.Log
+	done      chan struct{} // closed by cancel to signal emitter to skip this sub
+}
 
-	e.blockChans = append(e.blockChans, blockChan)
-	e.logsChans = append(e.logsChans, logsChan)
-	return blockChan, logsChan
+// Subscribe returns channels to receive blocks and logs, and a cancel func to unsubscribe.
+// The cancel func is idempotent and safe to call from any goroutine.
+func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, func()) {
+	sub := blockLogsSub{
+		blockChan: make(chan *coretypes.Header),
+		logsChan:  make(chan []*coretypes.Log),
+		done:      make(chan struct{}),
+	}
+
+	e.subMu.Lock()
+	e.subs = append(e.subs, sub)
+	e.subMu.Unlock()
+
+	var once sync.Once
+	cancel := func() {
+		once.Do(func() {
+			e.subMu.Lock()
+			e.subs = slices.DeleteFunc(e.subs, func(ss blockLogsSub) bool {
+				return ss.done == sub.done
+			})
+			e.subMu.Unlock()
+			close(sub.done)
+		})
+	}
+
+	return sub.blockChan, sub.logsChan, cancel
 }
 
 func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, error) {
@@ -307,16 +332,27 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan 
 		return
 	}
 
+	// snapshot subscriber list under RLock to avoid races with cancel()
+	e.subMu.RLock()
+	subs := append([]blockLogsSub(nil), e.subs...)
+	e.subMu.RUnlock()
+
 	// emit logs first; use unbuffered channel to ensure logs are emitted before block header
 	for _, logs := range blockEvents.logs {
-		for _, logsChan := range e.logsChans {
-			logsChan <- logs
+		for _, sub := range subs {
+			select {
+			case sub.logsChan <- logs:
+			case <-sub.done:
+			}
 		}
 	}
 
 	// emit block header
-	for _, blockChan := range e.blockChans {
-		blockChan <- blockEvents.header
+	for _, sub := range subs {
+		select {
+		case sub.blockChan <- blockEvents.header:
+		case <-sub.done:
+		}
 	}
 }
 

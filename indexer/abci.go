@@ -240,7 +240,10 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 			return
 		}
 
-		if len(e.logsChans) > 0 && len(receipt.Logs) > 0 {
+		e.subMu.RLock()
+		hasSubs := len(e.subs) > 0
+		e.subMu.RUnlock()
+		if hasSubs && len(receipt.Logs) > 0 {
 			for idx, log := range receipt.Logs {
 				// fill in missing fields before emitting
 				log.Index = uint(idx)
