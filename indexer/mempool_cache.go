@@ -2,7 +2,6 @@ package indexer
 
 import (
 	"fmt"
-	"slices"
 	"sync"
 	"sync/atomic"
 
@@ -268,7 +267,15 @@ func (c *MempoolTxCache) Subscribe() (<-chan *rpctypes.RPCTransaction, func()) {
 
 	cancel := func() {
 		c.subMu.Lock()
-		c.subs = slices.DeleteFunc(c.subs, func(s chan *rpctypes.RPCTransaction) bool { return s == ch })
+		for i, s := range c.subs {
+			if s != ch {
+				continue
+			}
+
+			c.subs = append(c.subs[:i], c.subs[i+1:]...)
+			close(ch)
+			break
+		}
 		c.subMu.Unlock()
 	}
 	return ch, cancel
