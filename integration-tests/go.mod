@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/ethereum/go-ethereum v1.16.0
 	github.com/initia-labs/OPinit v1.3.0-alpha.1
-	github.com/initia-labs/initia v1.4.0-beta.1
+	github.com/initia-labs/initia v1.4.0-beta.2
 	github.com/initia-labs/minievm v1.2.0
 	github.com/stretchr/testify v1.11.1
 )
@@ -147,7 +147,6 @@ require (
 	github.com/initia-labs/store v0.1.1 // indirect
 	github.com/initia-labs/store/memiavl v0.1.1 // indirect
 	github.com/initia-labs/store/versiondb v0.1.0 // indirect
-	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
