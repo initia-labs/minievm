@@ -194,6 +194,12 @@ func (c *MempoolTxCache) addToPendingLocked(from common.Address, nonce uint64, h
 		c.pending[from] = make(map[uint64]*rpctypes.RPCTransaction)
 	}
 
+	if old, ok := c.pending[from][nonce]; ok {
+		delete(c.byHash, old.Hash)
+		delete(c.pool, old.Hash)
+		c.pendingCount.Add(-1)
+	}
+
 	c.pending[from][nonce] = rpcTx
 	c.byHash[hash] = rpcTx
 	c.pool[hash] = true
@@ -204,6 +210,12 @@ func (c *MempoolTxCache) addToPendingLocked(from common.Address, nonce uint64, h
 func (c *MempoolTxCache) addToQueuedLocked(from common.Address, nonce uint64, hash common.Hash, rpcTx *rpctypes.RPCTransaction, cosmosTxKey string) {
 	if _, ok := c.queued[from]; !ok {
 		c.queued[from] = make(map[uint64]*rpctypes.RPCTransaction)
+	}
+
+	if old, ok := c.queued[from][nonce]; ok {
+		delete(c.byHash, old.Hash)
+		delete(c.pool, old.Hash)
+		c.queuedCount.Add(-1)
 	}
 
 	c.queued[from][nonce] = rpcTx
