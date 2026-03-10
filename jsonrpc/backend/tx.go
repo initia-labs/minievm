@@ -7,16 +7,20 @@ import (
 	"time"
 
 	"cosmossdk.io/collections"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	initiatx "github.com/initia-labs/initia/tx"
+
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, error) {
@@ -79,6 +83,18 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	cosmosTx, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertEthereumTxToCosmosTx(queryCtx, tx)
 	if err != nil {
 		return err
+	}
+
+	// add queued tx extension option so future-nonce txs are accepted by the mempool
+	txBuilder, err := b.app.TxConfig().WrapTxBuilder(cosmosTx)
+	if err != nil {
+		return err
+	}
+	if extBuilder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder); ok {
+		extBuilder.SetExtensionOptions(&codectypes.Any{
+			TypeUrl: initiatx.ExtensionOptionQueuedTxTypeURL,
+		})
+		cosmosTx = extBuilder.GetTx()
 	}
 
 	txBytes, err := b.app.TxEncode(cosmosTx)

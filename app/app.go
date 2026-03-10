@@ -55,6 +55,7 @@ import (
 	// initia imports
 	"github.com/initia-labs/initia/app/params"
 	cryptocodec "github.com/initia-labs/initia/crypto/codec"
+	initiatx "github.com/initia-labs/initia/tx"
 
 	// initia abcipp
 	"github.com/initia-labs/initia/abcipp"
@@ -150,6 +151,7 @@ func NewMinitiaApp(
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	cryptocodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	cryptocodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	initiatx.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	appCodec := encodingConfig.Codec
 	legacyAmino := encodingConfig.Amino
