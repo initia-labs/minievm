@@ -229,6 +229,47 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	done()
 }
 
+func Test_ListenFinalizeBlock_Subscribe_CancelBeforeDrain(t *testing.T) {
+	app, _, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
+	defer app.Close()
+
+	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+
+	blockChan, logsChan, cancel := indexer.Subscribe()
+
+	// Cancel before ExecuteTxs so the emitter must handle sub.done
+	cancel()
+
+	reqHeight := app.LastBlockHeight() + 1
+	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	require.Equal(t, reqHeight, finalizeReq.Height)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	// Wait for indexing to complete
+	indexer.Wait()
+
+	// Block should still be indexed in storage despite subscriber cancellation
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
+	require.NoError(t, err)
+
+	ih, err := indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
+	// Channels should never receive after cancel (no goroutine leak / panic)
+	select {
+	case <-blockChan:
+		t.Fatal("expected no block delivery after cancel")
+	case <-logsChan:
+		t.Fatal("expected no log delivery after cancel")
+	default:
+	}
+}
+
 func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
 	app, _, privKeys := tests.CreateApp(t)
 	indexer := app.EVMIndexer()

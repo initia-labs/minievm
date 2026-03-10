@@ -175,6 +175,13 @@ func (api *FilterAPI) eventLoop() {
 			for _, cancel := range api.cancelSubs {
 				cancel()
 			}
+			// close each active subscription's err channel so per-filter
+			// worker goroutines blocked on <-s.err wake up and exit cleanly.
+			for _, s := range api.subscriptions {
+				s.unsubOnce.Do(func() {
+					close(s.err)
+				})
+			}
 			return
 		}
 	}

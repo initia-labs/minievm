@@ -223,6 +223,15 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		txHash := ethTx.Hash()
 		receipt := receipts[idx]
 
+		// always backfill log metadata so stored receipts have correct fields
+		for logIdx, log := range receipt.Logs {
+			log.Index = uint(logIdx)
+			log.BlockHash = blockHash
+			log.BlockNumber = uint64(blockHeight)
+			log.TxHash = txHash
+			log.TxIndex = receipt.TransactionIndex
+		}
+
 		// store tx
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), ethTx.ChainId())
 		if err_ := e.TxMap.Set(ctx, txHash.Bytes(), *rpcTx); err_ != nil {
@@ -244,15 +253,6 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		hasSubs := len(e.subs) > 0
 		e.subMu.RUnlock()
 		if hasSubs && len(receipt.Logs) > 0 {
-			for idx, log := range receipt.Logs {
-				// fill in missing fields before emitting
-				log.Index = uint(idx)
-				log.BlockHash = blockHash
-				log.BlockNumber = uint64(blockHeight)
-				log.TxHash = txHash
-				log.TxIndex = receipt.TransactionIndex
-			}
-
 			blockLogs = append(blockLogs, receipt.Logs)
 		}
 	}
