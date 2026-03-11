@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -183,7 +184,8 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 	indexer := app.EVMIndexer()
 	defer app.Close()
 
-	blockChan, logsChan := indexer.Subscribe()
+	blockChan, logsChan, cancel := indexer.Subscribe()
+	defer cancel()
 
 	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
 
@@ -226,6 +228,51 @@ func Test_ListenFinalizeBlock_Subscribe(t *testing.T) {
 
 	wg.Wait()
 	done()
+}
+
+func Test_ListenFinalizeBlock_Subscribe_CancelBeforeDrain(t *testing.T) {
+	app, _, privKeys := tests.CreateApp(t)
+	indexer := app.EVMIndexer()
+	defer app.Close()
+
+	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+
+	blockChan, logsChan, cancel := indexer.Subscribe()
+
+	// Cancel before ExecuteTxs so the emitter must handle sub.done
+	cancel()
+
+	reqHeight := app.LastBlockHeight() + 1
+	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	require.Equal(t, reqHeight, finalizeReq.Height)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	// Wait for indexing to complete
+	indexer.Wait()
+
+	// Block should still be indexed in storage despite subscriber cancellation
+	ctx, closer, err := app.CreateQueryContext(0, false)
+	if closer != nil {
+		defer closer.Close()
+	}
+	require.NoError(t, err)
+
+	ih, err := indexer.GetLastIndexedHeight(ctx)
+	require.NoError(t, err)
+	require.Equal(t, finalizeReq.Height, int64(ih))
+
+	// Channels must not receive after cancel even after blockEventsEmitter
+	// (launched as a goroutine by doIndexing) has had time to run.
+	// A zero-time default could pass before a send arrives, so use a short
+	// bounded wait: any delivery within the window is a bug.
+	select {
+	case <-blockChan:
+		t.Fatal("expected no block delivery after cancel")
+	case <-logsChan:
+		t.Fatal("expected no log delivery after cancel")
+	case <-time.After(200 * time.Millisecond):
+		// no delivery — correct behaviour
+	}
 }
 
 func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
