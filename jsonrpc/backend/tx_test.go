@@ -99,6 +99,12 @@ func Test_SendRawTransaction(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 1 && int(status["queued"]) == 2
+	}, 2*time.Second, 10*time.Millisecond)
+
 	// 1 in pending, and 2 in queued
 	txPool, err := backend.TxPoolContent()
 	require.NoError(t, err)
@@ -124,6 +130,12 @@ func Test_SendRawTransaction(t *testing.T) {
 	// execute recheck txs
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 3 && int(status["queued"]) == 1
+	}, 2*time.Second, 10*time.Millisecond)
 
 	// 3 in pending and 1 in queued
 	txPool, err = backend.TxPoolContent()
@@ -152,6 +164,12 @@ func Test_SendRawTransaction(t *testing.T) {
 	// execute recheck txs
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 5 && int(status["queued"]) == 0
+	}, 2*time.Second, 10*time.Millisecond)
 
 	// 5 in pending and 0 in queued
 	txPool, err = backend.TxPoolContent()
@@ -551,6 +569,12 @@ func Test_PendingTransactions(t *testing.T) {
 	require.NoError(t, err)
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 3
+	}, 2*time.Second, 10*time.Millisecond)
 
 	pendingTxs, err := backend.PendingTransactions()
 	require.NoError(t, err)

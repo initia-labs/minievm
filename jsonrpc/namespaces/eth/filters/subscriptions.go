@@ -214,12 +214,20 @@ func (api *FilterAPI) uninstallSubscription(s *subscription) {
 			case <-s.txChan:
 			case <-s.hashChan:
 			case <-s.headerChan:
+			case <-api.ctx.Done():
+				// eventLoop is shutting down and will never read api.uninstall;
+				// close s.err directly so worker goroutines can exit.
+				close(s.err)
+				return
 			}
 		}
 
 		// wait for filter to be uninstalled in work loop before returning
 		// this ensures that the manager won't use the event channel which
 		// will probably be closed by the client asap after this method returns.
-		<-s.err
+		select {
+		case <-s.err:
+		case <-api.ctx.Done():
+		}
 	})
 }

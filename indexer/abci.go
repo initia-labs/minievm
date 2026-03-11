@@ -249,20 +249,19 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 			return
 		}
 
-		// remove tx from the pending and queued after indexing
-		e.pendingTxs.Delete(ethTx.Hash())
-		e.queuedTxs.Delete(ethTx.Hash())
+		// fill in log metadata fields that are derivable from context and not stored in the receipt
+		for logIdx, log := range receipt.Logs {
+			log.Index = txStartLogIndex + uint(logIdx)
+			log.BlockHash = blockHash
+			log.BlockNumber = uint64(blockHeight)
+			log.TxHash = txHash
+			log.TxIndex = receipt.TransactionIndex
+		}
 
-		if len(e.logsChans) > 0 && len(receipt.Logs) > 0 {
-			for logIdx, log := range receipt.Logs {
-				// fill in missing fields before emitting
-				log.Index = txStartLogIndex + uint(logIdx)
-				log.BlockHash = blockHash
-				log.BlockNumber = uint64(blockHeight)
-				log.TxHash = txHash
-				log.TxIndex = receipt.TransactionIndex
-			}
-
+		e.subMu.RLock()
+		hasSubs := len(e.subs) > 0
+		e.subMu.RUnlock()
+		if hasSubs && len(receipt.Logs) > 0 {
 			blockLogs = append(blockLogs, receipt.Logs)
 		}
 	}

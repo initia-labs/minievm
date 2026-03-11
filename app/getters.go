@@ -8,11 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
-
+	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
 	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
 	evmindexer "github.com/initia-labs/minievm/indexer"
@@ -37,6 +36,16 @@ func (app *MinitiaApp) GetEVMKeeper() *evmkeeper.Keeper {
 // GetUpgradeKeeper returns the upgrade keeper for the app.
 func (app *MinitiaApp) GetUpgradeKeeper() *upgradekeeper.Keeper {
 	return app.UpgradeKeeper
+}
+
+// GetOPChildKeeper returns the opchild keeper for the app.
+func (app *MinitiaApp) GetOPChildKeeper() *opchildkeeper.Keeper {
+	return app.OPChildKeeper
+}
+
+// SetStoreLoader sets the store loader for the app.
+func (app *MinitiaApp) SetStoreLoader(loader baseapp.StoreLoader) {
+	app.BaseApp.SetStoreLoader(loader)
 }
 
 // GetStakingKeeper returns the staking keeper for the app.

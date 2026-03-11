@@ -63,7 +63,8 @@ type FilterAPI struct {
 	// channels for block and log events
 	blockChan   chan *coretypes.Header
 	logsChan    chan []*coretypes.Log
-	pendingChan chan *rpctypes.RPCTransaction
+	pendingChan <-chan *rpctypes.RPCTransaction
+	cancelSubs  []func() // unregister functions called on shutdown
 }
 
 // NewFiltersAPI returns a new instance
@@ -86,7 +87,10 @@ func NewFilterAPI(ctx context.Context, app *app.MinitiaApp, backend *backend.JSO
 
 	go api.clearUnusedFilters()
 
-	api.blockChan, api.logsChan, api.pendingChan = app.EVMIndexer().Subscribe()
+	var cancelBlock, cancelPending func()
+	api.blockChan, api.logsChan, cancelBlock = app.EVMIndexer().Subscribe()
+	api.pendingChan, cancelPending = app.EVMIndexer().MempoolCache().Subscribe()
+	api.cancelSubs = []func(){cancelBlock, cancelPending}
 	go api.eventLoop()
 
 	return api
@@ -168,6 +172,16 @@ func (api *FilterAPI) eventLoop() {
 			delete(api.subscriptions, s.id)
 			close(s.err)
 		case <-api.ctx.Done():
+			for _, cancel := range api.cancelSubs {
+				cancel()
+			}
+			// close each active subscription's err channel so per-filter
+			// worker goroutines blocked on <-s.err wake up and exit cleanly.
+			for _, s := range api.subscriptions {
+				s.unsubOnce.Do(func() {
+					close(s.err)
+				})
+			}
 			return
 		}
 	}

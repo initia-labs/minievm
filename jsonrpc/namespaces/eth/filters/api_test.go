@@ -13,6 +13,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	cmtmempool "github.com/cometbft/cometbft/mempool"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -62,6 +64,14 @@ func setupFilterAPI(t *testing.T) testInput {
 
 	backend, err := backend.NewJSONRPCBackend(ctx, app, app.Logger(), svrCtx, clientCtx, cfg)
 	require.NoError(t, err)
+
+	// wire mempool events so the indexer cache is populated.
+	eventCh := make(chan cmtmempool.AppMempoolEvent, 8192)
+	app.ConnectMempoolEvents(eventCh)
+	go func() {
+		for range eventCh {
+		}
+	}()
 
 	filterAPI := filters.NewFilterAPI(ctx, app, backend, app.Logger())
 
@@ -512,4 +522,44 @@ func Test_GetFilterLogs(t *testing.T) {
 	require.Equal(t, txHash1, logs[2].TxHash)
 	require.Equal(t, txHash2, logs[3].TxHash)
 	require.Equal(t, txHash2, logs[4].TxHash)
+}
+
+// Test_UninstallFilter_ConcurrentShutdown is a regression test for the
+// deadlock that occurred when uninstallSubscription was blocked inside
+// unsubOnce.Do (waiting to send on api.uninstall) at the same time
+// eventLoop processed ctx.Done and tried to call s.unsubOnce.Do on the
+// same subscription. The fix makes uninstallSubscription ctx-aware so it
+// can exit without eventLoop reading api.uninstall.
+func Test_UninstallFilter_ConcurrentShutdown(t *testing.T) {
+	input := setupFilterAPI(t)
+	defer input.app.Close()
+
+	// Use a separate cancellable context so we can trigger shutdown
+	// independently of the outer app lifecycle.
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	filterAPI := filters.NewFilterAPI(ctx, input.app, input.backend, input.app.Logger())
+
+	filterID, err := filterAPI.NewBlockFilter()
+	require.NoError(t, err)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		filterAPI.UninstallFilter(filterID)
+	}()
+
+	// Cancel the context immediately to race with the UninstallFilter goroutine.
+	// Without the fix, both goroutines deadlock: uninstallSubscription holds
+	// unsubOnce.Do and blocks on api.uninstall, while eventLoop's shutdown
+	// path waits on the same unsubOnce.Do.
+	cancelCtx()
+
+	select {
+	case <-done:
+		// clean exit — no deadlock
+	case <-time.After(5 * time.Second):
+		t.Fatal("deadlock: concurrent UninstallFilter and context cancellation hung")
+	}
 }
