@@ -69,26 +69,13 @@ func Test_BloomStatus(t *testing.T) {
 		tests.IncreaseBlockHeight(t, app)
 	}
 
-	// wait for bloom indexing
-	for {
-		if indexer.IsBloomIndexingRunning() {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
-		}
-	}
-
 	// create a new block to trigger bloom indexing
 	tests.IncreaseBlockHeight(t, app)
 
-	// wait for bloom indexing
-	for {
-		if indexer.IsBloomIndexingRunning() {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
-		}
-	}
+	require.Eventually(t, func() bool {
+		_, section, err := backend.BloomStatus()
+		return err == nil && section >= 1 && !indexer.IsBloomIndexingRunning()
+	}, 10*time.Second, 100*time.Millisecond)
 
 	tx2, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[1])
 	_, finalizeRes2 := tests.ExecuteTxs(t, app, tx2)

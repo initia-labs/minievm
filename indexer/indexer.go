@@ -27,6 +27,7 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
+	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 )
 
@@ -410,9 +411,16 @@ func (e *EVMIndexerImpl) flushStore() error {
 	for {
 		select {
 		case <-ticker.C:
+			nextBloomSection, err := e.PeekBloomBitsNextSection(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to read next bloom section while flushing store: %w", err)
+			}
+
 			pruneIdle := !e.pruningRunning.Load() && e.pruneRequestedHeight.Load() <= e.lastPrunedHeight.Load()
-			// Bloom indexing may legitimately have a pending target that is not yet section-complete.
-			bloomIdle := !e.bloomIndexingRunning.Load()
+			// Bloom indexing is idle when it is not running and there is no processable section backlog.
+			// A requested height inside an incomplete section is not immediately processable.
+			bloomHasProcessableBacklog := e.bloomRequestedHeight.Load()/evmconfig.SectionSize > nextBloomSection
+			bloomIdle := !e.bloomIndexingRunning.Load() && !bloomHasProcessableBacklog
 			if pruneIdle && bloomIdle {
 				close(e.pruneStopCh)
 				close(e.bloomStopCh)

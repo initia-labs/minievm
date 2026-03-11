@@ -173,7 +173,11 @@ func (e *EVMIndexerImpl) pruneTxs(ctx context.Context, minHeight uint64) error {
 
 // pruneBloomBits removes old bloom bits from the indexer.
 func (e *EVMIndexerImpl) pruneBloomBits(ctx context.Context, minHeight uint64) error {
-	section := minHeight/evmconfig.SectionSize - 1
+	prunedSections := (minHeight + 1) / evmconfig.SectionSize
+	if prunedSections == 0 {
+		return nil
+	}
+	section := prunedSections - 1
 	return e.BloomBits.Clear(ctx, collections.NewPrefixUntilPairRange[uint64, uint32](section))
 }
 

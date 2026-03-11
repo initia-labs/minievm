@@ -43,29 +43,40 @@ func (e *EVMIndexerImpl) bloomLoop() {
 			return
 		case <-e.bloomNotifyCh:
 		}
+
+		e.bloomIndexingRunning.Store(true)
 		for {
 			targetHeight := e.bloomRequestedHeight.Load()
-			if targetHeight <= e.lastBloomIndexedHeight.Load() {
-				break
-			}
-
-			prevIndexedHeight := e.lastBloomIndexedHeight.Load()
-			e.bloomIndexingRunning.Store(true)
-			if err := e.bloomIndexing(ctx, targetHeight); err != nil {
-				e.logger.Error("failed to do bloom indexing", "height", targetHeight, "err", err)
-			}
-			e.bloomIndexingRunning.Store(false)
-
-			// If a newer target arrived while indexing, keep draining requests.
-			if e.bloomRequestedHeight.Load() <= targetHeight {
+			lastIndexedHeight := e.lastBloomIndexedHeight.Load()
+			if targetHeight <= lastIndexedHeight {
 				e.logger.Debug("bloom indexing finished", "height", targetHeight)
 				break
 			}
-			// No section was indexed; wait for a new block-triggered notification.
-			if e.lastBloomIndexedHeight.Load() <= prevIndexedHeight {
+
+			prevIndexedHeight := lastIndexedHeight
+			if err := e.bloomIndexing(ctx, targetHeight); err != nil {
+				e.logger.Error("failed to do bloom indexing", "height", targetHeight, "err", err)
 				break
 			}
+
+			currIndexedHeight := e.lastBloomIndexedHeight.Load()
+			// If a newer target arrived while indexing, continue with the latest target.
+			if e.bloomRequestedHeight.Load() > targetHeight {
+				continue
+			}
+			// No section was indexed; wait for a new block-triggered notification.
+			if currIndexedHeight <= prevIndexedHeight {
+				break
+			}
+			// Keep draining until we index up to the target height.
+			if currIndexedHeight < targetHeight {
+				continue
+			}
+
+			e.logger.Debug("bloom indexing finished", "height", targetHeight)
+			break
 		}
+		e.bloomIndexingRunning.Store(false)
 	}
 }
 
@@ -127,8 +138,8 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		return err
 	}
 
-	// update the last bloom indexed height
-	e.lastBloomIndexedHeight.Store(height)
+	// update the last bloom indexed height to the end of the indexed section
+	e.lastBloomIndexedHeight.Store((section + 1) * evmconfig.SectionSize)
 
 	return nil
 }
