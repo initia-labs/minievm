@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 
 	"cosmossdk.io/collections"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -116,7 +117,7 @@ func (e *EVMIndexerImpl) pruneTxs(ctx context.Context, minHeight uint64) error {
 		if err := e.TxReceiptMap.Remove(ctx, txHash.Bytes()); err != nil {
 			return err
 		}
-		if err := e.TxStartLogIndexMap.Remove(ctx, txHash.Bytes()); err != nil && err != collections.ErrNotFound {
+		if err := e.TxStartLogIndexMap.Remove(ctx, txHash.Bytes()); err != nil && !errors.Is(err, collections.ErrNotFound) {
 			return err
 		}
 		if cosmosTxHash, err := e.TxHashToCosmosTxHash.Get(ctx, txHash.Bytes()); err == nil {

@@ -1,6 +1,7 @@
 package backend_test
 
 import (
+	"context"
 	"math/big"
 	"sync"
 	"testing"
@@ -8,7 +9,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
+	evmindexer "github.com/initia-labs/minievm/indexer"
 	backendpkg "github.com/initia-labs/minievm/jsonrpc/backend"
 	"github.com/initia-labs/minievm/tests"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -628,4 +631,99 @@ func Test_BlockReceipts(t *testing.T) {
 	require.Equal(t, header.Number.Uint64(), uint64(receipt2["blockNumber"].(hexutil.Uint64)))
 	require.Equal(t, txHash2, receipt2["transactionHash"])
 	require.Equal(t, uint64(2), uint64(receipt2["transactionIndex"].(hexutil.Uint64)))
+}
+
+// Test_GetTransactionReceipt_LogIndex verifies that GetTransactionReceipt returns
+// the correct block-scoped log index for each log. When multiple transactions in
+// the same block each emit logs, the second tx's logs must start at the total
+// number of logs emitted by all preceding transactions.
+func Test_GetTransactionReceipt_LogIndex(t *testing.T) {
+	input := setupBackend(t)
+	app, _, backend, addrs, privKeys := input.app, input.addrs, input.backend, input.addrs, input.privKeys
+
+	// deploy ERC20
+	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	events := finalizeRes.TxResults[0].Events
+	createEvent := events[len(events)-3]
+	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
+	contractAddrBz, err := hexutil.Decode(createEvent.Attributes[0].Value)
+	require.NoError(t, err)
+	contract := common.BytesToAddress(contractAddrBz)
+
+	// Execute 2 mint txs in the same block; each mint emits 1 Transfer log.
+	tx1, txHash1 := tests.GenerateMintERC20Tx(t, app, privKeys[0], contract, addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+	tx2, txHash2 := tests.GenerateMintERC20Tx(t, app, privKeys[0], contract, addrs[0], new(big.Int).SetUint64(1_000_000_000_000), tests.SetNonce(2))
+	_, finalizeRes = tests.ExecuteTxs(t, app, tx1, tx2)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
+
+	// tx1 is first in the block — its logs start at block-scoped index 0.
+	receipt1, err := backend.GetTransactionReceipt(txHash1)
+	require.NoError(t, err)
+	require.NotNil(t, receipt1)
+	logs1 := receipt1["logs"].([]*coretypes.Log)
+	require.NotEmpty(t, logs1, "mint tx must emit at least one log")
+	require.Equal(t, uint(0), logs1[0].Index, "first tx first log must have block-scoped index 0")
+
+	// tx2 follows tx1 which emitted len(logs1) logs — its logs must begin at len(logs1).
+	receipt2, err := backend.GetTransactionReceipt(txHash2)
+	require.NoError(t, err)
+	require.NotNil(t, receipt2)
+	logs2 := receipt2["logs"].([]*coretypes.Log)
+	require.NotEmpty(t, logs2, "second mint tx must emit at least one log")
+	require.Equal(t, uint(len(logs1)), logs2[0].Index, "second tx first log must have block-scoped index equal to logs emitted by first tx")
+}
+
+// Test_GetTransactionReceipt_LogIndex_Lazy verifies that the lazy computation
+// path of getTxStartLogIndex (triggered when the stored index is absent) returns
+// the same correct block-scoped log indices. The fix ensures the implementation
+// uses blockTxs[i].Hash rather than receipt.TxHash, which is not persisted in
+// the indexer and would otherwise always be a zero hash.
+func Test_GetTransactionReceipt_LogIndex_Lazy(t *testing.T) {
+	input := setupBackend(t)
+	app, _, backend, addrs, privKeys := input.app, input.addrs, input.backend, input.addrs, input.privKeys
+
+	// deploy ERC20
+	tx, _ := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
+	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+
+	events := finalizeRes.TxResults[0].Events
+	createEvent := events[len(events)-3]
+	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
+	contractAddrBz, err := hexutil.Decode(createEvent.Attributes[0].Value)
+	require.NoError(t, err)
+	contract := common.BytesToAddress(contractAddrBz)
+
+	// Execute 2 mint txs in the same block; each mint emits 1 Transfer log.
+	tx1, txHash1 := tests.GenerateMintERC20Tx(t, app, privKeys[0], contract, addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
+	tx2, txHash2 := tests.GenerateMintERC20Tx(t, app, privKeys[0], contract, addrs[0], new(big.Int).SetUint64(1_000_000_000_000), tests.SetNonce(2))
+	_, finalizeRes = tests.ExecuteTxs(t, app, tx1, tx2)
+	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
+	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
+
+	// Remove the pre-stored start log indices to force the lazy computation path.
+	indexerImpl := input.indexer.(*evmindexer.EVMIndexerImpl)
+	ctx := context.Background()
+	require.NoError(t, indexerImpl.TxStartLogIndexMap.Remove(ctx, txHash1.Bytes()))
+	require.NoError(t, indexerImpl.TxStartLogIndexMap.Remove(ctx, txHash2.Bytes()))
+
+	// tx1 — its logs start at block-scoped index 0.
+	receipt1, err := backend.GetTransactionReceipt(txHash1)
+	require.NoError(t, err)
+	require.NotNil(t, receipt1)
+	logs1 := receipt1["logs"].([]*coretypes.Log)
+	require.NotEmpty(t, logs1)
+	require.Equal(t, uint(0), logs1[0].Index, "lazy: first tx first log must have block-scoped index 0")
+
+	// tx2 — its logs must start after tx1's logs.
+	receipt2, err := backend.GetTransactionReceipt(txHash2)
+	require.NoError(t, err)
+	require.NotNil(t, receipt2)
+	logs2 := receipt2["logs"].([]*coretypes.Log)
+	require.NotEmpty(t, logs2)
+	require.Equal(t, uint(len(logs1)), logs2[0].Index, "lazy: second tx first log must have block-scoped index equal to logs emitted by first tx")
 }

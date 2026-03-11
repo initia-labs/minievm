@@ -392,16 +392,32 @@ func (b *JSONRPCBackend) getTxStartLogIndex(hash common.Hash, rpcTx *rpctypes.RP
 	if err != nil {
 		return 0, err
 	}
+	// Receipts stored in the indexer do not carry TxHash — the field is not
+	// populated when the receipt is written during block indexing. Fetch the
+	// ordered block transaction list so we can pair each receipt with its tx
+	// hash by position.
+	blockTxs, err := b.getBlockTransactions(blockNumber)
+	if err != nil {
+		return 0, err
+	}
+	if len(blockTxs) != len(blockReceipts) {
+		// something is wrong, clear the cache
+		b.blockTxsCache.Remove(blockNumber)
+		b.blockReceiptsCache.Remove(blockNumber)
+		b.logger.Error("mismatched number of transactions and receipts", "height", blockNumber)
+
+		return 0, NewInternalError("mismatched number of transactions and receipts")
+	}
 
 	blockLogIndex := uint(0)
 	result := uint(0)
 	found := false
-	for _, receipt := range blockReceipts {
-		if err := b.app.EVMIndexer().StoreTxStartLogIndex(b.ctx, receipt.TxHash, uint64(blockLogIndex)); err != nil {
+	for i, receipt := range blockReceipts {
+		if err := b.app.EVMIndexer().StoreTxStartLogIndex(b.ctx, blockTxs[i].Hash, uint64(blockLogIndex)); err != nil {
 			// non-fatal: log and continue; next query will recompute
-			b.logger.Error("failed to lazily store tx start log index", "hash", receipt.TxHash, "err", err)
+			b.logger.Error("failed to lazily store tx start log index", "hash", blockTxs[i].Hash, "err", err)
 		}
-		if receipt.TxHash == hash {
+		if blockTxs[i].Hash == hash {
 			result = blockLogIndex
 			found = true
 		}
