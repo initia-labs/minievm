@@ -80,12 +80,16 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 			return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidPubKey, "pubkey on account is not set")
 		}
 
-		// Check account sequence number if it is not a simulated tx
-		if !simulate && sig.Sequence != acc.GetSequence() {
-			return ctx, errorsmod.Wrapf(
-				sdkerrors.ErrWrongSequence,
-				"account sequence mismatch, expected %d, got %d", acc.GetSequence(), sig.Sequence,
-			)
+		// Check account sequence number.
+		// Skip during CheckTx/ReCheckTx so that future-nonce txs can reach the queued pool.
+		// Full check still runs during PrepareProposal/ProcessProposal/FinalizeBlock.
+		if !simulate && !ctx.IsCheckTx() && !ctx.IsReCheckTx() {
+			if sig.Sequence != acc.GetSequence() {
+				return ctx, errorsmod.Wrapf(
+					sdkerrors.ErrWrongSequence,
+					"account sequence mismatch, expected %d, got %d", acc.GetSequence(), sig.Sequence,
+				)
+			}
 		}
 
 		// retrieve signer data

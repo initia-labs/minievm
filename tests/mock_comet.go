@@ -10,8 +10,6 @@ import (
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 
-	"github.com/skip-mev/block-sdk/v2/block"
-
 	minitiaapp "github.com/initia-labs/minievm/app"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -27,8 +25,6 @@ type MockCometRPC struct {
 	NPeers        int
 	Listening     bool
 	ClientVersion string
-
-	txs [][]byte
 }
 
 func NewMockCometRPC(app *minitiaapp.MinitiaApp) *MockCometRPC {
@@ -66,11 +62,6 @@ func (m *MockCometRPC) BroadcastTxSync(ctx context.Context, tx types.Tx) (*ctype
 		return nil, err
 	}
 
-	// save tx to be rechecked
-	if res.Code == abci.CodeTypeOK && res.Codespace == "txqueue" {
-		m.txs = append(m.txs, tx)
-	}
-
 	return &ctypes.ResultBroadcastTx{
 		Code:      res.Code,
 		Log:       res.Log,
@@ -80,37 +71,19 @@ func (m *MockCometRPC) BroadcastTxSync(ctx context.Context, tx types.Tx) (*ctype
 	}, nil
 }
 func (m *MockCometRPC) RecheckTx() error {
-	remainTxs := make([][]byte, 0)
-	for _, tx := range m.txs {
-		if res, err := m.app.CheckTx(&abci.RequestCheckTx{
-			Tx:   tx,
-			Type: abci.CheckTxType_Recheck,
-		}); err != nil {
-			return err
-		} else if res.Code == 0 && res.Codespace == "txqueue" {
-			remainTxs = append(remainTxs, tx)
-		}
-	}
-
-	m.txs = remainTxs
-
 	return nil
 }
 func (m *MockCometRPC) UnconfirmedTxs(ctx context.Context, limit *int) (*ctypes.ResultUnconfirmedTxs, error) {
 	mempool := m.app.Mempool()
-	laneMempool := mempool.(*block.LanedMempool)
-	lanes := laneMempool.Registry()
 	txs := make([]types.Tx, 0)
-	for _, lane := range lanes {
-		iter := lane.Select(ctx, nil)
-		for ; iter != nil; iter = iter.Next() {
-			tx, err := m.app.TxEncode(iter.Tx())
-			if err != nil {
-				return nil, err
-			}
-
-			txs = append(txs, tx)
+	iter := mempool.Select(ctx, nil)
+	for ; iter != nil; iter = iter.Next() {
+		tx, err := m.app.TxEncode(iter.Tx())
+		if err != nil {
+			return nil, err
 		}
+
+		txs = append(txs, tx)
 	}
 
 	return &ctypes.ResultUnconfirmedTxs{

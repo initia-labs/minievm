@@ -10,32 +10,10 @@ import (
 )
 
 func (b *JSONRPCBackend) TxPoolContent() (map[string]map[string]map[string]*rpctypes.RPCTransaction, error) {
+	cache := b.app.EVMIndexer().MempoolCache()
 	content := map[string]map[string]map[string]*rpctypes.RPCTransaction{
-		"pending": make(map[string]map[string]*rpctypes.RPCTransaction),
-		"queued":  make(map[string]map[string]*rpctypes.RPCTransaction),
-	}
-
-	pendingTxs := b.app.EVMIndexer().PendingTxs()
-	for _, tx := range pendingTxs {
-		dump, ok := content["pending"][tx.From.Hex()]
-		if !ok {
-			dump = make(map[string]*rpctypes.RPCTransaction)
-			content["pending"][tx.From.Hex()] = dump
-		}
-
-		dump[fmt.Sprintf("%d", tx.Nonce)] = tx
-	}
-
-	// load queued txs
-	queuedTxs := b.app.EVMIndexer().QueuedTxs()
-	for _, tx := range queuedTxs {
-		dump, ok := content["queued"][tx.From.Hex()]
-		if !ok {
-			dump = make(map[string]*rpctypes.RPCTransaction)
-			content["queued"][tx.From.Hex()] = dump
-		}
-
-		dump[fmt.Sprintf("%d", tx.Nonce)] = tx
+		"pending": cache.PendingContent(),
+		"queued":  cache.QueuedContent(),
 	}
 
 	return content, nil
@@ -54,18 +32,16 @@ func (b *JSONRPCBackend) TxPoolContentFrom(addr common.Address) (map[string]map[
 	return accountContent, nil
 }
 
-// Status returns the number of pending and queued transaction in the pool.
+// TxPoolStatus returns the number of pending and queued transactions in the pool.
 func (b *JSONRPCBackend) TxPoolStatus() (map[string]hexutil.Uint, error) {
-	numPendingTxs := b.app.EVMIndexer().NumPendingTxs()
-	numQueuedTxs := b.app.EVMIndexer().NumQueuedTxs()
-
+	cache := b.app.EVMIndexer().MempoolCache()
 	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(numPendingTxs),
-		"queued":  hexutil.Uint(numQueuedTxs),
+		"pending": hexutil.Uint(cache.PendingCount()),
+		"queued":  hexutil.Uint(cache.QueuedCount()),
 	}, nil
 }
 
-// Inspect retrieves the content of the transaction pool and flattens it into an
+// TxPoolInspect retrieves the content of the transaction pool and flattens it into an
 // easily inspectable list.
 func (b *JSONRPCBackend) TxPoolInspect() (map[string]map[string]map[string]string, error) {
 	inspectContent := map[string]map[string]map[string]string{

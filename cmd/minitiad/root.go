@@ -45,10 +45,13 @@ import (
 
 	"github.com/initia-labs/initia/app/params"
 	cryptokeyring "github.com/initia-labs/initia/crypto/keyring"
+	initiatx "github.com/initia-labs/initia/tx"
 
 	opchildcli "github.com/initia-labs/OPinit/x/opchild/client/cli"
 
 	cmtcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
+	cmtmempool "github.com/cometbft/cometbft/mempool"
+	"github.com/cometbft/cometbft/rpc/client/local"
 
 	initiastoreclient "github.com/initia-labs/store/client"
 	initiastoreconfig "github.com/initia-labs/store/config"
@@ -136,6 +139,16 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			initClientCtx, err = client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
 			if err != nil {
 				return err
+			}
+
+			// For tx commands, pass --allow-queued into the app tx config so the
+			// extension option is injected by NewTxBuilder before signing.
+			if flag := cmd.Flags().Lookup(initiatx.FlagAllowQueued); flag != nil {
+				allowQueued, err := cmd.Flags().GetBool(initiatx.FlagAllowQueued)
+				if err != nil {
+					return err
+				}
+				initClientCtx = initClientCtx.WithTxConfig(params.WithAllowQueuedTxConfig(initClientCtx.TxConfig, allowQueued))
 			}
 
 			// unsafe-reset-all is not working without viper set
@@ -236,6 +249,15 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, b
 				return err
 			}
 
+			// connect mempool events
+			if lc, ok := clientCtx.Client.(*local.Local); ok {
+				if ep, ok := lc.Mempool().(cmtmempool.EventProvider); ok {
+					if app, ok := a.App().(*minitiaapp.MinitiaApp); ok {
+						app.ConnectMempoolEvents(ep.AppEventCh())
+					}
+				}
+			}
+
 			return nil
 		},
 		DBOpener: initiastoreopendb.OpenDB,
@@ -321,6 +343,10 @@ func txCommand() *cobra.Command {
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
+
+	// Global tx flag: when enabled, the CLI injects the queued-tx extension option
+	// so future-nonce transactions can be accepted into the app-side queued mempool.
+	cmd.PersistentFlags().Bool(initiatx.FlagAllowQueued, false, "attach queued-tx extension option to allow future nonce tx queuing")
 
 	cmd.AddCommand(
 		authcmd.GetSignCommand(),

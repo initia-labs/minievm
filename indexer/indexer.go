@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/jellydator/ttlcache/v3"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -54,22 +53,13 @@ type EVMIndexer interface {
 	TxHashByCosmosTxHash(ctx context.Context, hash []byte) (common.Hash, error)
 
 	// event subscription
-	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction)
+	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, func())
+
+	// mempool cache
+	MempoolCache() *MempoolTxCache
 
 	// last indexed height
 	GetLastIndexedHeight(ctx context.Context) (uint64, error)
-
-	// mempool
-	TxInPending(hash common.Hash) *rpctypes.RPCTransaction
-	TxInQueued(hash common.Hash) *rpctypes.RPCTransaction
-	PushPendingTx(tx *coretypes.Transaction)
-	PushQueuedTx(tx *coretypes.Transaction)
-	PendingTxs() []*rpctypes.RPCTransaction
-	QueuedTxs() []*rpctypes.RPCTransaction
-	NumPendingTxs() int
-	NumQueuedTxs() int
-	RemovePendingTx(hash common.Hash)
-	RemoveQueuedTx(hash common.Hash)
 
 	// bloom
 	ReadBloomBits(ctx context.Context, section uint64, index uint32) ([]byte, error)
@@ -136,15 +126,10 @@ type EVMIndexerImpl struct {
 	BloomBits            collections.Map[collections.Pair[uint64, uint32], []byte]
 	BloomBitsNextSection collections.Sequence
 
-	blockChans   []chan *coretypes.Header
-	logsChans    []chan []*coretypes.Log
-	pendingChans []chan *rpctypes.RPCTransaction
+	subMu sync.RWMutex
+	subs  []blockLogsSub
 
-	// pendingTxs is a map to store tx hashes in pending state.
-	pendingTxs *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
-
-	// queuedTxs is a map to store tx hashes in queued state.
-	queuedTxs *ttlcache.Cache[common.Hash, *rpctypes.RPCTransaction]
+	mempoolCache *MempoolTxCache
 
 	// indexingChan is a channel to receive indexing tasks.
 	indexingChan chan *indexingTask
@@ -213,19 +198,9 @@ func NewEVMIndexer(
 		BloomBits:                collections.NewMap(sb, prefixBloomBits, "bloom_bits", collections.PairKeyCodec(collections.Uint64Key, collections.Uint32Key), collections.BytesValue),
 		BloomBitsNextSection:     collections.NewSequence(sb, prefixBloomBitsNextSection, "bloom_bits_next_section"),
 
-		blockChans:   nil,
-		logsChans:    nil,
-		pendingChans: nil,
+		subs: nil,
 
-		// Use ttlcache to cope with abnormal cases like tx not included in a block
-		pendingTxs: ttlcache.New(
-			// pending tx lifetime is 1 minutes in indexer
-			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
-		),
-		queuedTxs: ttlcache.New(
-			// queued tx lifetime is 1 minutes in indexer
-			ttlcache.WithTTL[common.Hash, *rpctypes.RPCTransaction](time.Minute),
-		),
+		mempoolCache: NewMempoolTxCache(),
 
 		// use buffered channel to avoid blocking the main thread
 		indexingChan: make(chan *indexingTask, 10),
@@ -239,10 +214,6 @@ func NewEVMIndexer(
 		return nil, err
 	}
 	indexer.schema = schema
-
-	// expire pending tx
-	go indexer.pendingTxs.Start()
-	go indexer.queuedTxs.Start()
 
 	return indexer, nil
 }
@@ -277,16 +248,44 @@ func (e *EVMIndexerImpl) Initialize(clientCtx client.Context, contextCreator con
 	return nil
 }
 
-// Subscribe returns channels to receive blocks and logs.
-func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, chan *rpctypes.RPCTransaction) {
-	blockChan := make(chan *coretypes.Header)
-	logsChan := make(chan []*coretypes.Log)
-	pendingChan := make(chan *rpctypes.RPCTransaction)
+// MempoolCache returns the in-memory mempool transaction cache.
+func (e *EVMIndexerImpl) MempoolCache() *MempoolTxCache {
+	return e.mempoolCache
+}
 
-	e.blockChans = append(e.blockChans, blockChan)
-	e.logsChans = append(e.logsChans, logsChan)
-	e.pendingChans = append(e.pendingChans, pendingChan)
-	return blockChan, logsChan, pendingChan
+// blockLogsSub is a subscriber entry for block and log events.
+type blockLogsSub struct {
+	blockChan chan *coretypes.Header
+	logsChan  chan []*coretypes.Log
+	done      chan struct{} // closed by cancel to signal emitter to skip this sub
+}
+
+// Subscribe returns channels to receive blocks and logs, and a cancel func to unsubscribe.
+// The cancel func is idempotent and safe to call from any goroutine.
+func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, func()) {
+	sub := blockLogsSub{
+		blockChan: make(chan *coretypes.Header),
+		logsChan:  make(chan []*coretypes.Log),
+		done:      make(chan struct{}),
+	}
+
+	e.subMu.Lock()
+	e.subs = append(e.subs, sub)
+	e.subMu.Unlock()
+
+	var once sync.Once
+	cancel := func() {
+		once.Do(func() {
+			e.subMu.Lock()
+			e.subs = slices.DeleteFunc(e.subs, func(ss blockLogsSub) bool {
+				return ss.done == sub.done
+			})
+			e.subMu.Unlock()
+			close(sub.done)
+		})
+	}
+
+	return sub.blockChan, sub.logsChan, cancel
 }
 
 func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, error) {
@@ -333,16 +332,27 @@ func (e *EVMIndexerImpl) blockEventsEmitter(blockEvents *blockEvents, done chan 
 		return
 	}
 
+	// snapshot subscriber list under RLock to avoid races with cancel()
+	e.subMu.RLock()
+	subs := append([]blockLogsSub(nil), e.subs...)
+	e.subMu.RUnlock()
+
 	// emit logs first; use unbuffered channel to ensure logs are emitted before block header
 	for _, logs := range blockEvents.logs {
-		for _, logsChan := range e.logsChans {
-			logsChan <- logs
+		for _, sub := range subs {
+			select {
+			case sub.logsChan <- logs:
+			case <-sub.done:
+			}
 		}
 	}
 
 	// emit block header
-	for _, blockChan := range e.blockChans {
-		blockChan <- blockEvents.header
+	for _, sub := range subs {
+		select {
+		case sub.blockChan <- blockEvents.header:
+		case <-sub.done:
+		}
 	}
 }
 
@@ -353,13 +363,6 @@ func (e *EVMIndexerImpl) Close() error {
 	}
 
 	e.logger.Info("EVM indexer closing...")
-
-	if e.pendingTxs != nil {
-		e.pendingTxs.Stop()
-	}
-	if e.queuedTxs != nil {
-		e.queuedTxs.Stop()
-	}
 
 	// flush store before stopping
 	return e.flushStore()

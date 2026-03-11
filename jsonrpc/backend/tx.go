@@ -7,18 +7,20 @@ import (
 	"time"
 
 	"cosmossdk.io/collections"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	initiatx "github.com/initia-labs/initia/tx"
+
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
-
-	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func (b *JSONRPCBackend) SendRawTransaction(input hexutil.Bytes) (common.Hash, error) {
@@ -81,6 +83,18 @@ func (b *JSONRPCBackend) SendTx(tx *coretypes.Transaction) error {
 	cosmosTx, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertEthereumTxToCosmosTx(queryCtx, tx)
 	if err != nil {
 		return err
+	}
+
+	// add queued tx extension option so future-nonce txs are accepted by the mempool
+	txBuilder, err := b.app.TxConfig().WrapTxBuilder(cosmosTx)
+	if err != nil {
+		return err
+	}
+	if extBuilder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder); ok {
+		extBuilder.SetExtensionOptions(&codectypes.Any{
+			TypeUrl: initiatx.ExtensionOptionQueuedTxTypeURL,
+		})
+		cosmosTx = extBuilder.GetTx()
 	}
 
 	txBytes, err := b.app.TxEncode(cosmosTx)
@@ -288,45 +302,7 @@ func (b *JSONRPCBackend) GetRawTransactionByBlockHashAndIndex(blockHash common.H
 }
 
 func (b *JSONRPCBackend) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
-	queryCtx, closer, err := b.getQueryCtx()
-	if closer != nil {
-		defer closer.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	mc, ok := b.clientCtx.Client.(cmtrpcclient.MempoolClient)
-	if !ok {
-		return nil, errors.New("mempool client not available")
-	}
-
-	res, err := mc.UnconfirmedTxs(b.ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*rpctypes.RPCTransaction, 0, len(res.Txs))
-	for _, txBz := range res.Txs {
-		tx, err := b.clientCtx.TxConfig.TxDecoder()(txBz)
-		if err != nil {
-			return nil, err
-		}
-
-		sdkCtx := sdk.UnwrapSDKContext(queryCtx)
-		ethTx, _, err := keeper.NewTxUtils(b.app.EVMKeeper).ConvertCosmosTxToEthereumTx(sdkCtx, tx)
-		if err != nil {
-			return nil, err
-		}
-		if ethTx != nil {
-			result = append(
-				result,
-				rpctypes.NewRPCTransaction(ethTx, common.Hash{}, 0, 0, ethTx.ChainId()),
-			)
-		}
-	}
-
-	return result, nil
+	return b.app.EVMIndexer().MempoolCache().AllPending(), nil
 }
 
 func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]map[string]any, error) {
@@ -374,14 +350,9 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 		return tx, nil
 	}
 
-	// check if the transaction is in the queued txs
-	if tx := b.app.EVMIndexer().TxInQueued(hash); tx != nil {
-		return tx, nil
-	}
-
-	// check if the transaction is in the pending txs
-	if tx := b.app.EVMIndexer().TxInPending(hash); tx != nil {
-		return tx, nil
+	// check the mempool (pending + queued) for the transaction
+	if rpcTx := b.findTxInMempool(hash); rpcTx != nil {
+		return rpcTx, nil
 	}
 
 	tx, err := b.app.EVMIndexer().TxByHash(b.ctx, hash)
@@ -394,6 +365,11 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 
 	_ = b.txLookupCache.Add(hash, tx)
 	return tx, nil
+}
+
+// findTxInMempool searches the mempool cache for a transaction by its hash.
+func (b *JSONRPCBackend) findTxInMempool(hash common.Hash) *rpctypes.RPCTransaction {
+	return b.app.EVMIndexer().MempoolCache().FindByHash(hash)
 }
 
 func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error) {

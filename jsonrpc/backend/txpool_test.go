@@ -3,6 +3,7 @@ package backend_test
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -73,6 +74,12 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	_, err = backend.SendRawTransaction(txBz)
 	require.NoError(t, err)
 
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 1 && int(status["queued"]) == 2
+	}, 2*time.Second, 10*time.Millisecond)
+
 	// 2 in queued and 0 in pending
 	txPool, err := backend.TxPoolContentFrom(addrs[0])
 	require.NoError(t, err)
@@ -104,6 +111,12 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 3 && int(status["queued"]) == 1
+	}, 2*time.Second, 10*time.Millisecond)
 
 	// 2 in pending and 1 in queued
 	txPool, err = backend.TxPoolContentFrom(addrs[0])
@@ -137,6 +150,12 @@ func Test_TxPoolContextFrom(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 5 && int(status["queued"]) == 0
+	}, 2*time.Second, 10*time.Millisecond)
 
 	// 4 in pending and 0 in queued
 	txPool, err = backend.TxPoolContentFrom(addrs[0])
@@ -229,6 +248,12 @@ func Test_TxPoolStatus(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 1 && int(status["queued"]) == 2
+	}, 2*time.Second, 10*time.Millisecond)
+
 	// 2 in queued and 0 in pending
 	status, err := backend.TxPoolStatus()
 	require.NoError(t, err)
@@ -252,6 +277,12 @@ func Test_TxPoolStatus(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		s, _ := backend.TxPoolStatus()
+		return int(s["pending"]) == 3 && int(s["queued"]) == 1
+	}, 2*time.Second, 10*time.Millisecond)
+
 	// 3 in pending and 1 in queued
 	status, err = backend.TxPoolStatus()
 	require.NoError(t, err)
@@ -274,6 +305,12 @@ func Test_TxPoolStatus(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		s, _ := backend.TxPoolStatus()
+		return int(s["pending"]) == 5 && int(s["queued"]) == 0
+	}, 2*time.Second, 10*time.Millisecond)
 
 	// 5 in pending and 0 in queued
 	status, err = backend.TxPoolStatus()
@@ -355,6 +392,12 @@ func Test_TxPoolInspect(t *testing.T) {
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
 
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 1 && int(status["queued"]) == 2
+	}, 2*time.Second, 10*time.Millisecond)
+
 	// 1 in pending, and 2 in queued
 	txPool, err := backend.TxPoolInspect()
 	require.NoError(t, err)
@@ -377,6 +420,12 @@ func Test_TxPoolInspect(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 3 && int(status["queued"]) == 1
+	}, 2*time.Second, 10*time.Millisecond)
 
 	// 3 in pending and 1 in queued
 	txPool, err = backend.TxPoolInspect()
@@ -401,6 +450,12 @@ func Test_TxPoolInspect(t *testing.T) {
 	// execute recheck
 	err = input.cometRPC.RecheckTx()
 	require.NoError(t, err)
+
+	// wait for async cache update
+	require.Eventually(t, func() bool {
+		status, _ := backend.TxPoolStatus()
+		return int(status["pending"]) == 5 && int(status["queued"]) == 0
+	}, 2*time.Second, 10*time.Millisecond)
 
 	// 5 in pending and 0 in queued
 	txPool, err = backend.TxPoolInspect()
