@@ -13,6 +13,7 @@ var (
 	prefixTx                    = collections.Prefix([]byte{0, 0, 2, 1})
 	prefixTxReceipt             = collections.Prefix([]byte{0, 0, 2, 2})
 	prefixBlockAndIndexToTxHash = collections.Prefix([]byte{0, 0, 2, 3})
+	prefixTxStartLogIndex       = collections.Prefix([]byte{0, 0, 2, 4})
 
 	// cosmos indexes
 	prefixTxHashToCosmosTxHash = collections.Prefix([]byte{0, 0, 3, 1})

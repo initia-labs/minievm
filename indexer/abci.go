@@ -219,17 +219,17 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 
 	blockHash := blockHeader.Hash()
 	blockLogs := make([][]*coretypes.Log, 0, len(ethTxs))
+	blockLogIndex := uint(0)
 	for idx, ethTx := range ethTxs {
 		txHash := ethTx.Hash()
 		receipt := receipts[idx]
+		txStartLogIndex := blockLogIndex
+		blockLogIndex += uint(len(receipt.Logs))
 
-		// always backfill log metadata so stored receipts have correct fields
-		for logIdx, log := range receipt.Logs {
-			log.Index = uint(logIdx)
-			log.BlockHash = blockHash
-			log.BlockNumber = uint64(blockHeight)
-			log.TxHash = txHash
-			log.TxIndex = receipt.TransactionIndex
+		// store the block-scoped starting log index for this tx
+		if err_ := e.TxStartLogIndexMap.Set(ctx, txHash.Bytes(), uint64(txStartLogIndex)); err_ != nil {
+			err = fmt.Errorf("failed to store tx start log index: %w", err_)
+			return
 		}
 
 		// store tx
@@ -247,6 +247,15 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		if err_ := e.BlockAndIndexToTxHashMap.Set(ctx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err_ != nil {
 			err = fmt.Errorf("failed to store blockAndIndexToTxHash: %w", err_)
 			return
+		}
+
+		// fill in log metadata fields that are derivable from context and not stored in the receipt
+		for logIdx, log := range receipt.Logs {
+			log.Index = txStartLogIndex + uint(logIdx)
+			log.BlockHash = blockHash
+			log.BlockNumber = uint64(blockHeight)
+			log.TxHash = txHash
+			log.TxIndex = receipt.TransactionIndex
 		}
 
 		e.subMu.RLock()
