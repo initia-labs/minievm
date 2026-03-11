@@ -26,7 +26,7 @@ func Test_PruneIndexer(t *testing.T) {
 	indexer.SetRetainHeight(1)
 
 	tx, evmTxHash := tests.GenerateCreateERC20Tx(t, app, privKeys[0])
-	_, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	events := finalizeRes.TxResults[0].Events
@@ -48,31 +48,18 @@ func Test_PruneIndexer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
-	// wait for pruning
-	for {
-		time.Sleep(100 * time.Millisecond)
-		if indexer.IsPruningRunning() {
-			continue
-		} else {
-			break
-		}
-	}
+	require.Eventually(t, func() bool {
+		return indexer.GetLastPrunedHeight() >= uint64(finalizeReq.Height)
+	}, 10*time.Second, 50*time.Millisecond)
 
 	// mint 1_000_000 tokens to the first address
 	tx, evmTxHash2 := tests.GenerateMintERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[0], new(big.Int).SetUint64(1_000_000_000_000))
-	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
+	finalizeReq, finalizeRes = tests.ExecuteTxs(t, app, tx)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
-	// wait for pruning
-	for {
-		time.Sleep(100 * time.Millisecond)
-
-		if indexer.IsPruningRunning() {
-			continue
-		} else {
-			break
-		}
-	}
+	require.Eventually(t, func() bool {
+		return indexer.GetLastPrunedHeight() >= uint64(finalizeReq.Height)
+	}, 10*time.Second, 50*time.Millisecond)
 
 	// listen finalize block
 	ctx, closer, err = app.CreateQueryContext(0, false)
@@ -138,59 +125,57 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 		tests.IncreaseBlockHeight(t, app)
 	}
 
-	// wait for bloom indexing
-	for {
-		time.Sleep(100 * time.Millisecond)
+	require.Eventually(t, func() bool {
 		if indexer.GetLastBloomIndexedHeight() < nextSectionHeight {
 			tests.IncreaseBlockHeight(t, app)
-		} else {
-			break
+			return false
 		}
-	}
+		return true
+	}, 20*time.Second, 100*time.Millisecond)
 
-	// wait for pruning
-	for {
-		time.Sleep(100 * time.Millisecond)
+	require.Eventually(t, func() bool {
 		if indexer.GetLastPrunedHeight() < nextSectionHeight {
 			tests.IncreaseBlockHeight(t, app)
-		} else {
-			break
+			return false
 		}
-	}
+		return true
+	}, 20*time.Second, 100*time.Millisecond)
 
 	// increase block height to trigger bloom indexing and pruning
 	tests.IncreaseBlockHeight(t, app)
+	postTriggerHeight := nextSectionHeight + 1
 
-	// wait for bloom indexing
-	for {
-		time.Sleep(100 * time.Millisecond)
-		if indexer.GetLastBloomIndexedHeight() < nextSectionHeight {
+	require.Eventually(t, func() bool {
+		if indexer.GetLastPrunedHeight() < postTriggerHeight {
 			tests.IncreaseBlockHeight(t, app)
-		} else {
-			break
+			return false
 		}
-	}
-
-	// wait for pruning
-	for {
-		time.Sleep(100 * time.Millisecond)
-		if indexer.GetLastPrunedHeight() < nextSectionHeight {
-			tests.IncreaseBlockHeight(t, app)
-		} else {
-			break
-		}
-	}
+		return true
+	}, 20*time.Second, 100*time.Millisecond)
 
 	// check the bloom bits are pruned
-	ctx, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
+	prunedSection := nextSectionHeight/evmconfig.SectionSize - 1
+	require.Eventually(t, func() bool {
+		ctx, closer, err := app.CreateQueryContext(0, false)
+		if err != nil {
+			return false
+		}
+		if closer != nil {
+			defer closer.Close()
+		}
 
-	err = indexer.BloomBits.Walk(ctx, nil, func(key collections.Pair[uint64, uint32], value []byte) (bool, error) {
-		require.Fail(t, "bloom bits should be pruned")
-		return true, nil
-	})
-	require.NoError(t, err)
+		found := false
+		err = indexer.BloomBits.Walk(ctx, collections.NewPrefixedPairRange[uint64, uint32](prunedSection), func(key collections.Pair[uint64, uint32], value []byte) (bool, error) {
+			found = true
+			return true, nil
+		})
+		if err != nil {
+			return false
+		}
+		if found {
+			tests.IncreaseBlockHeight(t, app)
+			return false
+		}
+		return true
+	}, 20*time.Second, 100*time.Millisecond, "section %d bloom bits should be pruned", prunedSection)
 }

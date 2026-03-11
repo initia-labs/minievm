@@ -105,18 +105,12 @@ func Test_TxStartLogIndex_Pruned(t *testing.T) {
 
 	// tx in block N+1 (retained)
 	tx, evmHashKept := tests.GenerateTransferERC20Tx(t, app, privKeys[0], contract, addrs[1], new(big.Int).SetUint64(1_000), tests.SetNonce(3))
-	_, finalizeRes = tests.ExecuteTxs(t, app, tx)
+	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
-	// wait for pruning to finish (with timeout)
-	deadline := time.Now().Add(10 * time.Second)
-	for {
-		time.Sleep(50 * time.Millisecond)
-		if !indexer.IsPruningRunning() {
-			break
-		}
-		require.True(t, time.Now().Before(deadline), "timed out waiting for pruning to finish")
-	}
+	require.Eventually(t, func() bool {
+		return indexer.GetLastPrunedHeight() >= uint64(finalizeReq.Height)
+	}, 10*time.Second, 50*time.Millisecond, "timed out waiting for pruning to finish")
 
 	ctx, closer, err := app.CreateQueryContext(0, false)
 	if closer != nil {

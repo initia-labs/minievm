@@ -97,16 +97,16 @@ type EVMIndexerImpl struct {
 	pruneNotifyCh        chan struct{}
 	pruneStopCh          chan struct{}
 	pruneDoneCh          chan struct{}
+
+	bloomIndexingRunning *atomic.Bool
 	bloomRequestedHeight *atomic.Uint64
+	bloomNotifyCh        chan struct{}
+	bloomStopCh          chan struct{}
+	bloomDoneCh          chan struct{}
 
-	bloomIndexingRunning   *atomic.Bool
-	bloomNotifyCh          chan struct{}
-	bloomStopCh            chan struct{}
-	bloomDoneCh            chan struct{}
+	lastIndexedHeight      *atomic.Uint64
+	lastPrunedHeight       *atomic.Uint64
 	lastBloomIndexedHeight *atomic.Uint64
-
-	lastIndexedHeight *atomic.Uint64
-	lastPrunedHeight  *atomic.Uint64
 
 	db       dbm.DB
 	logger   log.Logger
