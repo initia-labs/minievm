@@ -194,7 +194,12 @@ func (b *JSONRPCBackend) GetTransactionReceipt(hash common.Hash) (map[string]any
 		return nil, nil
 	}
 
-	return marshalReceipt(receipt, rpcTx), nil
+	startLogIndex, err := b.getTxStartLogIndex(hash, rpcTx)
+	if err != nil {
+		return nil, err
+	}
+
+	return marshalReceipt(receipt, rpcTx, startLogIndex), nil
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction at the given block hash and index.
@@ -360,8 +365,10 @@ func (b *JSONRPCBackend) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) (
 	}
 
 	result := make([]map[string]any, len(receipts))
+	blockLogIndex := uint(0)
 	for i, receipt := range receipts {
-		result[i] = marshalReceipt(receipt, txs[i])
+		result[i] = marshalReceipt(receipt, txs[i], blockLogIndex)
+		blockLogIndex += uint(len(receipt.Logs))
 	}
 
 	return result, nil
@@ -394,6 +401,45 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 
 	_ = b.txLookupCache.Add(hash, tx)
 	return tx, nil
+}
+
+// getTxStartLogIndex returns the block-scoped starting log index for the given tx.
+// For newly indexed txs the value is stored directly. For old data (before this field was introduced)
+// it computes the value from all block receipts, stores all of them, and returns the result.
+func (b *JSONRPCBackend) getTxStartLogIndex(hash common.Hash, rpcTx *rpctypes.RPCTransaction) (uint, error) {
+	idx, err := b.app.EVMIndexer().TxStartLogIndexByHash(b.ctx, hash)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return 0, NewInternalError("failed to get tx start log index")
+	}
+	if err == nil {
+		return uint(idx), nil
+	}
+
+	// not stored yet (old data) — compute and store for the whole block
+	blockNumber := rpcTx.BlockNumber.ToInt().Uint64()
+	blockReceipts, err := b.getBlockReceipts(blockNumber)
+	if err != nil {
+		return 0, err
+	}
+
+	blockLogIndex := uint(0)
+	result := uint(0)
+	found := false
+	for _, receipt := range blockReceipts {
+		if err := b.app.EVMIndexer().StoreTxStartLogIndex(b.ctx, receipt.TxHash, uint64(blockLogIndex)); err != nil {
+			// non-fatal: log and continue; next query will recompute
+			b.logger.Error("failed to lazily store tx start log index", "hash", receipt.TxHash, "err", err)
+		}
+		if receipt.TxHash == hash {
+			result = blockLogIndex
+			found = true
+		}
+		blockLogIndex += uint(len(receipt.Logs))
+	}
+	if !found {
+		return 0, NewInternalError("tx not found in block")
+	}
+	return result, nil
 }
 
 func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error) {
@@ -454,9 +500,10 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 }
 
 // marshalReceipt marshals a transaction receipt into a JSON object.
-func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction) map[string]any {
+// startLogIndex is the block-scoped index of the first log in this receipt.
+func marshalReceipt(receipt *coretypes.Receipt, tx *rpctypes.RPCTransaction, startLogIndex uint) map[string]any {
 	for idx, log := range receipt.Logs {
-		log.Index = uint(idx)
+		log.Index = startLogIndex + uint(idx)
 		if tx.BlockHash != nil {
 			log.BlockHash = *tx.BlockHash
 		}

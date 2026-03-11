@@ -219,9 +219,18 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 
 	blockHash := blockHeader.Hash()
 	blockLogs := make([][]*coretypes.Log, 0, len(ethTxs))
+	blockLogIndex := uint(0)
 	for idx, ethTx := range ethTxs {
 		txHash := ethTx.Hash()
 		receipt := receipts[idx]
+		txStartLogIndex := blockLogIndex
+		blockLogIndex += uint(len(receipt.Logs))
+
+		// store the block-scoped starting log index for this tx
+		if err_ := e.TxStartLogIndexMap.Set(ctx, txHash.Bytes(), uint64(txStartLogIndex)); err_ != nil {
+			err = fmt.Errorf("failed to store tx start log index: %w", err_)
+			return
+		}
 
 		// store tx
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), ethTx.ChainId())
@@ -245,9 +254,9 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		e.queuedTxs.Delete(ethTx.Hash())
 
 		if len(e.logsChans) > 0 && len(receipt.Logs) > 0 {
-			for idx, log := range receipt.Logs {
+			for logIdx, log := range receipt.Logs {
 				// fill in missing fields before emitting
-				log.Index = uint(idx)
+				log.Index = txStartLogIndex + uint(logIdx)
 				log.BlockHash = blockHash
 				log.BlockNumber = uint64(blockHeight)
 				log.TxHash = txHash

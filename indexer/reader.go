@@ -71,6 +71,18 @@ func (e *EVMIndexerImpl) TxReceiptByHash(ctx context.Context, hash common.Hash) 
 	return &receipt, err
 }
 
+// TxStartLogIndexByHash implements EVMIndexer.
+// Returns the block-scoped index of the first log for the given tx.
+// Returns collections.ErrNotFound if not stored (e.g. indexed before this field was introduced).
+func (e *EVMIndexerImpl) TxStartLogIndexByHash(ctx context.Context, hash common.Hash) (uint64, error) {
+	return e.TxStartLogIndexMap.Get(ctx, hash.Bytes())
+}
+
+// StoreTxStartLogIndex implements EVMIndexer.
+func (e *EVMIndexerImpl) StoreTxStartLogIndex(ctx context.Context, hash common.Hash, index uint64) error {
+	return e.TxStartLogIndexMap.Set(ctx, hash.Bytes(), index)
+}
+
 // BlockHashToNumber implements EVMIndexer.
 func (e *EVMIndexerImpl) BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error) {
 	return e.BlockHashToNumberMap.Get(ctx, hash.Bytes())

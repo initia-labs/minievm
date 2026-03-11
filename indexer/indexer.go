@@ -44,6 +44,8 @@ type EVMIndexer interface {
 	// tx receipt
 	TxReceiptByHash(ctx context.Context, hash common.Hash) (*coretypes.Receipt, error)
 	IterateBlockTxReceipts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error
+	TxStartLogIndexByHash(ctx context.Context, hash common.Hash) (uint64, error)
+	StoreTxStartLogIndex(ctx context.Context, hash common.Hash, index uint64) error
 
 	// block
 	BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error)
@@ -131,6 +133,7 @@ type EVMIndexerImpl struct {
 	TxReceiptMap         collections.Map[[]byte, coretypes.Receipt]
 	TxHashToCosmosTxHash collections.Map[[]byte, []byte]
 	CosmosTxHashToTxHash collections.Map[[]byte, []byte]
+	TxStartLogIndexMap   collections.Map[[]byte, uint64]
 
 	// bloom
 	BloomBits            collections.Map[collections.Pair[uint64, uint32], []byte]
@@ -205,6 +208,7 @@ func NewEVMIndexer(
 
 		TxMap:                    collections.NewMap(sb, prefixTx, "tx", collections.BytesKey, CollJsonVal[rpctypes.RPCTransaction]()),
 		TxReceiptMap:             collections.NewMap(sb, prefixTxReceipt, "tx_receipt", collections.BytesKey, CollJsonVal[coretypes.Receipt]()),
+		TxStartLogIndexMap:       collections.NewMap(sb, prefixTxStartLogIndex, "tx_start_log_index", collections.BytesKey, collections.Uint64Value),
 		BlockHeaderMap:           collections.NewMap(sb, prefixBlockHeader, "block_header", collections.Uint64Key, CollJsonVal[coretypes.Header]()),
 		BlockAndIndexToTxHashMap: collections.NewMap(sb, prefixBlockAndIndexToTxHash, "block_and_index_to_tx_hash", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), collections.BytesValue),
 		BlockHashToNumberMap:     collections.NewMap(sb, prefixBlockHashToNumber, "block_hash_to_number", collections.BytesKey, collections.Uint64Value),

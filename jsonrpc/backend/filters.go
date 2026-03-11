@@ -44,16 +44,18 @@ func (b *JSONRPCBackend) GetLogsByHeight(height uint64) ([]*coretypes.Log, error
 	}
 
 	blockLogs := []*coretypes.Log{}
+	blockLogIndex := uint(0)
 	for i, tx := range txs {
 		receipt := receipts[i]
 		logs := receipt.Logs
-		for idx, log := range logs {
+		for logIdx, log := range logs {
 			log.BlockHash = blockHeader.Hash()
 			log.BlockNumber = height
 			log.TxHash = tx.Hash
-			log.Index = uint(idx)
+			log.Index = blockLogIndex + uint(logIdx)
 			log.TxIndex = receipt.TransactionIndex
 		}
+		blockLogIndex += uint(len(logs))
 		blockLogs = append(blockLogs, logs...)
 	}
 
