@@ -42,26 +42,12 @@ func Test_BloomIndexing(t *testing.T) {
 		tests.IncreaseBlockHeight(t, app)
 	}
 
-	// wait for bloom indexing
-	for {
-		if indexer.IsBloomIndexingRunning() {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
-		}
-	}
-
 	// create a new block to trigger bloom indexing
 	tests.IncreaseBlockHeight(t, app)
 
-	// wait for bloom indexing
-	for {
-		if indexer.IsBloomIndexingRunning() {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
-		}
-	}
+	require.Eventually(t, func() bool {
+		return indexer.GetLastBloomIndexedHeight() >= evmconfig.SectionSize
+	}, 10*time.Second, 50*time.Millisecond)
 
 	ctx, closer, err := app.CreateQueryContext(0, false)
 	if closer != nil {

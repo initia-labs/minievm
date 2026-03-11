@@ -12,21 +12,72 @@ import (
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 )
 
-// doBloomIndexing triggers bloom indexing in a goroutine. If bloom indexing is already running,
-// it does nothing.
+// doBloomIndexing records a bloom indexing target and notifies the bloom worker.
 func (e *EVMIndexerImpl) doBloomIndexing(ctx context.Context, height uint64) {
-	if running := e.bloomIndexingRunning.Swap(true); running {
-		return
+	_ = ctx
+
+	for {
+		prev := e.bloomRequestedHeight.Load()
+		if height <= prev {
+			break
+		}
+		if e.bloomRequestedHeight.CompareAndSwap(prev, height) {
+			break
+		}
 	}
 
-	go func(ctx context.Context, height uint64) {
-		defer e.bloomIndexingRunning.Store(false)
-		if err := e.bloomIndexing(ctx, height); err != nil {
-			e.logger.Error("failed to do bloom indexing", "err", err)
+	// Coalesce wakeups; worker always loads the latest requested height.
+	select {
+	case e.bloomNotifyCh <- struct{}{}:
+	default:
+	}
+}
+
+func (e *EVMIndexerImpl) bloomLoop() {
+	defer close(e.bloomDoneCh)
+
+	ctx := context.Background()
+	for {
+		select {
+		case <-e.bloomStopCh:
+			return
+		case <-e.bloomNotifyCh:
 		}
 
-		e.logger.Debug("bloom indexing finished", "height", height)
-	}(ctx, height)
+		e.bloomIndexingRunning.Store(true)
+		for {
+			targetHeight := e.bloomRequestedHeight.Load()
+			lastIndexedHeight := e.lastBloomIndexedHeight.Load()
+			if targetHeight <= lastIndexedHeight {
+				e.logger.Debug("bloom indexing finished", "height", targetHeight)
+				break
+			}
+
+			prevIndexedHeight := lastIndexedHeight
+			if err := e.bloomIndexing(ctx, targetHeight); err != nil {
+				e.logger.Error("failed to do bloom indexing", "height", targetHeight, "err", err)
+				break
+			}
+
+			currIndexedHeight := e.lastBloomIndexedHeight.Load()
+			// If a newer target arrived while indexing, continue with the latest target.
+			if e.bloomRequestedHeight.Load() > targetHeight {
+				continue
+			}
+			// No section was indexed; wait for a new block-triggered notification.
+			if currIndexedHeight <= prevIndexedHeight {
+				break
+			}
+			// Keep draining until we index up to the target height.
+			if currIndexedHeight < targetHeight {
+				continue
+			}
+
+			e.logger.Debug("bloom indexing finished", "height", targetHeight)
+			break
+		}
+		e.bloomIndexingRunning.Store(false)
+	}
 }
 
 // bloomIndexing generates the bloom index if the current section is complete.
@@ -87,8 +138,8 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		return err
 	}
 
-	// update the last bloom indexed height
-	e.lastBloomIndexedHeight.Store(height)
+	// update the last bloom indexed height to the end of the indexed section
+	e.lastBloomIndexedHeight.Store((section + 1) * evmconfig.SectionSize)
 
 	return nil
 }

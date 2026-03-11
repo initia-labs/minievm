@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"errors"
+	"time"
 
 	"cosmossdk.io/collections"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -12,27 +13,73 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// doPrune triggers pruning in a goroutine. If pruning is already running,
-// it does nothing.
+// doPrune records a prune target and notifies the prune worker.
 func (e *EVMIndexerImpl) doPrune(ctx context.Context, height uint64) {
-	if running := e.pruningRunning.Swap(true); running {
-		return
+	_ = ctx
+
+	for {
+		prev := e.pruneRequestedHeight.Load()
+		if height <= prev {
+			break
+		}
+		if e.pruneRequestedHeight.CompareAndSwap(prev, height) {
+			break
+		}
 	}
 
-	go func(ctx context.Context, height uint64) {
-		defer e.pruningRunning.Store(false)
-		if err := e.prune(ctx, height); err != nil {
-			e.logger.Error("failed to prune", "err", err)
+	// Coalesce wakeups; worker always loads the latest requested height.
+	select {
+	case e.pruneNotifyCh <- struct{}{}:
+	default:
+	}
+}
+
+func (e *EVMIndexerImpl) pruneLoop() {
+	defer close(e.pruneDoneCh)
+
+	ctx := context.Background()
+	for {
+		select {
+		case <-e.pruneStopCh:
+			return
+		case <-e.pruneNotifyCh:
 		}
 
-		e.logger.Debug("prune finished", "height", height)
-	}(ctx, height)
+		for {
+			targetHeight := e.pruneRequestedHeight.Load()
+			if targetHeight <= e.lastPruneTriggerHeight.Load() {
+				break
+			}
+
+			e.pruningRunning.Store(true)
+			err := e.prune(ctx, targetHeight)
+			e.pruningRunning.Store(false)
+			if err != nil {
+				e.logger.Error("failed to prune", "height", targetHeight, "err", err)
+				// Back off on repeated failures, but remain responsive to shutdown.
+				select {
+				case <-time.After(100 * time.Millisecond):
+				case <-e.pruneStopCh:
+					return
+				}
+				continue
+			}
+
+			e.logger.Debug("prune finished", "height", targetHeight)
+
+			// If a newer target arrived while pruning, keep draining requests.
+			if e.pruneRequestedHeight.Load() <= targetHeight {
+				break
+			}
+		}
+	}
 }
 
 // prune removes old blocks and transactions from the indexer.
 func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 	minHeight := curHeight - e.retainHeight
-	if minHeight <= 0 || minHeight >= curHeight {
+	if minHeight == 0 || minHeight >= curHeight {
+		e.lastPruneTriggerHeight.Store(curHeight)
 		return nil
 	}
 
@@ -54,8 +101,8 @@ func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 	// write the changes to the store
 	e.store.Write()
 
-	// update the last pruned height
-	e.lastPrunedHeight.Store(curHeight)
+	// update the last prune trigger height
+	e.lastPruneTriggerHeight.Store(curHeight)
 
 	return nil
 }
@@ -137,8 +184,12 @@ func (e *EVMIndexerImpl) pruneTxs(ctx context.Context, minHeight uint64) error {
 
 // pruneBloomBits removes old bloom bits from the indexer.
 func (e *EVMIndexerImpl) pruneBloomBits(ctx context.Context, minHeight uint64) error {
-	section := minHeight/evmconfig.SectionSize - 1
-	return e.BloomBits.Clear(ctx, collections.NewPrefixedPairRange[uint64, uint32](section))
+	prunedSections := (minHeight + 1) / evmconfig.SectionSize
+	if prunedSections == 0 {
+		return nil
+	}
+	section := prunedSections - 1
+	return e.BloomBits.Clear(ctx, collections.NewPrefixUntilPairRange[uint64, uint32](section))
 }
 
 //////////////////////// TESTING INTERFACE ////////////////////////
