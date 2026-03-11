@@ -106,7 +106,7 @@ type EVMIndexerImpl struct {
 	bloomDoneCh          chan struct{}
 
 	lastIndexedHeight      *atomic.Uint64
-	lastPrunedHeight       *atomic.Uint64
+	lastPruneTriggerHeight *atomic.Uint64
 	lastBloomIndexedHeight *atomic.Uint64
 
 	db       dbm.DB
@@ -198,7 +198,7 @@ func NewEVMIndexer(
 		bloomStopCh:            make(chan struct{}),
 		bloomDoneCh:            make(chan struct{}),
 		lastIndexedHeight:      &atomic.Uint64{},
-		lastPrunedHeight:       &atomic.Uint64{},
+		lastPruneTriggerHeight: &atomic.Uint64{},
 		lastBloomIndexedHeight: &atomic.Uint64{},
 
 		db:       db,
@@ -335,12 +335,34 @@ func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, erro
 	return lastIndexedHeight, nil
 }
 
-func (e *EVMIndexerImpl) GetLastPrunedHeight() uint64 {
-	return e.lastPrunedHeight.Load()
+// GetLastPruneTriggerHeight returns the latest block height that completed a prune pass.
+// This is the prune trigger height, not the exact maximum deleted block height.
+func (e *EVMIndexerImpl) GetLastPruneTriggerHeight() uint64 {
+	return e.lastPruneTriggerHeight.Load()
 }
 
 func (e *EVMIndexerImpl) GetLastBloomIndexedHeight() uint64 {
 	return e.lastBloomIndexedHeight.Load()
+}
+
+// isPruneIdle reports whether prune work is fully drained.
+// It returns true only when no prune worker is running and all requested
+// prune trigger heights have been handled.
+func (e *EVMIndexerImpl) isPruneIdle() bool {
+	return !e.pruningRunning.Load() && e.pruneRequestedHeight.Load() <= e.lastPruneTriggerHeight.Load()
+}
+
+// isBloomIdle reports whether bloom indexing has no processable backlog.
+// A requested height inside an incomplete section is not processable yet, so
+// this can still return true in that case.
+func (e *EVMIndexerImpl) isBloomIdle(ctx context.Context) (bool, error) {
+	nextBloomSection, err := e.PeekBloomBitsNextSection(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	bloomHasProcessableBacklog := e.bloomRequestedHeight.Load()/evmconfig.SectionSize > nextBloomSection
+	return !e.bloomIndexingRunning.Load() && !bloomHasProcessableBacklog, nil
 }
 
 // blockEvents is a struct to emit block events.
@@ -411,17 +433,12 @@ func (e *EVMIndexerImpl) flushStore() error {
 	for {
 		select {
 		case <-ticker.C:
-			nextBloomSection, err := e.PeekBloomBitsNextSection(context.Background())
+			bloomIdle, err := e.isBloomIdle(context.Background())
 			if err != nil {
 				return fmt.Errorf("failed to read next bloom section while flushing store: %w", err)
 			}
 
-			pruneIdle := !e.pruningRunning.Load() && e.pruneRequestedHeight.Load() <= e.lastPrunedHeight.Load()
-			// Bloom indexing is idle when it is not running and there is no processable section backlog.
-			// A requested height inside an incomplete section is not immediately processable.
-			bloomHasProcessableBacklog := e.bloomRequestedHeight.Load()/evmconfig.SectionSize > nextBloomSection
-			bloomIdle := !e.bloomIndexingRunning.Load() && !bloomHasProcessableBacklog
-			if pruneIdle && bloomIdle {
+			if e.isPruneIdle() && bloomIdle {
 				close(e.pruneStopCh)
 				close(e.bloomStopCh)
 				select {

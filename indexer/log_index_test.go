@@ -109,7 +109,7 @@ func Test_TxStartLogIndex_Pruned(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	require.Eventually(t, func() bool {
-		return indexer.GetLastPrunedHeight() >= uint64(finalizeReq.Height)
+		return indexer.GetLastPruneTriggerHeight() >= uint64(finalizeReq.Height)
 	}, 10*time.Second, 50*time.Millisecond, "timed out waiting for pruning to finish")
 
 	ctx, closer, err := app.CreateQueryContext(0, false)

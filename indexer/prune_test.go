@@ -49,7 +49,7 @@ func Test_PruneIndexer(t *testing.T) {
 	require.NotNil(t, evmTx)
 
 	require.Eventually(t, func() bool {
-		return indexer.GetLastPrunedHeight() >= uint64(finalizeReq.Height)
+		return indexer.GetLastPruneTriggerHeight() >= uint64(finalizeReq.Height)
 	}, 10*time.Second, 50*time.Millisecond)
 
 	// mint 1_000_000 tokens to the first address
@@ -58,7 +58,7 @@ func Test_PruneIndexer(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	require.Eventually(t, func() bool {
-		return indexer.GetLastPrunedHeight() >= uint64(finalizeReq.Height)
+		return indexer.GetLastPruneTriggerHeight() >= uint64(finalizeReq.Height)
 	}, 10*time.Second, 50*time.Millisecond)
 
 	// listen finalize block
@@ -134,7 +134,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	}, 20*time.Second, 100*time.Millisecond)
 
 	require.Eventually(t, func() bool {
-		if indexer.GetLastPrunedHeight() < nextSectionHeight {
+		if indexer.GetLastPruneTriggerHeight() < nextSectionHeight {
 			tests.IncreaseBlockHeight(t, app)
 			return false
 		}
@@ -146,7 +146,7 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	postTriggerHeight := nextSectionHeight + 1
 
 	require.Eventually(t, func() bool {
-		if indexer.GetLastPrunedHeight() < postTriggerHeight {
+		if indexer.GetLastPruneTriggerHeight() < postTriggerHeight {
 			tests.IncreaseBlockHeight(t, app)
 			return false
 		}

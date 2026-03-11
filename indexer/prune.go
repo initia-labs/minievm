@@ -46,7 +46,7 @@ func (e *EVMIndexerImpl) pruneLoop() {
 
 		for {
 			targetHeight := e.pruneRequestedHeight.Load()
-			if targetHeight <= e.lastPrunedHeight.Load() {
+			if targetHeight <= e.lastPruneTriggerHeight.Load() {
 				break
 			}
 
@@ -68,7 +68,8 @@ func (e *EVMIndexerImpl) pruneLoop() {
 // prune removes old blocks and transactions from the indexer.
 func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 	minHeight := curHeight - e.retainHeight
-	if minHeight <= 0 || minHeight >= curHeight {
+	if minHeight == 0 || minHeight >= curHeight {
+		e.lastPruneTriggerHeight.Store(curHeight)
 		return nil
 	}
 
@@ -90,8 +91,8 @@ func (e *EVMIndexerImpl) prune(ctx context.Context, curHeight uint64) error {
 	// write the changes to the store
 	e.store.Write()
 
-	// update the last pruned height
-	e.lastPrunedHeight.Store(curHeight)
+	// update the last prune trigger height
+	e.lastPruneTriggerHeight.Store(curHeight)
 
 	return nil
 }
