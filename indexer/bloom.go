@@ -12,21 +12,61 @@ import (
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 )
 
-// doBloomIndexing triggers bloom indexing in a goroutine. If bloom indexing is already running,
-// it does nothing.
+// doBloomIndexing records a bloom indexing target and notifies the bloom worker.
 func (e *EVMIndexerImpl) doBloomIndexing(ctx context.Context, height uint64) {
-	if running := e.bloomIndexingRunning.Swap(true); running {
-		return
+	_ = ctx
+
+	for {
+		prev := e.bloomRequestedHeight.Load()
+		if height <= prev {
+			break
+		}
+		if e.bloomRequestedHeight.CompareAndSwap(prev, height) {
+			break
+		}
 	}
 
-	go func(ctx context.Context, height uint64) {
-		defer e.bloomIndexingRunning.Store(false)
-		if err := e.bloomIndexing(ctx, height); err != nil {
-			e.logger.Error("failed to do bloom indexing", "err", err)
-		}
+	// Coalesce wakeups; worker always loads the latest requested height.
+	select {
+	case e.bloomNotifyCh <- struct{}{}:
+	default:
+	}
+}
 
-		e.logger.Debug("bloom indexing finished", "height", height)
-	}(ctx, height)
+func (e *EVMIndexerImpl) bloomLoop() {
+	defer close(e.bloomDoneCh)
+
+	ctx := context.Background()
+	for {
+		select {
+		case <-e.bloomStopCh:
+			return
+		case <-e.bloomNotifyCh:
+		}
+		for {
+			targetHeight := e.bloomRequestedHeight.Load()
+			if targetHeight <= e.lastBloomIndexedHeight.Load() {
+				break
+			}
+
+			prevIndexedHeight := e.lastBloomIndexedHeight.Load()
+			e.bloomIndexingRunning.Store(true)
+			if err := e.bloomIndexing(ctx, targetHeight); err != nil {
+				e.logger.Error("failed to do bloom indexing", "height", targetHeight, "err", err)
+			}
+			e.bloomIndexingRunning.Store(false)
+
+			// If a newer target arrived while indexing, keep draining requests.
+			if e.bloomRequestedHeight.Load() <= targetHeight {
+				e.logger.Debug("bloom indexing finished", "height", targetHeight)
+				break
+			}
+			// No section was indexed; wait for a new block-triggered notification.
+			if e.lastBloomIndexedHeight.Load() <= prevIndexedHeight {
+				break
+			}
+		}
+	}
 }
 
 // bloomIndexing generates the bloom index if the current section is complete.

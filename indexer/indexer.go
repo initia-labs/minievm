@@ -92,15 +92,21 @@ type EVMIndexerImpl struct {
 	retainHeight        uint64
 	backfillStartHeight uint64
 
-	pruningRunning         *atomic.Bool
-	pruneRequestedHeight   *atomic.Uint64
-	pruneNotifyCh          chan struct{}
-	pruneStopCh            chan struct{}
-	pruneDoneCh            chan struct{}
+	pruningRunning       *atomic.Bool
+	pruneRequestedHeight *atomic.Uint64
+	pruneNotifyCh        chan struct{}
+	pruneStopCh          chan struct{}
+	pruneDoneCh          chan struct{}
+	bloomRequestedHeight *atomic.Uint64
+
 	bloomIndexingRunning   *atomic.Bool
-	lastIndexedHeight      *atomic.Uint64
-	lastPrunedHeight       *atomic.Uint64
+	bloomNotifyCh          chan struct{}
+	bloomStopCh            chan struct{}
+	bloomDoneCh            chan struct{}
 	lastBloomIndexedHeight *atomic.Uint64
+
+	lastIndexedHeight *atomic.Uint64
+	lastPrunedHeight  *atomic.Uint64
 
 	db       dbm.DB
 	logger   log.Logger
@@ -185,7 +191,11 @@ func NewEVMIndexer(
 		pruneNotifyCh:          make(chan struct{}, 1),
 		pruneStopCh:            make(chan struct{}),
 		pruneDoneCh:            make(chan struct{}),
+		bloomRequestedHeight:   &atomic.Uint64{},
 		bloomIndexingRunning:   &atomic.Bool{},
+		bloomNotifyCh:          make(chan struct{}, 1),
+		bloomStopCh:            make(chan struct{}),
+		bloomDoneCh:            make(chan struct{}),
 		lastIndexedHeight:      &atomic.Uint64{},
 		lastPrunedHeight:       &atomic.Uint64{},
 		lastBloomIndexedHeight: &atomic.Uint64{},
@@ -227,6 +237,7 @@ func NewEVMIndexer(
 	}
 	indexer.schema = schema
 	go indexer.pruneLoop()
+	go indexer.bloomLoop()
 
 	return indexer, nil
 }
@@ -390,7 +401,7 @@ func (e *EVMIndexerImpl) flushStore() error {
 	// wait for all the indexing to finish
 	e.Wait()
 
-	// wait for pruning to complete before flushing the store
+	// wait for pruning and bloom indexing to complete before flushing the store
 	ticker := time.NewTicker(time.Millisecond * 100)
 	timeout := time.NewTimer(time.Second * 30)
 	defer ticker.Stop()
@@ -399,12 +410,21 @@ func (e *EVMIndexerImpl) flushStore() error {
 	for {
 		select {
 		case <-ticker.C:
-			if !e.pruningRunning.Load() && e.pruneRequestedHeight.Load() <= e.lastPrunedHeight.Load() {
+			pruneIdle := !e.pruningRunning.Load() && e.pruneRequestedHeight.Load() <= e.lastPrunedHeight.Load()
+			// Bloom indexing may legitimately have a pending target that is not yet section-complete.
+			bloomIdle := !e.bloomIndexingRunning.Load()
+			if pruneIdle && bloomIdle {
 				close(e.pruneStopCh)
+				close(e.bloomStopCh)
 				select {
 				case <-e.pruneDoneCh:
 				case <-timeout.C:
 					return fmt.Errorf("timeout waiting for EVM indexer prune worker to stop before shutdown")
+				}
+				select {
+				case <-e.bloomDoneCh:
+				case <-timeout.C:
+					return fmt.Errorf("timeout waiting for EVM indexer bloom worker to stop before shutdown")
 				}
 
 				// if pruning is finished, flush the store
