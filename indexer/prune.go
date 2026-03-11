@@ -12,9 +12,10 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// doPrune triggers pruning in a goroutine. If pruning is already running,
-// it does nothing.
+// doPrune records a prune target and notifies the prune worker.
 func (e *EVMIndexerImpl) doPrune(ctx context.Context, height uint64) {
+	_ = ctx
+
 	for {
 		prev := e.pruneRequestedHeight.Load()
 		if height <= prev {
@@ -25,29 +26,43 @@ func (e *EVMIndexerImpl) doPrune(ctx context.Context, height uint64) {
 		}
 	}
 
-	if running := e.pruningRunning.Swap(true); running {
-		return
+	// Coalesce wakeups; worker always loads the latest requested height.
+	select {
+	case e.pruneNotifyCh <- struct{}{}:
+	default:
 	}
+}
 
-	go func(ctx context.Context) {
-		defer e.pruningRunning.Store(false)
-		var prunedTo uint64
+func (e *EVMIndexerImpl) pruneLoop() {
+	defer close(e.pruneDoneCh)
+
+	ctx := context.Background()
+	for {
+		select {
+		case <-e.pruneStopCh:
+			return
+		case <-e.pruneNotifyCh:
+		}
+
 		for {
 			targetHeight := e.pruneRequestedHeight.Load()
-			prunedTo = targetHeight
+			if targetHeight <= e.lastPrunedHeight.Load() {
+				break
+			}
 
+			e.pruningRunning.Store(true)
 			if err := e.prune(ctx, targetHeight); err != nil {
 				e.logger.Error("failed to prune", "height", targetHeight, "err", err)
 			}
+			e.pruningRunning.Store(false)
 
-			// if a newer prune target was requested while pruning, run again
+			// If a newer target arrived while pruning, keep draining requests.
 			if e.pruneRequestedHeight.Load() <= targetHeight {
+				e.logger.Debug("prune finished", "height", targetHeight)
 				break
 			}
 		}
-
-		e.logger.Debug("prune finished", "height", prunedTo)
-	}(ctx)
+	}
 }
 
 // prune removes old blocks and transactions from the indexer.

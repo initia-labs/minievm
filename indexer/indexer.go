@@ -94,6 +94,9 @@ type EVMIndexerImpl struct {
 
 	pruningRunning         *atomic.Bool
 	pruneRequestedHeight   *atomic.Uint64
+	pruneNotifyCh          chan struct{}
+	pruneStopCh            chan struct{}
+	pruneDoneCh            chan struct{}
 	bloomIndexingRunning   *atomic.Bool
 	lastIndexedHeight      *atomic.Uint64
 	lastPrunedHeight       *atomic.Uint64
@@ -179,6 +182,9 @@ func NewEVMIndexer(
 
 		pruningRunning:         &atomic.Bool{},
 		pruneRequestedHeight:   &atomic.Uint64{},
+		pruneNotifyCh:          make(chan struct{}, 1),
+		pruneStopCh:            make(chan struct{}),
+		pruneDoneCh:            make(chan struct{}),
 		bloomIndexingRunning:   &atomic.Bool{},
 		lastIndexedHeight:      &atomic.Uint64{},
 		lastPrunedHeight:       &atomic.Uint64{},
@@ -220,6 +226,7 @@ func NewEVMIndexer(
 		return nil, err
 	}
 	indexer.schema = schema
+	go indexer.pruneLoop()
 
 	return indexer, nil
 }
@@ -392,7 +399,14 @@ func (e *EVMIndexerImpl) flushStore() error {
 	for {
 		select {
 		case <-ticker.C:
-			if !e.pruningRunning.Swap(true) {
+			if !e.pruningRunning.Load() && e.pruneRequestedHeight.Load() <= e.lastPrunedHeight.Load() {
+				close(e.pruneStopCh)
+				select {
+				case <-e.pruneDoneCh:
+				case <-timeout.C:
+					return fmt.Errorf("timeout waiting for EVM indexer prune worker to stop before shutdown")
+				}
+
 				// if pruning is finished, flush the store
 				e.store.Write()
 
