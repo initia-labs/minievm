@@ -27,6 +27,8 @@ const (
 	Query_ContractAddrByDenom_FullMethodName         = "/minievm.evm.v1.Query/ContractAddrByDenom"
 	Query_ERC721ClassIdByContractAddr_FullMethodName = "/minievm.evm.v1.Query/ERC721ClassIdByContractAddr"
 	Query_ERC721OriginTokenInfos_FullMethodName      = "/minievm.evm.v1.Query/ERC721OriginTokenInfos"
+	Query_ERC721ClassInfos_FullMethodName            = "/minievm.evm.v1.Query/ERC721ClassInfos"
+	Query_ERC721ClassInfo_FullMethodName             = "/minievm.evm.v1.Query/ERC721ClassInfo"
 	Query_Denom_FullMethodName                       = "/minievm.evm.v1.Query/Denom"
 	Query_Call_FullMethodName                        = "/minievm.evm.v1.Query/Call"
 	Query_Params_FullMethodName                      = "/minievm.evm.v1.Query/Params"
@@ -51,6 +53,10 @@ type QueryClient interface {
 	ERC721ClassIdByContractAddr(ctx context.Context, in *QueryERC721ClassIdByContractAddrRequest, opts ...grpc.CallOption) (*QueryERC721ClassIdByContractAddrResponse, error)
 	// ERC721OriginTokenInfos gets the origin token infos by class id and token ids.
 	ERC721OriginTokenInfos(ctx context.Context, in *QueryERC721OriginTokenInfosRequest, opts ...grpc.CallOption) (*QueryERC721OriginTokenInfosResponse, error)
+	// ERC721ClassInfos gets the class infos.
+	ERC721ClassInfos(ctx context.Context, in *QueryERC721ClassInfosRequest, opts ...grpc.CallOption) (*QueryERC721ClassInfosResponse, error)
+	// ERC721ClassInfo gets the class info by class id.
+	ERC721ClassInfo(ctx context.Context, in *QueryERC721ClassInfoRequest, opts ...grpc.CallOption) (*QueryERC721ClassInfoResponse, error)
 	// Denom gets the denom of the given contract address.
 	Denom(ctx context.Context, in *QueryDenomRequest, opts ...grpc.CallOption) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
@@ -139,6 +145,24 @@ func (c *queryClient) ERC721OriginTokenInfos(ctx context.Context, in *QueryERC72
 	return out, nil
 }
 
+func (c *queryClient) ERC721ClassInfos(ctx context.Context, in *QueryERC721ClassInfosRequest, opts ...grpc.CallOption) (*QueryERC721ClassInfosResponse, error) {
+	out := new(QueryERC721ClassInfosResponse)
+	err := c.cc.Invoke(ctx, Query_ERC721ClassInfos_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ERC721ClassInfo(ctx context.Context, in *QueryERC721ClassInfoRequest, opts ...grpc.CallOption) (*QueryERC721ClassInfoResponse, error) {
+	out := new(QueryERC721ClassInfoResponse)
+	err := c.cc.Invoke(ctx, Query_ERC721ClassInfo_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) Denom(ctx context.Context, in *QueryDenomRequest, opts ...grpc.CallOption) (*QueryDenomResponse, error) {
 	out := new(QueryDenomResponse)
 	err := c.cc.Invoke(ctx, Query_Denom_FullMethodName, in, out, opts...)
@@ -185,6 +209,10 @@ type QueryServer interface {
 	ERC721ClassIdByContractAddr(context.Context, *QueryERC721ClassIdByContractAddrRequest) (*QueryERC721ClassIdByContractAddrResponse, error)
 	// ERC721OriginTokenInfos gets the origin token infos by class id and token ids.
 	ERC721OriginTokenInfos(context.Context, *QueryERC721OriginTokenInfosRequest) (*QueryERC721OriginTokenInfosResponse, error)
+	// ERC721ClassInfos gets the class infos.
+	ERC721ClassInfos(context.Context, *QueryERC721ClassInfosRequest) (*QueryERC721ClassInfosResponse, error)
+	// ERC721ClassInfo gets the class info by class id.
+	ERC721ClassInfo(context.Context, *QueryERC721ClassInfoRequest) (*QueryERC721ClassInfoResponse, error)
 	// Denom gets the denom of the given contract address.
 	Denom(context.Context, *QueryDenomRequest) (*QueryDenomResponse, error)
 	// Call execute entry function and return  the function result
@@ -221,6 +249,12 @@ func (UnimplementedQueryServer) ERC721ClassIdByContractAddr(context.Context, *Qu
 }
 func (UnimplementedQueryServer) ERC721OriginTokenInfos(context.Context, *QueryERC721OriginTokenInfosRequest) (*QueryERC721OriginTokenInfosResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ERC721OriginTokenInfos not implemented")
+}
+func (UnimplementedQueryServer) ERC721ClassInfos(context.Context, *QueryERC721ClassInfosRequest) (*QueryERC721ClassInfosResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ERC721ClassInfos not implemented")
+}
+func (UnimplementedQueryServer) ERC721ClassInfo(context.Context, *QueryERC721ClassInfoRequest) (*QueryERC721ClassInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ERC721ClassInfo not implemented")
 }
 func (UnimplementedQueryServer) Denom(context.Context, *QueryDenomRequest) (*QueryDenomResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Denom not implemented")
@@ -388,6 +422,42 @@ func _Query_ERC721OriginTokenInfos_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ERC721ClassInfos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryERC721ClassInfosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ERC721ClassInfos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ERC721ClassInfos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ERC721ClassInfos(ctx, req.(*QueryERC721ClassInfosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ERC721ClassInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryERC721ClassInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ERC721ClassInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ERC721ClassInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ERC721ClassInfo(ctx, req.(*QueryERC721ClassInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_Denom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryDenomRequest)
 	if err := dec(in); err != nil {
@@ -480,6 +550,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ERC721OriginTokenInfos",
 			Handler:    _Query_ERC721OriginTokenInfos_Handler,
+		},
+		{
+			MethodName: "ERC721ClassInfos",
+			Handler:    _Query_ERC721ClassInfos_Handler,
+		},
+		{
+			MethodName: "ERC721ClassInfo",
+			Handler:    _Query_ERC721ClassInfo_Handler,
 		},
 		{
 			MethodName: "Denom",
