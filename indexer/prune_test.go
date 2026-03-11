@@ -144,13 +144,12 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 	// increase block height to trigger bloom indexing and pruning
 	tests.IncreaseBlockHeight(t, app)
 	postTriggerHeight := nextSectionHeight + 1
+	for uint64(app.LastBlockHeight()) < postTriggerHeight {
+		tests.IncreaseBlockHeight(t, app)
+	}
 
 	require.Eventually(t, func() bool {
-		if indexer.GetLastPruneTriggerHeight() < postTriggerHeight {
-			tests.IncreaseBlockHeight(t, app)
-			return false
-		}
-		return true
+		return indexer.GetLastPruneTriggerHeight() >= postTriggerHeight
 	}, 20*time.Second, 100*time.Millisecond)
 
 	// check the bloom bits are pruned
@@ -172,10 +171,6 @@ func Test_PruneIndexer_BloomBits(t *testing.T) {
 		if err != nil {
 			return false
 		}
-		if found {
-			tests.IncreaseBlockHeight(t, app)
-			return false
-		}
-		return true
+		return !found
 	}, 20*time.Second, 100*time.Millisecond, "section %d bloom bits should be pruned", prunedSection)
 }

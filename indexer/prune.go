@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"errors"
+	"time"
 
 	"cosmossdk.io/collections"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -51,14 +52,23 @@ func (e *EVMIndexerImpl) pruneLoop() {
 			}
 
 			e.pruningRunning.Store(true)
-			if err := e.prune(ctx, targetHeight); err != nil {
-				e.logger.Error("failed to prune", "height", targetHeight, "err", err)
-			}
+			err := e.prune(ctx, targetHeight)
 			e.pruningRunning.Store(false)
+			if err != nil {
+				e.logger.Error("failed to prune", "height", targetHeight, "err", err)
+				// Back off on repeated failures, but remain responsive to shutdown.
+				select {
+				case <-time.After(100 * time.Millisecond):
+				case <-e.pruneStopCh:
+					return
+				}
+				continue
+			}
+
+			e.logger.Debug("prune finished", "height", targetHeight)
 
 			// If a newer target arrived while pruning, keep draining requests.
 			if e.pruneRequestedHeight.Load() <= targetHeight {
-				e.logger.Debug("prune finished", "height", targetHeight)
 				break
 			}
 		}
