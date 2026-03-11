@@ -93,6 +93,7 @@ type EVMIndexerImpl struct {
 	backfillStartHeight uint64
 
 	pruningRunning         *atomic.Bool
+	pruneRequestedHeight   *atomic.Uint64
 	bloomIndexingRunning   *atomic.Bool
 	lastIndexedHeight      *atomic.Uint64
 	lastPrunedHeight       *atomic.Uint64
@@ -177,6 +178,7 @@ func NewEVMIndexer(
 		backfillStartHeight: cfg.IndexerBackfillStartHeight,
 
 		pruningRunning:         &atomic.Bool{},
+		pruneRequestedHeight:   &atomic.Uint64{},
 		bloomIndexingRunning:   &atomic.Bool{},
 		lastIndexedHeight:      &atomic.Uint64{},
 		lastPrunedHeight:       &atomic.Uint64{},

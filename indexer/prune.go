@@ -15,18 +15,39 @@ import (
 // doPrune triggers pruning in a goroutine. If pruning is already running,
 // it does nothing.
 func (e *EVMIndexerImpl) doPrune(ctx context.Context, height uint64) {
+	for {
+		prev := e.pruneRequestedHeight.Load()
+		if height <= prev {
+			break
+		}
+		if e.pruneRequestedHeight.CompareAndSwap(prev, height) {
+			break
+		}
+	}
+
 	if running := e.pruningRunning.Swap(true); running {
 		return
 	}
 
-	go func(ctx context.Context, height uint64) {
+	go func(ctx context.Context) {
 		defer e.pruningRunning.Store(false)
-		if err := e.prune(ctx, height); err != nil {
-			e.logger.Error("failed to prune", "err", err)
+		var prunedTo uint64
+		for {
+			targetHeight := e.pruneRequestedHeight.Load()
+			prunedTo = targetHeight
+
+			if err := e.prune(ctx, targetHeight); err != nil {
+				e.logger.Error("failed to prune", "height", targetHeight, "err", err)
+			}
+
+			// if a newer prune target was requested while pruning, run again
+			if e.pruneRequestedHeight.Load() <= targetHeight {
+				break
+			}
 		}
 
-		e.logger.Debug("prune finished", "height", height)
-	}(ctx, height)
+		e.logger.Debug("prune finished", "height", prunedTo)
+	}(ctx)
 }
 
 // prune removes old blocks and transactions from the indexer.
