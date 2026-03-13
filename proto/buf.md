@@ -4,7 +4,10 @@ This is the public protocol buffers API for [MiniEVM](https://github.com/initia-
 
 ## npm Package
 
-TypeScript definitions are published to npm as [`@initia/minievm-proto`](https://www.npmjs.com/package/@initia/minievm-proto) on every tagged release (`v*`).
+TypeScript definitions are published to npm as [`@initia/minievm-proto`](https://www.npmjs.com/package/@initia/minievm-proto).
+
+- **Tagged releases** (`v*`) are published as `latest` (e.g. `1.0.0`).
+- **Main branch** pushes are published as `canary` (e.g. `0.0.0-canary.<short-sha>`).
 
 ### Installation
 
