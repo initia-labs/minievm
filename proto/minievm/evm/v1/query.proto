@@ -33,6 +33,7 @@ service Query {
     option (google.api.http).get = "/minievm/evm/v1/contracts/erc20_wrapper";
   }
 
+  // ConnectOracle gets the Connect Oracle contract address.
   rpc ConnectOracle(QueryConnectOracleRequest) returns (QueryConnectOracleResponse) {
     option (google.api.http).get = "/minievm/evm/v1/connect_oracle";
   }

@@ -1,0 +1,30 @@
+{
+  "name": "@initia/minievm-proto",
+  "version": "0.0.0",
+  "description": "Protocol Buffers TypeScript definitions for MiniEVM",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "amino",
+    "cosmos",
+    "cosmos_proto",
+    "gogoproto",
+    "google",
+    "minievm"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": ["protobuf", "minievm", "initia", "cosmos", "evm"],
+  "homepage": "https://github.com/initia-labs/minievm/tree/main/proto/npm",
+  "bugs": "https://github.com/initia-labs/minievm/issues",
+  "peerDependencies": {
+    "@bufbuild/protobuf": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/initia-labs/minievm.git",
+    "directory": "proto/npm"
+  },
+  "license": "Apache-2.0"
+}
