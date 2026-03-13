@@ -1,17 +1,22 @@
-# Maintaining Initia Proto Files
+# Protobufs
 
-All of the Initia proto files are defined here. This folder should
-be synced regularly with buf.build/initia-labs/minievm regularly by
-a maintainer by running `buf push` in this folder.
+This is the public protocol buffers API for [MiniEVM](https://github.com/initia-labs/minievm).
 
-User facing documentation should not be placed here but instead goes in
-`buf.md` and in each protobuf package following the guidelines in
-<https://docs.buf.build/bsr/documentation>.
+## npm Package
 
-## Generate
+TypeScript definitions are published to npm as [`@initia/minievm-proto`](https://www.npmjs.com/package/@initia/minievm-proto) on every tagged release (`v*`).
 
-To get the Initia proto given a commit, run:
+### Installation
 
 ```bash
-buf export buf.build/initia-labs/minievm:${commit} --output .
+npm install @initia/minievm-proto @bufbuild/protobuf
 ```
+
+### Usage
+
+```typescript
+import { MsgCreateSchema } from "@initia/minievm-proto/minievm/evm/v1/tx_pb.js";
+import { ParamsSchema } from "@initia/minievm-proto/minievm/evm/v1/types_pb.js";
+```
+
+The package requires `@bufbuild/protobuf` v2 as a peer dependency.

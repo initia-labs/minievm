@@ -67,6 +67,7 @@ message Params {
   ];
 }
 
+// GasEnforcement defines the gas enforcement rules for EVM transactions.
 message GasEnforcement {
   // max_gas_fee_cap sets an upper bound on the gas price (base fee + tip) for a single EVM transaction.
   // If set to 0, no gas price cap is enforced.
@@ -112,11 +113,13 @@ message AccessTuple {
   repeated string storage_keys = 2;
 }
 
+// ERC721OriginTokenInfo defines the origin token information of an ERC721 token.
 message ERC721OriginTokenInfo {
   string token_origin_id = 1;
   string token_uri = 2;
 }
 
+// ERC721ClassInfo defines the class information of an ERC721 token.
 message ERC721ClassInfo {
   string class_id = 1;
   string class_name = 2;
