@@ -174,8 +174,7 @@ func (c *Cluster) Close() {
 			continue
 		}
 
-		// Kill the entire process group to ensure child processes are also terminated.
-		_ = syscall.Kill(-n.cmd.Process.Pid, syscall.SIGTERM)
+		_ = n.cmd.Process.Signal(syscall.SIGTERM)
 	}
 
 	deadline := time.Now().Add(10 * time.Second)
@@ -196,7 +195,7 @@ func (c *Cluster) Close() {
 		case <-done:
 		case <-time.After(time.Until(deadline)):
 			if n.cmd.Process != nil {
-				_ = syscall.Kill(-n.cmd.Process.Pid, syscall.SIGKILL)
+				_ = n.cmd.Process.Kill()
 				<-done
 			}
 		}
@@ -249,6 +248,21 @@ func (c *Cluster) WaitForReady(ctx context.Context, timeout time.Duration) error
 }
 
 func (c *Cluster) WaitForMempoolEmpty(ctx context.Context, timeout time.Duration) error {
+	return c.waitForMempoolEmpty(ctx, timeout, len(c.nodes))
+}
+
+// WaitForSequencerMempoolEmpty waits until the mempool is empty on the
+// sequencer node only. CList mempool can leave txs stranded on fullnode
+// mempools that never get cleared, so this avoids false timeout failures.
+func (c *Cluster) WaitForSequencerMempoolEmpty(ctx context.Context, timeout time.Duration) error {
+	nodeCount := max(1, c.opts.ValidatorCount)
+	if nodeCount > len(c.nodes) {
+		nodeCount = len(c.nodes)
+	}
+	return c.waitForMempoolEmpty(ctx, timeout, nodeCount)
+}
+
+func (c *Cluster) waitForMempoolEmpty(ctx context.Context, timeout time.Duration, nodeCount int) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -260,7 +274,7 @@ func (c *Cluster) WaitForMempoolEmpty(ctx context.Context, timeout time.Duration
 		}
 
 		allEmpty := true
-		for i := range c.nodes {
+		for i := range nodeCount {
 			n, err := c.unconfirmedTxCount(ctx, i)
 			if err != nil || n != 0 {
 				allEmpty = false
@@ -1472,7 +1486,6 @@ func (c *Cluster) startNode(ctx context.Context, n *Node) error {
 	cmd := exec.CommandContext(ctx, c.bin, "start", "--home", n.Home)
 	cmd.Stdout = f
 	cmd.Stderr = f
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {
 		_ = f.Close()
 		return err

@@ -299,10 +299,20 @@ func CollectResultsEth(
 	return result, nil
 }
 
-// WaitForAllIncluded waits until the mempool is empty and all submitted txs
-// are included in blocks, returning the end height.
-func WaitForAllIncluded(ctx context.Context, cl *cluster.Cluster, timeout time.Duration) (int64, error) {
-	if err := cl.WaitForMempoolEmpty(ctx, timeout); err != nil {
+// WaitForLoadToSettle waits until the mempool is drained and one more block
+// has been produced, then returns the end height. Does not guarantee all
+// submitted txs were included. Partial inclusion is expected for some tests.
+// When validatorOnly is true, only the sequencer node mempool is checked.
+// This avoids false timeouts with the CList mempool where txs can get
+// stranded on fullnodes.
+func WaitForLoadToSettle(ctx context.Context, cl *cluster.Cluster, timeout time.Duration, validatorOnly bool) (int64, error) {
+	var err error
+	if validatorOnly {
+		err = cl.WaitForSequencerMempoolEmpty(ctx, timeout)
+	} else {
+		err = cl.WaitForMempoolEmpty(ctx, timeout)
+	}
+	if err != nil {
 		return 0, err
 	}
 

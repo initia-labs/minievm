@@ -81,7 +81,7 @@ func runBenchmarkWithCluster(t *testing.T, ctx context.Context, cl *cluster.Clus
 		loadResult.EndTime.Sub(loadResult.StartTime).Seconds())
 
 	drainTimeout := mempoolDrainTimeout + time.Duration(cfg.TotalTx()/20)*time.Second
-	endHeight, err := WaitForAllIncluded(ctx, cl, drainTimeout)
+	endHeight, err := WaitForLoadToSettle(ctx, cl, drainTimeout, cfg.NoAllowQueued)
 	require.NoError(t, err)
 
 	peakMempool := poller.Stop()
@@ -417,7 +417,7 @@ func runPreSignedBenchmark(
 		loadResult.EndTime.Sub(loadResult.StartTime).Seconds())
 
 	drainTimeout := mempoolDrainTimeout + time.Duration(cfg.TotalTx()/20)*time.Second
-	endHeight, err := WaitForAllIncluded(ctx, cl, drainTimeout)
+	endHeight, err := WaitForLoadToSettle(ctx, cl, drainTimeout, cfg.NoAllowQueued)
 	if err != nil {
 		t.Logf("Warning: mempool drain incomplete: %v (collecting partial results)", err)
 		// Still collect results with whatever blocks we have
@@ -736,11 +736,12 @@ func TestBenchmarkQueuedGapEviction(t *testing.T) {
 	metas, err = CollectInitialMetas(ctx, cl)
 	require.NoError(t, err)
 
+	// start mempool poller before load to capture peak queued size
+	poller := NewMempoolPoller(ctx, cl, mempoolPollInterval)
+
 	loadResult := QueuedGapLoad(ctx, cl, cfg, metas)
 	t.Logf("Submitted %d future-nonce txs (no gap fill), %d errors",
 		len(loadResult.Submissions), len(loadResult.Errors))
-
-	poller := NewMempoolPoller(ctx, cl, mempoolPollInterval)
 
 	t.Log("Waiting for gap TTL eviction (60s + 30s buffer)...")
 	time.Sleep(90 * time.Second)
@@ -783,7 +784,7 @@ func TestBenchmarkGossipPropagation(t *testing.T) {
 	loadResult := SingleNodeLoad(ctx, cl, cfg, metas, 0)
 	t.Logf("Submitted %d txs to node 0", len(loadResult.Submissions))
 
-	endHeight, err := WaitForAllIncluded(ctx, cl, mempoolDrainTimeout)
+	endHeight, err := WaitForLoadToSettle(ctx, cl, mempoolDrainTimeout, false)
 	require.NoError(t, err)
 
 	peakMempool := poller.Stop()
@@ -841,7 +842,7 @@ func runJsonRpcBenchmark(
 		loadResult.EndTime.Sub(loadResult.StartTime).Seconds())
 
 	drainTimeout := mempoolDrainTimeout + time.Duration(cfg.TotalTx()/20)*time.Second
-	endHeight, err := WaitForAllIncluded(ctx, cl, drainTimeout)
+	endHeight, err := WaitForLoadToSettle(ctx, cl, drainTimeout, cfg.NoAllowQueued)
 	require.NoError(t, err)
 
 	peakMempool := poller.Stop()
