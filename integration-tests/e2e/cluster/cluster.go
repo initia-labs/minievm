@@ -1154,7 +1154,7 @@ func (c *Cluster) initSingleValidator(ctx context.Context, baseHome string) erro
 	}
 
 	if err := patchGenesisOpchild(genesisPath, c.valAddresses[0], []validatorInfo{
-		{moniker: "node0", pubKeyJSON: strings.TrimSpace(string(valPubKeyJSON))},
+		{moniker: "node0", pubKeyJSON: strings.TrimSpace(string(valPubKeyJSON)), operAddr: c.valAddresses[0]},
 	}); err != nil {
 		return fmt.Errorf("patch genesis opchild: %w", err)
 	}
@@ -1211,6 +1211,7 @@ func (c *Cluster) initMultiValidator(ctx context.Context, baseHome string, valCo
 		vals = append(vals, validatorInfo{
 			moniker:    fmt.Sprintf("node%d", i),
 			pubKeyJSON: strings.TrimSpace(string(out)),
+			operAddr:   c.valAddresses[i],
 		})
 	}
 
@@ -1266,6 +1267,7 @@ func (c *Cluster) addAccountGenesisAccounts(ctx context.Context, baseHome string
 type validatorInfo struct {
 	moniker    string
 	pubKeyJSON string
+	operAddr   string // validator operator account address (bech32 account addr)
 }
 
 // patchGenesisOpchild configures the opchild module in genesis:
@@ -1317,14 +1319,12 @@ func patchGenesisOpchild(genesisPath, adminAddr string, validators []validatorIn
 			return fmt.Errorf("parse validator pubkey: %w", err)
 		}
 
-		keyB64, _ := pubKey["key"].(string)
-		keyBytes, err := base64.StdEncoding.DecodeString(keyB64)
+		// Derive valoper address from the operator account address
+		addrBytes, err := sdk.GetFromBech32(v.operAddr, "init")
 		if err != nil {
-			return fmt.Errorf("decode pubkey base64: %w", err)
+			return fmt.Errorf("decode operator address: %w", err)
 		}
-
-		addrHash := sha256.Sum256(keyBytes)
-		valOperAddr, err := sdk.Bech32ifyAddressBytes("initvaloper", addrHash[:20])
+		valOperAddr, err := sdk.Bech32ifyAddressBytes("initvaloper", addrBytes)
 		if err != nil {
 			return fmt.Errorf("bech32 encode valoper: %w", err)
 		}
