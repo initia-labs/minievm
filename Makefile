@@ -206,12 +206,15 @@ contracts-gen: $(CONTRACTS_DIR)/*
 	@bash ./scripts/contractsgen.sh
 
 benchmark:
-	@go test -timeout 20m -mod=readonly -bench=. ./... 
+	@go test -timeout 20m -mod=readonly -bench=. ./...
+
+benchmark-e2e:
+	cd integration-tests/e2e && go test -v -tags benchmark -run TestBenchmark -timeout 30m -count=1 ./benchmark/
 
 fuzz:
 	@go test --timeout 2m -mod=readonly -fuzz=Fuzz ./x/evm/keeper
 
-.PHONY: test test-all test-cover test-unit test-race benchmark contracts-gen
+.PHONY: test test-all test-cover test-unit test-race benchmark benchmark-e2e contracts-gen
 
 ###############################################################################
 ###                                Linting                                  ###
