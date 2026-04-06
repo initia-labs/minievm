@@ -85,6 +85,7 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
+// GasEnforcement defines the gas enforcement rules for EVM transactions.
 type GasEnforcement struct {
 	// max_gas_fee_cap sets an upper bound on the gas price (base fee + tip) for a single EVM transaction.
 	// If set to 0, no gas price cap is enforced.
@@ -215,6 +216,7 @@ func (m *AccessTuple) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AccessTuple proto.InternalMessageInfo
 
+// ERC721OriginTokenInfo defines the origin token information of an ERC721 token.
 type ERC721OriginTokenInfo struct {
 	TokenOriginId string `protobuf:"bytes,1,opt,name=token_origin_id,json=tokenOriginId,proto3" json:"token_origin_id,omitempty"`
 	TokenUri      string `protobuf:"bytes,2,opt,name=token_uri,json=tokenUri,proto3" json:"token_uri,omitempty"`
@@ -253,6 +255,7 @@ func (m *ERC721OriginTokenInfo) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ERC721OriginTokenInfo proto.InternalMessageInfo
 
+// ERC721ClassInfo defines the class information of an ERC721 token.
 type ERC721ClassInfo struct {
 	ClassId    string `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
 	ClassName  string `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`

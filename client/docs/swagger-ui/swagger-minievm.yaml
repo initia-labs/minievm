@@ -207,6 +207,7 @@ paths:
         - Query
   /minievm/evm/v1/connect_oracle:
     get:
+      summary: ConnectOracle gets the Connect Oracle contract address.
       operationId: ConnectOracle
       responses:
         '200':
@@ -491,6 +492,9 @@ paths:
                       type: string
                     class_descs:
                       type: string
+                  description: >-
+                    ERC721ClassInfo defines the class information of an ERC721
+                    token.
               pagination:
                 description: pagination defines the pagination in the response.
                 type: object
@@ -617,6 +621,9 @@ paths:
                     type: string
                   class_descs:
                     type: string
+                description: >-
+                  ERC721ClassInfo defines the class information of an ERC721
+                  token.
             title: >-
               QueryERC721ClassInfoResponse is the response type for the
               Query/ERC721ClassInfo RPC
@@ -672,6 +679,9 @@ paths:
                       type: string
                     token_uri:
                       type: string
+                  description: >-
+                    ERC721OriginTokenInfo defines the origin token information
+                    of an ERC721 token.
             title: >-
               QueryERC721OriginTokenInfosResponse is the response type for the
               Query/ERC721OriginTokenInfos RPC
@@ -1020,6 +1030,7 @@ definitions:
         type: string
       class_descs:
         type: string
+    description: ERC721ClassInfo defines the class information of an ERC721 token.
   minievm.evm.v1.ERC721OriginTokenInfo:
     type: object
     properties:
@@ -1027,6 +1038,9 @@ definitions:
         type: string
       token_uri:
         type: string
+    description: >-
+      ERC721OriginTokenInfo defines the origin token information of an ERC721
+      token.
   minievm.evm.v1.GasEnforcement:
     type: object
     properties:
@@ -1052,6 +1066,7 @@ definitions:
         description: >-
           unlimited_gas_senders is a list of addresses that are exempt from gas
           price and limit restrictions.
+    description: GasEnforcement defines the gas enforcement rules for EVM transactions.
   minievm.evm.v1.Log:
     type: object
     properties:
@@ -1345,6 +1360,7 @@ definitions:
             type: string
           class_descs:
             type: string
+        description: ERC721ClassInfo defines the class information of an ERC721 token.
     title: >-
       QueryERC721ClassInfoResponse is the response type for the
       Query/ERC721ClassInfo RPC
@@ -1366,6 +1382,7 @@ definitions:
               type: string
             class_descs:
               type: string
+          description: ERC721ClassInfo defines the class information of an ERC721 token.
       pagination:
         description: pagination defines the pagination in the response.
         type: object
@@ -1402,6 +1419,9 @@ definitions:
               type: string
             token_uri:
               type: string
+          description: >-
+            ERC721OriginTokenInfo defines the origin token information of an
+            ERC721 token.
     title: >-
       QueryERC721OriginTokenInfosResponse is the response type for the
       Query/ERC721OriginTokenInfos RPC

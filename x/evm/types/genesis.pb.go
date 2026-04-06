@@ -306,6 +306,7 @@ func (m *GenesisDenomTrace) GetContractAddress() []byte {
 	return nil
 }
 
+// GenesisClassTrace defines ERC721 contract address of a class.
 type GenesisClassTrace struct {
 	ClassId         string `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
 	ContractAddress []byte `protobuf:"bytes,2,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
@@ -366,6 +367,7 @@ func (m *GenesisClassTrace) GetUri() string {
 	return ""
 }
 
+// GenesisEVMBlockHash defines a mapping between an EVM block hash and its height.
 type GenesisEVMBlockHash struct {
 	Hash   []byte `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	Height uint64 `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`

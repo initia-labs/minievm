@@ -4666,6 +4666,7 @@ func (x *Params) GetGasEnforcement() *GasEnforcement {
 	return nil
 }
 
+// GasEnforcement defines the gas enforcement rules for EVM transactions.
 type GasEnforcement struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4825,6 +4826,7 @@ func (x *AccessTuple) GetStorageKeys() []string {
 	return nil
 }
 
+// ERC721OriginTokenInfo defines the origin token information of an ERC721 token.
 type ERC721OriginTokenInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4868,6 +4870,7 @@ func (x *ERC721OriginTokenInfo) GetTokenUri() string {
 	return ""
 }
 
+// ERC721ClassInfo defines the class information of an ERC721 token.
 type ERC721ClassInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
