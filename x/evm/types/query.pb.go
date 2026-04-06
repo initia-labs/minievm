@@ -1443,6 +1443,7 @@ type QueryClient interface {
 	ERC20Factory(ctx context.Context, in *QueryERC20FactoryRequest, opts ...grpc.CallOption) (*QueryERC20FactoryResponse, error)
 	// ERC20Wrapper gets the ERC20Wrapper contract address.
 	ERC20Wrapper(ctx context.Context, in *QueryERC20WrapperRequest, opts ...grpc.CallOption) (*QueryERC20WrapperResponse, error)
+	// ConnectOracle gets the Connect Oracle contract address.
 	ConnectOracle(ctx context.Context, in *QueryConnectOracleRequest, opts ...grpc.CallOption) (*QueryConnectOracleResponse, error)
 	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(ctx context.Context, in *QueryContractAddrByDenomRequest, opts ...grpc.CallOption) (*QueryContractAddrByDenomResponse, error)
@@ -1597,6 +1598,7 @@ type QueryServer interface {
 	ERC20Factory(context.Context, *QueryERC20FactoryRequest) (*QueryERC20FactoryResponse, error)
 	// ERC20Wrapper gets the ERC20Wrapper contract address.
 	ERC20Wrapper(context.Context, *QueryERC20WrapperRequest) (*QueryERC20WrapperResponse, error)
+	// ConnectOracle gets the Connect Oracle contract address.
 	ConnectOracle(context.Context, *QueryConnectOracleRequest) (*QueryConnectOracleResponse, error)
 	// ContractAddrByDenom gets the contract address by denom.
 	ContractAddrByDenom(context.Context, *QueryContractAddrByDenomRequest) (*QueryContractAddrByDenomResponse, error)
@@ -1898,6 +1900,7 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "minievm.evm.v1.Query",
 	HandlerType: (*QueryServer)(nil),

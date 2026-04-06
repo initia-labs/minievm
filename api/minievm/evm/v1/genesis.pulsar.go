@@ -4260,6 +4260,7 @@ func (x *GenesisDenomTrace) GetContractAddress() []byte {
 	return nil
 }
 
+// GenesisClassTrace defines ERC721 contract address of a class.
 type GenesisClassTrace struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4311,6 +4312,7 @@ func (x *GenesisClassTrace) GetUri() string {
 	return ""
 }
 
+// GenesisEVMBlockHash defines a mapping between an EVM block hash and its height.
 type GenesisEVMBlockHash struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
