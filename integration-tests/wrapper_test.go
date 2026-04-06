@@ -45,35 +45,35 @@ func (suite *KeeperTestSuite) TestE2ELocalTokenWrapper() {
 	var amount *big.Int
 	var initialBalancesA sdk.Coins
 	var initialBalancesB sdk.Coins
-	var userA sdk.AccAddress
+	var users sdk.AccAddress
 	var userB sdk.AccAddress
 
 	// mint tokenA 10 ether in A chain
 	amount, _ = new(big.Int).SetString("10000000000000000000", 10)
-	userA = pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
+	users = pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
 	userB = pathA2B.EndpointB.Chain.SenderAccount.GetAddress()
-	tokenA = suite.createAndMintERC20(pathA2B.EndpointA, userA, amount, 18)
-	initialBalancesA = bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA)
+	tokenA = suite.createAndMintERC20(pathA2B.EndpointA, users, amount, 18)
+	initialBalancesA = bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users)
 	initialBalancesB = bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB)
 
 	// test timeout
-	_, _, _ = suite.wrapLocal(pathA2B, tokenA, userA, userB, amount, true)
+	_, _, _ = suite.wrapLocal(pathA2B, tokenA, users, userB, amount, true)
 
 	// timeout should revert transfer
 	suite.Require().Equal(initialBalancesB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
-	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 
 	// Wrap tokenA and transfer token from A chain to B chain
-	tokenARemoteDenom, tokenB, wrapperAddr := suite.wrapLocal(pathA2B, tokenA, userA, userB, amount, false)
+	tokenARemoteDenom, tokenB, wrapperAddr := suite.wrapLocal(pathA2B, tokenA, users, userB, amount, false)
 	// check local decimals => remote decimals properly converted
 	suite.Require().Equal(tokenB.Amount, math.NewIntFromBigInt(amount).QuoRaw(1e12))
 
 	// Transfer tokenB from B chain to A chain, unwrap tokenB
-	suite.unwrapLocal(pathA2B, tokenARemoteDenom, tokenB, wrapperAddr, userB, userA)
+	suite.unwrapLocal(pathA2B, tokenARemoteDenom, tokenB, wrapperAddr, userB, users)
 
 	// Have the same balance as the initial state
 	suite.Require().Equal(initialBalancesB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
-	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 }
 
 func (suite *KeeperTestSuite) TestE2ERemoteTokenWrapper() {
@@ -89,41 +89,41 @@ func (suite *KeeperTestSuite) TestE2ERemoteTokenWrapper() {
 	var amount *big.Int
 	var initialBalancesA sdk.Coins
 	var initialBalancesB sdk.Coins
-	var userA sdk.AccAddress
+	var users sdk.AccAddress
 	var userB sdk.AccAddress
 
 	// Mint tokenA 10 ether in B chain
 	amount, _ = new(big.Int).SetString("10000000", 10)
-	userA = pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
+	users = pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
 	userB = pathA2B.EndpointB.Chain.SenderAccount.GetAddress()
-	tokenAContractAddr = suite.createAndMintERC20(pathA2B.EndpointA, userA, amount, 6)
-	initialBalancesA = bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA)
+	tokenAContractAddr = suite.createAndMintERC20(pathA2B.EndpointA, users, amount, 6)
+	initialBalancesA = bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users)
 	initialBalancesB = bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB)
 
 	// transfer token A from A chain to B chain and wrap it with hook
 	var tokenA, tokenB sdk.Coin
 	var tokenBContractAddr common.Address
-	tokenA, tokenB, tokenBContractAddr = suite.wrapRemote(pathA2B, tokenAContractAddr, userA, userB, amount)
+	tokenA, tokenB, tokenBContractAddr = suite.wrapRemote(pathA2B, tokenAContractAddr, users, userB, amount)
 
 	// Have the expected balance
 	expectedBalanceA := initialBalancesA.Sub(tokenA)
 	expectedBalanceB := initialBalancesB.Add(tokenB)
-	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 	suite.Require().Equal(expectedBalanceB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
 
 	// test timeout
-	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, userA, tokenB.Amount.BigInt(), true)
+	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, users, tokenB.Amount.BigInt(), true)
 
 	// Have the expected balance
-	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 	suite.Require().Equal(expectedBalanceB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
 
 	// test unwrap
 	// Unwrap tokenB and transfer token from B chain to A chain
-	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, userA, tokenB.Amount.BigInt(), false)
+	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, users, tokenB.Amount.BigInt(), false)
 
 	// Have the same balance with initial balance
-	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 	suite.Require().Equal(initialBalancesB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
 }
 
@@ -140,42 +140,42 @@ func (suite *KeeperTestSuite) TestE2ERemoteTokenWrapperWithOPMigration() {
 	var amount *big.Int
 	var initialBalancesA sdk.Coins
 	var initialBalancesB sdk.Coins
-	var userA sdk.AccAddress
+	var users sdk.AccAddress
 	var userB sdk.AccAddress
 
 	// Mint tokenA 10 ether in B chain
 	amount, _ = new(big.Int).SetString("10000000", 10)
-	userA = pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
+	users = pathA2B.EndpointA.Chain.SenderAccount.GetAddress()
 	userB = pathA2B.EndpointB.Chain.SenderAccount.GetAddress()
-	tokenAContractAddr = suite.createAndMintERC20(pathA2B.EndpointA, userA, amount, 6)
-	initialBalancesA = bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA)
+	tokenAContractAddr = suite.createAndMintERC20(pathA2B.EndpointA, users, amount, 6)
+	initialBalancesA = bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users)
 	initialBalancesB = bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB)
 
 	// transfer token A from A chain to B chain and wrap it with hook
 	var tokenA, tokenB sdk.Coin
 	var tokenBContractAddr common.Address
-	tokenA, tokenB, tokenBContractAddr = suite.wrapRemoteWithOPMigration(pathA2B, tokenAContractAddr, userA, userB, amount)
+	tokenA, tokenB, tokenBContractAddr = suite.wrapRemoteWithOPMigration(pathA2B, tokenAContractAddr, users, userB, amount)
 
 	// Have the expected balance
 	expectedBalanceA := initialBalancesA.Sub(tokenA)
 	expectedBalanceB := initialBalancesB.Add(tokenB)
-	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 	suite.Require().Equal(expectedBalanceB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
 	suite.Require().NotNil(tokenBContractAddr)
 
 	// test timeout
-	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, userA, tokenB.Amount.BigInt(), true)
+	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, users, tokenB.Amount.BigInt(), true)
 
 	// Have the expected balance
-	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(expectedBalanceA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 	suite.Require().Equal(expectedBalanceB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
 
 	// test unwrap
 	// Unwrap tokenB and transfer token from B chain to A chain
-	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, userA, tokenB.Amount.BigInt(), false)
+	_ = suite.unwrapRemote(pathA2B, tokenBContractAddr, userB, users, tokenB.Amount.BigInt(), false)
 
 	// Have the same balance with initial balance
-	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), userA))
+	suite.Require().Equal(initialBalancesA, bankKeeperA.GetAllBalances(pathA2B.EndpointA.Chain.GetContext(), users))
 	suite.Require().Equal(initialBalancesB, bankKeeperB.GetAllBalances(pathA2B.EndpointB.Chain.GetContext(), userB))
 }
 
