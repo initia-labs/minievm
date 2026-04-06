@@ -151,9 +151,10 @@ update-swagger-docs: statik
 ###                                Protobuf                                 ###
 ###############################################################################
 
-protoVer=0.14.0
+protoVer=0.18.1
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
 protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
+swaggerProtoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace ghcr.io/cosmos/proto-builder:$(protoVer)
 
 proto-all: proto-format proto-lint proto-gen
 
@@ -163,7 +164,7 @@ proto-gen:
 
 proto-swagger-gen:
 	@echo "Generating Swagger files"
-	@$(protoImage) sh ./scripts/protoc-swagger-gen.sh
+	@$(swaggerProtoImage) sh ./scripts/protoc-swagger-gen.sh
 	$(MAKE) update-swagger-docs
 
 proto-pulsar-gen:
