@@ -67,7 +67,7 @@ func (c *Cluster) ValidatorEthAddress() (common.Address, error) {
 	return bech32ToEthAddress(c.ValidatorAddress())
 }
 
-// generateEthAccounts creates Ethereum keypairs for JSON-RPC benchmarks.
+// generateEthAccounts creates Ethereum key pairs for JSON-RPC benchmarks.
 func (c *Cluster) generateEthAccounts() error {
 	c.ethAccounts = make([]EthAccount, 0, c.opts.AccountCount)
 	for i := 1; i <= c.opts.AccountCount; i++ {
