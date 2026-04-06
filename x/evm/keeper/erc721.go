@@ -8,10 +8,11 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	erc721 "github.com/initia-labs/minievm/x/evm/contracts/ics721_erc721"
 	"github.com/initia-labs/minievm/x/evm/types"

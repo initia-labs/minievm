@@ -14,7 +14,7 @@ func MergeJSON(dstStr, srcStr string) (string, error) {
 		return "", errors.New("empty JSON string")
 	}
 
-	var dstMap, srcMap map[string]interface{}
+	var dstMap, srcMap map[string]any
 	err := json.Unmarshal([]byte(dstStr), &dstMap)
 	if err != nil {
 		return "", err
@@ -38,7 +38,7 @@ func MergeJSON(dstStr, srcStr string) (string, error) {
 	return string(resBz), nil
 }
 
-func merge(dst, src map[string]interface{}, depth int) (map[string]interface{}, error) {
+func merge(dst, src map[string]any, depth int) (map[string]any, error) {
 	if depth > MaxDepth {
 		return nil, errors.New("max recursion depth reached")
 	}
@@ -61,10 +61,10 @@ func merge(dst, src map[string]interface{}, depth int) (map[string]interface{}, 
 	return dst, nil
 }
 
-func mapify(i interface{}) (map[string]interface{}, bool) {
+func mapify(i any) (map[string]any, bool) {
 	value := reflect.ValueOf(i)
 	if value.Kind() == reflect.Map {
-		m := map[string]interface{}{}
+		m := map[string]any{}
 		for _, k := range value.MapKeys() {
 			m[k.String()] = value.MapIndex(k).Interface()
 		}
@@ -72,5 +72,5 @@ func mapify(i interface{}) (map[string]interface{}, bool) {
 		return m, true
 	}
 
-	return map[string]interface{}{}, false
+	return map[string]any{}, false
 }

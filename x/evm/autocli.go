@@ -5,8 +5,9 @@ import (
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	"github.com/cosmos/cosmos-sdk/version"
 	evmv1 "github.com/initia-labs/minievm/api/minievm/evm/v1"
+
+	"github.com/cosmos/cosmos-sdk/version"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

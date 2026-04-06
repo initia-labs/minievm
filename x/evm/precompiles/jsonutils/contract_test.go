@@ -19,12 +19,13 @@ import (
 	storemetrics "cosmossdk.io/store/metrics"
 	"cosmossdk.io/x/tx/signing"
 	db "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/gogoproto/proto"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecaddress "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/cosmos/gogoproto/proto"
 
 	contracts "github.com/initia-labs/minievm/x/evm/contracts/i_jsonutils"
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/jsonutils"
@@ -177,7 +178,7 @@ func Test_JSONUtilsPrecompile_Stringify(t *testing.T) {
 	}
 }
 
-func mustMarshalJSON(t *testing.T, obj interface{}) []byte {
+func mustMarshalJSON(t *testing.T, obj any) []byte {
 	bz, err := json.Marshal(obj)
 	require.NoError(t, err)
 	return bz

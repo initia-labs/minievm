@@ -17,7 +17,7 @@ func BenchmarkCacheStore(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			// Do 10 operations per batch
-			for j := 0; j < 10; j++ {
+			for j := range 10 {
 				key := []byte{byte(i % 256), byte((i / 256) % 256), byte(j)}
 				value := []byte{byte(i % 256), byte((i / 256) % 256), byte((i / 65536) % 256), byte(j)}
 				_ = store.Set(key, value)
@@ -29,7 +29,7 @@ func BenchmarkCacheStore(b *testing.B) {
 	// Benchmark Get operations with cache hits
 	b.Run("GetWithCacheHits", func(b *testing.B) {
 		// Pre-populate with a small dataset
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			key := []byte{byte(i % 256), byte((i / 256) % 256)}
 			value := []byte{byte(i % 256), byte((i / 256) % 256), byte((i / 65536) % 256)}
 			_ = store.Set(key, value)
@@ -70,7 +70,7 @@ func BenchmarkCacheStore(b *testing.B) {
 	// Benchmark large dataset operations
 	b.Run("LargeDataset", func(b *testing.B) {
 		// Pre-populate with a large dataset
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			key := []byte{byte(i % 256), byte((i / 256) % 256)}
 			value := []byte{byte(i % 256), byte((i / 256) % 256), byte((i / 65536) % 256)}
 			_ = store.Set(key, value)

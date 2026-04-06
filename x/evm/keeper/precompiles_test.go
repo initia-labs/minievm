@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -278,7 +279,7 @@ func Test_PrecompileRevertError(t *testing.T) {
 	require.Equal(t, math.ZeroInt(), input.BankKeeper.GetBalance(ctx, addr, denom).Amount)
 }
 
-func mustMarshalJSON(t *testing.T, obj interface{}) []byte {
+func mustMarshalJSON(t *testing.T, obj any) []byte {
 	bz, err := json.Marshal(obj)
 	require.NoError(t, err)
 	return bz

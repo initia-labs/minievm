@@ -142,7 +142,7 @@ func (e *JSONUtilsPrecompile) ExtendedRun(caller common.Address, input []byte, s
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		var m map[string]interface{}
+		var m map[string]any
 		if err := json.Unmarshal(unmarshalJSONArguments.JSONBytes, &m); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
@@ -181,7 +181,7 @@ func (e *JSONUtilsPrecompile) ExtendedRun(caller common.Address, input []byte, s
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		var a []interface{}
+		var a []any
 		if err := json.Unmarshal(unmarshalJSONArguments.JSONBytes, &a); err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}

@@ -264,10 +264,7 @@ func (f *Filter) unindexedLogs(ctx context.Context, logChan chan *coretypes.Log)
 		// make local copy of i for goroutine
 		idx := i
 		begin := f.begin + i*batchSize
-		end := begin + batchSize - 1
-		if end > f.end {
-			end = f.end
-		}
+		end := min(begin+batchSize-1, f.end)
 
 		// fetch logs in parallel
 		g.Go(func() error {

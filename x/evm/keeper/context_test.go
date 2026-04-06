@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"

@@ -160,7 +160,7 @@ func Test_NewPendingTransactionFilter_FullTx(t *testing.T) {
 	rpcTx2.TransactionIndex = nil
 
 	res := []string{}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		rpcTx := changes.([]*rpctypes.RPCTransaction)[i]
 		res = append(res, rpcTx.String())
 	}
@@ -391,7 +391,7 @@ func Test_GetLogs(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// increase block heights for batching tests
-	for i := uint64(0); i < evmconfig.SectionSize; i++ {
+	for range evmconfig.SectionSize {
 		tests.IncreaseBlockHeight(t, app)
 	}
 

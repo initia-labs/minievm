@@ -2,9 +2,10 @@ package app
 
 import (
 	"cosmossdk.io/errors"
-	"github.com/cosmos/cosmos-sdk/x/authz"
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
+
+	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"

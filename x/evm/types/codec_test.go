@@ -3,10 +3,11 @@ package types
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRegisterLegacyAminoCodec(t *testing.T) {
@@ -20,7 +21,7 @@ func TestRegisterLegacyAminoCodec(t *testing.T) {
 	// Test that concrete types can be marshaled and unmarshaled
 	concreteTypes := []struct {
 		name string
-		obj  interface{}
+		obj  any
 	}{
 		{
 			name: "ContractAccount",

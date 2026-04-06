@@ -5,10 +5,11 @@ import (
 	"math/big"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
 	"github.com/initia-labs/minievm/x/evm/keeper"
@@ -186,7 +187,7 @@ func (b *JSONRPCBackend) ChainID() (*big.Int, error) {
 	return types.ConvertCosmosChainIDToEthereumChainID(sdkCtx.ChainID()), nil
 }
 
-func (b *JSONRPCBackend) Syncing() (interface{}, error) {
+func (b *JSONRPCBackend) Syncing() (any, error) {
 	status, err := b.clientCtx.Client.Status(b.ctx)
 	if err != nil {
 		return nil, err
@@ -199,7 +200,7 @@ func (b *JSONRPCBackend) Syncing() (interface{}, error) {
 	latestHeight := status.SyncInfo.LatestBlockHeight
 
 	// Otherwise gather the block sync stats
-	return map[string]interface{}{
+	return map[string]any{
 		"startingBlock":          hexutil.Uint64(status.SyncInfo.EarliestBlockHeight),
 		"currentBlock":           hexutil.Uint64(latestHeight),
 		"highestBlock":           hexutil.Uint64(latestHeight),

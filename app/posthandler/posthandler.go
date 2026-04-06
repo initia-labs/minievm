@@ -5,6 +5,7 @@ import (
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"

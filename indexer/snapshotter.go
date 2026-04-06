@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/collections"
 	snapshot "cosmossdk.io/store/snapshots/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	coretypes "github.com/ethereum/go-ethereum/core/types"
