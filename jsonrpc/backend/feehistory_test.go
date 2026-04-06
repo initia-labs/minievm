@@ -56,12 +56,12 @@ func Test_FeeHistory(t *testing.T) {
 
 	nonce := 2
 	txs := make([]sdk.Tx, 5)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		txs[i], _ = tests.GenerateTransferERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000), tests.SetNonce(uint64(nonce+i)), tests.SetGasLimit(gasLimit), tests.SetGasFeeCap(gasFeeCap), tests.SetGasTipCap(gasTipCap))
 	}
 	_, finalizeRes = tests.ExecuteTxs(t, app, txs...)
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		tests.CheckTxResult(t, finalizeRes.TxResults[i], true)
 	}
 

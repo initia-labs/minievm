@@ -5,8 +5,9 @@ import (
 	"time"
 
 	tmcfg "github.com/cometbft/cometbft/config"
-	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/initia-labs/initia/abcipp"
+
+	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 
 	jsonrpcconfig "github.com/initia-labs/minievm/jsonrpc/config"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
@@ -28,7 +29,7 @@ type minitiaAppConfig struct {
 
 // initAppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
-func initAppConfig() (string, interface{}) {
+func initAppConfig() (string, any) {
 	// Optionally allow the chain developer to overwrite the SDK's default
 	// server config.
 	srvCfg := serverconfig.DefaultConfig()

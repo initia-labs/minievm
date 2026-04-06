@@ -5,9 +5,10 @@ import (
 
 	"cosmossdk.io/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/require"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func Test_CalGasUsed(t *testing.T) {
@@ -21,10 +22,7 @@ func Test_CalGasUsed(t *testing.T) {
 
 	// Test with zero gas remaining
 	gasUsed = CalGasUsed(100, 0, 10)
-	expectedRefund := 100 / params.RefundQuotientEIP3529
-	if expectedRefund > 10 {
-		expectedRefund = 10
-	}
+	expectedRefund := min(100/params.RefundQuotientEIP3529, 10)
 	require.Equal(t, uint64(100-expectedRefund), gasUsed)
 
 	// Test with zero gas refunded
@@ -33,10 +31,7 @@ func Test_CalGasUsed(t *testing.T) {
 
 	// Test with large refund that gets capped
 	gasUsed = CalGasUsed(1000, 100, 1000) // refund would be 900/5=180, capped at 1000, so uses 180
-	expectedRefund = 900 / params.RefundQuotientEIP3529
-	if expectedRefund > 1000 {
-		expectedRefund = 1000
-	}
+	expectedRefund = min(900/params.RefundQuotientEIP3529, 1000)
 	require.Equal(t, uint64(900-expectedRefund), gasUsed)
 
 	// Test edge case: gasBalance equals gasRemaining
@@ -50,10 +45,7 @@ func Test_CalGasUsed(t *testing.T) {
 	// This could lead to unexpected behavior in edge cases
 	// 100 - 150 underflows to 18446744073709551566
 	expectedGasUsed := uint64(18446744073709551566)
-	expectedRefund = expectedGasUsed / params.RefundQuotientEIP3529
-	if expectedRefund > 10 {
-		expectedRefund = 10
-	}
+	expectedRefund = min(expectedGasUsed/params.RefundQuotientEIP3529, 10)
 	require.Equal(t, expectedGasUsed-expectedRefund, gasUsed)
 }
 

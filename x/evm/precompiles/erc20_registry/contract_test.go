@@ -11,9 +11,10 @@ import (
 	storemetrics "cosmossdk.io/store/metrics"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	db "github.com/cosmos/cosmos-db"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	contracts "github.com/initia-labs/minievm/x/evm/contracts/i_erc20_registry"
 	precompiles "github.com/initia-labs/minievm/x/evm/precompiles/erc20_registry"

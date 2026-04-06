@@ -4,8 +4,9 @@ import (
 	"context"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
+	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/initia-labs/minievm/app/upgrades"
 	"github.com/initia-labs/minievm/app/upgrades/contracts/erc20_factory"

@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
 	proto "github.com/cosmos/gogoproto/proto"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 

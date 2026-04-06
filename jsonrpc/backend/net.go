@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"

@@ -5,9 +5,10 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/params"
 	"golang.org/x/crypto/sha3"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func ConvertCosmosChainIDToEthereumChainID(chainID string) *big.Int {

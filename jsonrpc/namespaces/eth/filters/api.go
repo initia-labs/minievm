@@ -472,13 +472,13 @@ func (api *FilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*coretype
 //
 // For pending transaction and block filters the result is []common.Hash.
 // (pending)Log filters return []Log.
-func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
+func (api *FilterAPI) GetFilterChanges(id rpc.ID) (any, error) {
 	api.filtersMut.RLock()
 	f, ok := api.filters[id]
 	api.filtersMut.RUnlock()
 
 	if !ok {
-		return []interface{}{}, errFilterNotFound
+		return []any{}, errFilterNotFound
 	}
 
 	f.lastUsed = time.Now()
@@ -508,7 +508,7 @@ func (api *FilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
 		return returnHashes(hashes), nil
 	}
 
-	return []interface{}{}, errFilterNotFound
+	return []any{}, errFilterNotFound
 }
 
 // returnLogs is a helper that will return an empty log array in case the given logs array is nil,

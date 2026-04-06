@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"cosmossdk.io/core/address"
+	"github.com/ethereum/go-ethereum/common"
+
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 var (

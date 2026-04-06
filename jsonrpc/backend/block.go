@@ -91,7 +91,7 @@ func (b *JSONRPCBackend) GetHeaderByHash(hash common.Hash) (*coretypes.Header, e
 	return b.GetHeaderByNumber(rpc.BlockNumber(blockNumber))
 }
 
-func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
+func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bool) (map[string]any, error) {
 	blockNumber, err := b.resolveBlockNr(ethBlockNum)
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (b *JSONRPCBackend) GetBlockByNumber(ethBlockNum rpc.BlockNumber, fullTx bo
 	return formatBlock(header, txs, fullTx), nil
 }
 
-func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
+func (b *JSONRPCBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]any, error) {
 	blockNumber, err := b.resolveBlockNrOrHash(rpc.BlockNumberOrHash{BlockHash: &hash})
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
@@ -140,7 +140,7 @@ func (b *JSONRPCBackend) blockNumberByHash(hash common.Hash) (uint64, error) {
 	return number, nil
 }
 
-func formatBlock(header *coretypes.Header, txs []*rpctypes.RPCTransaction, fullTx bool) map[string]interface{} {
+func formatBlock(header *coretypes.Header, txs []*rpctypes.RPCTransaction, fullTx bool) map[string]any {
 	fields := formatHeader(header)
 
 	if fullTx {
@@ -162,8 +162,8 @@ func formatBlock(header *coretypes.Header, txs []*rpctypes.RPCTransaction, fullT
 }
 
 // formatHeader converts the given header to the RPC output .
-func formatHeader(head *coretypes.Header) map[string]interface{} {
-	result := map[string]interface{}{
+func formatHeader(head *coretypes.Header) map[string]any {
+	result := map[string]any{
 		"number":           (*hexutil.Big)(head.Number),
 		"hash":             head.Hash(),
 		"parentHash":       head.ParentHash,

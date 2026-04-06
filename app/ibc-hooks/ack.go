@@ -4,11 +4,12 @@ import (
 	"errors"
 
 	"cosmossdk.io/collections"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	"github.com/initia-labs/initia/x/ibc-hooks/types"

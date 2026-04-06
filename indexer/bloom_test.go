@@ -38,7 +38,7 @@ func Test_BloomIndexing(t *testing.T) {
 	_, finalizeRes = tests.ExecuteTxs(t, app, tx)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
-	for i := uint64(0); i < evmconfig.SectionSize; i++ {
+	for range evmconfig.SectionSize {
 		tests.IncreaseBlockHeight(t, app)
 	}
 
@@ -55,7 +55,7 @@ func Test_BloomIndexing(t *testing.T) {
 	}
 	require.NoError(t, err)
 
-	for i := uint32(0); i < coretypes.BloomBitLength; i++ {
+	for i := range uint32(coretypes.BloomBitLength) {
 		bloomBits, err := indexer.ReadBloomBits(ctx, 0, i)
 		require.NoError(t, err)
 		require.NotNil(t, bloomBits)
