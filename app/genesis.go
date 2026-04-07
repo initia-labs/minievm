@@ -17,6 +17,7 @@ import (
 
 	l2connect "github.com/initia-labs/OPinit/x/opchild/l2connect"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
+
 	"github.com/initia-labs/initia/app/genesis_markets"
 
 	connecttypes "github.com/skip-mev/connect/v2/pkg/types"

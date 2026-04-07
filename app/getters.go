@@ -7,10 +7,11 @@ import (
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
-	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
-	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
+
+	ibctestingtypes "github.com/initia-labs/initia/x/ibc/testing/types"
+	icaauthkeeper "github.com/initia-labs/initia/x/intertx/keeper"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"

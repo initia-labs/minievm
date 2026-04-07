@@ -13,8 +13,9 @@ import (
 	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 
-	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 	evmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
+
+	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 )
 
 func Test_SendPacket_asyncCallback_only(t *testing.T) {

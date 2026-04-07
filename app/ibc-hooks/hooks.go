@@ -11,10 +11,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm/contracts/i_ibc_async_callback"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 )
 
 var (

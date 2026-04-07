@@ -16,10 +16,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 	evm_hooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 )
 
 func Test_onReceiveIcs20Packet_noMemo(t *testing.T) {

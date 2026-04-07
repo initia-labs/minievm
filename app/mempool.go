@@ -3,6 +3,7 @@ package app
 import (
 	cmtmempool "github.com/cometbft/cometbft/mempool"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/initia-labs/initia/abcipp"
 
 	rpctypes "github.com/initia-labs/minievm/jsonrpc/types"
