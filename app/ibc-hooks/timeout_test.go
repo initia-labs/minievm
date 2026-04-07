@@ -18,10 +18,11 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
-	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
-	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 	evmhooks "github.com/initia-labs/minievm/app/ibc-hooks"
 	"github.com/initia-labs/minievm/x/evm/contracts/counter"
+
+	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
+	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"
 )
 
 func Test_onTimeoutIcs20Packet_noMemo(t *testing.T) {

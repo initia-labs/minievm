@@ -41,12 +41,13 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 	custombankkeeper "github.com/initia-labs/minievm/x/bank/keeper"
 	"github.com/initia-labs/minievm/x/evm"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 )
 
 var ModuleBasics = module.NewBasicManager(

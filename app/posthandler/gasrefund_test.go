@@ -16,12 +16,13 @@ import (
 	coretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 	"github.com/initia-labs/minievm/app/posthandler"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	"github.com/initia-labs/initia/crypto/ethsecp256k1"
 )
 
 func (suite *PostHandlerTestSuite) Test_NotSpendingGasForTxWithFeeDenom() {

@@ -14,8 +14,9 @@ import (
 
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 	ophosttypes "github.com/initia-labs/OPinit/x/ophost/types"
-	ibctesting "github.com/initia-labs/initia/x/ibc/testing"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
+
+	ibctesting "github.com/initia-labs/initia/x/ibc/testing"
 
 	"github.com/ethereum/go-ethereum/common"
 )
