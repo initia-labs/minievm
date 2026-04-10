@@ -33,6 +33,7 @@ func Test_Reader(t *testing.T) {
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
 	require.NoError(t, err)
 
+	// check the tx is indexed
 	evmTx, err := indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
@@ -54,6 +55,7 @@ func Test_Reader(t *testing.T) {
 	cmtTx2 := cmttypes.Tx(txBytes2)
 	cosmosTxHash2 := cmtTx2.Hash()
 
+	// check the tx is indexed
 	evmTx, err = indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)

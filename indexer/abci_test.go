@@ -279,6 +279,7 @@ func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
 	require.NoError(t, err)
 
+	// check the tx is indexed
 	receipt, err := indexer.TxReceiptByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, receipt)
