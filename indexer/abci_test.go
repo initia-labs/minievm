@@ -59,13 +59,6 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	finalizeReq, finalizeRes := tests.ExecuteTxs(t, app, tx)
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
-	// listen finalize block
-	_, closer, err = app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	// check the tx is indexed
 	evmTx, err = indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
@@ -251,13 +244,6 @@ func Test_ListenFinalizeBlock_Subscribe_CancelBeforeDrain(t *testing.T) {
 	// Wait for indexing to complete
 	indexer.Wait()
 
-	// Block should still be indexed in storage despite subscriber cancellation
-	_, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	ih, err := indexer.GetLastIndexedHeight()
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
@@ -290,13 +276,6 @@ func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
 	require.Equal(t, evmtypes.EventTypeContractCreated, createEvent.GetType())
 
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
-	require.NoError(t, err)
-
-	// check the tx is indexed
-	_, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
 	require.NoError(t, err)
 
 	receipt, err := indexer.TxReceiptByHash(evmTxHash)

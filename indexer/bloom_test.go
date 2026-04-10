@@ -49,12 +49,6 @@ func Test_BloomIndexing(t *testing.T) {
 		return indexer.GetLastBloomIndexedHeight() >= evmconfig.SectionSize
 	}, 10*time.Second, 50*time.Millisecond)
 
-	_, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	for i := range uint32(coretypes.BloomBitLength) {
 		bloomBits, err := indexer.ReadBloomBits(0, i)
 		require.NoError(t, err)

@@ -33,13 +33,6 @@ func Test_Reader(t *testing.T) {
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
 	require.NoError(t, err)
 
-	// check the tx is indexed
-	_, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	evmTx, err := indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
@@ -60,13 +53,6 @@ func Test_Reader(t *testing.T) {
 	cosmosTxHash := cmtTx.Hash()
 	cmtTx2 := cmttypes.Tx(txBytes2)
 	cosmosTxHash2 := cmtTx2.Hash()
-
-	// check the tx is indexed
-	_, closer, err = app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
 
 	evmTx, err = indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)

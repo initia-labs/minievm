@@ -50,12 +50,6 @@ func Test_TxStartLogIndex(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
-	_, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	// tx1 is the first tx in the block — its start log index must be 0
 	start1, err := indexer.TxStartLogIndexByHash(evmHash1)
 	require.NoError(t, err)
@@ -111,12 +105,6 @@ func Test_TxStartLogIndex_Pruned(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return indexer.GetLastPruneTriggerHeight() >= uint64(finalizeReq.Height)
 	}, 10*time.Second, 50*time.Millisecond, "timed out waiting for pruning to finish")
-
-	_, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
 
 	// pruned tx's start log index should be gone
 	_, err = indexer.TxStartLogIndexByHash(evmHashPruned)

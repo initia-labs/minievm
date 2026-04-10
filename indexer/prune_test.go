@@ -36,13 +36,6 @@ func Test_PruneIndexer(t *testing.T) {
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
 	require.NoError(t, err)
 
-	// listen finalize block
-	_, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	// check the tx is indexed
 	evmTx, err := indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
@@ -60,13 +53,6 @@ func Test_PruneIndexer(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return indexer.GetLastPruneTriggerHeight() >= uint64(finalizeReq.Height)
 	}, 10*time.Second, 50*time.Millisecond)
-
-	// listen finalize block
-	_, closer, err = app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
 
 	// check the block header is indexed
 	header, err := indexer.BlockHeaderByNumber(uint64(finalizeReq.Height))
