@@ -9,7 +9,7 @@ import (
 
 // CosmosTxHashByTxHash returns the Cosmos transaction hash by the Ethereum transaction hash.
 func (b *JSONRPCBackend) CosmosTxHashByTxHash(hash common.Hash) ([]byte, error) {
-	cosmosTxHash, err := b.app.EVMIndexer().CosmosTxHashByTxHash(b.ctx, hash)
+	cosmosTxHash, err := b.app.EVMIndexer().CosmosTxHashByTxHash(hash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -22,7 +22,7 @@ func (b *JSONRPCBackend) CosmosTxHashByTxHash(hash common.Hash) ([]byte, error) 
 
 // TxHashByCosmosTxHash returns the Ethereum transaction hash by the Cosmos transaction hash.
 func (b *JSONRPCBackend) TxHashByCosmosTxHash(hash []byte) (common.Hash, error) {
-	txHash, err := b.app.EVMIndexer().TxHashByCosmosTxHash(b.ctx, hash)
+	txHash, err := b.app.EVMIndexer().TxHashByCosmosTxHash(hash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return common.Hash{}, nil
 	} else if err != nil {

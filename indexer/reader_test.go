@@ -34,13 +34,7 @@ func Test_Reader(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the tx is indexed
-	ctx, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
-	evmTx, err := indexer.TxByHash(ctx, evmTxHash)
+	evmTx, err := indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
@@ -62,37 +56,31 @@ func Test_Reader(t *testing.T) {
 	cosmosTxHash2 := cmtTx2.Hash()
 
 	// check the tx is indexed
-	ctx, closer, err = app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
-	evmTx, err = indexer.TxByHash(ctx, evmTxHash)
+	evmTx, err = indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
-	evmTx, err = indexer.TxByHash(ctx, evmTxHash2)
+	evmTx, err = indexer.TxByHash(evmTxHash2)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
 	// check the block header is indexed
-	header, err := indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	header, err := indexer.BlockHeaderByNumber(uint64(finalizeReq.Height))
 	require.NoError(t, err)
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
 	// check tx hash by block and index
-	txHash, err := indexer.TxHashByBlockAndIndex(ctx, uint64(finalizeReq.Height), 1)
+	txHash, err := indexer.TxHashByBlockAndIndex(uint64(finalizeReq.Height), 1)
 	require.NoError(t, err)
 	require.Equal(t, evmTxHash, txHash)
 
-	txHash, err = indexer.TxHashByBlockAndIndex(ctx, uint64(finalizeReq.Height), 2)
+	txHash, err = indexer.TxHashByBlockAndIndex(uint64(finalizeReq.Height), 2)
 	require.NoError(t, err)
 	require.Equal(t, evmTxHash2, txHash)
 
 	// iterate block txs
 	count := 0
-	err = indexer.IterateBlockTxs(ctx, uint64(finalizeReq.Height), func(tx *rpctypes.RPCTransaction) (bool, error) {
+	err = indexer.IterateBlockTxs(uint64(finalizeReq.Height), func(tx *rpctypes.RPCTransaction) (bool, error) {
 		count++
 		switch count {
 		case 1:
@@ -106,18 +94,18 @@ func Test_Reader(t *testing.T) {
 	require.Equal(t, 2, count)
 
 	// receipt by hash
-	receipt1, err := indexer.TxReceiptByHash(ctx, evmTxHash)
+	receipt1, err := indexer.TxReceiptByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, receipt1)
 
 	// receipt by hash
-	receipt2, err := indexer.TxReceiptByHash(ctx, evmTxHash2)
+	receipt2, err := indexer.TxReceiptByHash(evmTxHash2)
 	require.NoError(t, err)
 	require.NotNil(t, receipt2)
 
 	// iterate block tx receipts
 	count = 0
-	err = indexer.IterateBlockTxReceipts(ctx, uint64(finalizeReq.Height), func(receipt *coretypes.Receipt) (bool, error) {
+	err = indexer.IterateBlockTxReceipts(uint64(finalizeReq.Height), func(receipt *coretypes.Receipt) (bool, error) {
 		count++
 		switch count {
 		case 1:
@@ -130,25 +118,25 @@ func Test_Reader(t *testing.T) {
 	require.NoError(t, err)
 
 	// block hash to number
-	blockNumber, err := indexer.BlockHashToNumber(ctx, header.Hash())
+	blockNumber, err := indexer.BlockHashToNumber(header.Hash())
 	require.NoError(t, err)
 	require.Equal(t, uint64(finalizeReq.Height), blockNumber)
 
 	// cosmos tx hash
-	hash, err := indexer.CosmosTxHashByTxHash(ctx, evmTxHash)
+	hash, err := indexer.CosmosTxHashByTxHash(evmTxHash)
 	require.NoError(t, err)
 	require.Equal(t, cosmosTxHash, hash)
 
-	hash, err = indexer.CosmosTxHashByTxHash(ctx, evmTxHash2)
+	hash, err = indexer.CosmosTxHashByTxHash(evmTxHash2)
 	require.NoError(t, err)
 	require.Equal(t, cosmosTxHash2, hash)
 
 	// tx hash by cosmos tx hash
-	txHash, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	txHash, err = indexer.TxHashByCosmosTxHash(cosmosTxHash)
 	require.NoError(t, err)
 	require.Equal(t, evmTxHash, txHash)
 
-	txHash, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash2)
+	txHash, err = indexer.TxHashByCosmosTxHash(cosmosTxHash2)
 	require.NoError(t, err)
 	require.Equal(t, evmTxHash2, txHash)
 }

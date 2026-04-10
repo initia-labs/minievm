@@ -112,23 +112,22 @@ func (e *EVMIndexerImpl) RestoreExtension(height uint64, format uint32, payloadR
 func (e *EVMIndexerImpl) SnapshotExtension(height uint64, payloadWriter snapshot.ExtensionPayloadWriter) error {
 	logger := e.logger.With("module", "snapshotter")
 	var s SnapshotInfo
-	ctx := sdk.Context{}.WithContext(context.Background())
 
-	header, err := e.BlockHeaderByNumber(ctx, height)
+	header, err := e.BlockHeaderByNumber(height)
 	if err != nil {
 		logger.Error("failed to get block header", "err", err)
 		return err
 	}
 	s.Header = header
 
-	err = e.IterateBlockTxs(ctx, height, func(tx *rpctypes.RPCTransaction) (bool, error) {
-		cosmosTxHash, err := e.CosmosTxHashByTxHash(ctx, tx.Hash)
+	err = e.IterateBlockTxs(height, func(tx *rpctypes.RPCTransaction) (bool, error) {
+		cosmosTxHash, err := e.CosmosTxHashByTxHash(tx.Hash)
 		if err != nil {
 			logger.Error("failed to get cosmos tx hash", "err", err)
 			return true, err
 		}
 
-		receipt, err := e.TxReceiptByHash(ctx, tx.Hash)
+		receipt, err := e.TxReceiptByHash(tx.Hash)
 		if err != nil {
 			logger.Error("failed to get tx receipt", "err", err)
 			return true, err
