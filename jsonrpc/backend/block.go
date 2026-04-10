@@ -13,7 +13,7 @@ import (
 )
 
 func (b *JSONRPCBackend) BlockNumber() (hexutil.Uint64, error) {
-	lh, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	lh, err := b.app.EVMIndexer().GetLastIndexedHeight()
 	if err != nil {
 		return 0, err
 	}
@@ -66,7 +66,7 @@ func (b *JSONRPCBackend) GetHeaderByNumber(ethBlockNum rpc.BlockNumber) (*corety
 		return header, nil
 	}
 
-	header, err := b.app.EVMIndexer().BlockHeaderByNumber(b.ctx, blockNumber)
+	header, err := b.app.EVMIndexer().BlockHeaderByNumber(blockNumber)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -130,7 +130,7 @@ func (b *JSONRPCBackend) blockNumberByHash(hash common.Hash) (uint64, error) {
 		return number, nil
 	}
 
-	number, err := b.app.EVMIndexer().BlockHashToNumber(b.ctx, hash)
+	number, err := b.app.EVMIndexer().BlockHashToNumber(hash)
 	if err != nil {
 		b.logger.Error("failed to get block number by hash", "err", err)
 		return 0, NewInternalError("failed to get block number by hash")
@@ -203,7 +203,7 @@ func formatHeader(head *coretypes.Header) map[string]any {
 // the last indexed block height. Returns true if the block is indexed, false if not indexed or
 // if there was an error retrieving the last indexed height (error will be logged).
 func (b *JSONRPCBackend) isBlockIndexed(blockHeight uint64) (bool, error) {
-	lastIndexedHeight, err := b.app.EVMIndexer().GetLastIndexedHeight(b.ctx)
+	lastIndexedHeight, err := b.app.EVMIndexer().GetLastIndexedHeight()
 	if err != nil {
 		b.logger.Error("failed to get last indexed height", "err", err)
 		return false, err

@@ -1,8 +1,6 @@
 package indexer
 
 import (
-	"context"
-
 	"cosmossdk.io/collections"
 	"github.com/ethereum/go-ethereum/common"
 	coretypes "github.com/ethereum/go-ethereum/core/types"
@@ -10,8 +8,8 @@ import (
 )
 
 // BlockHeaderByNumber implements EVMIndexer.
-func (e *EVMIndexerImpl) BlockHeaderByNumber(ctx context.Context, blockNumber uint64) (*coretypes.Header, error) {
-	blockHeader, err := e.BlockHeaderMap.Get(ctx, blockNumber)
+func (e *EVMIndexerImpl) BlockHeaderByNumber(blockNumber uint64) (*coretypes.Header, error) {
+	blockHeader, err := e.BlockHeaderMap.Get(storageCtx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -20,8 +18,8 @@ func (e *EVMIndexerImpl) BlockHeaderByNumber(ctx context.Context, blockNumber ui
 }
 
 // TxHashByBlockAndIndex implements EVMIndexer.
-func (e *EVMIndexerImpl) TxHashByBlockAndIndex(ctx context.Context, blockHeight uint64, index uint64) (common.Hash, error) {
-	txHashBz, err := e.BlockAndIndexToTxHashMap.Get(ctx, collections.Join(blockHeight, index))
+func (e *EVMIndexerImpl) TxHashByBlockAndIndex(blockHeight uint64, index uint64) (common.Hash, error) {
+	txHashBz, err := e.BlockAndIndexToTxHashMap.Get(storageCtx, collections.Join(blockHeight, index))
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -30,8 +28,8 @@ func (e *EVMIndexerImpl) TxHashByBlockAndIndex(ctx context.Context, blockHeight 
 }
 
 // TxByHash implements EVMIndexer.
-func (e *EVMIndexerImpl) TxByHash(ctx context.Context, hash common.Hash) (*rpctypes.RPCTransaction, error) {
-	tx, err := e.TxMap.Get(ctx, hash.Bytes())
+func (e *EVMIndexerImpl) TxByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
+	tx, err := e.TxMap.Get(storageCtx, hash.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +38,10 @@ func (e *EVMIndexerImpl) TxByHash(ctx context.Context, hash common.Hash) (*rpcty
 }
 
 // IterateBlockTxs implements EVMIndexer.
-func (e *EVMIndexerImpl) IterateBlockTxs(ctx context.Context, blockHeight uint64, cb func(tx *rpctypes.RPCTransaction) (bool, error)) error {
-	return e.BlockAndIndexToTxHashMap.Walk(ctx, collections.NewPrefixedPairRange[uint64, uint64](blockHeight), func(key collections.Pair[uint64, uint64], txHashBz []byte) (bool, error) {
+func (e *EVMIndexerImpl) IterateBlockTxs(blockHeight uint64, cb func(tx *rpctypes.RPCTransaction) (bool, error)) error {
+	return e.BlockAndIndexToTxHashMap.Walk(storageCtx, collections.NewPrefixedPairRange[uint64, uint64](blockHeight), func(key collections.Pair[uint64, uint64], txHashBz []byte) (bool, error) {
 		txHash := common.BytesToHash(txHashBz)
-		tx, err := e.TxByHash(ctx, txHash)
+		tx, err := e.TxByHash(txHash)
 		if err != nil {
 			return true, err
 		}
@@ -53,10 +51,10 @@ func (e *EVMIndexerImpl) IterateBlockTxs(ctx context.Context, blockHeight uint64
 }
 
 // IterateBlockTxReceipts implements EVMIndexer.
-func (e *EVMIndexerImpl) IterateBlockTxReceipts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error {
-	return e.BlockAndIndexToTxHashMap.Walk(ctx, collections.NewPrefixedPairRange[uint64, uint64](blockHeight), func(key collections.Pair[uint64, uint64], txHashBz []byte) (bool, error) {
+func (e *EVMIndexerImpl) IterateBlockTxReceipts(blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error {
+	return e.BlockAndIndexToTxHashMap.Walk(storageCtx, collections.NewPrefixedPairRange[uint64, uint64](blockHeight), func(key collections.Pair[uint64, uint64], txHashBz []byte) (bool, error) {
 		txHash := common.BytesToHash(txHashBz)
-		txReceipt, err := e.TxReceiptByHash(ctx, txHash)
+		txReceipt, err := e.TxReceiptByHash(txHash)
 		if err != nil {
 			return true, err
 		}
@@ -66,36 +64,36 @@ func (e *EVMIndexerImpl) IterateBlockTxReceipts(ctx context.Context, blockHeight
 }
 
 // TxReceiptByHash implements EVMIndexer.
-func (e *EVMIndexerImpl) TxReceiptByHash(ctx context.Context, hash common.Hash) (*coretypes.Receipt, error) {
-	receipt, err := e.TxReceiptMap.Get(ctx, hash.Bytes())
+func (e *EVMIndexerImpl) TxReceiptByHash(hash common.Hash) (*coretypes.Receipt, error) {
+	receipt, err := e.TxReceiptMap.Get(storageCtx, hash.Bytes())
 	return &receipt, err
 }
 
 // TxStartLogIndexByHash implements EVMIndexer.
 // Returns the block-scoped index of the first log for the given tx.
 // Returns collections.ErrNotFound if not stored (e.g. indexed before this field was introduced).
-func (e *EVMIndexerImpl) TxStartLogIndexByHash(ctx context.Context, hash common.Hash) (uint64, error) {
-	return e.TxStartLogIndexMap.Get(ctx, hash.Bytes())
+func (e *EVMIndexerImpl) TxStartLogIndexByHash(hash common.Hash) (uint64, error) {
+	return e.TxStartLogIndexMap.Get(storageCtx, hash.Bytes())
 }
 
 // StoreTxStartLogIndex implements EVMIndexer.
-func (e *EVMIndexerImpl) StoreTxStartLogIndex(ctx context.Context, hash common.Hash, index uint64) error {
-	return e.TxStartLogIndexMap.Set(ctx, hash.Bytes(), index)
+func (e *EVMIndexerImpl) StoreTxStartLogIndex(hash common.Hash, index uint64) error {
+	return e.TxStartLogIndexMap.Set(storageCtx, hash.Bytes(), index)
 }
 
 // BlockHashToNumber implements EVMIndexer.
-func (e *EVMIndexerImpl) BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error) {
-	return e.BlockHashToNumberMap.Get(ctx, hash.Bytes())
+func (e *EVMIndexerImpl) BlockHashToNumber(hash common.Hash) (uint64, error) {
+	return e.BlockHashToNumberMap.Get(storageCtx, hash.Bytes())
 }
 
 // CosmosTxHashByTxHash implements EVMIndexer.
-func (e *EVMIndexerImpl) CosmosTxHashByTxHash(ctx context.Context, hash common.Hash) ([]byte, error) {
-	return e.TxHashToCosmosTxHash.Get(ctx, hash.Bytes())
+func (e *EVMIndexerImpl) CosmosTxHashByTxHash(hash common.Hash) ([]byte, error) {
+	return e.TxHashToCosmosTxHash.Get(storageCtx, hash.Bytes())
 }
 
 // TxHashByCosmosTxHash implements EVMIndexer.
-func (e *EVMIndexerImpl) TxHashByCosmosTxHash(ctx context.Context, hash []byte) (common.Hash, error) {
-	bz, err := e.CosmosTxHashToTxHash.Get(ctx, hash)
+func (e *EVMIndexerImpl) TxHashByCosmosTxHash(hash []byte) (common.Hash, error) {
+	bz, err := e.CosmosTxHashToTxHash.Get(storageCtx, hash)
 	if err != nil {
 		return common.Hash{}, err
 	}

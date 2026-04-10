@@ -49,7 +49,7 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the tx is indexed
-	evmTx, err := indexer.TxByHash(ctx, evmTxHash)
+	evmTx, err := indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
@@ -60,25 +60,25 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	// listen finalize block
-	ctx, closer, err = app.CreateQueryContext(0, false)
+	_, closer, err = app.CreateQueryContext(0, false)
 	if closer != nil {
 		defer closer.Close()
 	}
 	require.NoError(t, err)
 
 	// check the tx is indexed
-	evmTx, err = indexer.TxByHash(ctx, evmTxHash)
+	evmTx, err = indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
 	// check the block header is indexed
-	header, err := indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	header, err := indexer.BlockHeaderByNumber(uint64(finalizeReq.Height))
 	require.NoError(t, err)
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
 	// check the tx is indexed
-	ih, err := indexer.GetLastIndexedHeight(ctx)
+	ih, err := indexer.GetLastIndexedHeight()
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
 
@@ -102,22 +102,22 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	// check the block header is indexed
-	header, err = indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	header, err = indexer.BlockHeaderByNumber(uint64(finalizeReq.Height))
 	require.NoError(t, err)
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
 	// check the tx is indexed
-	evmTxHash, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	evmTxHash, err = indexer.TxHashByCosmosTxHash(cosmosTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTxHash)
 
-	evmTx, err = indexer.TxByHash(ctx, evmTxHash)
+	evmTx, err = indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
 	// check the tx is indexed
-	ih, err = indexer.GetLastIndexedHeight(ctx)
+	ih, err = indexer.GetLastIndexedHeight()
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
 
@@ -135,18 +135,18 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 
 	// check the block header is indexed
-	header, err = indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	header, err = indexer.BlockHeaderByNumber(uint64(finalizeReq.Height))
 	require.NoError(t, err)
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
 	// check the tx is indexed
-	ih, err = indexer.GetLastIndexedHeight(ctx)
+	ih, err = indexer.GetLastIndexedHeight()
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
 
 	// check the tx is not indexed
-	_, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	_, err = indexer.TxHashByCosmosTxHash(cosmosTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 
 	// 4. Test that failed Cosmos transactions are not indexed
@@ -166,17 +166,17 @@ func Test_ListenFinalizeBlock(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], false)
 
 	// check the block header is indexed
-	header, err = indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	header, err = indexer.BlockHeaderByNumber(uint64(finalizeReq.Height))
 	require.NoError(t, err)
 	require.NotNil(t, header)
 
 	// check the tx is indexed
-	ih, err = indexer.GetLastIndexedHeight(ctx)
+	ih, err = indexer.GetLastIndexedHeight()
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
 
 	// check the tx is not indexed
-	_, err = indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	_, err = indexer.TxHashByCosmosTxHash(cosmosTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 }
 
@@ -252,13 +252,13 @@ func Test_ListenFinalizeBlock_Subscribe_CancelBeforeDrain(t *testing.T) {
 	indexer.Wait()
 
 	// Block should still be indexed in storage despite subscriber cancellation
-	ctx, closer, err := app.CreateQueryContext(0, false)
+	_, closer, err := app.CreateQueryContext(0, false)
 	if closer != nil {
 		defer closer.Close()
 	}
 	require.NoError(t, err)
 
-	ih, err := indexer.GetLastIndexedHeight(ctx)
+	ih, err := indexer.GetLastIndexedHeight()
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
 
@@ -293,13 +293,13 @@ func Test_ListenFinalizeBlock_ContractCreation(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the tx is indexed
-	ctx, closer, err := app.CreateQueryContext(0, false)
+	_, closer, err := app.CreateQueryContext(0, false)
 	if closer != nil {
 		defer closer.Close()
 	}
 	require.NoError(t, err)
 
-	receipt, err := indexer.TxReceiptByHash(ctx, evmTxHash)
+	receipt, err := indexer.TxReceiptByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, receipt)
 

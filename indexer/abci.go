@@ -85,7 +85,7 @@ func (e *EVMIndexerImpl) indexingLoop() {
 		if err != nil {
 			e.logger.Error("indexingLoop error", "err", err)
 		} else if needBackfill {
-			lastIndexedHeight, err := e.GetLastIndexedHeight(context.Background())
+			lastIndexedHeight, err := e.GetLastIndexedHeight()
 			if err != nil {
 				e.logger.Error("failed to get last indexed height", "err", err)
 				continue
@@ -117,9 +117,6 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		}
 	}()
 
-	// TODO: Consider removing context usage across all getter and setter methods since they are only used for consistency.
-	// Currently keeping it to maintain uniform API patterns across the collections.Map interface and other storage operations.
-	ctx := context.Background()
 	ethTxInfos, err_ := extractEthTxInfos(e.logger, args, req, res)
 	if err_ != nil {
 		err = fmt.Errorf("failed to extract eth tx infos: %w", err_)
@@ -139,11 +136,11 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		contractAddr := ethTxInfo.ContractAddr
 
 		// index tx hash
-		if err_ := e.TxHashToCosmosTxHash.Set(ctx, ethTx.Hash().Bytes(), cosmosTxHash); err_ != nil {
+		if err_ := e.TxHashToCosmosTxHash.Set(storageCtx, ethTx.Hash().Bytes(), cosmosTxHash); err_ != nil {
 			err = fmt.Errorf("failed to store tx hash to cosmos tx hash: %w", err_)
 			return
 		}
-		if err_ := e.CosmosTxHashToTxHash.Set(ctx, cosmosTxHash, ethTx.Hash().Bytes()); err_ != nil {
+		if err_ := e.CosmosTxHashToTxHash.Set(storageCtx, cosmosTxHash, ethTx.Hash().Bytes()); err_ != nil {
 			err = fmt.Errorf("failed to store cosmos tx hash to tx hash: %w", err_)
 			return
 		}
@@ -184,7 +181,7 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 	parentHash := common.Hash{}
 	if blockHeight > 1 {
 		parentNumber := uint64(blockHeight - 1)
-		parentHeader, err_ := e.BlockHeaderByNumber(ctx, parentNumber)
+		parentHeader, err_ := e.BlockHeaderByNumber(parentNumber)
 		if err_ != nil && errors.Is(err_, collections.ErrNotFound) {
 			return true, nil
 		} else if err_ != nil {
@@ -228,24 +225,24 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 		blockLogIndex += uint(len(receipt.Logs))
 
 		// store the block-scoped starting log index for this tx
-		if err_ := e.TxStartLogIndexMap.Set(ctx, txHash.Bytes(), uint64(txStartLogIndex)); err_ != nil {
+		if err_ := e.TxStartLogIndexMap.Set(storageCtx, txHash.Bytes(), uint64(txStartLogIndex)); err_ != nil {
 			err = fmt.Errorf("failed to store tx start log index: %w", err_)
 			return
 		}
 
 		// store tx
 		rpcTx := rpctypes.NewRPCTransaction(ethTx, blockHash, uint64(blockHeight), uint64(receipt.TransactionIndex), ethTx.ChainId())
-		if err_ := e.TxMap.Set(ctx, txHash.Bytes(), *rpcTx); err_ != nil {
+		if err_ := e.TxMap.Set(storageCtx, txHash.Bytes(), *rpcTx); err_ != nil {
 			err = fmt.Errorf("failed to store rpcTx: %w", err_)
 			return
 		}
-		if err_ := e.TxReceiptMap.Set(ctx, txHash.Bytes(), *receipt); err_ != nil {
+		if err_ := e.TxReceiptMap.Set(storageCtx, txHash.Bytes(), *receipt); err_ != nil {
 			err = fmt.Errorf("failed to store tx receipt: %w", err_)
 			return
 		}
 
 		// store index
-		if err_ := e.BlockAndIndexToTxHashMap.Set(ctx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err_ != nil {
+		if err_ := e.BlockAndIndexToTxHashMap.Set(storageCtx, collections.Join(uint64(blockHeight), uint64(receipt.TransactionIndex)), txHash.Bytes()); err_ != nil {
 			err = fmt.Errorf("failed to store blockAndIndexToTxHash: %w", err_)
 			return
 		}
@@ -268,11 +265,11 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 	}
 
 	// index block header
-	if err_ := e.BlockHeaderMap.Set(ctx, uint64(blockHeight), blockHeader); err_ != nil {
+	if err_ := e.BlockHeaderMap.Set(storageCtx, uint64(blockHeight), blockHeader); err_ != nil {
 		err = fmt.Errorf("failed to marshal blockHeader: %w", err_)
 		return
 	}
-	if err_ := e.BlockHashToNumberMap.Set(ctx, blockHash.Bytes(), uint64(blockHeight)); err_ != nil {
+	if err_ := e.BlockHashToNumberMap.Set(storageCtx, blockHash.Bytes(), uint64(blockHeight)); err_ != nil {
 		err = fmt.Errorf("failed to store blockHashToNumber: %w", err_)
 		return
 	}
@@ -300,11 +297,11 @@ func (e *EVMIndexerImpl) doIndexing(args *indexingArgs, req *abci.RequestFinaliz
 
 	// execute pruning only if retain height is set
 	if e.retainHeight > 0 {
-		e.doPrune(ctx, uint64(blockHeight))
+		e.doPrune(storageCtx, uint64(blockHeight))
 	}
 
 	// trigger bloom indexing
-	e.doBloomIndexing(ctx, uint64(blockHeight))
+	e.doBloomIndexing(storageCtx, uint64(blockHeight))
 
 	e.logger.Info("evm indexer indexed", "blockHeight", blockHeight)
 
