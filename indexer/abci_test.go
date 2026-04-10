@@ -244,6 +244,7 @@ func Test_ListenFinalizeBlock_Subscribe_CancelBeforeDrain(t *testing.T) {
 	// Wait for indexing to complete
 	indexer.Wait()
 
+	// Block should still be indexed in storage despite subscriber cancellation
 	ih, err := indexer.GetLastIndexedHeight()
 	require.NoError(t, err)
 	require.Equal(t, finalizeReq.Height, int64(ih))
