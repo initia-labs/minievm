@@ -37,7 +37,6 @@ func Test_PruneIndexer(t *testing.T) {
 	require.NoError(t, err)
 
 	// check the tx is indexed
-	// check the tx is indexed
 	evmTx, err := indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
