@@ -36,10 +36,11 @@ func (e *EVMIndexerImpl) doBloomIndexing(ctx context.Context, height uint64) {
 func (e *EVMIndexerImpl) bloomLoop() {
 	defer close(e.bloomDoneCh)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	for {
 		select {
 		case <-e.bloomStopCh:
+			cancel()
 			return
 		case <-e.bloomNotifyCh:
 		}
@@ -82,7 +83,7 @@ func (e *EVMIndexerImpl) bloomLoop() {
 
 // bloomIndexing generates the bloom index if the current section is complete.
 func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error {
-	section, err := e.PeekBloomBitsNextSection(ctx)
+	section, err := e.PeekBloomBitsNextSection()
 	if err != nil {
 		return err
 	}
@@ -105,7 +106,7 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 		}
 
 		height := section*evmconfig.SectionSize + i
-		header, err := e.BlockHeaderByNumber(ctx, height)
+		header, err := e.BlockHeaderByNumber(height)
 		if err != nil && errors.Is(err, collections.ErrNotFound) {
 			// pruned block, create a dummy header
 			header = &coretypes.Header{
@@ -128,13 +129,13 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 			return err
 		}
 
-		if err := e.RecordBloomBits(ctx, section, uint32(i), bits); err != nil {
+		if err := e.RecordBloomBits(section, uint32(i), bits); err != nil {
 			return err
 		}
 	}
 
 	// increment the section number; if this fails, the section will be reprocessed
-	if err := e.NextBloomBitsSection(ctx); err != nil {
+	if err := e.NextBloomBitsSection(); err != nil {
 		return err
 	}
 
@@ -145,8 +146,8 @@ func (e *EVMIndexerImpl) bloomIndexing(ctx context.Context, height uint64) error
 }
 
 // ReadBloomBits reads the bloom bits for the given index, section and hash.
-func (e *EVMIndexerImpl) ReadBloomBits(ctx context.Context, section uint64, index uint32) ([]byte, error) {
-	bloomBits, err := e.BloomBits.Get(ctx, collections.Join(section, index))
+func (e *EVMIndexerImpl) ReadBloomBits(section uint64, index uint32) ([]byte, error) {
+	bloomBits, err := e.BloomBits.Get(storageCtx, collections.Join(section, index))
 	if err != nil {
 		return nil, err
 	}
@@ -155,19 +156,19 @@ func (e *EVMIndexerImpl) ReadBloomBits(ctx context.Context, section uint64, inde
 }
 
 // RecordBloomBits records the bloom bits for the given index, section and hash.
-func (e *EVMIndexerImpl) RecordBloomBits(ctx context.Context, section uint64, index uint32, bloomBits []byte) error {
-	return e.BloomBits.Set(ctx, collections.Join(section, index), bloomBits)
+func (e *EVMIndexerImpl) RecordBloomBits(section uint64, index uint32, bloomBits []byte) error {
+	return e.BloomBits.Set(storageCtx, collections.Join(section, index), bloomBits)
 }
 
 // NextBloomBitsSection increments the section number.
-func (e *EVMIndexerImpl) NextBloomBitsSection(ctx context.Context) error {
-	_, err := e.BloomBitsNextSection.Next(ctx)
+func (e *EVMIndexerImpl) NextBloomBitsSection() error {
+	_, err := e.BloomBitsNextSection.Next(storageCtx)
 	return err
 }
 
 // PeekBloomBitsNextSection returns the next section number to be processed.
-func (e *EVMIndexerImpl) PeekBloomBitsNextSection(ctx context.Context) (uint64, error) {
-	return e.BloomBitsNextSection.Peek(ctx)
+func (e *EVMIndexerImpl) PeekBloomBitsNextSection() (uint64, error) {
+	return e.BloomBitsNextSection.Peek(storageCtx)
 }
 
 // Check if bloom indexing is running

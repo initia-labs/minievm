@@ -36,15 +36,8 @@ func Test_PruneIndexer(t *testing.T) {
 	contractAddr, err := hexutil.Decode(createEvent.Attributes[0].Value)
 	require.NoError(t, err)
 
-	// listen finalize block
-	ctx, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	// check the tx is indexed
-	evmTx, err := indexer.TxByHash(ctx, evmTxHash)
+	evmTx, err := indexer.TxByHash(evmTxHash)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
@@ -61,53 +54,46 @@ func Test_PruneIndexer(t *testing.T) {
 		return indexer.GetLastPruneTriggerHeight() >= uint64(finalizeReq.Height)
 	}, 10*time.Second, 50*time.Millisecond)
 
-	// listen finalize block
-	ctx, closer, err = app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	// check the block header is indexed
-	header, err := indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height))
+	header, err := indexer.BlockHeaderByNumber(uint64(finalizeReq.Height))
 	require.NoError(t, err)
 	require.NotNil(t, header)
 	require.Equal(t, finalizeReq.Height, header.Number.Int64())
 
 	// previous block should be pruned
-	header, err = indexer.BlockHeaderByNumber(ctx, uint64(finalizeReq.Height-1))
+	header, err = indexer.BlockHeaderByNumber(uint64(finalizeReq.Height - 1))
 	require.ErrorIs(t, err, collections.ErrNotFound)
 	require.Nil(t, header)
 
 	// check the tx is indexed
-	evmTx, err = indexer.TxByHash(ctx, evmTxHash2)
+	evmTx, err = indexer.TxByHash(evmTxHash2)
 	require.NoError(t, err)
 	require.NotNil(t, evmTx)
 
 	// but the first tx should be pruned
-	evmTx, err = indexer.TxByHash(ctx, evmTxHash)
+	evmTx, err = indexer.TxByHash(evmTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 	require.Nil(t, evmTx)
 
 	// check the receipt is indexed
-	receipt, err := indexer.TxReceiptByHash(ctx, evmTxHash2)
+	receipt, err := indexer.TxReceiptByHash(evmTxHash2)
 	require.NoError(t, err)
 	require.NotNil(t, receipt)
 
 	// check the receipt is pruned
-	_, err = indexer.TxReceiptByHash(ctx, evmTxHash)
+	_, err = indexer.TxReceiptByHash(evmTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 
 	// check cosmos tx hash is indexed
-	cosmosTxHash, err := indexer.CosmosTxHashByTxHash(ctx, evmTxHash2)
+	cosmosTxHash, err := indexer.CosmosTxHashByTxHash(evmTxHash2)
 	require.NoError(t, err)
 	require.NotNil(t, cosmosTxHash)
-	evmTxHash3, err := indexer.TxHashByCosmosTxHash(ctx, cosmosTxHash)
+	evmTxHash3, err := indexer.TxHashByCosmosTxHash(cosmosTxHash)
 	require.NoError(t, err)
 	require.Equal(t, evmTxHash2, evmTxHash3)
 
 	// check cosmos tx hash is pruned
-	_, err = indexer.CosmosTxHashByTxHash(ctx, evmTxHash)
+	_, err = indexer.CosmosTxHashByTxHash(evmTxHash)
 	require.ErrorIs(t, err, collections.ErrNotFound)
 }
 

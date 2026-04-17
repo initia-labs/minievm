@@ -83,7 +83,7 @@ const (
 )
 
 func (b *JSONRPCBackend) BloomStatus() (uint64, uint64, error) {
-	sections, err := b.app.EVMIndexer().PeekBloomBitsNextSection(b.ctx)
+	sections, err := b.app.EVMIndexer().PeekBloomBitsNextSection()
 	if err != nil {
 		return 0, 0, err
 	}
@@ -112,7 +112,7 @@ func (b *JSONRPCBackend) startBloomHandlers(sectionSize uint64) {
 					task.Bitsets = make([][]byte, len(task.Sections))
 
 					for i, section := range task.Sections {
-						compVector, err := b.app.EVMIndexer().ReadBloomBits(b.ctx, section, uint32(task.Bit))
+						compVector, err := b.app.EVMIndexer().ReadBloomBits(section, uint32(task.Bit))
 						if errors.Is(err, collections.ErrNotFound) {
 							// pruned section, return empty bitset
 							task.Bitsets[i] = make([]byte, evmconfig.SectionSize/8)

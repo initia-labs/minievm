@@ -50,24 +50,18 @@ func Test_TxStartLogIndex(t *testing.T) {
 	tests.CheckTxResult(t, finalizeRes.TxResults[0], true)
 	tests.CheckTxResult(t, finalizeRes.TxResults[1], true)
 
-	ctx, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	// tx1 is the first tx in the block — its start log index must be 0
-	start1, err := indexer.TxStartLogIndexByHash(ctx, evmHash1)
+	start1, err := indexer.TxStartLogIndexByHash(evmHash1)
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), start1, "first tx start log index should be 0")
 
 	// tx2 follows tx1 which emitted 1 log — its start log index must be 1
-	receipt1, err := indexer.TxReceiptByHash(ctx, evmHash1)
+	receipt1, err := indexer.TxReceiptByHash(evmHash1)
 	require.NoError(t, err)
 	logsInTx1 := uint64(len(receipt1.Logs))
 	require.Greater(t, logsInTx1, uint64(0), "tx1 must have emitted at least one log")
 
-	start2, err := indexer.TxStartLogIndexByHash(ctx, evmHash2)
+	start2, err := indexer.TxStartLogIndexByHash(evmHash2)
 	require.NoError(t, err)
 	require.Equal(t, logsInTx1, start2, "second tx start log index should equal number of logs in first tx")
 }
@@ -112,17 +106,11 @@ func Test_TxStartLogIndex_Pruned(t *testing.T) {
 		return indexer.GetLastPruneTriggerHeight() >= uint64(finalizeReq.Height)
 	}, 10*time.Second, 50*time.Millisecond, "timed out waiting for pruning to finish")
 
-	ctx, closer, err := app.CreateQueryContext(0, false)
-	if closer != nil {
-		defer closer.Close()
-	}
-	require.NoError(t, err)
-
 	// pruned tx's start log index should be gone
-	_, err = indexer.TxStartLogIndexByHash(ctx, evmHashPruned)
+	_, err = indexer.TxStartLogIndexByHash(evmHashPruned)
 	require.ErrorIs(t, err, collections.ErrNotFound, "start log index for pruned tx should be removed")
 
 	// kept tx's start log index should still be present
-	_, err = indexer.TxStartLogIndexByHash(ctx, evmHashKept)
+	_, err = indexer.TxStartLogIndexByHash(evmHashKept)
 	require.NoError(t, err, "start log index for retained tx should still exist")
 }

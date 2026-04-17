@@ -38,23 +38,23 @@ type EVMIndexer interface {
 	storetypes.ABCIListener
 
 	// tx
-	TxByHash(ctx context.Context, hash common.Hash) (*rpctypes.RPCTransaction, error)
-	IterateBlockTxs(ctx context.Context, blockHeight uint64, cb func(tx *rpctypes.RPCTransaction) (bool, error)) error
-	TxHashByBlockAndIndex(ctx context.Context, blockHeight uint64, index uint64) (common.Hash, error)
+	TxByHash(hash common.Hash) (*rpctypes.RPCTransaction, error)
+	IterateBlockTxs(blockHeight uint64, cb func(tx *rpctypes.RPCTransaction) (bool, error)) error
+	TxHashByBlockAndIndex(blockHeight uint64, index uint64) (common.Hash, error)
 
 	// tx receipt
-	TxReceiptByHash(ctx context.Context, hash common.Hash) (*coretypes.Receipt, error)
-	IterateBlockTxReceipts(ctx context.Context, blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error
-	TxStartLogIndexByHash(ctx context.Context, hash common.Hash) (uint64, error)
-	StoreTxStartLogIndex(ctx context.Context, hash common.Hash, index uint64) error
+	TxReceiptByHash(hash common.Hash) (*coretypes.Receipt, error)
+	IterateBlockTxReceipts(blockHeight uint64, cb func(tx *coretypes.Receipt) (bool, error)) error
+	TxStartLogIndexByHash(hash common.Hash) (uint64, error)
+	StoreTxStartLogIndex(hash common.Hash, index uint64) error
 
 	// block
-	BlockHashToNumber(ctx context.Context, hash common.Hash) (uint64, error)
-	BlockHeaderByNumber(ctx context.Context, number uint64) (*coretypes.Header, error)
+	BlockHashToNumber(hash common.Hash) (uint64, error)
+	BlockHeaderByNumber(number uint64) (*coretypes.Header, error)
 
 	// cosmos tx hash
-	CosmosTxHashByTxHash(ctx context.Context, hash common.Hash) ([]byte, error)
-	TxHashByCosmosTxHash(ctx context.Context, hash []byte) (common.Hash, error)
+	CosmosTxHashByTxHash(hash common.Hash) ([]byte, error)
+	TxHashByCosmosTxHash(hash []byte) (common.Hash, error)
 
 	// event subscription
 	Subscribe() (chan *coretypes.Header, chan []*coretypes.Log, func())
@@ -63,11 +63,11 @@ type EVMIndexer interface {
 	MempoolCache() *MempoolTxCache
 
 	// last indexed height
-	GetLastIndexedHeight(ctx context.Context) (uint64, error)
+	GetLastIndexedHeight() (uint64, error)
 
 	// bloom
-	ReadBloomBits(ctx context.Context, section uint64, index uint32) ([]byte, error)
-	PeekBloomBitsNextSection(ctx context.Context) (uint64, error)
+	ReadBloomBits(section uint64, index uint32) ([]byte, error)
+	PeekBloomBitsNextSection() (uint64, error)
 	IsBloomIndexingRunning() bool
 
 	// Close stops the indexer process, waits for pending operations to complete,
@@ -81,6 +81,8 @@ type EVMIndexer interface {
 	// Initialize sets the client context.
 	Initialize(clientCtx client.Context, contextCreator contextCreator, consensusParamsGetter consensusParamsGetter) error
 }
+
+var storageCtx = context.Background()
 
 // contextCreator creates a new SDK context.
 type contextCreator func(height int64, prove bool) (sdk.Context, io.Closer, error)
@@ -251,7 +253,7 @@ func (e *EVMIndexerImpl) Initialize(clientCtx client.Context, contextCreator con
 	e.consensusParamsGetter = consensusParamsGetter
 
 	if e.backfillStartHeight != 0 {
-		lastIndexedHeight, err := e.GetLastIndexedHeight(context.Background())
+		lastIndexedHeight, err := e.GetLastIndexedHeight()
 		if err != nil {
 			e.logger.Error("failed to get last indexed height", "err", err)
 			return err
@@ -314,11 +316,11 @@ func (e *EVMIndexerImpl) Subscribe() (chan *coretypes.Header, chan []*coretypes.
 	return sub.blockChan, sub.logsChan, cancel
 }
 
-func (e *EVMIndexerImpl) GetLastIndexedHeight(ctx context.Context) (uint64, error) {
+func (e *EVMIndexerImpl) GetLastIndexedHeight() (uint64, error) {
 	// if lastIndexedHeight is not set, get the last indexed block header from the store
 	lastIndexedHeight := e.lastIndexedHeight.Load()
 	if lastIndexedHeight == 0 {
-		blockHeader, err := e.BlockHeaderMap.Iterate(ctx, new(collections.Range[uint64]).Descending())
+		blockHeader, err := e.BlockHeaderMap.Iterate(storageCtx, new(collections.Range[uint64]).Descending())
 		if err != nil {
 			return 0, err
 		}
@@ -356,8 +358,8 @@ func (e *EVMIndexerImpl) isPruneIdle() bool {
 // isBloomIdle reports whether bloom indexing has no processable backlog.
 // A requested height inside an incomplete section is not processable yet, so
 // this can still return true in that case.
-func (e *EVMIndexerImpl) isBloomIdle(ctx context.Context) (bool, error) {
-	nextBloomSection, err := e.PeekBloomBitsNextSection(ctx)
+func (e *EVMIndexerImpl) isBloomIdle() (bool, error) {
+	nextBloomSection, err := e.PeekBloomBitsNextSection()
 	if err != nil {
 		return false, err
 	}
@@ -434,7 +436,7 @@ func (e *EVMIndexerImpl) flushStore() error {
 	for {
 		select {
 		case <-ticker.C:
-			bloomIdle, err := e.isBloomIdle(context.Background())
+			bloomIdle, err := e.isBloomIdle()
 			if err != nil {
 				return fmt.Errorf("failed to read next bloom section while flushing store: %w", err)
 			}
