@@ -36,10 +36,11 @@ func (e *EVMIndexerImpl) doBloomIndexing(ctx context.Context, height uint64) {
 func (e *EVMIndexerImpl) bloomLoop() {
 	defer close(e.bloomDoneCh)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	for {
 		select {
 		case <-e.bloomStopCh:
+			cancel()
 			return
 		case <-e.bloomNotifyCh:
 		}
