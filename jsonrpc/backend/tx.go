@@ -248,7 +248,7 @@ func (b *JSONRPCBackend) GetTransactionByBlockNumberAndIndex(blockNum rpc.BlockN
 		return nil, err
 	}
 
-	txhash, err := b.app.EVMIndexer().TxHashByBlockAndIndex(b.ctx, blockNumber, uint64(idx))
+	txhash, err := b.app.EVMIndexer().TxHashByBlockAndIndex(blockNumber, uint64(idx))
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -363,7 +363,7 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 		return rpcTx, nil
 	}
 
-	tx, err := b.app.EVMIndexer().TxByHash(b.ctx, hash)
+	tx, err := b.app.EVMIndexer().TxByHash(hash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -379,7 +379,7 @@ func (b *JSONRPCBackend) getTransaction(hash common.Hash) (*rpctypes.RPCTransact
 // For newly indexed txs the value is stored directly. For old data (before this field was introduced)
 // it computes the value from all block receipts, stores all of them, and returns the result.
 func (b *JSONRPCBackend) getTxStartLogIndex(hash common.Hash, rpcTx *rpctypes.RPCTransaction) (uint, error) {
-	idx, err := b.app.EVMIndexer().TxStartLogIndexByHash(b.ctx, hash)
+	idx, err := b.app.EVMIndexer().TxStartLogIndexByHash(hash)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
 		return 0, NewInternalError("failed to get tx start log index")
 	}
@@ -414,7 +414,7 @@ func (b *JSONRPCBackend) getTxStartLogIndex(hash common.Hash, rpcTx *rpctypes.RP
 	result := uint(0)
 	found := false
 	for i, receipt := range blockReceipts {
-		if err := b.app.EVMIndexer().StoreTxStartLogIndex(b.ctx, blockTxs[i].Hash, uint64(blockLogIndex)); err != nil {
+		if err := b.app.EVMIndexer().StoreTxStartLogIndex(blockTxs[i].Hash, uint64(blockLogIndex)); err != nil {
 			// non-fatal: log and continue; next query will recompute
 			b.logger.Error("failed to lazily store tx start log index", "hash", blockTxs[i].Hash, "err", err)
 		}
@@ -440,7 +440,7 @@ func (b *JSONRPCBackend) getReceipt(hash common.Hash) (*coretypes.Receipt, error
 		return receipt, nil
 	}
 
-	receipt, err := b.app.EVMIndexer().TxReceiptByHash(b.ctx, hash)
+	receipt, err := b.app.EVMIndexer().TxReceiptByHash(hash)
 	if err != nil && errors.Is(err, collections.ErrNotFound) {
 		return nil, nil
 	} else if err != nil {
@@ -458,7 +458,7 @@ func (b *JSONRPCBackend) getBlockTransactions(blockNumber uint64) ([]*rpctypes.R
 	}
 
 	txs := []*rpctypes.RPCTransaction{}
-	err := b.app.EVMIndexer().IterateBlockTxs(b.ctx, blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
+	err := b.app.EVMIndexer().IterateBlockTxs(blockNumber, func(tx *rpctypes.RPCTransaction) (bool, error) {
 		txs = append(txs, tx)
 		return false, nil
 	})
@@ -478,7 +478,7 @@ func (b *JSONRPCBackend) getBlockReceipts(blockNumber uint64) ([]*coretypes.Rece
 	}
 
 	receipt := []*coretypes.Receipt{}
-	err := b.app.EVMIndexer().IterateBlockTxReceipts(b.ctx, blockNumber, func(recept *coretypes.Receipt) (bool, error) {
+	err := b.app.EVMIndexer().IterateBlockTxReceipts(blockNumber, func(recept *coretypes.Receipt) (bool, error) {
 		receipt = append(receipt, recept)
 		return false, nil
 	})

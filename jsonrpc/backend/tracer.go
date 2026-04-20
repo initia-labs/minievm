@@ -117,7 +117,7 @@ func (b *JSONRPCBackend) TraceBlockByHash(hash common.Hash, config *tracers.Trac
 
 func (b *JSONRPCBackend) TraceTransaction(hash common.Hash, config *tracers.TraceConfig) (any, error) {
 	// check if the tx is indexed
-	tx, err := b.app.EVMIndexer().TxByHash(b.ctx, hash)
+	tx, err := b.app.EVMIndexer().TxByHash(hash)
 	if err != nil {
 		return nil, err
 	} else if tx == nil {
