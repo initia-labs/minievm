@@ -1,6 +1,6 @@
 module github.com/initia-labs/minievm/integration-tests
 
-go 1.24.0
+go 1.26.0
 
 require (
 	cosmossdk.io/math v1.4.0
