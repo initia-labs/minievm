@@ -1410,8 +1410,8 @@ github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c h1:qSH
 github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
 github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 h1:W9WBk7wlPfJLvMCdtV4zPulc4uCPrlywQOmbFOhgQNU=
 github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839/go.mod h1:xaLFMmpvUxqXtVkUJfg9QmT88cDaCJ3ZKgdZ78oO8Qo=
-github.com/initia-labs/OPinit v1.3.0-alpha.1 h1:BKkxu+NJbIQyDi/YzG6NY9soXbK/X40+/X9w/sBXiWc=
-github.com/initia-labs/OPinit v1.3.0-alpha.1/go.mod h1:VZG+/Wd/9cVDbzCwZld/tve6kcJC1zemeeQvp5FKKCI=
+github.com/initia-labs/OPinit v1.3.0 h1:cGxJpzVOfxGO8Ql/Z6SVJCSpokkqB4jFBjo6kx9Uax8=
+github.com/initia-labs/OPinit v1.3.0/go.mod h1:VZG+/Wd/9cVDbzCwZld/tve6kcJC1zemeeQvp5FKKCI=
 github.com/initia-labs/OPinit/api v1.3.0 h1:MAu4XEJ2uibDVKBo0jB6b6/BGaoXjDUJC+dwhU530ag=
 github.com/initia-labs/OPinit/api v1.3.0/go.mod h1:sWDfvmcxd7KD59ukB/Wz0BSpyimyptDEzz1Epe/ET+Y=
 github.com/initia-labs/cometbft v0.38.19-minitia.24 h1:laacf9A9XgDLHeQEPrWZiG+rNa3somPPmzqBOrD5LG4=
@@ -1428,8 +1428,8 @@ github.com/initia-labs/forwarding/v2 v2.0.3-initia.3 h1:Uu1VqRsSwX7rgS2A4M3Snzyz
 github.com/initia-labs/forwarding/v2 v2.0.3-initia.3/go.mod h1:N3OzYf14ton71zCxomBmpR7tOxZ2dKwhsMxUmtuJuVQ=
 github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0 h1:qDaf7jqmism9WXe8OtqpDDxJckKrZFVYWRhKFWV8V9g=
 github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0/go.mod h1:G2z+Q6ZQSMcyHI2+BVcJdvfOupb09M2h/tgpXOEdY6k=
-github.com/initia-labs/initia v1.4.0-beta.2 h1:rfwoFREiMvz89Pq4NJHa/E1WKrVoxANTFJ6BIw6+MTU=
-github.com/initia-labs/initia v1.4.0-beta.2/go.mod h1:ANsYsojlAl2VsYMlzlBAidYIjTrzinP+pG5p1EHgwfQ=
+github.com/initia-labs/initia v1.4.6 h1:9/PrZDo5hwHhKvJUvsjK8SwbT0v8iqXpNzU5JFRsM/w=
+github.com/initia-labs/initia v1.4.6/go.mod h1:/aHIbLL7b96+ljiF1FvGHYcgUYCQZK2/FvBqcMVHdgU=
 github.com/initia-labs/initia/api v1.4.0 h1:1DOUBxugC9ZdtMnmmN3qFWnNjlW7I6sssvvu4/ohVtU=
 github.com/initia-labs/initia/api v1.4.0/go.mod h1:YQAtPknqt4tZSj+AK0OfZ83XXah2MCna/Ko74/VQe6Q=
 github.com/initia-labs/movevm v1.2.0 h1:IbpipjRIZe851FJZZzP3RGIqrOCcNsI6bDF9VC0K0do=
