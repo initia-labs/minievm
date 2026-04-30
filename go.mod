@@ -1,6 +1,6 @@
 module github.com/initia-labs/minievm
 
-go 1.24.0
+go 1.26.0
 
 require (
 	cosmossdk.io/api v0.7.6
@@ -32,8 +32,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/holiman/uint256 v1.3.2
-	github.com/initia-labs/OPinit v1.3.0-alpha.1
-	github.com/initia-labs/initia v1.4.0-beta.2
+	github.com/initia-labs/OPinit v1.3.0
+	github.com/initia-labs/initia v1.4.6
 	github.com/initia-labs/store v0.1.1
 	github.com/noble-assets/forwarding/v2 v2.0.3
 	github.com/pkg/errors v0.9.1
