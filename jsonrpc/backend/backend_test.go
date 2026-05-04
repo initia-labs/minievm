@@ -118,8 +118,7 @@ func Test_FloodingQuery(t *testing.T) {
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		for range 1000 {
 			tx, _ = tests.GenerateTransferERC20Tx(t, app, privKeys[0], common.BytesToAddress(contractAddr), addrs[1], new(big.Int).SetUint64(1_000_000))
 			_, finalizeRes = tests.ExecuteTxs(t, app, tx)
@@ -127,8 +126,7 @@ func Test_FloodingQuery(t *testing.T) {
 
 			time.Sleep(5 * time.Millisecond)
 		}
-		wg.Done()
-	}()
+	})
 
 	wg.Wait()
 	cancel()
