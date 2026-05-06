@@ -30,23 +30,23 @@ func (w *CheckTxWrapper) moveToPending(
 
 // updateFeeDenomCache updates the fee denom cache.
 //
-// - If the fee denom height is not the same as the current block height, it will update the fee denom.
+// - If the fee denom is empty or stale for the current block height, it will update the fee denom.
 // - It will then update the fee denom height.
-func (w *CheckTxWrapper) updateFeeDenomCache(sdkCtx sdk.Context) error {
+func (w *CheckTxWrapper) updateFeeDenomCache(sdkCtx sdk.Context) (string, error) {
 	w.feeDenomMut.Lock()
 	defer w.feeDenomMut.Unlock()
 
-	if w.feeDenomHeight < uint64(sdkCtx.BlockHeight()) {
+	if w.feeDenom == "" || w.feeDenomHeight < uint64(sdkCtx.BlockHeight()) {
 		var err error
 		w.feeDenom, err = w.fdg.GetFeeDenom(sdkCtx)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		w.feeDenomHeight = uint64(sdkCtx.BlockHeight())
 	}
 
-	return nil
+	return w.feeDenom, nil
 }
 
 // checkTxHandler is the handler for the checkTx request.
@@ -197,13 +197,16 @@ func (w *CheckTxWrapper) validateTx(sdkCtx sdk.Context, tx sdk.Tx, ethTx *corety
 	}
 
 	// load fee denom if it is not cached
-	err = w.updateFeeDenomCache(sdkCtx)
+	feeDenom, err := w.updateFeeDenomCache(sdkCtx)
 	if err != nil {
 		return nil, err
 	}
+	if err := sdk.ValidateDenom(feeDenom); err != nil {
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "invalid fee denom %q: %v", feeDenom, err)
+	}
 
 	// check balance
-	balance := w.bg.GetBalance(sdkCtx, sdk.AccAddress(expectedSender.Bytes()), w.feeDenom)
+	balance := w.bg.GetBalance(sdkCtx, sdk.AccAddress(expectedSender.Bytes()), feeDenom)
 	if balance.Amount.LT(sdkmath.NewIntFromBigInt(ethTx.Cost())) {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "insufficient balance for tx: %s", ethTx.Hash().Hex())
 	}

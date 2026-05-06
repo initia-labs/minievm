@@ -1,6 +1,7 @@
 package checktx
 
 import (
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -8,6 +9,7 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/jellydator/ttlcache/v3"
 
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -122,7 +124,24 @@ func (w *CheckTxWrapper) Stop() {
 //
 // After the above steps are finished, try to flush
 func (w *CheckTxWrapper) CheckTx() blockchecktx.CheckTx {
-	return func(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error) {
+	return func(req *abci.RequestCheckTx) (res *abci.ResponseCheckTx, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				if w != nil && w.logger != nil {
+					w.logger.Error("panic recovered in checktx wrapper", "panic", r, "stack", string(debug.Stack()))
+				}
+
+				err = nil
+				res = sdkerrors.ResponseCheckTxWithEvents(
+					errorsmod.Wrapf(sdkerrors.ErrPanic, "recovered in checktx wrapper: %v", r),
+					0,
+					0,
+					nil,
+					false,
+				)
+			}
+		}()
+
 		isRecheck := req.Type == abci.CheckTxType_Recheck
 		blockHeight, sdkTx, ethTx, sender, accNonce, err := w.getTxInfo(req)
 		if err != nil {
