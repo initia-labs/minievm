@@ -388,7 +388,7 @@ func NewAppKeeper(
 
 		// create evm ibc-hooks middleware for transfer
 		*ibcHooksICS4Wrapper = *ibchooks.NewICS4Middleware(
-			// ics4wrapper: ibchooks -> channel
+			// ics4wrapper: transfer -> packet forward -> rate limit -> ibchooks -> channel
 			appKeepers.IBCKeeper.ChannelKeeper,
 			appKeepers.IBCHooksKeeper,
 			ibcevmhooks.NewEVMHooks(appCodec, ac, appKeepers.EVMKeeper, appKeepers.OPChildKeeper),
@@ -428,7 +428,7 @@ func NewAppKeeper(
 
 		// create evm ibc-hooks middleware for nft-transfer
 		*ibcHooksICS4Wrapper = *ibchooks.NewICS4Middleware(
-			// ics4wrapper: ibchooks -> channel
+			// ics4wrapper: nft transfer -> ibchooks -> channel
 			appKeepers.IBCKeeper.ChannelKeeper,
 			appKeepers.IBCHooksKeeper,
 			ibcevmhooks.NewEVMHooks(appCodec, ac, appKeepers.EVMKeeper, appKeepers.OPChildKeeper),
