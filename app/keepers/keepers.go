@@ -508,7 +508,11 @@ func NewAppKeeper(
 		AddRoute(icahosttypes.SubModuleName, icaHostStack).
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(icaauthtypes.ModuleName, icaControllerStack).
-		AddRoute(ibcnfttransfertypes.ModuleName, nftTransferStack).
+		// new v10 PortKeeper.Route requires alphanumeric route keys but does a substring
+		// fallback (over sorted Keys()) when exact match fails. PortID "nft-transfer"
+		// has a hyphen so we register under "nft". sorts before "transfer", is a
+		// substring of "nft-transfer", so the fallback resolves deterministically.
+		AddRoute(ibcnfttransfertypes.IbcRouterKey, nftTransferStack).
 		AddRoute(opchildtypes.ModuleName, opchildStack)
 
 	appKeepers.IBCKeeper.SetRouter(ibcRouter)
