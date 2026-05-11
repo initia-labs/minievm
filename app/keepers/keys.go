@@ -9,18 +9,15 @@ import (
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	"github.com/cosmos/cosmos-sdk/x/group"
 
 	// ibc imports
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
-	ratelimittypes "github.com/cosmos/ibc-apps/modules/rate-limiting/v8/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
-	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
-	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
+	ratelimittypes "github.com/cosmos/ibc-apps/modules/rate-limiting/v10/types"
+	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 
 	// initia imports
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
@@ -45,11 +42,11 @@ import (
 func KVStoreKeys() []string {
 	return []string{
 		authtypes.StoreKey, banktypes.StoreKey, group.StoreKey, consensusparamtypes.StoreKey,
-		crisistypes.StoreKey, ibcexported.StoreKey, upgradetypes.StoreKey,
+		ibcexported.StoreKey, upgradetypes.StoreKey,
 		ibctransfertypes.StoreKey, ibcnfttransfertypes.StoreKey,
-		capabilitytypes.StoreKey, authzkeeper.StoreKey, feegrant.StoreKey,
+		authzkeeper.StoreKey, feegrant.StoreKey,
 		icahosttypes.StoreKey, icacontrollertypes.StoreKey, icaauthtypes.StoreKey,
-		ibcfeetypes.StoreKey, evmtypes.StoreKey, opchildtypes.StoreKey,
+		evmtypes.StoreKey, opchildtypes.StoreKey,
 		packetforwardtypes.StoreKey, ratelimittypes.StoreKey,
 		oracletypes.StoreKey, marketmaptypes.StoreKey, ibchookstypes.StoreKey, forwardingtypes.StoreKey,
 	}
@@ -67,7 +64,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys(forwardingtypes.TransientStoreKey, ibchookstypes.TStoreKey)
 
 	// MemKeys are for information that is stored only in RAM.
-	appKeepers.memKeys = storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	appKeepers.memKeys = storetypes.NewMemoryStoreKeys()
 }
 
 func (appKeepers *AppKeepers) GetKVStoreKey() map[string]*storetypes.KVStoreKey {

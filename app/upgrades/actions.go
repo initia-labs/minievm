@@ -5,25 +5,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
-
 	"github.com/initia-labs/minievm/app/upgrades/contracts/erc20_factory"
 	"github.com/initia-labs/minievm/app/upgrades/contracts/erc20_wrapper"
 )
-
-// BindOPInitPort binds the OPinit IBC port if not already bound.
-func BindOPInitPort(ctx context.Context, app MinitiaApp) error {
-	bound, err := app.GetOPChildKeeper().IsBound(ctx, opchildtypes.PortID)
-	if err != nil {
-		return err
-	}
-	if !bound {
-		if err := app.GetOPChildKeeper().BindPort(ctx, opchildtypes.PortID); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 // NormalizeEVMParams normalizes EVM param addresses via address codec.
 func NormalizeEVMParams(ctx context.Context, app MinitiaApp) error {

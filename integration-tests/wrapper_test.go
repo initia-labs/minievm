@@ -10,7 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 	ophosttypes "github.com/initia-labs/OPinit/x/ophost/types"
@@ -23,8 +23,8 @@ import (
 
 func NewTransferPath(chainA, chainB *ibctesting.TestChain) *ibctesting.Path {
 	path := ibctesting.NewPath(chainA, chainB)
-	path.EndpointA.ChannelConfig.Version = transfertypes.Version
-	path.EndpointB.ChannelConfig.Version = transfertypes.Version
+	path.EndpointA.ChannelConfig.Version = transfertypes.V1
+	path.EndpointB.ChannelConfig.Version = transfertypes.V1
 	path.EndpointA.ClientConfig.(*ibctesting.TendermintConfig).TrustingPeriod = TrustingPeriod
 	path.EndpointA.ClientConfig.(*ibctesting.TendermintConfig).UnbondingPeriod = UnbondingPeriod
 	path.EndpointB.ClientConfig.(*ibctesting.TendermintConfig).TrustingPeriod = TrustingPeriod
