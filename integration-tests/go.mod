@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/ibc-go/v10 v10.6.0
 	github.com/ethereum/go-ethereum v1.17.0
 	github.com/initia-labs/OPinit v1.4.1
-	github.com/initia-labs/initia v1.4.6
+	github.com/initia-labs/initia v1.5.0-alpha.0
 	github.com/initia-labs/minievm v1.2.0
 	github.com/stretchr/testify v1.11.1
 )
@@ -307,10 +307,6 @@ replace (
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.53.7-initia.0
 	github.com/cosmos/ibc-go/v10 => github.com/initia-labs/ibc-go/v10 v10.6.0-initia.0
 	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v1.15.11-initia.0
-
-	// TODO: bump to v1.5.0 once initia-labs/initia PR #517 is merged and is tagged.
-	github.com/initia-labs/initia => github.com/initia-labs/initia v1.4.7-0.20260508081501-142225d2bdb3
-
 	github.com/noble-assets/forwarding/simapp => github.com/initia-labs/forwarding/simapp v1.0.1-0.20260421090420-f24c4fc5f529
 	github.com/noble-assets/forwarding/v2 => github.com/initia-labs/forwarding/v2 v2.0.3-initia.4
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.4.0

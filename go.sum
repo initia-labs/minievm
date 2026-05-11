@@ -624,8 +624,8 @@ github.com/initia-labs/forwarding/v2 v2.0.3-initia.4 h1:jHxKhDxt1Yhg7AVZoCFfABPO
 github.com/initia-labs/forwarding/v2 v2.0.3-initia.4/go.mod h1:slR65ckL3elajwnJO1RRHbqRFue4YtZrDVFh33Ux6FE=
 github.com/initia-labs/ibc-go/v10 v10.6.0-initia.0 h1:vfhYrMvYt/JwC3jfgIejYnEWwV/T5neNFmKJxOHajsE=
 github.com/initia-labs/ibc-go/v10 v10.6.0-initia.0/go.mod h1:a74pAPUSJ7NewvmvELU74hUClJhwnmm5MGbEaiTw/kE=
-github.com/initia-labs/initia v1.4.7-0.20260508081501-142225d2bdb3 h1:0slBcvS6tE712fkp26yWNJ0muOiL1QFSCnqJbCEVOe0=
-github.com/initia-labs/initia v1.4.7-0.20260508081501-142225d2bdb3/go.mod h1:n5d9qGNTc9yZ3C/D7q81gAGU1RHboWZEmQpRBFXxPCQ=
+github.com/initia-labs/initia v1.5.0-alpha.0 h1:lOKSInTSCEWkKst1/rPLKxKFB2bfZzVYHLruUAPWRdo=
+github.com/initia-labs/initia v1.5.0-alpha.0/go.mod h1:n5d9qGNTc9yZ3C/D7q81gAGU1RHboWZEmQpRBFXxPCQ=
 github.com/initia-labs/initia/api v1.4.0 h1:1DOUBxugC9ZdtMnmmN3qFWnNjlW7I6sssvvu4/ohVtU=
 github.com/initia-labs/initia/api v1.4.0/go.mod h1:YQAtPknqt4tZSj+AK0OfZ83XXah2MCna/Ko74/VQe6Q=
 github.com/initia-labs/movevm v1.2.0 h1:IbpipjRIZe851FJZZzP3RGIqrOCcNsI6bDF9VC0K0do=
