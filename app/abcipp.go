@@ -2,7 +2,7 @@ package app
 
 import (
 	"cosmossdk.io/errors"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	"github.com/cosmos/cosmos-sdk/x/authz"

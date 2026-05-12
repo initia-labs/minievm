@@ -3,9 +3,8 @@ package app
 import (
 	storetypes "cosmossdk.io/store/types"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	opchildkeeper "github.com/initia-labs/OPinit/x/opchild/keeper"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
@@ -69,11 +68,6 @@ func (app *MinitiaApp) GetICAControllerKeeper() *icacontrollerkeeper.Keeper {
 // GetICAAuthKeeper returns the ica auth keeper for the app.
 func (app *MinitiaApp) GetICAAuthKeeper() *icaauthkeeper.Keeper {
 	return app.ICAAuthKeeper
-}
-
-// GetScopedIBCKeeper returns the scoped ibc keeper for the app.
-func (app *MinitiaApp) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
-	return app.ScopedIBCKeeper
 }
 
 // TxConfig returns the tx config for the app.

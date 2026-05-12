@@ -15,8 +15,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
+	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
+	host "github.com/cosmos/ibc-go/v10/modules/core/24-host"
 
 	nfttransferkeeper "github.com/initia-labs/initia/x/ibc/nft-transfer/keeper"
 	nfttransfertypes "github.com/initia-labs/initia/x/ibc/nft-transfer/types"

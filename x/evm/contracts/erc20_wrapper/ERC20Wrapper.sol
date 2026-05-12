@@ -720,20 +720,54 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         ) {
             IJSONUtils.JSONObject memory res_obj = JSONUTILS_CONTRACT
                 .unmarshal_to_object(bytes(queryRes));
+            (bytes memory ibcDenom, bool hasIBCDenom) = _jsonObjectValue(
+                res_obj,
+                "ibc_denom"
+            );
+            if (!hasIBCDenom) {
+                return "";
+            }
+
+            (
+                bytes memory migrationInfo,
+                bool hasMigrationInfo
+            ) = _jsonObjectValue(res_obj, "migration_info");
+            if (!hasMigrationInfo) {
+                return "";
+            }
+
             IJSONUtils.JSONObject memory info_obj = JSONUTILS_CONTRACT
-                .unmarshal_to_object(res_obj.elements[1].value);
+                .unmarshal_to_object(migrationInfo);
+            (
+                bytes memory migrationChannel,
+                bool hasMigrationChannel
+            ) = _jsonObjectValue(info_obj, "ibc_channel_id");
+            if (!hasMigrationChannel) {
+                return "";
+            }
+
             string memory migrated_channel = JSONUTILS_CONTRACT
-                .unmarshal_to_string(info_obj.elements[1].value);
+                .unmarshal_to_string(migrationChannel);
             if (!areStringsEqual(migrated_channel, channel)) {
                 return "";
             }
-            return
-                JSONUTILS_CONTRACT.unmarshal_to_string(
-                    res_obj.elements[0].value
-                );
+            return JSONUTILS_CONTRACT.unmarshal_to_string(ibcDenom);
         } catch {
             return "";
         }
+    }
+
+    function _jsonObjectValue(
+        IJSONUtils.JSONObject memory obj,
+        string memory key
+    ) internal pure returns (bytes memory, bool) {
+        for (uint i = 0; i < obj.elements.length; i++) {
+            if (areStringsEqual(obj.elements[i].key, key)) {
+                return (obj.elements[i].value, true);
+            }
+        }
+
+        return ("", false);
     }
 
     function areStringsEqual(

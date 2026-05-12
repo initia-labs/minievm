@@ -9,9 +9,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
@@ -24,14 +24,15 @@ import (
 func (h EVMHooks) onRecvIcs20Packet(
 	ctx sdk.Context,
 	im ibchooks.IBCMiddleware,
+	channelVersion string,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 	data transfertypes.FungibleTokenPacketData,
 ) ibcexported.Acknowledgement {
-	return h.handleOnReceive(ctx, im, packet, relayer, ibchookstypes.ICSData{
+	return h.handleOnReceive(ctx, im, channelVersion, packet, relayer, ibchookstypes.ICSData{
 		ICS20Data: &data,
 	}, func(intermediateSender, contractAddr string) error {
-		localDenom := LocalDenom(packet, data.Denom)
+		localDenom := ibchookstypes.GetReceivedTokenDenom(packet, data)
 
 		// if the denom was migrated, then user will receive L2 denom instead of original IBC denom
 		if ok, err := h.opchildKeeper.HasIBCToL2DenomMap(ctx, localDenom); err != nil {
@@ -84,11 +85,12 @@ func (h EVMHooks) approveERC20(ctx sdk.Context, intermediateSender string, contr
 func (h EVMHooks) onRecvIcs721Packet(
 	ctx sdk.Context,
 	im ibchooks.IBCMiddleware,
+	channelVersion string,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 	data nfttransfertypes.NonFungibleTokenPacketData,
 ) ibcexported.Acknowledgement {
-	return h.handleOnReceive(ctx, im, packet, relayer, ibchookstypes.ICSData{
+	return h.handleOnReceive(ctx, im, channelVersion, packet, relayer, ibchookstypes.ICSData{
 		ICS721Data: &data,
 	}, func(intermediateSender, contractAddr string) error {
 		localClassId := LocalClassId(packet, data.ClassId)
@@ -137,6 +139,7 @@ func (h EVMHooks) approveERC721(ctx sdk.Context, intermediateSender string, cont
 func (h EVMHooks) handleOnReceive(
 	ctx sdk.Context,
 	im ibchooks.IBCMiddleware,
+	channelVersion string,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 	data ibchookstypes.ICSData,
@@ -147,7 +150,7 @@ func (h EVMHooks) handleOnReceive(
 		return newEmitErrorAcknowledgement(err)
 	}
 	if !isEVMRouted || hookData == nil || hookData.Message == nil {
-		return im.App.OnRecvPacket(ctx, packet, relayer)
+		return im.App.OnRecvPacket(ctx, channelVersion, packet, relayer)
 	}
 
 	msg := hookData.Message
@@ -174,7 +177,7 @@ func (h EVMHooks) handleOnReceive(
 	data.SetReceiver(intermediateSender)
 	packet.Data = data.GetBytes()
 
-	ack := im.App.OnRecvPacket(ctx, packet, relayer)
+	ack := im.App.OnRecvPacket(ctx, channelVersion, packet, relayer)
 	if !ack.Success() {
 		return ack
 	}

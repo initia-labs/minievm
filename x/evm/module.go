@@ -128,9 +128,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), querier)
 }
 
-// RegisterInvariants registers the x/evm module's invariants.
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
-
 // InitGenesis performs the x/evm module's genesis initialization. It
 // returns no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) {

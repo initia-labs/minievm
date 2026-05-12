@@ -5,9 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
 	ibchookstypes "github.com/initia-labs/initia/x/ibc-hooks/types"
@@ -19,14 +18,13 @@ import (
 func (h EVMHooks) sendIcs20Packet(
 	ctx sdk.Context,
 	im ibchooks.ICS4Middleware,
-	chanCap *capabilitytypes.Capability,
 	sourcePort string,
 	sourceChannel string,
 	timeoutHeight clienttypes.Height,
 	timeoutTimestamp uint64,
 	ics20Data transfertypes.FungibleTokenPacketData,
 ) (uint64, error) {
-	return h.handleSendPacket(ctx, im, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, ibchookstypes.ICSData{
+	return h.handleSendPacket(ctx, im, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, ibchookstypes.ICSData{
 		ICS20Data: &ics20Data,
 	})
 }
@@ -34,14 +32,13 @@ func (h EVMHooks) sendIcs20Packet(
 func (h EVMHooks) sendIcs721Packet(
 	ctx sdk.Context,
 	im ibchooks.ICS4Middleware,
-	chanCap *capabilitytypes.Capability,
 	sourcePort string,
 	sourceChannel string,
 	timeoutHeight clienttypes.Height,
 	timeoutTimestamp uint64,
 	ics721Data nfttransfertypes.NonFungibleTokenPacketData,
 ) (uint64, error) {
-	return h.handleSendPacket(ctx, im, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, ibchookstypes.ICSData{
+	return h.handleSendPacket(ctx, im, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, ibchookstypes.ICSData{
 		ICS721Data: &ics721Data,
 	})
 }
@@ -49,7 +46,6 @@ func (h EVMHooks) sendIcs721Packet(
 func (h EVMHooks) handleSendPacket(
 	ctx sdk.Context,
 	im ibchooks.ICS4Middleware,
-	chanCap *capabilitytypes.Capability,
 	sourcePort string,
 	sourceChannel string,
 	timeoutHeight clienttypes.Height,
@@ -61,7 +57,7 @@ func (h EVMHooks) handleSendPacket(
 		return 0, err
 	}
 	if !isEVMRouted || hookData == nil || hookData.AsyncCallback == nil {
-		return im.ICS4Wrapper.SendPacket(ctx, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, icsData.GetBytes())
+		return im.ICS4Wrapper.SendPacket(ctx, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, icsData.GetBytes())
 	}
 
 	asyncCallback := hookData.AsyncCallback
@@ -88,7 +84,7 @@ func (h EVMHooks) handleSendPacket(
 	}
 	icsData.SetMemo(string(bz))
 
-	sequence, err := im.ICS4Wrapper.SendPacket(ctx, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, icsData.GetBytes())
+	sequence, err := im.ICS4Wrapper.SendPacket(ctx, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, icsData.GetBytes())
 	if err != nil {
 		return sequence, err
 	}

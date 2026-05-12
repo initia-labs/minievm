@@ -13,28 +13,22 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	genutil "github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/group"
 	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 
 	// ibc imports
-	packetforward "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward"
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
-	"github.com/cosmos/ibc-go/modules/capability"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	ica "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts"
-	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
-	ibcfee "github.com/cosmos/ibc-go/v8/modules/apps/29-fee"
-	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	ibctransfer "github.com/cosmos/ibc-go/v8/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v8/modules/core"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	solomachine "github.com/cosmos/ibc-go/v8/modules/light-clients/06-solomachine"
-	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	packetforward "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
+	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
+	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
+	ibctransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v10/modules/core"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	solomachine "github.com/cosmos/ibc-go/v10/modules/light-clients/06-solomachine"
+	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 
 	// initia imports
 	ibchooks "github.com/initia-labs/initia/x/ibc-hooks"
@@ -69,7 +63,6 @@ import (
 var maccPerms = map[string][]string{
 	authtypes.FeeCollectorName:  nil,
 	icatypes.ModuleName:         nil,
-	ibcfeetypes.ModuleName:      nil,
 	ibctransfertypes.ModuleName: {authtypes.Minter, authtypes.Burner},
 	opchildtypes.ModuleName:     {authtypes.Minter, authtypes.Burner},
 
@@ -80,17 +73,15 @@ var maccPerms = map[string][]string{
 	authtypes.Minter: {authtypes.Minter},
 }
 
+//nolint:staticcheck
 func appModules(
 	app *MinitiaApp,
-	skipGenesisInvariants bool,
 ) []module.AppModule {
 	return []module.AppModule{
 		auth.NewAppModule(app.appCodec, *app.AccountKeeper, nil, nil),
 		bank.NewAppModule(app.appCodec, *app.BankKeeper, app.AccountKeeper),
 		opchild.NewAppModule(app.appCodec, app.OPChildKeeper),
-		capability.NewAppModule(app.appCodec, *app.CapabilityKeeper, false),
 		feegrantmodule.NewAppModule(app.appCodec, app.AccountKeeper, app.BankKeeper, *app.FeeGrantKeeper, app.interfaceRegistry),
-		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, nil),
 		upgrade.NewAppModule(app.UpgradeKeeper, app.ac),
 		authzmodule.NewAppModule(app.appCodec, *app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		groupmodule.NewAppModule(app.appCodec, *app.GroupKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
@@ -102,9 +93,8 @@ func appModules(
 		ibcnfttransfer.NewAppModule(app.appCodec, *app.NftTransferKeeper),
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
 		icaauth.NewAppModule(app.appCodec, *app.ICAAuthKeeper),
-		ibcfee.NewAppModule(*app.IBCFeeKeeper),
-		ibctm.NewAppModule(),
-		solomachine.NewAppModule(),
+		ibctm.NewAppModule(*app.TMLightClientModule),
+		solomachine.NewAppModule(*app.SMLightClientModule),
 		packetforward.NewAppModule(app.PacketForwardKeeper, nil),
 		ibchooks.NewAppModule(app.appCodec, *app.IBCHooksKeeper),
 		forwarding.NewAppModule(app.ForwardingKeeper),
@@ -141,7 +131,6 @@ NOTE: capability module's beginblocker must come before any modules using capabi
 */
 func orderBeginBlockers() []string {
 	return []string{
-		capabilitytypes.ModuleName,
 		opchildtypes.ModuleName,
 		authz.ModuleName,
 		ibcexported.ModuleName,
@@ -160,7 +149,6 @@ thus, gov.EndBlock must be executed before staking.EndBlock
 */
 func orderEndBlockers() []string {
 	return []string{
-		crisistypes.ModuleName,
 		opchildtypes.ModuleName,
 		authz.ModuleName,
 		feegrant.ModuleName,
@@ -181,11 +169,11 @@ can do so safely.
 */
 func orderInitBlockers() []string {
 	return []string{
-		capabilitytypes.ModuleName, authtypes.ModuleName, ibchookstypes.ModuleName, evmtypes.ModuleName, banktypes.ModuleName,
-		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName, crisistypes.ModuleName,
+		authtypes.ModuleName, ibchookstypes.ModuleName, evmtypes.ModuleName, banktypes.ModuleName,
+		opchildtypes.ModuleName, genutiltypes.ModuleName, authz.ModuleName, group.ModuleName,
 		upgradetypes.ModuleName, feegrant.ModuleName, consensusparamtypes.ModuleName, ibcexported.ModuleName,
 		ibctransfertypes.ModuleName, ibcnfttransfertypes.ModuleName, icatypes.ModuleName, icaauthtypes.ModuleName,
-		ibcfeetypes.ModuleName, oracletypes.ModuleName, marketmaptypes.ModuleName,
+		oracletypes.ModuleName, marketmaptypes.ModuleName,
 		packetforwardtypes.ModuleName, forwardingtypes.ModuleName,
 	}
 }

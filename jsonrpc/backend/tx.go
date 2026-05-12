@@ -134,7 +134,7 @@ func (b *JSONRPCBackend) getQueryCtxWithHeight(height uint64) (context.Context, 
 		height = 0
 	}
 
-	return b.app.CreateQueryContext(int64(height), false)
+	return b.app.CreateQueryContextWithCheckHeader(int64(height), false, false)
 }
 
 // GetTransactionByHash returns the transaction with the given hash.
