@@ -513,7 +513,7 @@ func NewAppKeeper(
 		// has a hyphen so we register under "nft". sorts before "transfer", is a
 		// substring of "nft-transfer", so the fallback resolves deterministically.
 		AddRoute(ibcnfttransfertypes.IbcRouterKey, nftTransferStack).
-		AddRoute(opchildtypes.ModuleName, opchildStack)
+		AddRoute(opchildtypes.PortID, opchildStack)
 
 	appKeepers.IBCKeeper.SetRouter(ibcRouter)
 	appKeepers.OPChildKeeper.
