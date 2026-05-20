@@ -2,12 +2,12 @@ package keeper_test
 
 import (
 	"bytes"
+	sha30 "crypto/sha3"
 	"fmt"
 	"testing"
 
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
 
 	"cosmossdk.io/math"
 
@@ -163,10 +163,10 @@ func Test_GetHash(t *testing.T) {
 	require.NoError(t, err)
 
 	// set block hash
-	hash99 := sha3.Sum256([]byte("block99"))
-	hash100 := sha3.Sum256([]byte("block100"))
-	hash101 := sha3.Sum256([]byte("block101"))
-	hash356 := sha3.Sum256([]byte("block356"))
+	hash99 := sha30.Sum256([]byte("block99"))
+	hash100 := sha30.Sum256([]byte("block100"))
+	hash101 := sha30.Sum256([]byte("block101"))
+	hash356 := sha30.Sum256([]byte("block356"))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 99, common.BytesToHash(hash99[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 100, common.BytesToHash(hash100[:])))
 	require.NoError(t, input.EVMKeeper.TrackBlockHash(ctx, 101, common.BytesToHash(hash101[:])))
