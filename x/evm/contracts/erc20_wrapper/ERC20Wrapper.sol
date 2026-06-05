@@ -581,9 +581,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
             abi.encodePacked(
                 '{"@type": "/ibc.applications.transfer.v1.MsgTransfer",',
                 '"source_port": "transfer",',
-                '"source_channel": "',
-                channel,
-                '",',
+                '"source_channel": ',
+                _stringifyJson(channel),
+                ",",
                 '"token": { "denom": "',
                 denom,
                 '",',
@@ -593,15 +593,15 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 '"sender": "',
                 COSMOS_CONTRACT.to_cosmos_address(address(this)),
                 '",',
-                '"receiver": "',
-                receiver,
-                '",',
+                '"receiver": ',
+                _stringifyJson(receiver),
+                ",",
                 '"timeout_height": {"revision_number": "0","revision_height": "0"},',
                 '"timeout_timestamp": "',
                 Strings.toString(timeout),
                 '",',
                 '"memo": ',
-                JSONUTILS_CONTRACT.stringify_json(merged_memo),
+                _stringifyJson(merged_memo),
                 "}"
             )
         );
@@ -622,9 +622,9 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
                 Strings.toString(amount),
                 '"},"sender": "',
                 COSMOS_CONTRACT.to_cosmos_address(address(this)),
-                '","to": "',
-                receiver,
-                '"}'
+                '","to": ',
+                _stringifyJson(receiver),
+                "}"
             )
         );
     }
@@ -641,6 +641,12 @@ contract ERC20Wrapper is Ownable, ERC165, IIBCAsyncCallback, ERC20ACL {
         } catch {
             return false;
         }
+    }
+
+    function _stringifyJson(
+        string memory value
+    ) internal view returns (string memory) {
+        return JSONUTILS_CONTRACT.stringify_json(value);
     }
 
     // pure
