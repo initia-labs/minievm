@@ -4,10 +4,16 @@ import (
 	"crypto/rand"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"cosmossdk.io/math"
+	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/stretchr/testify/require"
+
+	"github.com/holiman/uint256"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -15,6 +21,7 @@ import (
 
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20"
 	"github.com/initia-labs/minievm/x/evm/contracts/erc20_factory"
+	"github.com/initia-labs/minievm/x/evm/contracts/erc20_wrapper"
 	"github.com/initia-labs/minievm/x/evm/contracts/infinite_loop_erc20"
 	"github.com/initia-labs/minievm/x/evm/keeper"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -160,6 +167,32 @@ func transferFromERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller,
 	} else {
 		require.NoError(t, err)
 	}
+}
+
+func callERC20WrapperWithoutDispatch(
+	t *testing.T,
+	ctx sdk.Context,
+	input TestKeepers,
+	caller common.Address,
+	inputBz []byte,
+) []types.ExecuteRequest {
+	t.Helper()
+
+	wrapperAddr, err := input.EVMKeeper.GetERC20WrapperAddr(ctx)
+	require.NoError(t, err)
+
+	evmCtx, evm, cleanup, err := input.EVMKeeper.CreateEVM(ctx, caller)
+	require.NoError(t, err)
+	defer cleanup()
+
+	_, _, err = evm.Call(caller, wrapperAddr, inputBz, 50_000_000, uint256.NewInt(0))
+	require.NoError(t, err)
+
+	stateDB := evm.StateDB.(types.StateDB)
+	require.NoError(t, stateDB.Commit())
+
+	requests := sdk.UnwrapSDKContext(evmCtx).Value(types.CONTEXT_KEY_EXECUTE_REQUESTS).(*[]types.ExecuteRequest)
+	return *requests
 }
 
 func updateMetadataERC20(t *testing.T, ctx sdk.Context, input TestKeepers, caller common.Address, denom, name, symbol string, decimals uint8) error {
@@ -653,6 +686,104 @@ func Test_Approve(t *testing.T) {
 
 	// should fail to transferFrom more than approved
 	transferFromERC20(t, ctx, input, evmAddr2, evmAddr, evmAddr2, sdk.NewCoin(fooDenom, math.NewInt(50)), true)
+}
+
+func Test_ERC20Wrapper_OPWithdrawEscapesReceiverJSONInjection(t *testing.T) {
+	ctx, input := createDefaultTestInput(t)
+	opchildtypes.RegisterInterfaces(input.EncodingConfig.InterfaceRegistry)
+
+	_, _, addr := keyPubAddr()
+	evmAddr := common.BytesToAddress(addr.Bytes())
+
+	wrapperAddr, err := input.EVMKeeper.GetERC20WrapperAddr(ctx)
+	require.NoError(t, err)
+
+	localToken := deployERC20(t, ctx, input, evmAddr, "local")
+	localDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, localToken)
+	require.NoError(t, err)
+
+	mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(localDenom, math.NewInt(1)), false)
+	approveERC20(t, ctx, input, evmAddr, wrapperAddr, sdk.NewCoin(localDenom, math.NewInt(1)), false)
+
+	abi, err := erc20_wrapper.Erc20WrapperMetaData.GetAbi()
+	require.NoError(t, err)
+
+	receiver := `init1atk","amount":{"denom":"uusdc","amount":"999999999999"},"to":"init1atk`
+	inputBz, err := abi.Pack("toRemoteAndOPWithdraw", receiver, localDenom, math.NewInt(1).BigInt(), uint64(250_000))
+	require.NoError(t, err)
+
+	requests := callERC20WrapperWithoutDispatch(t, ctx, input, evmAddr, inputBz)
+	require.Len(t, requests, 1)
+
+	msg, ok := requests[0].Msg.(*opchildtypes.MsgInitiateTokenWithdrawal)
+	require.True(t, ok)
+	require.Equal(t, receiver, msg.To)
+	require.Equal(t, math.NewInt(1), msg.Amount.Amount)
+	require.NotEqual(t, "uusdc", msg.Amount.Denom)
+}
+
+func Test_ERC20Wrapper_IBCTransferEscapesJSONInjection(t *testing.T) {
+	testCases := []struct {
+		name     string
+		channel  string
+		receiver string
+	}{
+		{
+			name:     "channel",
+			channel:  `channel-0","token":{"denom":"ibc/USDC","amount":"1000000"},"source_channel":"channel-0`,
+			receiver: "init1receiver",
+		},
+		{
+			name:     "receiver",
+			channel:  "channel-0",
+			receiver: `attacker","token":{"denom":"ibc/USDC","amount":"1000000"},"receiver":"attacker`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, input := createDefaultTestInput(t)
+			transfertypes.RegisterInterfaces(input.EncodingConfig.InterfaceRegistry)
+
+			_, _, addr := keyPubAddr()
+			evmAddr := common.BytesToAddress(addr.Bytes())
+
+			wrapperAddr, err := input.EVMKeeper.GetERC20WrapperAddr(ctx)
+			require.NoError(t, err)
+
+			localToken := deployERC20(t, ctx, input, evmAddr, "local")
+			localDenom, err := types.ContractAddrToDenom(ctx, &input.EVMKeeper, localToken)
+			require.NoError(t, err)
+
+			mintERC20(t, ctx, input, evmAddr, evmAddr, sdk.NewCoin(localDenom, math.NewInt(1)), false)
+			approveERC20(t, ctx, input, evmAddr, wrapperAddr, sdk.NewCoin(localDenom, math.NewInt(1)), false)
+
+			abi, err := erc20_wrapper.Erc20WrapperMetaData.GetAbi()
+			require.NoError(t, err)
+
+			inputBz, err := abi.Pack(
+				"toRemoteAndIBCTransfer",
+				localDenom,
+				math.NewInt(1).BigInt(),
+				tc.channel,
+				tc.receiver,
+				math.NewInt(1000).BigInt(),
+				"{}",
+				uint64(250_000),
+			)
+			require.NoError(t, err)
+
+			requests := callERC20WrapperWithoutDispatch(t, ctx, input, evmAddr, inputBz)
+			require.Len(t, requests, 1)
+
+			msg, ok := requests[0].Msg.(*transfertypes.MsgTransfer)
+			require.True(t, ok)
+			require.Equal(t, tc.channel, msg.SourceChannel)
+			require.Equal(t, tc.receiver, msg.Receiver)
+			require.Equal(t, math.NewInt(1), msg.Token.Amount)
+			require.NotEqual(t, "ibc/USDC", msg.Token.Denom)
+		})
+	}
 }
 
 func Test_ERC20MetadataUpdate(t *testing.T) {
