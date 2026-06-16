@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/initia-labs/minievm/x/evm/contracts/i_cosmos"
 	"github.com/initia-labs/minievm/x/evm/types"
@@ -337,7 +338,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller common.Address, input []byte, supp
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrNotSupportedCosmosQuery.Wrap(queryCosmosArguments.Path)
 		}
 
-		reqData, err := types.ConvertJSONToProto(e.cdc, protoSet.Request, []byte(queryCosmosArguments.Req))
+		reqData, err := types.ConvertJSONToProto(e.cdc, proto.Clone(protoSet.Request), []byte(queryCosmosArguments.Req))
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
@@ -350,7 +351,7 @@ func (e *CosmosPrecompile) ExtendedRun(caller common.Address, input []byte, supp
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}
 
-		resBz, err = types.ConvertProtoToJSON(e.cdc, protoSet.Response, res.Value)
+		resBz, err = types.ConvertProtoToJSON(e.cdc, proto.Clone(protoSet.Response), res.Value)
 		if err != nil {
 			return nil, ctx.GasMeter().GasConsumedToLimit(), types.ErrPrecompileFailed.Wrap(err.Error())
 		}

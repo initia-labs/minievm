@@ -2,6 +2,8 @@ package cosmosprecompile_test
 
 import (
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -493,6 +495,116 @@ func Test_QueryCosmos(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, expectedRet, ret)
+}
+
+func Test_QueryCosmosDataRace(t *testing.T) {
+	ctx, cdc, ac, ak, bk := setup()
+	authorityAddr := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	queryPath := "/connect.oracle.v2.Query/GetPrice"
+	whitelist := types.QueryCosmosWhitelist{
+		queryPath: {
+			Request:  &oracletypes.GetPriceRequest{},
+			Response: &oracletypes.GetPriceResponse{},
+		},
+	}
+
+	const workers = 128
+	pairIDs := map[string]uint64{}
+	for i := 0; i < workers; i++ {
+		pairIDs[fmt.Sprintf("ASSET%d/USD", i)] = uint64(i + 1)
+	}
+
+	router := precompiletesting.MockGRPCRouter{
+		Routes: map[string]baseapp.GRPCQueryHandler{
+			queryPath: func(_ sdk.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
+				var priceReq oracletypes.GetPriceRequest
+				if err := cdc.Unmarshal(req.Data, &priceReq); err != nil {
+					return nil, err
+				}
+
+				resBz, err := cdc.Marshal(&oracletypes.GetPriceResponse{
+					Id: pairIDs[priceReq.CurrencyPair],
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				return &abci.ResponseQuery{Value: resBz}, nil
+			},
+		},
+	}
+
+	abi, err := contracts.ICosmosMetaData.GetAbi()
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	var mismatches int64
+	var errs int64
+	mu := sync.Mutex{}
+	samples := []string{}
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					atomic.AddInt64(&errs, 1)
+				}
+			}()
+
+			stateDB := precompiletesting.NewMockStateDB(ctx)
+			cosmosPrecompile, err := precompiles.NewCosmosPrecompile(stateDB, cdc, ac, ak, bk, nil, router, whitelist, authorityAddr)
+			if err != nil {
+				atomic.AddInt64(&errs, 1)
+				return
+			}
+
+			pair := fmt.Sprintf("ASSET%d/USD", i)
+			inputBz, err := abi.Pack(precompiles.METHOD_QUERY_COSMOS, queryPath, fmt.Sprintf(`{"currency_pair":"%s"}`, pair))
+			if err != nil {
+				atomic.AddInt64(&errs, 1)
+				return
+			}
+
+			retBz, _, err := cosmosPrecompile.ExtendedRun(common.HexToAddress("0x1"), inputBz, precompiles.QUERY_COSMOS_GAS+uint64(len(inputBz)), true)
+			if err != nil {
+				atomic.AddInt64(&errs, 1)
+				return
+			}
+
+			unpackedRet, err := abi.Methods["query_cosmos"].Outputs.Unpack(retBz)
+			if err != nil {
+				atomic.AddInt64(&errs, 1)
+				return
+			}
+
+			var ret oracletypes.GetPriceResponse
+			if err := cdc.UnmarshalJSON([]byte(unpackedRet[0].(string)), &ret); err != nil {
+				atomic.AddInt64(&errs, 1)
+				return
+			}
+
+			want := pairIDs[pair]
+			if ret.Id != want {
+				atomic.AddInt64(&mismatches, 1)
+				mu.Lock()
+				if len(samples) < 20 {
+					samples = append(samples, fmt.Sprintf("pair=%s want=%d got=%d", pair, want, ret.Id))
+				}
+				mu.Unlock()
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	t.Logf("workers=%d mismatches=%d errors=%d", workers, mismatches, errs)
+	for _, s := range samples {
+		t.Logf("CORRUPTION: %s", s)
+	}
+	require.Zero(t, errs)
+	require.Zero(t, mismatches)
 }
 
 func Test_ToDenom(t *testing.T) {
