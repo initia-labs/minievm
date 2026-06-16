@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/math"
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	opchildtypes "github.com/initia-labs/OPinit/x/opchild/types"
 
 	"github.com/ethereum/go-ethereum/common"
