@@ -511,7 +511,7 @@ func Test_QueryCosmosDataRace(t *testing.T) {
 
 	const workers = 128
 	pairIDs := map[string]uint64{}
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		pairIDs[fmt.Sprintf("ASSET%d/USD", i)] = uint64(i + 1)
 	}
 
@@ -544,7 +544,7 @@ func Test_QueryCosmosDataRace(t *testing.T) {
 	mu := sync.Mutex{}
 	samples := []string{}
 
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
