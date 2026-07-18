@@ -273,7 +273,7 @@ replace (
 )
 
 // indirect custom dependencies
-require github.com/cosmos/iavl v1.2.6 // indirect
+require github.com/cosmos/iavl v1.2.8 // indirect
 
 // initia custom
 // use custom version for
