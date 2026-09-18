@@ -1,4 +1,4 @@
-FROM initia/go-rocksdb-builder:0001-debian AS go-builder
+FROM initia/go-rocksdb-builder:0003-debian AS go-builder
 
 ARG VERSION
 ARG COMMIT
@@ -16,7 +16,7 @@ ENV CGO_CFLAGS="-I/usr/local/include"
 # Build minimove/minitiad
 RUN VERSION=${VERSION} COMMIT=${COMMIT} LEDGER_ENABLED=false COSMOS_BUILD_OPTIONS=rocksdb make build
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 # Install runtime shared libs
 RUN apt-get update && \

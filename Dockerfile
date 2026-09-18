@@ -1,5 +1,5 @@
 # Stage 1: Build the Go project
-FROM golang:1.23-alpine3.20 AS go-builder
+FROM golang:1.26-alpine3.22 AS go-builder
 
 # Use build arguments for the target architecture
 ARG TARGETARCH
@@ -21,8 +21,8 @@ ENV MIMALLOC_RESERVE_HUGE_OS_PAGES=4
 
 RUN VERSION=${VERSION} COMMIT=${COMMIT} LEDGER_ENABLED=false GOARCH=${GOARCH} LDFLAGS="-linkmode=external -extldflags \"-L/code/mimalloc/build -lmimalloc -Wl,-z,muldefs -static\"" make build
 
-# use bullseye-slim as base image for rly binary at launch
-FROM debian:bullseye-slim
+# use bookworm-slim as base image for rly binary at launch
+FROM debian:bookworm-slim
 
 # install curl for health check
 RUN apt-get update && \
