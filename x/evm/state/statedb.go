@@ -649,6 +649,27 @@ func (s *StateDB) RevertToSnapshot(i int) {
 	s.snaps = s.snaps[:i+1]
 }
 
+// DiscardSnapshot is called by the EVM when the call frame that took snapshot i
+// returned without error, so i will never be reverted to. It folds the frame's
+// cache layers into the layer that was active when the snapshot was taken.
+func (s *StateDB) DiscardSnapshot(i int) {
+	base := i
+	if base < 0 {
+		base = 0
+	}
+	if base+1 >= len(s.snaps) {
+		return
+	}
+
+	// commit from the top down, the same order Commit uses
+	for j := len(s.snaps) - 1; j > base; j-- {
+		s.snaps[j].Commit()
+	}
+
+	s.snaps = s.snaps[:base+1]
+	s.ctx = s.snaps[base].ctx
+}
+
 // Context returns the current context
 func (s *StateDB) Context() sdk.Context {
 	return s.ctx.Context

@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/holiman/uint256"
@@ -422,4 +423,65 @@ func Test_CreateContract_OverrideEmptyAccount(t *testing.T) {
 	contractAcc := input.AccountKeeper.GetAccount(ctx, sdk.AccAddress(contractAddr.Bytes()))
 	_, ok := contractAcc.(*evmtypes.ContractAccount)
 	require.True(t, ok)
+}
+
+func Test_DiscardSnapshot(t *testing.T) {
+	sdkCtx, input := createDefaultTestInput(t)
+
+	_, evm, _, err := input.EVMKeeper.CreateEVM(sdkCtx, evmtypes.StdAddress)
+	require.NoError(t, err)
+	stateDB := evm.StateDB.(*state.StateDB)
+
+	_, _, addr := keyPubAddr()
+	contract := common.BytesToAddress(addr)
+	key := func(i int) common.Hash { return common.BigToHash(big.NewInt(int64(i))) }
+	value := common.BytesToHash([]byte("value"))
+	stateDB.CreateContract(contract)
+
+	// outermost frame
+	outer := stateDB.Snapshot()
+
+	// a finished frame survives a later sibling's revert
+	sidA := stateDB.Snapshot()
+	stateDB.SetState(contract, key(1), value)
+	stateDB.AddLog(&coretypes.Log{Address: contract, Topics: []common.Hash{{1}}})
+	stateDB.DiscardSnapshot(sidA)
+
+	sidB := stateDB.Snapshot()
+	stateDB.SetState(contract, key(2), value)
+	stateDB.AddLog(&coretypes.Log{Address: contract, Topics: []common.Hash{{2}}})
+	stateDB.RevertToSnapshot(sidB)
+
+	require.Equal(t, value, stateDB.GetState(contract, key(1)))
+	require.Equal(t, common.Hash{}, stateDB.GetState(contract, key(2)))
+
+	// many sequential finished frames
+	for i := 10; i < 1010; i++ {
+		sid := stateDB.Snapshot()
+		stateDB.SetTransientState(contract, key(i), value)
+		stateDB.SetState(contract, key(i), value)
+		stateDB.DiscardSnapshot(sid)
+	}
+	require.Equal(t, value, stateDB.GetTransientState(contract, key(500)))
+
+	// a discarded inner frame is still reverted with its parent
+	sidC := stateDB.Snapshot()
+	sidD := stateDB.Snapshot()
+	stateDB.SetState(contract, key(3), value)
+	stateDB.DiscardSnapshot(sidD)
+	stateDB.RevertToSnapshot(sidC)
+	require.Equal(t, common.Hash{}, stateDB.GetState(contract, key(3)))
+
+	stateDB.DiscardSnapshot(outer)
+	require.NoError(t, stateDB.Commit())
+
+	// committed state and logs contain exactly the surviving frames
+	require.Equal(t, value, stateDB.GetState(contract, key(1)))
+	require.Equal(t, value, stateDB.GetState(contract, key(1009)))
+	require.Equal(t, common.Hash{}, stateDB.GetState(contract, key(2)))
+	require.Equal(t, common.Hash{}, stateDB.GetState(contract, key(3)))
+
+	logs := stateDB.Logs()
+	require.Len(t, logs, 1)
+	require.Equal(t, common.Hash{1}.Hex(), logs[0].Topics[0])
 }

@@ -12,6 +12,7 @@ import (
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -248,10 +249,12 @@ func ConvertCosmosTxToEthereumTx(
 		return nil, nil, nil
 	}
 	md := txMetadata{}
+	isLegacy := false
 	decoder := json.NewDecoder(bytes.NewReader([]byte(memo)))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&md); err != nil {
 		if allowLegacy {
+			isLegacy = true
 			mdLegacy := txMetadataLegacy{}
 			decoderLegacy := json.NewDecoder(bytes.NewReader([]byte(memo)))
 			decoderLegacy.DisallowUnknownFields()
@@ -340,6 +343,12 @@ func ConvertCosmosTxToEthereumTx(
 	computedFeeAmount := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewIntFromBigInt(computeGasFeeAmount(enforcedFeeCap, enforcedGasLimit, feeDecimals))))
 	if !feeAmount.Equal(computedFeeAmount) {
 		return nil, nil, ErrTxConversionFailed.Wrap("fee amount manipulation detected")
+	}
+
+	// the ethereum signature only covers the fields used below to rebuild the tx,
+	// so anyone relaying it could change the others
+	if err := validateUnsignedTxFields(authTx, isLegacy, enforcedGasLimit); err != nil {
+		return nil, nil, err
 	}
 
 	var to *common.Address
@@ -464,6 +473,35 @@ func ConvertCosmosTxToEthereumTx(
 	tx = coretypes.NewTx(txData)
 
 	return tx, &sender, nil
+}
+
+// extensionOptionsTx is implemented by txs that carry extension options.
+type extensionOptionsTx interface {
+	GetExtensionOptions() []*codectypes.Any
+	GetNonCriticalExtensionOptions() []*codectypes.Any
+}
+
+// validateUnsignedTxFields checks that the Cosmos tx fields which the ethereum
+// signature does not cover hold the values ConvertEthereumTxToCosmosTx sets.
+// A fee payer other than the sender needs its own signature, so sig
+// verification already rejects it.
+func validateUnsignedTxFields(authTx authsigning.Tx, isLegacy bool, gasLimit uint64) error {
+	// legacy metadata has no gas limit, it was taken from the cosmos tx itself
+	if !isLegacy && authTx.GetGas() != gasLimit {
+		return ErrTxConversionFailed.Wrap("gas limit manipulation detected")
+	}
+	if len(authTx.FeeGranter()) != 0 {
+		return ErrTxConversionFailed.Wrap("fee granter is not allowed")
+	}
+	if authTx.GetTimeoutHeight() != 0 {
+		return ErrTxConversionFailed.Wrap("timeout height is not allowed")
+	}
+	if extTx, ok := authTx.(extensionOptionsTx); ok &&
+		(len(extTx.GetExtensionOptions()) != 0 || len(extTx.GetNonCriticalExtensionOptions()) != 0) {
+		return ErrTxConversionFailed.Wrap("extension options are not allowed")
+	}
+
+	return nil
 }
 
 func computeGasFeeAmount(gasFeeCap *big.Int, gas uint64, decimals uint8) *big.Int {

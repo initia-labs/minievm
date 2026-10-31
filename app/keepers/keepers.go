@@ -376,6 +376,7 @@ func NewAppKeeper(
 			authorityAddr,
 		)
 		appKeepers.TransferKeeper = &transferKeeper
+		appKeepers.ForwardingKeeper.SetIBCKeepers(appKeepers.IBCKeeper.ChannelKeeper, appKeepers.TransferKeeper)
 		transferStack = ibctransfer.NewIBCModule(*appKeepers.TransferKeeper)
 
 		// forwarding middleware

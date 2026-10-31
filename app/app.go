@@ -66,6 +66,7 @@ import (
 	"github.com/initia-labs/minievm/app/keepers"
 	"github.com/initia-labs/minievm/app/posthandler"
 	"github.com/initia-labs/minievm/app/upgrades/v1_2_18"
+	"github.com/initia-labs/minievm/app/upgrades/v1_2_21"
 	evmindexer "github.com/initia-labs/minievm/indexer"
 	evmconfig "github.com/initia-labs/minievm/x/evm/config"
 	evmtypes "github.com/initia-labs/minievm/x/evm/types"
@@ -264,6 +265,7 @@ func NewMinitiaApp(
 	// but this isn't required during initial encoding config setup.
 	if loadLatest {
 		v1_2_18.RegisterUpgradeHandlers(app)
+		v1_2_21.RegisterUpgradeHandlers(app)
 	}
 
 	// register executor change plans for later use
@@ -287,7 +289,7 @@ func NewMinitiaApp(
 
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
-	app.SetPreBlocker(app.PreBlocker)
+	app.SetPreBlocker(v1_2_21.WrapPreBlocker(app, app.PreBlocker))
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.setPostHandler()
 	app.SetEndBlocker(app.EndBlocker)

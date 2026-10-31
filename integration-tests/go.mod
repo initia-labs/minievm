@@ -296,7 +296,7 @@ replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.38.19-minitia.21.1
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.50.14-initia.3
 	github.com/cosmos/ibc-go/v8 => github.com/initia-labs/ibc-go/v8 v8.7.0-initia.0
-	github.com/ethereum/go-ethereum => github.com/initia-labs/evm v1.15.11-initia.0
+	github.com/ethereum/go-ethereum => github.com/initia-labs/evm-sec v1.15.11-initia.1
 	github.com/noble-assets/forwarding/simapp => github.com/initia-labs/forwarding/simapp v1.0.0
 	github.com/noble-assets/forwarding/v2 => github.com/initia-labs/forwarding/v2 v2.0.3-initia.3
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1

@@ -62,6 +62,15 @@ func validateAndParseMemo(memo string) (
 
 	evmHookRaw := metadata[evmHookMemoKey]
 
+	// Reject a memo whose "evm" hook object carries a key that folds onto a
+	// reserved hook key
+	if evmObj, ok := evmHookRaw.(map[string]interface{}); ok {
+		if err = validateHookKeys(evmObj); err != nil {
+			err = errors.Wrap(channeltypes.ErrInvalidPacket, err.Error())
+			return
+		}
+	}
+
 	// parse evm raw bytes to execute message
 	bz, err := json.Marshal(evmHookRaw)
 	if err != nil {
@@ -76,6 +85,25 @@ func validateAndParseMemo(memo string) (
 	}
 
 	return
+}
+
+// reservedHookKeys are the JSON object keys of the "evm" hook payload. They map
+// to the fields of HookData and are all ASCII.
+var reservedHookKeys = []string{"message", "async_callback"}
+
+// validateHookKeys rejects an "evm" hook object that contains a key which folds
+// onto a reserved hook key without being byte-identical to it. See the call site
+// in validateAndParseMemo for why such a key is a spoofing vector.
+func validateHookKeys(evmObj map[string]interface{}) error {
+	for k := range evmObj {
+		for _, reserved := range reservedHookKeys {
+			if k != reserved && strings.EqualFold(k, reserved) {
+				return fmt.Errorf("evm hook memo key %q collides with reserved key %q under case folding", k, reserved)
+			}
+		}
+	}
+
+	return nil
 }
 
 func validateReceiver(msg *evmtypes.MsgCall, receiver string) error {

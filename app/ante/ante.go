@@ -79,6 +79,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		NewConsumeTxSizeGasDecorator(options.AccountKeeper),
+		NewFeeDenomGuardDecorator(options.EVMKeeper, options.OPChildKeeper),
 		NewGasFreeFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.EVMKeeper, txFeeChecker),
 		// SetPubKeyDecorator must be called before all signature verification decorators
 		ante.NewSetPubKeyDecorator(options.AccountKeeper),

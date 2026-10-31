@@ -6,12 +6,15 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	evmkeeper "github.com/initia-labs/minievm/x/evm/keeper"
+
+	forwardingkeeper "github.com/noble-assets/forwarding/v2/keeper"
 )
 
 type MinitiaApp interface {
 	GetAccountKeeper() *authkeeper.AccountKeeper
 	GetEVMKeeper() *evmkeeper.Keeper
 	GetUpgradeKeeper() *upgradekeeper.Keeper
+	GetForwardingKeeper() *forwardingkeeper.Keeper
 
 	GetConfigurator() module.Configurator
 	GetModuleManager() *module.Manager
